@@ -87,9 +87,9 @@ switch (process.argv[2]) {
     const value = await manifest();
     assert(value.dirty === false, 'Publish requires a package built from a clean committed source tree');
     // A manually bootstrapped version may already exist before Trusted Publishing is configured.
-    // Only a registry 404 permits publication; every existing version must match the tested bytes.
+    // Only a registry 404 permits publication; an existing archive payload must match exactly.
     if (await isIdenticalPublishedPackage(metadata.name, metadata.version, await readFile(join(artifacts, value.filename)))) {
-      console.log(`Already published ${metadata.name}@${metadata.version}: downloaded npm tarball is byte-identical (SHA-512) to the tested artifact. Skipped immutable re-publication.`);
+      console.log(`Already published ${metadata.name}@${metadata.version}: registry SHA-512 verified; the complete decompressed TAR payload is byte-identical to the tested artifact (gzip encoding may differ). Skipped immutable re-publication.`);
     } else execFileSync('npm', ['publish', join(artifacts, value.filename), '--access', 'public', '--ignore-scripts'], { cwd: root, stdio: 'inherit' });
     break;
   }

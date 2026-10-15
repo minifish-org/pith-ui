@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
+
+const maxArchiveBytes = 32 * 1024 * 1024;
 
 /** A registry metadata 404 is the only condition that permits a new publication. */
 export async function isIdenticalPublishedPackage(
@@ -17,8 +20,17 @@ export async function isIdenticalPublishedPackage(
   assert(download.ok, `Published tarball download failed: HTTP ${download.status}`);
   const downloaded = new Uint8Array(await download.arrayBuffer());
   const integrity = (bytes: Uint8Array) => 'sha512-' + createHash('sha512').update(bytes).digest('base64');
-  const expected = integrity(testedTarball);
-  assert(integrity(downloaded) === expected, 'This immutable npm version already contains a different tarball; publication was refused');
-  assert(published.dist.integrity.split(/\s+/).includes(expected), 'Published npm integrity metadata differs from the tested tarball');
+  assert(published.dist.integrity.split(/\s+/).includes(integrity(downloaded)), 'Published npm integrity metadata differs from the downloaded tarball');
+  let downloadedArchive: Buffer;
+  let testedArchive: Buffer;
+  try {
+    downloadedArchive = gunzipSync(downloaded, { maxOutputLength: maxArchiveBytes });
+    testedArchive = gunzipSync(testedTarball, { maxOutputLength: maxArchiveBytes });
+  } catch {
+    throw new Error('Package gzip archive is invalid or exceeds the 32 MiB decompressed size limit; publication was refused');
+  }
+  // gzip encodings can differ across operating systems. Compare the complete TAR
+  // bytes, including file metadata, rather than extracting and comparing files.
+  assert(Buffer.from(downloaded).equals(testedTarball) || downloadedArchive.equals(testedArchive), 'This immutable npm version already contains a different archive payload; publication was refused');
   return true;
 }
