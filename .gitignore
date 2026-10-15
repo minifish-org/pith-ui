@@ -1,0 +1,11 @@
+node_modules/
+dist/
+showroom-dist/
+test-results/
+playwright-report/
+*.tgz
+.DS_Store
+visual-results/
+
+artifacts/
+.playwright-cli/

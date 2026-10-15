@@ -1,0 +1,72 @@
+import DOMPurify from 'dompurify';
+import { marked, Renderer } from 'marked';
+import { escape } from '../dom.js';
+
+export interface LocalContentLink { path: string; conversationId: string }
+export interface MarkdownOptions {
+  /** The host validates its own file identity and download permissions. */
+  resolveLocalLink?: (href: string) => LocalContentLink | null;
+}
+
+/** Sanitized content only: embedded images, executable markup and forms are excluded. */
+export function renderMarkdown(value: string, options: MarkdownOptions = {}): string {
+  const localLinks = new Map<string, LocalContentLink>();
+  const renderer = new Renderer();
+  renderer.link = function(token) {
+    const local = options.resolveLocalLink?.(token.href);
+    if (local) {
+      const marker = `#pui-file-${localLinks.size}`;
+      localLinks.set(marker, local);
+      return Renderer.prototype.link.call(this, { ...token, href: marker });
+    }
+    return Renderer.prototype.link.call(this, token);
+  };
+  const html = marked.parse(value, { async: false, breaks: true, renderer }) as string;
+  const safe = DOMPurify.sanitize(html, {
+    FORBID_TAGS: ['img', 'video', 'audio', 'iframe', 'object', 'embed', 'svg', 'math', 'style', 'form', 'input', 'button'],
+    FORBID_ATTR: ['style', 'src', 'srcset'],
+    ALLOW_DATA_ATTR: false,
+  });
+  const container = document.createElement('div');
+  container.innerHTML = safe;
+  for (const link of container.querySelectorAll('a')) {
+    const href = link.getAttribute('href') ?? '';
+    const local = localLinks.get(href) || options.resolveLocalLink?.(href);
+    if (local) {
+      link.setAttribute('href', '#');
+      link.dataset.downloadPath = local.path;
+      link.dataset.downloadConversation = local.conversationId;
+      link.title = `Save file: ${local.path}`;
+    } else if (/^https?:\/\//i.test(href) || /^mailto:/i.test(href)) {
+      link.setAttribute('target', '_blank');
+      link.setAttribute('rel', 'noopener noreferrer');
+    } else link.replaceWith(...link.childNodes);
+  }
+  for (const code of container.querySelectorAll('pre > code')) {
+    const pre = code.parentElement!;
+    const block = document.createElement('div');
+    block.className = 'pui-code-block';
+    const toolbar = document.createElement('div');
+    toolbar.className = 'pui-code-toolbar';
+    toolbar.dataset.findIgnore = '';
+    const language = document.createElement('span');
+    language.textContent = [...code.classList].find((name) => name.startsWith('language-'))?.slice(9) || 'Code';
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'pui-secondary-button pui-code-copy';
+    copy.dataset.copyCode = '';
+    copy.textContent = 'Copy';
+    copy.setAttribute('aria-label', 'Copy code');
+    toolbar.append(language, copy);
+    pre.replaceWith(block);
+    block.append(toolbar, pre);
+  }
+  return container.innerHTML;
+}
+
+export function renderDiff(diff: string): string {
+  return diff.split('\n').map((line) => {
+    const kind = line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@') ? 'meta' : line.startsWith('+') ? 'add' : line.startsWith('-') ? 'remove' : 'context';
+    return `<span class="pui-diff-line pui-diff-${kind}">${escape(line) || ' '}</span>`;
+  }).join('');
+}

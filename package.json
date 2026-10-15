@@ -1,0 +1,29 @@
+{
+  "name": "pith-ui",
+  "version": "0.1.0",
+  "description": "Native TypeScript building blocks with explicit behavior and a human-verifiable component showroom.",
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "repository": { "type": "git", "url": "git+https://github.com/minifish-org/pith-ui.git" },
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./styles.css": "./dist/styles.css"
+  },
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "files": ["dist", "README.md", "AI.md", "API.md", "LICENSE"],
+  "sideEffects": ["**/*.css"],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json && node scripts/build.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:browser": "playwright test",
+    "dev": "vite --host 127.0.0.1",
+    "showroom:build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "prepack": "npm run build"
+  },
+  "dependencies": { "dompurify": "3.4.16", "marked": "16.4.2" },
+  "devDependencies": { "@playwright/test": "1.64.0", "@types/node": "^25.0.0", "typescript": "5.9.3", "vite": "7.3.6" },
+  "engines": { "node": ">=22.18.0" }
+}
