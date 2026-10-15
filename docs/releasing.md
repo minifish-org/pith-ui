@@ -12,7 +12,7 @@ The package is `pith-ui`, with runtime dependencies and build tools fixed by the
 
 Workflows pin GitHub actions to verified commits, Node to `22.18.0` and npm to `11.12.1`. Dependencies are installed with `npm ci`. Publishing has no package-manager cache and no long-lived npm token.
 
-`scripts/release.ts` implements `verify-tag`, `pack`, `verify` and `publish`. Its manifest records the source commit and whether the tree was dirty; publish requires a clean committed source artifact. Only `publish` sends a package to npm. Before sending, it checks the exact public npm version: a metadata 404 permits publication; an existing version is downloaded and must have the same SHA-512 bytes and registry integrity as the tested tarball before re-publication is skipped. A different artifact, registry error or download failure stops the job. A build or a successful `pack` is not publication.
+`scripts/release.ts` implements `verify-tag`, `pack`, `verify` and `publish`. Its manifest records the source commit and whether the tree was dirty; publish requires a clean committed source artifact. Only `publish` sends a package to npm. Before sending, it checks the exact public npm version: a metadata 404 permits publication. For an existing version, it verifies the downloaded gzip against registry SHA-512 and compares the complete decompressed TAR bytes, including file metadata, with the tested archive before skipping re-publication. Gzip encoding can differ across operating systems; archive payloads must match exactly. Invalid gzip, expansion beyond 32 MiB, a different payload, registry errors or download failure stop the job. A build or a successful `pack` is not publication.
 
 ## One-time remote setup
 
