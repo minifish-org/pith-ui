@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
 export default defineConfig({
-  base: process.env.GITHUB_ACTIONS ? '/pith-ui/' : '/',
+  base: '/',
   build: { outDir: 'showroom-dist', emptyOutDir: true },
 });

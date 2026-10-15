@@ -2,6 +2,7 @@ node_modules/
 dist/
 showroom-dist/
 test-results/
+test-dist/
 playwright-report/
 *.tgz
 .DS_Store

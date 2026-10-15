@@ -44,6 +44,10 @@
   --pui-error-text: #B42318;
   --pui-error-surface: #FEF0ED;
   --pui-error-border: #E6ABA5;
+  --pui-diff-add: #166534;
+  --pui-diff-add-bg: #dcfce7;
+  --pui-diff-remove: #991b1b;
+  --pui-diff-remove-bg: #fee2e2;
   --pui-overlay: #1F253066;
   --pui-shadow: 0 12px 35px #1F25300D;
   --pui-modal-shadow: 0 30px 100px #1F253026;
@@ -85,6 +89,10 @@
   --pui-error-text: #FFADA4;
   --pui-error-surface: #352221;
   --pui-error-border: #79504B;
+  --pui-diff-add: #bbf7d0;
+  --pui-diff-add-bg: #163526;
+  --pui-diff-remove: #fecaca;
+  --pui-diff-remove-bg: #442329;
   --pui-overlay: #00000088;
   --pui-shadow: 0 12px 35px #00000015;
   --pui-modal-shadow: 0 30px 100px #00000080;
@@ -126,6 +134,10 @@
     --pui-error-text: #FFADA4;
     --pui-error-surface: #352221;
     --pui-error-border: #79504B;
+    --pui-diff-add: #bbf7d0;
+    --pui-diff-add-bg: #163526;
+    --pui-diff-remove: #fecaca;
+    --pui-diff-remove-bg: #442329;
     --pui-overlay: #00000088;
     --pui-shadow: 0 12px 35px #00000015;
     --pui-modal-shadow: 0 30px 100px #00000080;
@@ -371,11 +383,9 @@
 .pui .pui-approval-file code { overflow-wrap: anywhere; color: var(--pui-text); }
 .pui .pui-approval-card pre.pui-approval-diff { max-height: min(260px, 26vh); white-space: pre; overflow-wrap: normal; color: var(--pui-text); background: var(--pui-surface-code); border: 1px solid var(--pui-border); padding: 10px 0; }
 .pui .pui-diff-line { display: block; min-height: 1.6em; padding: 0 12px; }
-.pui .pui-diff-add { color: #166534; background: #dcfce7; }
-.pui .pui-diff-remove { color: #991b1b; background: #fee2e2; }
+.pui .pui-diff-add { color: var(--pui-diff-add); background: var(--pui-diff-add-bg); }
+.pui .pui-diff-remove { color: var(--pui-diff-remove); background: var(--pui-diff-remove-bg); }
 .pui .pui-diff-meta { color: var(--pui-muted); }
-.pui [data-theme="dark"] .pui-diff-add { color: #bbf7d0; background: #163526; }
-.pui [data-theme="dark"] .pui-diff-remove { color: #fecaca; background: #442329; }
 .pui .pui-approval-arguments { margin-top: 8px; font-size: 12px; }
 .pui .pui-approval-arguments summary { color: var(--pui-muted); cursor: pointer; }
 .pui .pui-preview-note { font-size: 12px; color: var(--pui-muted); margin: 10px 0; }

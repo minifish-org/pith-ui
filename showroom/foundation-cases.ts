@@ -30,7 +30,7 @@ export const foundationCases: ShowcaseCase[] = [
     mount(context) {
       const root = exhibit('Color foundations'); root.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))';
       const owned: Owned[] = []; const measurements: Array<() => void> = [];
-      const tokens = ['bg-main', 'bg-sidebar', 'surface', 'surface-subtle', 'surface-hover', 'surface-selected', 'surface-input', 'surface-code', 'text', 'muted', 'border', 'accent', 'accent-foreground', 'warning-text', 'warning-surface', 'error-text', 'error-surface', 'overlay'] as const;
+      const tokens = ['bg-main', 'bg-sidebar', 'surface', 'surface-subtle', 'surface-hover', 'surface-selected', 'surface-input', 'surface-code', 'text', 'muted', 'border', 'accent', 'accent-foreground', 'warning-text', 'warning-surface', 'error-text', 'error-surface', 'diff-add', 'diff-add-bg', 'diff-remove', 'diff-remove-bg', 'overlay'] as const;
       for (const appearance of ['light', 'dark'] as const) {
         const theme = panel(appearance === 'light' ? 'Light / 明亮' : 'Dark / 暗色'); setAppearance(theme, appearance);
         const grid = element('div'); grid.style.display = 'grid'; grid.style.gap = '8px';
