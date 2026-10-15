@@ -73,20 +73,28 @@ test('official npm client compatible 2xx exchange accepts a token with optional 
     });
   }
 });
-test('npm exchange requires a successful status, a nonempty token and valid expiry when present', async () => {
+test('npm exchange requires a successful status and a nonempty token', async () => {
   for (const response of [
     new Response(npmToken, { status: 302 }), new Response(npmToken, { status: 401 }), new Response(npmToken, { status: 500 }),
     new Response(npmToken, { status: 201 }), Response.json(null, { status: 201 }),
-    Response.json({ token: '', expires }, { status: 201 }), Response.json({ token: npmToken, expires: npmToken }, { status: 201 }),
-    Response.json({ token: npmToken, expires: '2000-01-01T00:00:00.000Z' }, { status: 201 }),
+    Response.json({ token: '', expires }, { status: 201 }),
   ]) {
     const fetcher = responses([identity(), response]);
     assertFailure(await verifyPublisher(environment, fetcher));
     assert.equal(fetcher.calls, 2, 'Exchange failures must not be retried');
   }
-  assert.deepEqual(await verifyPublisher(environment, responses([identity(), Response.json({ token: npmToken, expires: 123 }, { status: 201 })])), {
-    success: false, package: 'pith-ui', expires: null, reason: 'exchange-expiry', status: 201, tokenPresent: true, expiresType: 'number',
-  });
+});
+test('expiry metadata supports numeric registry timestamps without determining identity success', async () => {
+  for (const expiry of [Date.parse(expires) / 1000, Date.parse(expires)]) {
+    assert.deepEqual(await verifyPublisher(environment, responses([identity(), Response.json({ token: npmToken, expires: expiry }, { status: 201 })])), {
+      ...success, expiresType: 'number',
+    });
+  }
+  for (const expiry of [123, null, npmToken, '2000-01-01T00:00:00.000Z', false, {}]) {
+    const result = await verifyPublisher(environment, responses([identity(), Response.json({ token: npmToken, expires: expiry }, { status: 201 })]));
+    assert.equal(result.success, true); assert.equal(result.expires, null);
+    for (const secret of [idToken, npmToken]) assert.ok(!JSON.stringify(result).includes(secret));
+  }
 });
 test('network exceptions cannot expose credential-bearing messages or response bodies', async () => {
   const fail: typeof fetch = async () => { throw new Error(`${idToken} ${npmToken} ${environment.ACTIONS_ID_TOKEN_REQUEST_TOKEN}`); };

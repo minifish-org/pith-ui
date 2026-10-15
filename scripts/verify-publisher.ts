@@ -8,7 +8,7 @@ export interface PublisherVerification {
   success: boolean;
   package: 'pith-ui';
   expires: string | null;
-  reason: 'verified' | 'missing-configuration' | 'identity-url' | 'identity-request' | 'identity-status' | 'identity-json' | 'identity-token' | 'exchange-request' | 'exchange-status' | 'exchange-json' | 'exchange-token' | 'exchange-expiry';
+  reason: 'verified' | 'missing-configuration' | 'identity-url' | 'identity-request' | 'identity-status' | 'identity-json' | 'identity-token' | 'exchange-request' | 'exchange-status' | 'exchange-json' | 'exchange-token';
   status: number | null;
   tokenPresent: boolean;
   expiresType: 'unavailable' | 'missing' | 'null' | 'string' | 'number' | 'boolean' | 'other';
@@ -56,12 +56,12 @@ export async function verifyPublisher(
     if (!exchangeResponse.ok) return result();
     reason = 'exchange-token';
     if (!tokenPresent) return result();
-    let expires: string | null = null;
-    if (expiry !== undefined) {
-      reason = 'exchange-expiry';
-      if (typeof expiry !== 'string' || !Number.isFinite(Date.parse(expiry)) || Date.parse(expiry) <= Date.now()) return result();
-      expires = new Date(expiry).toISOString();
-    }
+    // Expiry is informational: the official npm client only requires a token.
+    // The registry can return numeric timestamps instead of the documented ISO date.
+    const milliseconds = typeof expiry === 'number' ? expiry * (expiry < 1e12 ? 1000 : 1)
+      : typeof expiry === 'string' ? Date.parse(expiry) : NaN;
+    const date = new Date(milliseconds);
+    const expires = Number.isFinite(date.getTime()) && milliseconds > Date.now() ? date.toISOString() : null;
     reason = 'verified';
     return result(expires);
   } catch {
