@@ -73,3 +73,23 @@ test('Cancel observes the same close-disabled policy as the other dialog exits',
     await page.evaluate(() => { (window as any).coreReview.dialog.destroy(); });
   }
 });
+
+test('native multiple choices expose complete values while retaining their draft and reset baseline', async ({ page }) => {
+  await page.evaluate(async () => {
+    const path = '/src/primitives.ts'; const { createSelect } = await import(path);
+    const choices = [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }, { value: 'c', label: 'C' }];
+    const events: string[][] = []; const form = document.createElement('form');
+    const select = createSelect({ label: 'Models', multiple: true, size: 3, options: choices, values: ['a', 'c'], onValuesChange: (values: readonly string[]) => events.push([...values]) });
+    form.append(select.element); document.body.append(form);
+    Object.assign(window, { coreReview: { select, choices, events, form, original: select.control } });
+  });
+  expect(await page.evaluate(() => (window as any).coreReview.select.getValues())).toEqual(['a', 'c']);
+  await page.getByRole('listbox', { name: 'Models' }).selectOption(['b', 'c']);
+  expect(await page.evaluate(() => (window as any).coreReview.events)).toEqual([['b', 'c']]);
+  expect(await page.evaluate(() => {
+    const f = (window as any).coreReview;
+    f.select.update({ label: 'Models', options: f.choices, description: 'Feedback only' });
+    const draft = f.select.getValues(); f.select.resetValues(['c']); const reset = f.select.getValues();
+    f.form.reset(); return { draft, reset, baseline: f.select.getValues(), same: f.select.control === f.original, events: f.events };
+  })).toEqual({ draft: ['b', 'c'], reset: ['c'], baseline: ['a', 'c'], same: true, events: [['b', 'c']] });
+});
