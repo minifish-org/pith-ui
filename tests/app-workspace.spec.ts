@@ -228,3 +228,55 @@ test('controlled brand assets follow application appearance in the wordmark and 
   await page.emulateMedia({colorScheme: 'light'});
   await expect(wordmark).toHaveAttribute('src', /light-logo\.svg$/); await expect(welcome).toHaveAttribute('src', /light-logo\.svg$/);
 });
+
+for (const failure of ['missing', 'rejected'] as const) test(`a ${failure} message image can recover on a later projection without refetching successful images`, async ({page}) => {
+  await page.evaluate(async (failure) => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='), char => char.charCodeAt(0));
+    let calls = 0;
+    const app = createApplication(document.body, {workspace: {onLoadImage: async () => {
+      calls++;
+      if (calls === 1) {if (failure === 'rejected') throw new Error('Temporary download failure'); return null;}
+      return new Blob([bytes], {type: 'image/png'});
+    }}});
+    const update = () => app.workspace.updateConversation({id: 'same', messages: [{id: 'image', role: 'user', text: '', images: [{index: 0}]}], working: false});
+    (window as unknown as {imageRetry: {update(): void; calls(): number}}).imageRetry = {update, calls: () => calls};
+    update();
+  }, failure);
+  const image = page.locator('.pui-history-image');
+  await expect.poll(() => page.evaluate(() => (window as unknown as {imageRetry: {calls(): number}}).imageRetry.calls())).toBe(1);
+  await expect(image).toHaveAttribute('alt', 'Image unavailable');
+  await page.evaluate(() => (window as unknown as {imageRetry: {update(): void}}).imageRetry.update());
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  const original = await image.getAttribute('src');
+  await page.evaluate(() => {const fixture = (window as unknown as {imageRetry: {update(): void}}).imageRetry; fixture.update(); fixture.update();});
+  await expect(image).toHaveAttribute('src', original!);
+  expect(await page.evaluate(() => (window as unknown as {imageRetry: {calls(): number}}).imageRetry.calls())).toBe(2);
+});
+
+test('mixed drops preserve empty-MIME image recognition and workspace URI intent', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const images: string[][] = [], references: unknown[] = [];
+    const app = createApplication(document.body, {workspace: {onImages: (files: File[]) => images.push(files.map(file => file.name)), onDropReferences: (value: unknown) => references.push(value)}});
+    app.workspace.updateComposer({action: 'send'});
+    const transfer = new DataTransfer();
+    transfer.items.add(new File(['bytes'], 'photo.PNG', {type: ''}));
+    transfer.items.add(new File(['vector'], 'vector.svg', {type: 'image/svg+xml'}));
+    transfer.setData('text/uri-list', 'file:///work/readme.md');
+    document.querySelector('.pui-composer')!.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: transfer}));
+    app.destroy(); return {images, references};
+  });
+  expect(result).toEqual({images: [['photo.PNG']], references: [{paths: [], uris: 'file:///work/readme.md'}]});
+});
+
+test('controlled brand marks preserve the existing narrow-screen welcome dimensions', async ({page}) => {
+  await page.setViewportSize({width: 600, height: 800});
+  await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const app = createApplication(document.body, {brand: {name: 'Pith', mark: {src: '/brand.svg', alt: ''}}});
+    app.workspace.updateWelcome({hasApiKey: true, hasConnections: true});
+  });
+  const mark = page.locator('.pui-welcome-mark img');
+  await expect(mark).toHaveCSS('width', '27px'); await expect(mark).toHaveCSS('height', '27px');
+});
