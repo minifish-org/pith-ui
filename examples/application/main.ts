@@ -46,7 +46,7 @@ const nextId = (kind: string) => `demo-${kind}-${++sequence}`;
 function copyText(text: string): ActionResult {clipboard = text; announce(`模拟复制完成：${clipboard.length} 个字符仅保存在本页内存。`); return ok();}
 
 const app: Application = createApplication(mount, {
-  brand: {name: 'Pith', qualifier: 'UI · 模拟应用'}, appearance,
+  brand: {name: 'Pith', qualifier: 'UI · 模拟应用', mark: {symbol: 'pith', alt: ''}}, appearance,
   host: {
     copyText,
     openExternal(url) {announce(`模拟打开外部链接：${url}。没有离开当前页面。`); return ok();},
