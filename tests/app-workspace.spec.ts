@@ -65,7 +65,7 @@ test('navigation menus own their anchor and return immutable semantic action tar
   const geometry = await page.evaluate(() => {
     const trigger = document.querySelector<HTMLButtonElement>('[aria-label="Actions for Conversation"]')!.getBoundingClientRect();
     const menu = document.querySelector<HTMLElement>('[role="menu"]:not([hidden])')!.getBoundingClientRect();
-    return {edge: Math.abs(trigger.right - menu.right), gap: Math.min(Math.abs(menu.top - trigger.bottom), Math.abs(menu.bottom - trigger.top))};
+    return {edge: Math.min(Math.abs(trigger.left - menu.left), Math.abs(trigger.right - menu.right)), gap: Math.min(Math.abs(menu.top - trigger.bottom), Math.abs(menu.bottom - trigger.top))};
   });
   expect(geometry.edge).toBeLessThanOrEqual(2); expect(geometry.gap).toBeLessThanOrEqual(12);
   await page.getByRole('menuitem', {name: /Rename/}).click();
@@ -78,15 +78,15 @@ test('the reader owns folds across conversation switches and preserves selected 
     const app = createApplication(document.body);
     const messages = [{id: 'text', role: 'assistant', text: 'Historical selection stays here'}, {id: 'tool', role: 'tool', toolName: 'read', text: 'output', status: 'done'}];
     app.workspace.updateConversation({id: 'a', messages, working: false});
-    const disclosure = document.querySelector<HTMLDetailsElement>('[data-fold-key]')!; disclosure.open = true;
+    const disclosure = document.querySelector<HTMLDetailsElement>('[data-tool-fold]')!; disclosure.open = true;
     const text = document.querySelector('[data-reading-id] p')!.firstChild!;
     const range = document.createRange(); range.setStart(text, 0); range.setEnd(text, 10);
     const selection = getSelection()!; selection.removeAllRanges(); selection.addRange(range);
     app.workspace.updateConversation({id: 'a', messages: [...messages, {id: 'live', role: 'assistant', text: 'New token'}], working: true});
-    const selected = selection.toString(), retained = disclosure === document.querySelector('[data-fold-key]') && disclosure.open;
+    const selected = selection.toString(), retained = disclosure === document.querySelector('[data-tool-fold]') && disclosure.open;
     app.workspace.updateConversation({id: 'b', messages: [], working: false});
     app.workspace.updateConversation({id: 'a', messages, working: false});
-    const restored = document.querySelector<HTMLDetailsElement>('[data-fold-key]')!.open;
+    const restored = document.querySelector<HTMLDetailsElement>('[data-tool-fold]')!.open;
     app.destroy(); return {selected, retained, restored};
   });
   expect(result).toEqual({selected: 'Historical', retained: true, restored: true});
