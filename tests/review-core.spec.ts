@@ -18,6 +18,25 @@ test('a completed menu action cannot close a reopened target', async ({ page }) 
   await expect(page.getByRole('menuitem', { name: 'New target' })).toBeVisible();
 });
 
+test('menu failures are visible and late failures stay with their original session', async ({page}) => {
+  await page.evaluate(async () => {
+    const path='/src/primitives.ts'; const {createMenu}=await import(path); const errors: string[]=[];
+    let finish!: (result:{ok:false;error:string})=>void;
+    const menu=createMenu({label:'Actions',onError:(message:string)=>errors.push(message),items:[
+      {id:'fail',label:'Fail now',onAction:async()=>({ok:false,error:'Could not save'})},
+      {id:'late',label:'Old task',onAction:()=>new Promise(resolve=>{finish=resolve;})},
+    ]});
+    document.body.append(menu.element); menu.open(); Object.assign(window,{coreReview:{menu,errors,finish:()=>finish({ok:false,error:'Old failure'})}});
+  });
+  await page.getByRole('menuitem',{name:'Fail now',exact:true}).click(); await expect(page.getByRole('alert')).toHaveText('Could not save');
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.getByRole('menuitem',{name:'Old task',exact:true}).click();
+  await expect(page.getByRole('menuitem',{name:'Old task',exact:true})).toBeDisabled();
+  await page.evaluate(() => {const f=(window as any).coreReview; f.menu.close();f.menu.update({label:'Actions',items:[{id:'new',label:'New target',onAction(){}}]});f.menu.open();f.finish();});
+  await expect(page.getByRole('menuitem',{name:'New target',exact:true})).toBeVisible(); await expect(page.getByRole('alert')).toHaveCount(0);
+  expect(await page.evaluate(()=>(window as any).coreReview.errors)).toEqual(['Could not save']);
+});
+
 test('disabled secrets cannot be revealed before their first update', async ({ page }) => {
   await page.evaluate(async () => {
     const path = '/src/primitives.ts'; const { createSecretInput } = await import(path);

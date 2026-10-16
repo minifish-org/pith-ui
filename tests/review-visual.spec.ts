@@ -79,11 +79,12 @@ test('permission keyboard focus has one outer ring in ordinary and forced colors
   await page.keyboard.press('Tab'); await expect(page.getByRole('combobox')).toBeFocused();
   const rings = () => page.locator('.pui-permission-control').evaluate(node => {
     const inner=getComputedStyle(node.querySelector('[role="combobox"]')!),outer=getComputedStyle(node);
-    return {inner:parseFloat(inner.outlineWidth),outer:parseFloat(outer.outlineWidth),shadow:inner.boxShadow};
+    // A non-painted outline may serialize its initial medium width as 3px.
+    return {inner:inner.outlineStyle,outer:outer.outlineStyle,width:parseFloat(outer.outlineWidth),shadow:inner.boxShadow};
   });
-  expect(await rings()).toEqual({inner:0,outer:1,shadow:'none'});
+  expect(await rings()).toEqual({inner:'none',outer:'solid',width:1,shadow:'none'});
   if (browserName === 'chromium') {
     await page.emulateMedia({forcedColors:'active'});
-    expect(await rings()).toEqual({inner:0,outer:1,shadow:'none'});
+    expect(await rings()).toEqual({inner:'none',outer:'solid',width:1,shadow:'none'});
   }
 });
