@@ -164,6 +164,37 @@ test('settings connection testing keeps its existing cancel action available',as
   expect(await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.values)).toEqual([{provider:'first',baseUrl:state.baseUrl,apiKey:''},'cancel']);
 });
 
+for(const action of ['save','remove'] as const) test(`an earlier successful provider ${action} cannot close the reset provider draft`,async ({page})=>{
+  await page.evaluate(state=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const pending=(draft:SettingsDraft)=>{h.calls++;h.values.push(draft);return new Promise<ActionResult>(resolve=>{h.release=resolve;});};
+    const session=h.app.settings.openSettings(state,{onSubmit:pending,onRemoveKey:pending});h.current=session;
+    session.setProviders([{id:'first',name:'First provider'},{id:'second',name:'Second provider'}],'first');
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:true});
+  },state);
+  await page.getByLabel('API key',{exact:false}).fill('First provider key');
+  await page.getByRole('button',{name:action==='save'?'Save settings':'Remove saved API key',exact:true}).click();
+  await page.evaluate(()=>((window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession).resetProvider({provider:'second',baseUrl:'https://second.example/v1',clearKey:true}));
+  const key=page.getByLabel('API key',{exact:false});await key.fill('Second provider draft');await key.focus();await key.evaluate((node:HTMLInputElement)=>node.setSelectionRange(3,10));
+  await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.release!({ok:true}));
+  await expect(page.getByRole('dialog')).toBeVisible();await expect(page.getByRole('button',{name:'Save settings',exact:true})).toBeEnabled();
+  await expect(key).toHaveValue('Second provider draft');await expect(key).toBeFocused();
+  expect(await key.evaluate((node:HTMLInputElement)=>[node.selectionStart,node.selectionEnd])).toEqual([3,10]);
+  expect(await page.evaluate(()=>{const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;return {calls:h.calls,values:h.values,current:(h.current as SettingsSession).read()};})).toEqual({calls:1,values:[{provider:'first',baseUrl:state.baseUrl,apiKey:'First provider key'}],current:{provider:'second',baseUrl:'https://second.example/v1',apiKey:'Second provider draft'}});
+});
+
+test('an earlier successful model submission cannot close an explicitly reset selection',async ({page})=>{
+  await page.evaluate(()=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const editor={providers:[{id:'first',name:'First provider',model:'balanced',thinkingLevel:'high'}],models:[{id:'balanced',name:'Balanced',provider:'first',supportsImages:true,contextWindow:100000,maxTokens:8000,thinkingLevels:['off','high']},{id:'fast',name:'Fast',provider:'first',supportsImages:false,contextWindow:64000,maxTokens:4096,thinkingLevels:['off']}],selection:{provider:'first',model:'balanced',thinkingLevel:'high'}};
+    h.current=h.app.settings.openModels({editor,loading:false},{onSubmit:selection=>{h.calls++;h.values.push(selection);return new Promise<ActionResult>(resolve=>{h.release=resolve;});}});
+  });
+  const submit=page.getByRole('button',{name:'Use model',exact:true});await submit.click();await expect(submit).toBeDisabled();
+  await page.evaluate(()=>{const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;(h.current as ModelSession).reset({provider:'first',model:'fast',thinkingLevel:'off'});h.release!({ok:true});});
+  await expect(page.getByRole('dialog')).toBeVisible();await expect(submit).toBeEnabled();await expect(page.getByRole('listbox',{name:'Choose model',exact:true})).toHaveValue('fast');
+  expect(await page.evaluate(()=>{const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;return {calls:h.calls,values:h.values,current:(h.current as ModelSession).read()};})).toEqual({calls:1,values:[{provider:'first',model:'balanced',thinkingLevel:'high'}],current:{provider:'first',model:'fast',thinkingLevel:'off'}});
+});
+
 test('update refresh errors expose retry through semantic state without changing the reported phase',async ({page})=>{
   await page.evaluate((state)=>{
     const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
