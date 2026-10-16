@@ -40,21 +40,21 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     for (const scene of scenes) {
       await page.goto(url);
-      await expect(page.locator('#composer-input')).toBeEditable();
+      await expect(page.locator('[id$=composer-input]')).toBeEditable();
       if (scene === 'settings') {
-        await page.locator('#sidebar [data-action="settings"]').click(); await expect(page.locator('#save-settings')).toBeVisible();
-        await expect(page.locator('#settings-provider')).toHaveValue('custom-test');
-        await expect(page.locator('#settings-dialog [data-update-message]')).toHaveText('Local review fixture');
+        await page.locator('[id$=sidebar] [data-action="settings"]').click(); await expect(page.locator('[id$=save-settings]')).toBeVisible();
+        await expect(page.locator('[id$=settings-provider]')).toHaveValue('custom-test');
+        await expect(page.locator('[id$=settings-dialog] [data-update-message]')).toHaveText('Local review fixture');
       } else if (scene === 'model') {
-        await page.locator('#composer-model').click(); await expect(page.locator('#picker-model option')).toHaveCount(1);
+        await page.locator('[id$=composer-model]').click(); await expect(page.locator('[id$=picker-model] option')).toHaveCount(1);
       } else if (scene === 'message-edit') {
-        await page.locator('[data-edit-message="user"]').click(); await expect(page.locator('#message-edit-text')).toBeFocused();
+        await page.locator('[data-edit-message="user"]').click(); await expect(page.locator(':is(#message-edit-text,.pui-text-edit textarea)')).toBeFocused();
       } else if (scene === 'queue-edit') {
         await page.evaluate(() => {
           const scope = window as unknown as { reviewState: { running: boolean; queuedMessages: unknown[] }; emitReview(): void };
           scope.reviewState.running = true; scope.reviewState.queuedMessages = [{ id: 'queued', mode: 'follow-up', text: 'Pending 中文 follow-up', imageCount: 1 }]; scope.emitReview();
         });
-        await page.locator('[data-queue-action="edit"]').click(); await expect(page.locator('#queue-edit-text')).toBeFocused();
+        await page.locator('[data-queue-action="edit"]').click(); await expect(page.locator(':is(#queue-edit-text,.pui-text-edit textarea)')).toBeFocused();
       } else if (scene === 'approval') {
         await page.evaluate(() => {
           const scope = window as unknown as { reviewState: { running: boolean; runtime: { phase: string }; pendingApproval: unknown; queuedMessages: unknown[] }; emitReview(): void };
@@ -62,11 +62,11 @@ try {
           scope.reviewState.pendingApproval = { id: 'approval', toolName: 'edit_file', args: { path: 'result.md', edits: [{ oldText: 'old line', newText: 'new line' }] }, preview: { kind: 'modify', path: 'result.md', diff: '--- a/result.md\n+++ b/result.md\n' + '-old line\n+new line\n'.repeat(50) } };
           scope.reviewState.queuedMessages = Array.from({ length: 6 }, (_, index) => ({ id: `q${index}`, text: 'Pending follow-up message', mode: 'follow-up' })); scope.emitReview();
         });
-        await expect(page.locator('[data-approval="allow"]')).toBeAttached(); await page.locator('#composer-input').fill('A multiline draft\n'.repeat(6));
+        await expect(page.locator('[data-approval="allow"]')).toBeAttached(); await page.locator('[id$=composer-input]').fill('A multiline draft\n'.repeat(6));
       } else if (scene === 'resources') {
-        await page.locator('[data-action="resources"]').click(); await expect(page.locator('#resources-content')).toContainText('AGENTS.md');
+        await page.locator('[data-action="resources"]').click(); await expect(page.locator('[id$=resources-content]')).toContainText('AGENTS.md');
       } else if (scene === 'confirmation') {
-        await page.locator('[data-action="connections"]').click(); await page.locator('[data-mcp-remove]').click(); await expect(page.locator('#cancel-delete')).toBeFocused();
+        await page.locator('[data-action="connections"]').click(); await page.locator('[data-mcp-remove]').click(); await expect(page.locator(':is(#cancel-delete,.pui-confirm button[type=button])')).toBeFocused();
       }
       await page.evaluate(() => document.fonts.ready);
       const file = `${scene}-${theme}-${viewport.width}x${viewport.height}.png`;

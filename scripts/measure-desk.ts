@@ -62,7 +62,7 @@ async function run(browser: Browser, variant: Variant) {
     const session = await context.newCDPSession(page);
     await session.send('Performance.enable', { timeDomain: 'threadTicks' });
     const initialMetrics = await metrics(session); const started = performance.now();
-    await page.goto(urls[variant]); await expect(page.locator('#composer-input')).toBeEditable();
+    await page.goto(urls[variant]); await expect(page.locator('[id$=composer-input]')).toBeEditable();
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     const readyMs = performance.now() - started; const readyMetrics = await metrics(session);
     if (!('ThreadTime' in readyMetrics)) throw new Error('Chromium did not expose ThreadTime; refusing to label wall-clock metrics as CPU');
@@ -84,7 +84,7 @@ async function run(browser: Browser, variant: Variant) {
     await session.send('HeapProfiler.collectGarbage'); const streamHeap = (await metrics(session)).JSHeapUsedSize;
     const inputBefore = await metrics(session); const inputStarted = performance.now();
     const text = 'A draft with Chinese 中文 and a path /workspace/src/index.ts. '.repeat(3).slice(0, 134);
-    await page.locator('#composer-input').pressSequentially(text, { delay: 10 });
+    await page.locator('[id$=composer-input]').pressSequentially(text, { delay: 10 });
     await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
     const inputMs = performance.now() - inputStarted; const inputAfter = await metrics(session);
     await session.send('HeapProfiler.collectGarbage'); const inputHeap = (await metrics(session)).JSHeapUsedSize;
