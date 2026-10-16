@@ -70,3 +70,20 @@ test('native multi-row choices use readable type and fit their actual platform r
   expect(metrics.height).toBeLessThanOrEqual(metrics.row * metrics.rows + metrics.padding + 2);
   await list.selectOption(['1', '3']); expect(await list.evaluate((node: HTMLSelectElement) => [...node.selectedOptions].map(option => option.value))).toEqual(['1', '3']);
 });
+
+test('permission keyboard focus has one outer ring in ordinary and forced colors', async ({page, browserName}) => {
+  await page.evaluate(async () => {
+    const path='/src/tasks/permission.ts'; const {createPermissionControl}=await import(path);
+    document.body.append(createPermissionControl({mode:'ask',description:'Ask before changes'}).element);
+  });
+  await page.keyboard.press('Tab'); await expect(page.getByRole('combobox')).toBeFocused();
+  const rings = () => page.locator('.pui-permission-control').evaluate(node => {
+    const inner=getComputedStyle(node.querySelector('[role="combobox"]')!),outer=getComputedStyle(node);
+    return {inner:parseFloat(inner.outlineWidth),outer:parseFloat(outer.outlineWidth),shadow:inner.boxShadow};
+  });
+  expect(await rings()).toEqual({inner:0,outer:1,shadow:'none'});
+  if (browserName === 'chromium') {
+    await page.emulateMedia({forcedColors:'active'});
+    expect(await rings()).toEqual({inner:0,outer:1,shadow:'none'});
+  }
+});
