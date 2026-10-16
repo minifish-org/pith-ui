@@ -7,15 +7,17 @@ The public entry is `pith-ui`; exact options and return types are in its declara
 | Category | Showroom | Design contract |
 |---|---|---|
 | Color | [Palette](https://minifish-org.github.io/pith-ui/?item=foundation-colors) | Semantic light/dark/system palettes; `--pui-*` tokens |
-| Type | [Typography](https://minifish-org.github.io/pith-ui/?item=foundation-typography) | System font stack, size, weight, line height, mixed scripts |
-| Spacing | [Spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing) | Shared padding, margins and grouping rhythm |
-| Size/density | [Dimensions](https://minifish-org.github.io/pith-ui/?item=foundation-sizing) | Normal/compact controls and intentional multiline differences |
+| Type | [Typography](https://minifish-org.github.io/pith-ui/?item=foundation-typography) | Two automatic font roles; 12/14/16 CSS px, 400/600 weight, 1.5 line height |
+| Spacing | [Spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing) | Only 4/8/12/16/24 CSS px; blocks own padding, margins and grouping |
+| Dimensions | [Dimensions](https://minifish-org.github.io/pith-ui/?item=foundation-sizing) | Standard controls, fixed internal compact samples and native multiline differences |
 | Borders | [Borders](https://minifish-org.github.io/pith-ui/?item=foundation-borders) | Border widths, corners and focus separation |
 | Layers | [Surfaces](https://minifish-org.github.io/pith-ui/?item=foundation-surfaces) | Surfaces, selection, overlay and shadow |
 | Focus | [Keyboard focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus) | Visible keyboard targets and logical traversal |
 | Motion | [Motion](https://minifish-org.github.io/pith-ui/?item=foundation-motion) | Existing transition/working feedback, replay and reduced motion |
 
 `setAppearance` establishes a `.pui` root and its selected appearance. CSS values are measured in CSS px; device pixel ratio is shown separately. The showroom distinguishes declared rules from current browser measurements and does not infer actual glyph fonts or browser zoom from device pixel ratio.
+
+The typography and spacing exhibits display the supported contract, not an open-ended design editor. UI and code fonts are selected by purpose; medium 14 CSS px is the default. Common showroom controls let a reviewer choose content state, theme and container width. Density is retained only in the fixed compatibility demonstration; old density URLs normalize to the standard view.
 
 ## 2. Base components
 
@@ -30,7 +32,7 @@ The public entry is `pith-ui`; exact options and return types are in its declara
 | Composition | `createFormSection`, `createActions`, `createToolbar`, `createDisclosure`, `createScrollArea` | `form-section`, `actions`, `toolbar`, `disclosure`, `scroll-area` |
 | File actions | `createFileActions` | `file-actions` |
 
-See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showroom/files-cases.ts`](../showroom/files-cases.ts). Not every base component accepts size, intent or density: its concrete state type is authoritative.
+See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showroom/files-cases.ts`](../showroom/files-cases.ts). Use default presentation and semantic intent; the concrete state type defines content capabilities. Density remains a compatibility/internal presentation option. Functional size options, such as a Select's visible row count or a ScrollArea's viewport mode, retain their documented behavior and are separate from typography or spacing choices.
 
 `createSelect` uses the shared floating option surface for a single-choice dropdown, including selection, disabled items, keyboard navigation and focus. Permission, provider, theme and other product choices reuse this implementation. Use the block's `focus()` method to reach its visible control; `control` retains the native form value and validation adapter. Explicit `multiple: true` or `size > 1` produces a visible native listbox, preserving platform multi-selection and multiline navigation rather than squeezing a list into a dropdown. See [Select](https://minifish-org.github.io/pith-ui/?item=select) and [conversation permissions](https://minifish-org.github.io/pith-ui/?item=permission-control) together.
 

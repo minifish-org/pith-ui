@@ -1,7 +1,7 @@
 import type {ActionResult,ConversationViewState,CustomConnectionDraft,CustomConnectionState,ModelEditorState,ModelSelection,SettingsPanelState,SettingsProviderOption,SettingsDraft,MCPConnectionDraft,MCPEditorValue,ResourceEditorState,ResourceDraft,ProviderActionsState,ProviderActionOptions,ResourceActionsState,ResourceActionOptions,MCPConnectionListState,MCPConnectionListOptions,WorkspaceNavigationState,WorkspaceNavigationAction,FilePreviewState} from '../src/index.js';
 type PithUI = typeof import('../src/index.js');
 
-/** A single choice uses the shared option surface; form adapters stay private to the composition. */
+/** The block chooses standard typography/spacing automatically; no style or density arguments are needed. */
 export function mountProviderChoice(ui: PithUI, host: HTMLElement, onChange: (value: string) => void): () => void {
   ui.setAppearance(host, 'system');
   const provider = ui.createSelect({

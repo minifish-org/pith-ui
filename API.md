@@ -68,7 +68,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 | [`createScrollArea`](#createscrollarea) | [scroll-area](https://minifish-org.github.io/pith-ui/?item=scroll-area) |
 | [`createSearchInput`](#createsearchinput) | [search-input](https://minifish-org.github.io/pith-ui/?item=search-input) |
 | [`createSecretInput`](#createsecretinput) | [secret-input](https://minifish-org.github.io/pith-ui/?item=secret-input) |
-| [`createSelect`](#createselect) | [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [select](https://minifish-org.github.io/pith-ui/?item=select) |
+| [`createSelect`](#createselect) | [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [select](https://minifish-org.github.io/pith-ui/?item=select) |
 | [`createSettingsPanel`](#createsettingspanel) | [settings-panel](https://minifish-org.github.io/pith-ui/?item=settings-panel) |
 | [`createStatus`](#createstatus) | [status](https://minifish-org.github.io/pith-ui/?item=status) |
 | [`createTaskFailure`](#createtaskfailure) | [task-failure](https://minifish-org.github.io/pith-ui/?item=task-failure) |
@@ -2803,7 +2803,7 @@ export declare function createSelect(options: SelectOptions): SelectBlock;
 
 Referenced public types and APIs: [`SelectBlock`](#selectblock), [`SelectOptions`](#selectoptions).
 
-Related gallery: [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [select](https://minifish-org.github.io/pith-ui/?item=select).
+Related gallery: [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [select](https://minifish-org.github.io/pith-ui/?item=select).
 
 ### createStatus
 

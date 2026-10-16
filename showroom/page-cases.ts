@@ -78,9 +78,9 @@ function workspacePage(context: DemoContext, mode: 'chat' | 'reading' | 'task'):
       else { if (queueSubmission) queueSubmission(text); else destination.push({ id: uniqueId(prefix + 'sent'), role: 'user', text, actions: { copy: 'Copy message', edit: true } }); if (activeId === submittedConversation && shell.composer.getValue() === text) shell.composer.reset(''); render(); }
     });
   };
-  const find = createButton({ label: 'Find / 查找', density: context.density, onAction: reader.openFind }); owned.push(find);
-  const append = createButton({ label: 'Append a response', density: context.density, onAction() { messages.push({ id: uniqueId(prefix + 'append'), role: 'assistant', text: `新增回复 · a+b · ${prose}`, status: 'done', actions: { copy: 'Copy response' } }); render(); context.log('Appended. Scroll to history and repeat to verify reading position.'); } }); owned.push(append);
-  const controls = createToolbar({ label: 'Composition simulation', density: context.density, children: [find.element, append.element] }); owned.push(controls); root.prepend(controls.element);
+  const find = createButton({ label: 'Find / 查找', onAction: reader.openFind }); owned.push(find);
+  const append = createButton({ label: 'Append a response', onAction() { messages.push({ id: uniqueId(prefix + 'append'), role: 'assistant', text: `新增回复 · a+b · ${prose}`, status: 'done', actions: { copy: 'Copy response' } }); render(); context.log('Appended. Scroll to history and repeat to verify reading position.'); } }); owned.push(append);
+  const controls = createToolbar({ label: 'Composition simulation', children: [find.element, append.element] }); owned.push(controls); root.prepend(controls.element);
   if (mode === 'task') {
     let queued = [{ id: `${prefix}queued-a`, mode: 'follow-up', text: '完成后再检查错误处理。', imageCount: 1 }, { id: `${prefix}queued-b`, mode: 'steer', text: 'Keep the current behavior.', imageCount: 0 }];
     const queueEditor = createTextEditDialog({ title: 'Edit pending message', submitLabel: 'Save message', onSubmit: async value => {
@@ -105,7 +105,7 @@ function workspacePage(context: DemoContext, mode: 'chat' | 'reading' | 'task'):
 }
 
 function settingsPage(context: DemoContext): MountedDemo {
-  const root = pageRoot('Settings and provider login composition'); root.style.padding = '20px'; const prefix = uniqueId('pui-settings-page') + '-'; const life = new Lifetime(); const owned: Owned[] = []; let live = true; let loginGeneration = 0;
+  const root = pageRoot('Settings and provider login composition'); root.style.padding = 'var(--pui-space-lg)'; const prefix = uniqueId('pui-settings-page') + '-'; const life = new Lifetime(); const owned: Owned[] = []; let live = true; let loginGeneration = 0;
   let settingsState: SettingsPanelState = { baseUrl: 'https://example.test/v1', hasApiKey: true, ready: true, error: context.state === 'error' ? 'Demonstration: provider save failed. Existing values are kept.' : '', disabled: context.state === 'disabled' };
   const settings = createSettingsPanel(settingsState, { idPrefix: prefix, onSubmit: () => context.action(), onAppearanceChange: value => context.log(`Appearance choice: ${value}. Global theme is controlled by the showroom toolbar.`), onTest: async () => {
     settingsState = {...settingsState, testing: true, testResult: {message: 'Testing demonstration connection…'}}; settings.update(settingsState);
@@ -130,7 +130,7 @@ function settingsPage(context: DemoContext): MountedDemo {
 }
 
 function resourcesPage(context: DemoContext): MountedDemo {
-  const root = pageRoot('Resources and file preview composition'); root.style.padding = '20px'; const prefix = uniqueId('pui-resources-page') + '-'; const owned: Owned[] = []; const life = new Lifetime();
+  const root = pageRoot('Resources and file preview composition'); root.style.padding = 'var(--pui-space-lg)'; const prefix = uniqueId('pui-resources-page') + '-'; const owned: Owned[] = []; const life = new Lifetime();
   const preview = createFilePreview({ titleId: prefix + 'preview-title', dialogId: prefix + 'preview-dialog', bodyId: prefix + 'preview-body', onClose() { preview.element.hidden = true; } }); owned.push(preview); preview.element.hidden = true;
   const path = '/demo/output/报告.md';
   const previewActions = createFileActions({ kind: 'artifact', ownerId: prefix, path, preview: false, copyMode: 'path', onAction: action => context.log(`File action: ${action} ${path}`) }); owned.push(previewActions);
@@ -139,7 +139,7 @@ function resourcesPage(context: DemoContext): MountedDemo {
     else context.log(`File action: ${action} ${path}`);
   } }); owned.push(fileActions);
   const fileHeader = element('section', 'pui-file-card', element('strong', '', '报告.md'), fileActions.element);
-  const refresh = createButton({ label: 'Refresh resources', density: context.density, onAction: () => context.action() }); owned.push(refresh);
+  const refresh = createButton({ label: 'Refresh resources', onAction: () => context.action() }); owned.push(refresh);
   const resources = createResourcesPanel({ titleId: prefix + 'resources-title', dialogId: prefix + 'resources-dialog', listId: prefix + 'resources-list', errorId: prefix + 'resources-error', onClose: () => context.log('Close resources requested; this inline composition stays visible.') }); owned.push(resources);
   resources.open('Example workspace', refresh.element);
   const instructionsAction = createFileActions({ kind: 'resource', ownerId: prefix, path: '/demo/AGENTS.md', preview: false, copyMode: 'none', onAction: action => context.log(`${action} /demo/AGENTS.md`) }); owned.push(instructionsAction);
@@ -150,9 +150,9 @@ function resourcesPage(context: DemoContext): MountedDemo {
 }
 
 export const pageCases: ShowcaseCase[] = [
-  { id: 'workspace-chat', title: '工作区与聊天 Workspace chat', layer: 'pages', category: '工作区与会话', description: '真实导航、搜索、模型选择、权限、消息编辑和发送组合，使用演示数据与可控异步结果。', states: ['normal', 'error', 'disabled', 'empty', 'long'], controls: ['outcome', 'density'], related: ['workspace-navigation', 'conversation-messages', 'text-edit-dialog'], code: `const shell = createWorkspaceShell({ brand, prefix: 'my-workspace-' });\nconst view = createConversationView({ container: shell.part('messages') });\nview.update({ id: 'chat', messages, working: false });`, mount: context => workspacePage(context, 'chat') },
-  { id: 'workspace-reading', title: '长会话与历史阅读 Long reading', layer: 'pages', category: '工作区与会话', description: '滚动历史、选择文字、横向滚动代码、查找 a+b、追加回复，再检查阅读位置和焦点是否保持。', states: ['normal', 'long'], controls: ['density'], related: ['conversation-reader', 'conversation-messages'], code: `const reader = installConversationReader(scroll, messagesHost, findBar, latest, { keyboardTarget: shell.element });\nreader.beforeRender(conversationId);\nview.update(nextState);\nreader.afterRender();`, mount: context => workspacePage(context, 'reading') },
-  { id: 'workspace-approval', title: '任务、审批与队列 Tasks and queue', layer: 'pages', category: '任务与审批', description: '长审批、运行详情、待发送消息和输入区共存。可以批准、拒绝、编辑待发送内容并切换阅读位置。', states: ['normal', 'loading', 'disabled', 'long'], controls: ['outcome', 'density'], related: ['approval-panel', 'runtime-panel', 'text-edit-dialog'], code: `const approval = createApprovalPanel({ approval: display }, { onAction: handleApproval });\nconst queue = createPendingMessages({ onAction: handleQueuedMessage });\nqueue.update({ items, running: true, busy: false });`, mount: context => workspacePage(context, 'task') },
+  { id: 'workspace-chat', title: '工作区与聊天 Workspace chat', layer: 'pages', category: '工作区与会话', description: '真实导航、搜索、模型选择、权限、消息编辑和发送组合，使用演示数据与可控异步结果。', states: ['normal', 'error', 'disabled', 'empty', 'long'], controls: ['outcome'], related: ['workspace-navigation', 'conversation-messages', 'text-edit-dialog'], code: `const shell = createWorkspaceShell({ brand, prefix: 'my-workspace-' });\nconst view = createConversationView({ container: shell.part('messages') });\nview.update({ id: 'chat', messages, working: false });`, mount: context => workspacePage(context, 'chat') },
+  { id: 'workspace-reading', title: '长会话与历史阅读 Long reading', layer: 'pages', category: '工作区与会话', description: '滚动历史、选择文字、横向滚动代码、查找 a+b、追加回复，再检查阅读位置和焦点是否保持。', states: ['normal', 'long'], controls: [], related: ['conversation-reader', 'conversation-messages'], code: `const reader = installConversationReader(scroll, messagesHost, findBar, latest, { keyboardTarget: shell.element });\nreader.beforeRender(conversationId);\nview.update(nextState);\nreader.afterRender();`, mount: context => workspacePage(context, 'reading') },
+  { id: 'workspace-approval', title: '任务、审批与队列 Tasks and queue', layer: 'pages', category: '任务与审批', description: '长审批、运行详情、待发送消息和输入区共存。可以批准、拒绝、编辑待发送内容并切换阅读位置。', states: ['normal', 'loading', 'disabled', 'long'], controls: ['outcome'], related: ['approval-panel', 'runtime-panel', 'text-edit-dialog'], code: `const approval = createApprovalPanel({ approval: display }, { onAction: handleApproval });\nconst queue = createPendingMessages({ onAction: handleQueuedMessage });\nqueue.update({ items, running: true, busy: false });`, mount: context => workspacePage(context, 'task') },
   { id: 'settings-login-page', title: '设置、连接与登录 Settings and login', layer: 'pages', category: '设置与连接', description: '真实设置表单、密钥、连接测试与登录过程组合。可模拟成功、失败和迟到；不访问真实提供商。', states: ['normal', 'error', 'disabled'], controls: ['outcome'], related: ['settings-panel', 'provider-login', 'updates'], code: `const settings = createSettingsPanel({ baseUrl, hasApiKey: true }, { idPrefix: 'settings-demo-' });\nconst login = createProviderLoginPanel(display, { onAnswer, onCancel });`, mount: settingsPage },
   { id: 'resources-files-page', title: '资源与文件 Resources and files', layer: 'pages', category: '资源与文件', description: '指令、技能、模板、文件动作和 Markdown 分页预览组合。展开原文、打开预览、关闭预览均可操作。', states: ['normal', 'loading', 'error', 'empty', 'long'], related: ['resources-panel', 'file-preview', 'file-actions'], code: `const resources = createResourcesPanel({ titleId, dialogId, listId, errorId });\nresources.open('Workspace', refreshButton);\nresources.update(display);\nconst preview = createFilePreview();`, mount: resourcesPage },
 ];

@@ -202,9 +202,9 @@ test('drop feedback example sends only through a simulation and retains its page
   await expect(page.locator('.gallery-heading h2')).toHaveText('拖放反馈');
 });
 
-test('button showroom retains density and async outcome controls together', async ({ page }) => {
+test('button showroom retains async outcome controls with the standard presentation', async ({ page }) => {
   await page.goto('/?item=button&theme=light');
-  await expect(page.getByRole('combobox', { name: '密度', exact: true })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: '密度', exact: true })).toHaveCount(0);
   const outcome = page.getByRole('combobox', { name: '模拟异步结果', exact: true });
   await expect(outcome).toBeVisible();
   await outcome.click(); await page.getByRole('option', { name: '失败 · 保留输入', exact: true }).click();

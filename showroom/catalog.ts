@@ -12,7 +12,6 @@ export const catalog: readonly ShowcaseCase[] = [
   ...foundationCases, ...primitiveCases, ...contentCases, ...filesCases,
   ...formsCases, ...navigationCases, ...composerCases, ...pageCases,
 ].map(item => ({ ...item, controls: item.controls ?? [
-  ...(item.layer === 'components' && ['button', 'text-input', 'number-input', 'search-input', 'secret-input', 'text-area', 'select', 'actions', 'toolbar'].includes(item.id) ? ['density' as const] : []),
   ...(['text-edit-dialog', 'confirmation', 'menu', 'button', 'workspace-picker', 'rename-conversation', 'approval-panel'].includes(item.id) ? ['outcome' as const] : []),
 ] }));
 const ids = new Set<string>();

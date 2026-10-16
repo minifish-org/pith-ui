@@ -14,9 +14,9 @@ const state = {
   theme: choices('theme', ['light', 'dark', 'system'], 'system'),
   scene: params.get('state') ?? 'normal',
   width: Math.max(280, Math.min(1440, Number(params.get('width')) || 800)),
-  density: choices('density', ['normal', 'compact'], 'normal'),
   outcome: choices<Outcome>('outcome', ['success', 'failure', 'late', 'invalid'], 'success'),
-  compare: choices('compare', ['none', 'theme', 'density', 'size'], 'none'),
+  // Legacy density parameters normalize to the one standard presentation.
+  compare: choices('compare', ['none', 'theme', 'size'], 'none'),
   motion: choices('motion', ['normal', 'slow', 'reduced'], 'normal'),
   rulers: params.get('rulers') === '1',
 };
@@ -70,7 +70,7 @@ function log(message: string): void {
   while (eventLog.children.length > 12) eventLog.lastElementChild?.remove();
 }
 function updateURL(): void {
-  const next = new URLSearchParams({ item: state.item, theme: state.theme, state: state.scene, width: String(state.width), density: state.density, outcome: state.outcome, compare: state.compare, motion: state.motion });
+  const next = new URLSearchParams({ item: state.item, theme: state.theme, state: state.scene, width: String(state.width), outcome: state.outcome, compare: state.compare, motion: state.motion });
   if (state.rulers) next.set('rulers', '1');
   history.replaceState(null, '', `${location.pathname}?${next}`);
 }
@@ -106,8 +106,7 @@ function renderControls(): void {
   }
   select('合法状态', state.scene, states.map(value => ({ value, label: sceneNames[value] })), value => { state.scene = value; });
   select('容器宽度', String(state.width), [...new Set([320, 600, 800, 900, 1280, 1440, state.width])].sort((a,b) => a-b).map(value => ({ value: String(value), label: `${value} CSS px` })), value => { state.width = Number(value); });
-  select('并排比较', state.compare, [{value:'none',label:'单项体验'}, {value:'theme',label:'明亮 / 深色'}, {value:'density',label:'普通 / 紧凑'}, {value:'size',label:'320 / 800 CSS px'}], value => { state.compare = value as typeof state.compare; });
-  if (selected.controls?.includes('density')) select('密度', state.density, [{value:'normal',label:'普通'}, {value:'compact',label:'紧凑'}], value => { state.density = value as typeof state.density; });
+  select('并排比较', state.compare, [{value:'none',label:'单项体验'}, {value:'theme',label:'明亮 / 深色'}, {value:'size',label:'320 / 800 CSS px'}], value => { state.compare = value as typeof state.compare; });
   if (selected.controls?.includes('outcome')) select('模拟异步结果', state.outcome, [{value:'success',label:'成功 · 600ms'}, {value:'failure',label:'失败 · 保留输入'}, {value:'late',label:'迟到 · 5秒'}, {value:'invalid',label:'目标失效'}], value => { state.outcome = value as Outcome; });
   select('动效体验', state.motion, [{value:'normal',label:'正常速度'}, {value:'slow',label:'慢放 ×0.2'}, {value:'reduced',label:'减少动态效果'}], value => { state.motion = value as typeof state.motion; });
 }
@@ -123,12 +122,12 @@ function mountPreview(): void {
   disposePreview(); preview.replaceChildren();
   const selected = catalog.find(item => item.id === state.item)!;
   const generation = epoch;
-  const variants = state.compare === 'theme' ? [{theme:'light',density:state.density,width:state.width,label:'明亮'}, {theme:'dark',density:state.density,width:state.width,label:'深色'}] : state.compare === 'density' ? [{theme:state.theme,density:'normal',width:state.width,label:'普通'}, {theme:state.theme,density:'compact',width:state.width,label:'紧凑'}] : state.compare === 'size' ? [{theme:state.theme,density:state.density,width:320,label:'320 CSS px'}, {theme:state.theme,density:state.density,width:800,label:'800 CSS px'}] : [{theme:state.theme,density:state.density,width:state.width,label:`${state.width} CSS px`}];
+  const variants = state.compare === 'theme' ? [{theme:'light',width:state.width,label:'明亮'}, {theme:'dark',width:state.width,label:'深色'}] : state.compare === 'size' ? [{theme:state.theme,width:320,label:'320 CSS px'}, {theme:state.theme,width:800,label:'800 CSS px'}] : [{theme:state.theme,width:state.width,label:`${state.width} CSS px`}];
   for (const variant of variants) {
     const canvas = element('div', 'pui gallery-canvas'); setAppearance(canvas, variant.theme as typeof state.theme);
     canvas.style.width = `${variant.width}px`; canvas.style.maxWidth = '100%';
     const host = element('div', 'gallery-demo-host'); canvas.append(host);
-    const context: DemoContext = { host, state: state.scene as DemoState, density: variant.density as DemoContext['density'], intent: 'primary', outcome: state.outcome,
+    const context: DemoContext = { host, state: state.scene as DemoState, intent: 'primary', outcome: state.outcome,
       log: message => { if (generation === epoch) { log(message); queueMeasure(); } },
       action: async () => {
         const outcome = state.outcome;

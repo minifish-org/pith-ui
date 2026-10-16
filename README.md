@@ -4,6 +4,8 @@ Native TypeScript UI building blocks for AI-assisted application development. Ch
 
 The source is TypeScript and CSS. The package contains compiled ESM, declarations and a separate stylesheet. It uses browser DOM APIs, native controls and system fonts; no UI framework or animation runtime is required.
 
+Presentation is fixed rather than assembled from style choices: system UI and monospace code fonts, small/medium/large text at 12/14/16 CSS px, regular/strong weights at 400/600, a shared 1.5 line height, and 4/8/12/16/24 CSS px spacing. Blocks choose the appropriate role automatically. Applications supply their own branding.
+
 ## Try the components
 
 The [interactive showroom](https://minifish-org.github.io/pith-ui/) groups **design foundations → base components → product blocks → composed pages**. It exposes real controls, theme and state comparisons, CSS-pixel measurements, spacing rulers and motion playback. Showroom data and actions are simulated and labelled accordingly. Automated checks do not substitute for human acceptance.

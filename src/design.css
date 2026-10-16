@@ -1,0 +1,38 @@
+/* Fixed design foundations. Components choose roles; consumers supply content,
+   state and actions rather than configuring individual type or spacing values. */
+.pui {
+  --pui-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --pui-font-code: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --pui-text-small: 12px;
+  --pui-text-medium: 14px;
+  --pui-text-large: 16px;
+  --pui-line-height: 1.5;
+  --pui-weight-regular: 400;
+  --pui-weight-strong: 600;
+  --pui-space-xs: 4px;
+  --pui-space-sm: 8px;
+  --pui-space-md: 12px;
+  --pui-space-lg: 16px;
+  --pui-space-xl: 24px;
+
+  /* Compatibility names resolve to the same fixed foundations. */
+  --pui-font-family: var(--pui-font-ui);
+  --pui-font-size: var(--pui-text-medium);
+  --pui-form-font-size: var(--pui-text-medium);
+  --pui-field-gap: var(--pui-space-sm);
+  --pui-control-height: 40px;
+
+  font-family: var(--pui-font-ui);
+  font-size: var(--pui-text-medium);
+  font-weight: var(--pui-weight-regular);
+  line-height: var(--pui-line-height);
+  letter-spacing: normal;
+}
+.pui :is(h1, h2, h3, h4, h5, h6) {
+  font-size: var(--pui-text-large);
+  font-weight: var(--pui-weight-strong);
+  line-height: var(--pui-line-height);
+}
+.pui :is(b, strong, th) { font-weight: var(--pui-weight-strong); }
+.pui small { font-size: var(--pui-text-small); }
+.pui :is(code, pre, kbd, samp) { font-family: var(--pui-font-code); }

@@ -4,7 +4,6 @@ export type Outcome = 'success' | 'failure' | 'late' | 'invalid';
 export interface DemoContext {
   host: HTMLElement;
   state: DemoState;
-  density: 'normal' | 'compact';
   intent: 'neutral' | 'primary' | 'danger';
   outcome: Outcome;
   log(message: string): void;
@@ -23,7 +22,7 @@ export interface ShowcaseCase {
   category: string;
   description: string;
   states?: readonly DemoState[];
-  controls?: readonly ('density' | 'intent' | 'outcome')[];
+  controls?: readonly ('outcome')[];
   related?: readonly string[];
   code: string;
   mount(context: DemoContext): MountedDemo;

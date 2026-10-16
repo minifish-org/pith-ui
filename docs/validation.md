@@ -22,6 +22,8 @@ Playwright runs the actual components in Chromium and WebKit. These are browser-
 
 Theme colors have one build-only source in `scripts/palette.ts`; Vite and the package builder generate the same ordinary CSS rules. Theme tests cover explicit and nested appearances, missing/invalid preferences and live system changes. Multi-row select checks measure actual option bounds and native selection, since WebKit ignores option-padding declarations; a tall empty control is not evidence of readable row spacing.
 
+Design checks verify the two automatic font roles, only 12/14/16 CSS px text, 400/600 weights, a 1.5 line-height ratio and five spacing values (4/8/12/16/24 CSS px). The showroom tests also reject a free gap editor or a general density chooser, preserve old URL handling and exercise theme, state, width and actual measurements. Native list row metrics and application-supplied graphics/branding are reported separately from ordinary text geometry.
+
 Maintained visual comparison is separate: `node scripts/visual.ts` checks 30 PNGs across five complete pages, two themes and three viewports. It requires the recorded macOS/Apple Silicon environment; Linux CI does not compare Mac system-font pixels. Only explicit `node scripts/visual.ts --update` records candidate baseline changes. See `visual-baselines/README.md`. No image update implies human acceptance.
 
 ## Shared behavior matrix
@@ -46,7 +48,7 @@ Start with a full block or page, then inspect its base components and design fou
 
 1. Inspect normal light and dark appearance at `900×600`, `1280×800` and `1440×900`; use a narrow container for reachability and wrapping.
 2. Exercise the case's legal loading, empty, error, disabled, pending and long-content states. Parameters are enabled only where the real API supports them.
-3. Compare sizes/density/themes side by side. Inspect measured bounds, spacing, typography, token values and the optional rulers.
+3. Compare themes and container widths side by side. Inspect the three text sizes, two weights, five spacing values, actual measurements and optional rulers. The dimensions exhibit contains fixed standard/compact compatibility samples rather than a general density chooser.
 4. Use the keyboard, retain text selection, scroll long output, perform repeated actions and close/reopen surfaces.
 5. Replay motion at normal and slow speed; interrupt it and enable reduced motion. Do not infer temporal correctness from a still image.
 6. Share the exact URL and explain any issue in a chat or code review. There is no showroom approval button or stored acceptance state.

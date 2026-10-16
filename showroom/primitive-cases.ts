@@ -19,7 +19,7 @@ function group(blocks: readonly Owned[], replay?: () => void): MountedDemo {
   return { element: root, replay, destroy() { for (const block of blocks) block.destroy(); } };
 }
 function field(context: DemoContext, label: string) {
-  return { label, value: sample(context, 'Example value 中文'), density: context.density,
+  return { label, value: sample(context, 'Example value 中文'),
     disabled: disabled(context), description: 'Use Tab and Shift+Tab to check keyboard focus.',
     error: context.state === 'error' ? 'The value could not be saved. Your input is retained.' : '',
     onInput: (value: string) => context.log(`Input: ${value}`) };
@@ -34,10 +34,10 @@ export const primitiveCases: ShowcaseCase[] = [
     mount(context) {
       const buttons = (['neutral', 'primary', 'danger'] as const).map(intent => createButton({
         label: sample(context, intent === 'neutral' ? 'Cancel' : intent === 'primary' ? 'Save changes' : 'Delete'),
-        intent, density: context.density, disabled: disabled(context), pending: context.state === 'pending' || context.state === 'loading',
+        intent, disabled: disabled(context), pending: context.state === 'pending' || context.state === 'loading',
         onAction: () => context.action(), onError: message => context.log(message),
       }));
-      buttons.push(createButton({ label: sample(context, 'Secondary action'), appearance: 'secondary', density: context.density, disabled: disabled(context), pending: context.state === 'pending' || context.state === 'loading', onAction: () => context.action(), onError: message => context.log(message) }));
+      buttons.push(createButton({ label: sample(context, 'Secondary action'), appearance: 'secondary', disabled: disabled(context), pending: context.state === 'pending' || context.state === 'loading', onAction: () => context.action(), onError: message => context.log(message) }));
       const toolbar = createToolbar({ label: 'Button variants', children: buttons.map(button => button.element) });
       return group([{ ...toolbar, destroy() { toolbar.destroy(); buttons.forEach(button => button.destroy()); } }]);
     },
@@ -101,7 +101,7 @@ export const primitiveCases: ShowcaseCase[] = [
         ...(context.state === 'long' ? options.map(option => ({ ...option, value: `provider-${option.value}` })) : []),
       ];
       const error = context.state === 'error' ? '演示读取失败；当前选择保留，可以重新选择。' : '';
-      return group([createSelect({ label: 'Provider', description: '单选下拉：点击或按 Enter 打开；方向键移动，Enter 确认，Esc 取消。禁用项不可选择。', value: 'pith', options: providerOptions, density: context.density, disabled: disabled(context), error, onChange: value => context.log(`Provider: ${value}`) }),
+      return group([createSelect({ label: 'Provider', description: '单选下拉：点击或按 Enter 打开；方向键移动，Enter 确认，Esc 取消。禁用项不可选择。', value: 'pith', options: providerOptions, disabled: disabled(context), error, onChange: value => context.log(`Provider: ${value}`) }),
         createSelect({ label: 'Models (multi-row)', description: '16 CSS px 原生多选列表，使用系统键盘与修饰键；WebKit 不应用选项内边距，行距由平台决定。回调提供全部选中项，初始选中 Model 1、Model 3。', options, size: 5, multiple: true, values:['0','2'], disabled: disabled(context), error, onValuesChange: values => context.log(`演示所选模型：${values.join(', ') || '未选择'}`) })]);
     },
   },
@@ -242,8 +242,8 @@ export const primitiveCases: ShowcaseCase[] = [
     mount(context) {
       const owned: Owned[] = [];
       for (const align of ['start', 'end', 'between'] as const) {
-        const cancel = createButton({ label: `Cancel (${align})`, density: context.density, disabled: disabled(context) });
-        const save = createButton({ label: sample(context, 'Save changes'), intent: context.intent, density: context.density, disabled: disabled(context), onAction: () => context.action() });
+        const cancel = createButton({ label: `Cancel (${align})`, disabled: disabled(context) });
+        const save = createButton({ label: sample(context, 'Save changes'), intent: context.intent, disabled: disabled(context), onAction: () => context.action() });
         const actions = createActions({ align, children: [cancel.element, save.element] });
         owned.push({ ...actions, destroy() { actions.destroy(); cancel.destroy(); save.destroy(); } });
       }
@@ -252,12 +252,12 @@ export const primitiveCases: ShowcaseCase[] = [
   },
   {
     id: 'toolbar', title: '工具栏 Toolbar', layer: 'components', category: '布局',
-    description: '工具区使用紧凑与普通间距，可在窄容器换行。', states, related: ['icon-button', 'actions'],
-    code: `import { createToolbar, createButton } from 'pith-ui';\nconst refresh = createButton({ label: 'Refresh' });\nconst toolbar = createToolbar({ label: 'Resources', children: [refresh.element], density: 'compact' });\ndocument.body.append(toolbar.element);`,
+    description: '工具区自动使用统一间距，在窄容器中换行；不需要额外选择密度。', states, related: ['icon-button', 'actions'],
+    code: `import { createToolbar, createButton } from 'pith-ui';\nconst refresh = createButton({ label: 'Refresh' });\nconst toolbar = createToolbar({ label: 'Resources', children: [refresh.element] });\ndocument.body.append(toolbar.element);`,
     mount(context) {
-      const refresh = createButton({ label: 'Refresh', density: context.density, disabled: disabled(context), onAction: () => context.action() });
+      const refresh = createButton({ label: 'Refresh', disabled: disabled(context), onAction: () => context.action() });
       const add = createIconButton({ label: 'Add resource', icon: 'plus', disabled: disabled(context), onAction: () => context.action() });
-      const toolbar = createToolbar({ label: 'Resource tools', density: context.density, children: [refresh.element, add.element] });
+      const toolbar = createToolbar({ label: 'Resource tools', children: [refresh.element, add.element] });
       return group([{ ...toolbar, destroy() { toolbar.destroy(); refresh.destroy(); add.destroy(); } }]);
     },
   },

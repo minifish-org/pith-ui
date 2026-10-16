@@ -8,6 +8,14 @@ Call `setAppearance(root, appearance)` on an ancestor of all mounted components.
 
 Use host layout to position a component, and supported component options to configure it. Theme-specific overrides belong in a reviewed, central `--pui-*` token scope. Internal class names are implementation details, not a per-page design API.
 
+## Fixed presentation
+
+Create the appropriate block without selecting a font, text size or gap. It chooses between system UI and monospace code fonts, using small/medium/large text at 12/14/16 CSS px, regular/strong weights at 400/600 and a proportional line height of 1.5. Medium is the default. The same scale applies to UI headings and content; code keeps its monospace role. Supplied logos and brand Nodes remain application-owned.
+
+The spacing scale is 4/8/12/16/24 CSS px. The block chooses gaps and padding from these values; zero simply means no spacing. Control heights, image/icon geometry, borders and focus offsets have their own functional dimensions. Do not use these as a second spacing scale.
+
+The shared stylesheet defines `--pui-font-ui/code`, `--pui-text-small/medium/large`, `--pui-weight-regular/strong`, `--pui-line-height` and `--pui-space-xs/sm/md/lg/xl`. These document the shared contract; adding an internal override in a consumer creates another implementation. Retained font/field token names resolve to the shared foundations rather than introducing arbitrary font or size choices. Density options remain for compatibility and internal compositions, while ordinary examples use the standard presentation. Library-owned compact chat actions and the fixed dimensions exhibit retain their deliberate geometry.
+
 ## Create, update, destroy
 
 The common handle is:
@@ -90,4 +98,4 @@ Share an exact state using:
 ?item=conversation-messages&theme=dark&state=long&width=800&compare=theme&rulers=1
 ```
 
-Supported gallery parameters are `item`, `theme`, `state`, `width`, `density`, `compare`, `outcome`, `motion` and `rulers`. Legal options come from the chosen case. Measurement/ruler tools and simulated requests stay in the showroom bundle.
+Supported gallery parameters are `item`, `theme`, `state`, `width`, `compare`, `outcome`, `motion` and `rulers`. Comparisons show themes or container widths. Old `density` parameters and `compare=density` links normalize to the standard view. Legal content states come from the chosen case. Measurement/ruler tools and simulated requests stay in the showroom bundle; there is no arbitrary font or gap editor.

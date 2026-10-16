@@ -49,7 +49,8 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
     const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? doc.documentElement.clientWidth;
     const height = viewport?.height ?? doc.documentElement.clientHeight;
-    const margin = 8, gap = 6;
+    const gap = parseFloat(view.getComputedStyle(panel).getPropertyValue('--pui-space-sm')) || 8;
+    const margin = gap;
     style('max-width', `${Math.max(0, width - margin * 2)}px`);
     style('min-width', `${Math.min(anchor.width, Math.max(0, width - margin * 2))}px`);
     // scrollHeight measures the content without expanding the viewport first.
