@@ -20,7 +20,7 @@ function group(blocks: readonly Owned[], replay?: () => void): MountedDemo {
 }
 function field(context: DemoContext, label: string) {
   return { label, value: sample(context, 'Example value 中文'),
-    disabled: disabled(context), description: 'Use Tab and Shift+Tab to check keyboard focus.',
+    disabled: disabled(context), description: 'Tab and Shift+Tab move focus; typing, caret and text selection remain native.',
     error: context.state === 'error' ? 'The value could not be saved. Your input is retained.' : '',
     onInput: (value: string) => context.log(`Input: ${value}`) };
 }
@@ -44,7 +44,7 @@ export const primitiveCases: ShowcaseCase[] = [
   },
   {
     id: 'icon-button', title: '图标按钮 Icon button', layer: 'components', category: '操作',
-    description: '紧凑操作具有可访问名称，悬停说明与键盘焦点。', states, related: ['button', 'icons'],
+    description: '紧凑操作具有可访问名称和悬停说明，支持键盘聚焦与激活，不绘制焦点框。', states, related: ['button', 'icons'],
     code: `import { createIconButton } from 'pith-ui';\nconst copy = createIconButton({ label: 'Copy message', icon: 'copy', onAction: () => {} });\ndocument.body.append(copy.element);`,
     mount(context) {
       const blocks = ['copy', 'edit', 'trash', 'close'].map(icon => createIconButton({ label: `${icon} action`, icon, title: `${icon} action`, disabled: disabled(context), onAction: () => context.action(), onError: message => context.log(message) }));

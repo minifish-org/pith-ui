@@ -27,12 +27,14 @@ The following four design/component layers document the general library. Their N
 | Type | [Typography](https://minifish-org.github.io/pith-ui/?item=foundation-typography) | Two automatic font roles; 12/14/16 CSS px, 400/600 weight, 1.5 line height |
 | Spacing | [Spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing) | Only 4/8/12/16/24 CSS px; blocks own padding, margins and grouping |
 | Dimensions | [Dimensions](https://minifish-org.github.io/pith-ui/?item=foundation-sizing) | Standard controls, fixed internal compact samples and native multiline differences |
-| Borders | [Borders](https://minifish-org.github.io/pith-ui/?item=foundation-borders) | Border widths, corners and focus separation |
+| Borders | [Borders](https://minifish-org.github.io/pith-ui/?item=foundation-borders) | Border widths, corners and validation states |
 | Layers | [Surfaces](https://minifish-org.github.io/pith-ui/?item=foundation-surfaces) | Surfaces, selection, overlay and shadow |
-| Focus | [Keyboard focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus) | Visible keyboard targets and logical traversal |
+| Focus | [Focus and keyboard interaction](https://minifish-org.github.io/pith-ui/?item=foundation-focus) | Native focus and traversal without focus outlines, glows or border highlights |
 | Motion | [Motion](https://minifish-org.github.io/pith-ui/?item=foundation-motion) | Existing transition/working feedback, replay and reduced motion |
 
 `setAppearance` establishes a `.pui` root and its selected appearance. CSS values are measured in CSS px; device pixel ratio is shown separately. The showroom distinguishes declared rules from current browser measurements and does not infer actual glyph fonts or browser zoom from device pixel ratio.
+
+The focus exhibit observes the actual focused control while exercising pointer, Tab and keyboard activation. Its observer is showroom-only. Focus adds no outlines, glows or border-color changes, and no replacement background cue. Existing navigation/menu focus backgrounds and focus-driven action visibility remain unchanged, along with hover, caret, selection, surface shadows, drag feedback and business states. A keyboard user no longer has a focus ring for locating the active control.
 
 The typography and spacing exhibits display the supported contract, not an open-ended design editor. UI and code fonts are selected by purpose; medium 14 CSS px is the default. Common showroom controls let a reviewer choose content state, theme and container width. Density is retained only in the fixed compatibility demonstration; old density URLs normalize to the standard view.
 

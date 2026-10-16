@@ -5,9 +5,9 @@ This is the constrained application contract for Pith Desk and applications choo
 The allowed UI imports are `pith-ui/app` and `pith-ui/styles.css`. The general `pith-ui` entry remains available for independent component compositions; Pith Desk must not use it, private package paths, copied components or internal CSS to bypass this contract. A missing application capability needs a tested semantic port in the library before the application consumes it.
 
 <!-- PUI_APP_VERSION_START -->
-This contract accompanies `pith-ui@0.2.1`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
+This contract accompanies `pith-ui@0.2.2`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
 
-The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.1/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.1/examples/application/index.html). These sources are not bundled into the npm runtime package.
+The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.2/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.2/examples/application/index.html). These sources are not bundled into the npm runtime package.
 <!-- PUI_APP_VERSION_END -->
 
 ## One mount, four scenes
@@ -125,6 +125,7 @@ Callbacks return semantic targets and values. `File[]` attachment inputs and `Bl
 
 - Create an application once. Update existing scene projections with stable keys. Do not recreate the shell or replace messages on each token merely to refresh presentation.
 - Initial values are applied at opening or by a declared explicit reset/edit operation. Ordinary `update` feedback must preserve input, IME composition, selection, focus, scroll and owned disclosures. Keep versioned business drafts in the controller.
+- Focus has no outline, glow or border-color highlight, and no new replacement background. Native focus, keyboard activation and focus restoration remain; hover, caret, text selection and business-state styling keep their existing behavior. The active control no longer has a visible focus ring.
 - Submit callbacks whose declaration returns `ActionResult` return `{ok: true}` or `{ok: false, error}` (or their promise). A failed save retains the draft; local pending combines with external disabled state. Void notifications, such as queue/approval intents, still require the controller to project authoritative availability and guard business operations.
 - Artifact Open, Reveal and Preview actions expose the shared button busy state while their callbacks are pending. External availability updates cannot release that local pending state; completion or failure restores availability only for the same live file owner.
 - Validate submitted identity, version and permission immediately before a write. A successful write followed by a failed refresh remains a successful write; present the refresh failure separately and do not retry the write automatically.

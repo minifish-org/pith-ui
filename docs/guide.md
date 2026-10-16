@@ -28,9 +28,11 @@ Use host layout to position a component, and supported component options to conf
 
 Create the appropriate block without selecting a font, text size or gap. It chooses between system UI and monospace code fonts, using small/medium/large text at 12/14/16 CSS px, regular/strong weights at 400/600 and a proportional line height of 1.5. Medium is the default. The same scale applies to UI headings and content; code keeps its monospace role. Supplied logos and brand Nodes remain application-owned.
 
-The spacing scale is 4/8/12/16/24 CSS px. The block chooses gaps and padding from these values; zero simply means no spacing. Control heights, image/icon geometry, borders and focus offsets have their own functional dimensions. Do not use these as a second spacing scale.
+The spacing scale is 4/8/12/16/24 CSS px. The block chooses gaps and padding from these values; zero simply means no spacing. Control heights, image/icon geometry and borders have their own functional dimensions. Do not use these as a second spacing scale.
 
 The shared stylesheet defines `--pui-font-ui/code`, `--pui-text-small/medium/large`, `--pui-weight-regular/strong`, `--pui-line-height` and `--pui-space-xs/sm/md/lg/xl`. These document the shared contract; adding an internal override in a consumer creates another implementation. Retained font/field token names resolve to the shared foundations rather than introducing arbitrary font or size choices. Density options remain for compatibility and internal compositions, while ordinary examples use the standard presentation. Library-owned compact chat actions and the fixed dimensions exhibit retain their deliberate geometry.
+
+Focus adds no outline, glow or border-color highlight, and there is no new background cue in its place. Existing hover, caret, text selection, surface shadows, drag feedback and selected/error/permission states remain. Focus itself, Tab traversal, keyboard activation and focus restoration are preserved. The absence of a focus ring makes the active control harder to locate with a keyboard; the [focus exhibit](https://minifish-org.github.io/pith-ui/?item=foundation-focus) includes a showroom-only focus observer for inspecting traversal.
 
 ## Create, update, destroy
 

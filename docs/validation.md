@@ -24,6 +24,8 @@ Theme colors have one build-only source in `scripts/palette.ts`; Vite and the pa
 
 Design checks verify the two automatic font roles, only 12/14/16 CSS px text, 400/600 weights, a 1.5 line-height ratio and five spacing values (4/8/12/16/24 CSS px). The showroom tests also reject a free gap editor or a general density chooser, preserve old URL handling and exercise theme, state, width and actual measurements. Native list row metrics and application-supplied graphics/branding are reported separately from ordinary text geometry.
 
+Focus checks verify the absence of focus outlines, glows and border-color highlights under pointer and keyboard interaction, without adding a replacement background. Assert the actual focused element and preserve typing, caret/text selection, native validation, keyboard activation and focus restoration. Compare existing hover, surface shadows, drag feedback and selected/error/permission states separately so removing focus decoration cannot erase those states. The showroom-only focus observer helps inspect traversal; it is not an application focus cue or a claim of visible-keyboard-focus accessibility.
+
 Maintained visual comparison is separate: `node scripts/visual.ts` checks 30 PNGs across five complete pages, two themes and three viewports. It requires the recorded macOS/Apple Silicon environment; Linux CI does not compare Mac system-font pixels. Only explicit `node scripts/visual.ts --update` records candidate baseline changes. See `visual-baselines/README.md`. No image update implies human acceptance.
 
 ## Shared behavior matrix
@@ -31,6 +33,7 @@ Maintained visual comparison is separate: `node scripts/visual.ts` checks 30 PNG
 | Area | Essential scenarios |
 |---|---|
 | Inputs | Initial value, typing/composition, selection, feedback update, explicit reset, long text, disabled/read-only |
+| Focus presentation | No focus outline/glow/border highlight; real pointer/Tab focus, activation and restoration remain; existing hover and business-state styles are preserved |
 | Async actions | Immediate pending, duplicate prevention, failure retains data, close/reopen, target changed, late result, destroy |
 | Forms | Auxiliary buttons do not submit, native validation, local error ownership, secret visibility, multiline select height |
 | Floating UI | Initial focus, Tab order, keyboard navigation, Escape, backdrop policy, source-focus restoration |

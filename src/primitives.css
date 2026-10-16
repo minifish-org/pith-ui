@@ -24,10 +24,9 @@
 .pui .pui-button.pui-danger { color: var(--pui-error-text); border-color: var(--pui-error-border); }
 .pui .pui-button.pui-danger:hover:not(:disabled) { background: var(--pui-error-surface); }
 .pui .pui-button.pui-compact { min-height: 30px; padding: var(--pui-space-xs) var(--pui-space-sm); font-size: var(--pui-text-small); }
-.pui :is(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
-  outline: var(--pui-focus-width, 1px) solid var(--pui-focus, var(--pui-accent)); outline-offset: var(--pui-focus-offset, 2px);
-  box-shadow: none;
-}
+/* Focus remains native; only its outline is suppressed within this scope.
+   Surface shadows and state feedback belong to their existing components. */
+.pui:focus, .pui :focus { outline: none; }
 .pui .pui-icon { display: inline-block; width: 18px; height: 18px; flex-shrink: 0; vertical-align: middle; }
 .pui .pui-icon-button { width: 36px; min-width: 36px; min-height: 36px; padding: var(--pui-space-sm); background: transparent; border-color: transparent; }
 .pui .pui-text-action { font-size: var(--pui-text-small); min-height: 28px; padding: var(--pui-space-xs) var(--pui-space-sm); background: transparent; border-color: transparent; }
@@ -162,7 +161,6 @@
 .pui .pui-scroll-area[data-size="small"] { max-height: 160px; }
 .pui .pui-scroll-area[data-size="medium"] { max-height: 320px; }
 .pui .pui-scroll-area[data-size="fill"] { max-height: 100%; }
-@media (forced-colors: active) { .pui :is(button, a[href], input, textarea, select, summary, [tabindex]):focus-visible { outline-color: Highlight; } }
 .pui .pui-button[hidden], .pui .pui-field [hidden], .pui .pui-notice[hidden], .pui .pui-collection [hidden], .pui .pui-text-edit [hidden], .pui .pui-list-row [hidden], .pui .pui-dialog [hidden], .pui .pui-popover [hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { .pui .pui-button { transition: none; } }
 @media (max-width: 520px) { .pui .pui-dialog { padding: var(--pui-space-lg); max-height: calc(100dvh - 24px); } .pui .pui-list-row { flex-wrap: wrap; } }

@@ -48,6 +48,9 @@ async function mountStandalone(page: Page, theme: Theme): Promise<void> {
     const scope = document.createElement('section'); scope.className = 'pui'; scope.tabIndex = 0; scope.setAttribute('aria-label','Focusable scope'); scope.textContent = 'Scoped root';
     document.body.append(link,editable,scope);
   }, theme);
+  // WebKit may retain detached listbox theme values until its first paint.
+  // Measure the rendered unfocused control, preserving the first-focus check.
+  await page.screenshot();
 }
 
 function standaloneTargets(page: Page): Locator[] {
@@ -73,8 +76,9 @@ for (const theme of ['light','dark'] as const) {
         if (input === 'keyboard') await keyboardModality(page);
         await target.focus(); await expect(target).toBeFocused();
         const after = await paint(target);
-        expect.soft(after.outline,`${await target.getAttribute('aria-label') || await target.textContent()} outline`).toBe('none');
-        expect.soft(after).toEqual({...before,outline:'none'});
+        const description=await target.evaluate(node=>node.outerHTML.slice(0,180));
+        expect.soft(after.outline,description+' outline').toBe('none');
+        expect.soft(after,description+' focus presentation').toEqual({...before,outline:'none'});
       }
       await expect(page.getByRole('checkbox',{name:'Enabled'})).toBeChecked({checked:input === 'keyboard'});
     });
@@ -154,10 +158,10 @@ for (const theme of ['light','dark'] as const) {
     await actions.press('ArrowDown');await page.keyboard.press('Escape');await expect(actions).toBeFocused();await expect(page.getByRole('menu')).toBeHidden();
     const popoverTrigger=page.getByRole('button',{name:'Details panel',exact:true});await popoverTrigger.click();
     const field=page.getByRole('textbox',{name:'Popover field',exact:true}),panel=page.locator('.pui-popover-panel:visible');
-    await blurAndLeave(page);const panelBefore=await paint(panel),fieldBefore=await paint(field);expect(panelBefore.shadow).not.toBe('none');
+    await page.mouse.move(1250,780);const panelBefore=await paint(panel),fieldBefore=await paint(field);expect(panelBefore.shadow).not.toBe('none');
     await keyboardModality(page);await field.focus();expect.soft(await paint(field)).toEqual({...fieldBefore,outline:'none'});expect(await paint(panel)).toEqual(panelBefore);
     await page.keyboard.press('Escape');await expect(popoverTrigger).toBeFocused();await expect(panel).toBeHidden();
-    const summary=page.locator('summary');await summary.focus();expect.soft((await paint(summary)).outline).toBe('none');await page.keyboard.press('Enter');await expect(page.getByText('Expanded information',{exact:true})).toBeVisible();
+    const summary=page.locator('.pui-disclosure > summary');await summary.focus();expect.soft((await paint(summary)).outline).toBe('none');await page.keyboard.press('Enter');await expect(page.getByText('Expanded information',{exact:true})).toBeVisible();
     const chat=page.locator('.pui-chat-scroll');await blurAndLeave(page);const chatBefore=await paint(chat);await keyboardModality(page);await chat.focus();await expect(chat).toBeFocused();expect.soft(await paint(chat)).toEqual({...chatBefore,outline:'none'});
   });
 
@@ -191,7 +195,10 @@ test('forced colors do not reintroduce focus outlines or erase selected and erro
   await keyboardModality(page);
   for (const target of [...standaloneTargets(page),page.getByRole('textbox',{name:'Invalid endpoint'})]) {
     await blurAndLeave(page);const before=await paint(target);await target.focus();await expect(target).toBeFocused();
-    expect.soft(await paint(target)).toEqual({...before,outline:'none'});
+    const after=await paint(target);
+    // Forced colors may remap borders to the system Highlight while focused.
+    // Keep that browser/user preference; the library must not add a ring/glow.
+    expect.soft({outline:after.outline,shadow:after.shadow,background:after.background,color:after.color}).toEqual({outline:'none',shadow:before.shadow,background:before.background,color:before.color});
   }
   await expect(page.getByRole('checkbox',{name:'Enabled'})).toBeChecked();await expect(page.getByRole('listbox',{name:'Multiple models'})).toHaveValues(['b']);
   await expect(page.getByRole('textbox',{name:'Invalid endpoint'})).toHaveAttribute('aria-invalid','true');await expect(page.getByText('Connection failed',{exact:true})).toBeVisible();
@@ -199,9 +206,9 @@ test('forced colors do not reintroduce focus outlines or erase selected and erro
 
 test('focus suppression is limited to the library scope',async ({page}) => {
   await page.goto('/tests/fixture.html');await page.evaluate(()=>{
-    document.body.classList.remove('pui');const outside=document.createElement('button');outside.textContent='Outside';outside.style.outline='3px solid rgb(255, 128, 0)';
+    document.body.classList.remove('pui');const outside=document.createElement('button');outside.textContent='Outside';
     const scope=document.createElement('section');scope.className='pui';scope.innerHTML='<button>Inside</button>';document.body.append(outside,scope);
   });
-  await keyboardModality(page);const outside=page.getByRole('button',{name:'Outside',exact:true});await outside.focus();await expect(outside).toBeFocused();await expect(outside).toHaveCSS('outline-style','solid');await expect(outside).toHaveCSS('outline-width','3px');
+  await keyboardModality(page);const outside=page.getByRole('button',{name:'Outside',exact:true});await outside.focus();await expect(outside).toBeFocused();await expect(outside).not.toHaveCSS('outline-style','none');
   const inside=page.getByRole('button',{name:'Inside',exact:true});await inside.focus();await expect(inside).toBeFocused();expect((await paint(inside)).outline).toBe('none');
 });

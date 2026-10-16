@@ -87,6 +87,8 @@ editor.open({ value: 'Original message' });
 
 The first consumer is Pith Desk. Its existing controllers retain their request, draft, approval and recovery semantics. Its UI integration must use the application scenes instead of reconstructing shared views through lower-level factories.
 
+Focus adds no outlines, glows or border highlights, and no replacement background cue. Native focus, keyboard activation and restoration remain, alongside existing hover, caret, text selection and business-state feedback. Keyboard users no longer have a focus ring for locating the active control; the showroom focus exhibit includes an inspection-only observer.
+
 ## Find a block
 
 - **Foundations:** color, typography, spacing, dimensions, borders, surfaces, focus and motion.
