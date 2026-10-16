@@ -17,7 +17,7 @@ interface MCPSession extends Session {read():MCPConnectionDraft;edit(value?:MCPE
 interface ModelSession extends Session {read():ModelSelection;reset(value:ModelSelection):void}
 interface CustomSession extends Session {read():CustomConnectionDraft}
 interface SettingsScene {
-  openSettings(state:SettingsPanelState,callbacks?:{onSubmit?:(draft:SettingsDraft)=>Result;onRemoveKey?:(draft:SettingsDraft)=>Result;onProviderChange?:(id:string)=>void;onProviderAction?:(action:string,target:{id:string})=>Result;onUpdateAction?:(action:'check'|'install')=>void}):SettingsSession;
+  openSettings(state:SettingsPanelState,callbacks?:{onSubmit?:(draft:SettingsDraft)=>Result;onRemoveKey?:(draft:SettingsDraft)=>Result;onProviderChange?:(id:string)=>void;onProviderAction?:(action:string,target:{id:string})=>Result;onUpdateAction?:(action:'check'|'install')=>void;onCreateConnection?:()=>void|Result;onTest?:(draft:SettingsDraft)=>void|Result;onCancelTest?:()=>void|Result}):SettingsSession;
   openConnections(state:Record<string,unknown>,callbacks?:{onSubmit?:(draft:MCPConnectionDraft)=>Result;onConnectionAction?:(action:string,target:{name:string})=>Result}):MCPSession;
   openModels(state:ModelPickerState,callbacks?:{onSubmit?:(selection:ModelSelection)=>Result}):ModelSession;
   openCustomConnection(state:CustomConnectionState,callbacks?:{onSubmit?:(draft:CustomConnectionDraft)=>Result}):CustomSession;
@@ -104,6 +104,64 @@ test('provider and update actions use semantic data and closing settings clears 
   await page.getByLabel('API key',{exact:false}).fill('Discard on close');
   const result=await page.evaluate(()=>{const session=(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession;session.close();return {open:session.isOpen(),key:session.read().apiKey};});
   expect(result).toEqual({open:false,key:''});await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+for(const signedIn of [false,true]) test(`settings availability disables provider and add actions while retaining a live draft (${signedIn?'signed in':'signed out'})`,async ({page})=>{
+  await page.evaluate(({state,signedIn})=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings({...state,disabled:true},{onProviderAction:()=>{h.calls++;return {ok:true};},onCreateConnection:()=>{h.calls++;}});h.current=session;
+    session.setProviders([{id:'first',name:'First provider'}],'first');
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:true,providerActions:{id:'first',oauth:true,signedIn,custom:true}});
+  },{state,signedIn});
+  const labels=[signedIn?'Sign out':'Sign in with provider','Edit models and prices','Remove connection','Add independent model connection'];
+  for(const name of labels) await expect(page.getByRole('button',{name,exact:true})).toBeDisabled();
+  const key=page.getByLabel('API key',{exact:false});await key.fill('Unsaved private draft');await key.focus();await key.evaluate((node:HTMLInputElement)=>node.setSelectionRange(2,8));
+  await page.evaluate(({state,signedIn})=>{
+    const session=(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession;
+    session.update(state);session.update({...state,disabled:true});
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:true,providerActions:{id:'first',oauth:true,signedIn,custom:true}});
+  },{state,signedIn});
+  for(const name of labels) {const button=page.getByRole('button',{name,exact:true});await expect(button).toBeDisabled();await button.dispatchEvent('click',{bubbles:true});}
+  await expect(key).toBeFocused();await expect(key).toHaveValue('Unsaved private draft');
+  expect(await key.evaluate((node:HTMLInputElement)=>[node.selectionStart,node.selectionEnd])).toEqual([2,8]);
+  expect(await page.evaluate(()=>{const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;return {calls:h.calls,draft:(h.current as SettingsSession).read()};})).toEqual({calls:0,draft:{provider:'first',baseUrl:state.baseUrl,apiKey:'Unsaved private draft'}});
+  await page.evaluate(state=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current!.update(state),state);
+  for(const name of labels) await expect(page.getByRole('button',{name,exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:labels[0],exact:true}).click();await page.getByRole('button',{name:'Add independent model connection',exact:true}).click();
+  expect(await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.calls)).toBe(2);
+});
+
+for(const action of ['provider','add'] as const) test(`settings ${action} action pending completion preserves external unavailability`,async ({page})=>{
+  await page.evaluate(({state,action})=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const pending=()=>{h.calls++;return new Promise<ActionResult>(resolve=>{h.release=resolve;});};
+    const session=h.app.settings.openSettings(state,action==='provider'?{onProviderAction:pending}:{onCreateConnection:pending});h.current=session;
+    session.setProviders([{id:'first',name:'First provider'}],'first');
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:false,providerActions:{id:'first',oauth:true,signedIn:false,custom:true}});
+  },{state,action});
+  const button=page.getByRole('button',{name:action==='provider'?'Sign in with provider':'Add independent model connection',exact:true});
+  await button.click();await expect(button).toBeDisabled();
+  await page.evaluate(state=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest,session=h.current as SettingsSession;
+    session.update({...state,disabled:true});
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:false,providerActions:{id:'first',oauth:true,signedIn:false,custom:true}});
+    h.release!({ok:true});
+  },state);
+  await expect(button).toHaveAttribute('aria-busy','false');await expect(button).toBeDisabled();
+  await button.dispatchEvent('click',{bubbles:true});expect(await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.calls)).toBe(1);
+  await page.evaluate(state=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current!.update(state),state);await expect(button).toBeEnabled();
+});
+
+test('settings connection testing keeps its existing cancel action available',async ({page})=>{
+  await page.evaluate(state=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings(state,{onTest:draft=>{h.values.push(draft);session.update({...state,testing:true});return new Promise<ActionResult>(resolve=>{h.release=resolve;});},onCancelTest:()=>{h.values.push('cancel');session.update(state);h.release!({ok:true});}});h.current=session;
+    session.setProviders([{id:'first',name:'First provider'}],'first');
+  },state);
+  await page.getByRole('button',{name:'Test connection',exact:true}).click();
+  const cancel=page.getByRole('button',{name:'Cancel test',exact:true});await expect(cancel).toBeEnabled();await cancel.click();
+  await expect(page.getByRole('button',{name:'Test connection',exact:true})).toBeEnabled();
+  expect(await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.values)).toEqual([{provider:'first',baseUrl:state.baseUrl,apiKey:''},'cancel']);
 });
 
 test('update refresh errors expose retry through semantic state without changing the reported phase',async ({page})=>{
