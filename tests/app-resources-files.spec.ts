@@ -16,10 +16,12 @@ interface FutureApplication {
   resources: {
     open(state: State, callbacks?: Callbacks): Session;
     openEditor(state: State, callbacks?: Callbacks): EditorSession;
+    destroy(): void;
   };
   files: {
     updateArtifacts(state: State, callbacks?: Callbacks): void;
     openPreview(input: State, callbacks?: Callbacks): Session;
+    destroy(): void;
   };
   destroy(): void;
 }
@@ -255,4 +257,32 @@ test('file scene preserves UTF-8 paging and owns image zoom with focus restorati
   await page.getByRole('button', {name: 'Close image', exact: true}).click();
   await expect(page.getByRole('dialog', {name: 'Chart.png', exact: true})).toBeVisible();
   await expect(page.locator('dialog[open] img[alt="Chart"]')).toBeFocused();
+});
+
+for (const kind of ['inventory', 'editor'] as const) test(`resource scene destruction prevents its ${kind} close callback from reopening a window`, async ({page}) => {
+  const result = await page.evaluate(kind => {
+    const fixture = window.appResourcesFilesFixture;
+    const inventory = {workspace: {id: 'w1', name: 'Project', path: '/demo/project'}, instructions: [], skills: [], templates: [], diagnostics: []};
+    const editor = {workspaceId: 'w1', workspacePath: '/demo/project', path: '/demo/project/AGENTS.md', kind: 'instructions', content: '# Instructions', editable: true, workspaceBusy: false};
+    const open = (onClose?: () => void): Session => kind === 'inventory'
+      ? fixture.app.resources.open(inventory, {onClose})
+      : fixture.app.resources.openEditor(editor, {onClose});
+    fixture.old = open(() => {fixture.events.push('closed'); fixture.session = open();});
+    fixture.app.resources.destroy();
+    return {oldOpen: fixture.old.isOpen(), reopened: fixture.session?.isOpen(), openDialogs: document.querySelectorAll('dialog[open]').length, events: fixture.events};
+  }, kind);
+  expect(result).toEqual({oldOpen: false, reopened: false, openDialogs: 0, events: ['closed']});
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('file scene destruction prevents its preview close callback from reopening a window', async ({page}) => {
+  const result = await page.evaluate(() => {
+    const fixture = window.appResourcesFilesFixture;
+    const input = {owner: {kind: 'artifact', id: 'chat-a'}, name: 'Report.txt', path: 'report.txt', capabilities: {open: true, reveal: true, copyMode: 'path'}, content: {kind: 'text', text: 'Current file'}};
+    fixture.old = fixture.app.files.openPreview(input, {onClose() {fixture.events.push('closed'); fixture.session = fixture.app.files.openPreview({...input, name: 'Reopened.txt', path: 'reopened.txt'});}});
+    fixture.app.files.destroy();
+    return {oldOpen: fixture.old.isOpen(), reopened: fixture.session?.isOpen(), openDialogs: document.querySelectorAll('dialog[open]').length, events: fixture.events};
+  });
+  expect(result).toEqual({oldOpen: false, reopened: false, openDialogs: 0, events: ['closed']});
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
