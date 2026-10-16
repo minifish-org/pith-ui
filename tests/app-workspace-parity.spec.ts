@@ -137,6 +137,8 @@ test('pending native references still accept the matching image drop without res
       onImages: (files: File[]) => images.push(files.map(file => file.name)),
       onDropReferences(value: unknown) {references.push(value); app.workspace.setDropPending(true);},
     }});
+    let choices = 0;
+    document.querySelector<HTMLInputElement>('input[type="file"]')!.click = () => {choices++;};
     const form = document.querySelector<HTMLElement>('.pui-composer')!;
     const drop = () => {
       const transfer = new DataTransfer(); transfer.items.add(new File(['image'], 'photo.png', {type: 'image/png'}));
@@ -148,19 +150,20 @@ test('pending native references still accept the matching image drop without res
     input.setSelectionRange(7, 10);
     const rect = form.getBoundingClientRect();
     app.workspace.receiveNativeDrop({paths: ['/workspace/docs/中文 draft.md', '/workspace/photo.png'], x: rect.x + 8, y: rect.y + 8});
+    app.workspace.pickImages();
     drop();
-    const pending = {images: [...images], references: [...references]};
+    const pending = {images: [...images], references: [...references], choices};
     app.workspace.setDropPending(false); app.workspace.insertReferences(['docs/中文 draft.md']);
     const draft = app.workspace.readDraft();
-    for (const state of [{readOnly: true}, {disabled: true}]) {app.workspace.updateComposer(state); drop();}
-    app.workspace.updateComposer({}); app.workspace.updateAvailability({busy: true}); drop();
-    const final = {images, references, draft};
+    for (const state of [{readOnly: true}, {disabled: true}]) {app.workspace.updateComposer(state); app.workspace.pickImages(); drop();}
+    app.workspace.updateComposer({}); app.workspace.updateAvailability({busy: true}); app.workspace.pickImages(); drop();
+    const final = {images, references, draft, choices};
     app.destroy(); return {pending, final};
   });
   const references = [{paths: ['/workspace/docs/中文 draft.md', '/workspace/photo.png'], hasUnidentifiedFiles: false}];
   expect(result).toEqual({
-    pending: {images: [['photo.png']], references},
-    final: {images: [['photo.png']], references, draft: 'Review `docs/中文 draft.md` please'},
+    pending: {images: [['photo.png']], references, choices: 1},
+    final: {images: [['photo.png']], references, draft: 'Review `docs/中文 draft.md` please', choices: 1},
   });
 });
 
