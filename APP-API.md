@@ -836,7 +836,7 @@ Referenced types and APIs: [`ApplicationConversation`](#applicationconversation)
 
 ### ConfirmationState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L79)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L78)
 
 ```ts
 export interface ConfirmationState {
@@ -889,7 +889,7 @@ export interface ImageTarget {
 
 ### MessageEditorSession
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L78)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L77)
 
 ```ts
 export interface MessageEditorSession extends SceneSession<MessageEditorState> {
@@ -903,7 +903,7 @@ Referenced types and APIs: [`MessageEditorState`](#messageeditorstate), [`SceneS
 
 ### MessageEditorState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L73)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L72)
 
 ```ts
 export interface MessageEditorState {
@@ -945,7 +945,7 @@ export interface NavigationStatus {
 
 ### SceneSession
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L66)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L65)
 
 ```ts
 export interface SceneSession<State> {
@@ -967,7 +967,7 @@ export type WorkspaceAction = 'workspace' | 'resources' | 'connections' | 'setti
 
 ### WorkspaceAvailability
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L84)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L83)
 
 ```ts
 export interface WorkspaceAvailability {
@@ -997,7 +997,6 @@ export interface WorkspaceCallbacks {
     onBusyAction?(key: string): void;
     onSearch?(query: string): void;
     onSelectConversation?(id: string): void;
-    onSelectWorkspace?(id: string): void;
     onNewConversation?(workspaceId: string): void;
     onConversationAction?(action: ConversationNavigationAction, id: string): HostResult;
     onWorkspaceAction?(action: 'remove', id: string): HostResult;
@@ -1026,7 +1025,7 @@ Referenced types and APIs: [`ConversationAction`](#conversationaction), [`Conver
 
 ### WorkspaceScene
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L91)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/src/app/workspace.ts#L90)
 
 ```ts
 export interface WorkspaceScene {

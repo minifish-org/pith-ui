@@ -44,7 +44,6 @@ export interface WorkspaceCallbacks {
   onBusyAction?(key: string): void;
   onSearch?(query: string): void;
   onSelectConversation?(id: string): void;
-  onSelectWorkspace?(id: string): void;
   onNewConversation?(workspaceId: string): void;
   onConversationAction?(action: ConversationNavigationAction, id: string): HostResult;
   onWorkspaceAction?(action: 'remove', id: string): HostResult;
@@ -175,7 +174,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
   }});
   let menuTarget: {kind: 'workspace' | 'conversation'; id: string} | undefined;
   const navigation = createWorkspaceNavigation({groups: [], empty: 'workspaces'}, {element: env.part('history-list'), idPrefix: env.idPrefix,
-    onToggle(id) {const group = navigationState.groups.find(group => group.id === id); if (!group) return; const open = !(expanded.get(id) ?? group.selected); expanded.set(id, open); if (open) callbacks.onSelectWorkspace?.(id); renderNavigation();},
+    onToggle(id) {const group = navigationState.groups.find(group => group.id === id); if (!group) return; const open = !(expanded.get(id) ?? group.selected); expanded.set(id, open); renderNavigation();},
     onSelect(id) {closeMenu(); shell.setSidebarOpen(false); callbacks.onSelectConversation?.(id);},
     onAction(action) {
       if (action.action === 'add-workspace') {void run(() => callbacks.onAction?.('workspace')); return;}

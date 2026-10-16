@@ -99,7 +99,6 @@ const app: Application = createApplication(mount, {
     },
     onNewConversation() {taskGeneration++; working = false; queued = []; messages = [{id: nextId('intro'), role: 'assistant', text: notice}]; app.workspace.updateApproval({approval: null}); render();},
     onSelectConversation() {app.workspace.setSidebarOpen(false);},
-    onSelectWorkspace() {app.workspace.setSidebarOpen(false);},
     onImages(files) {announce(`模拟收到 ${files.length} 个图片附件；本参考应用不读取或上传图片内容。`);},
     onDropReferences(input) {
       if (input.hasUnidentifiedFiles && !input.paths.length) announce('模拟文件拖放：浏览器未提供可验证的文件路径；没有猜测文件身份。');
