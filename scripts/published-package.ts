@@ -3,6 +3,13 @@ import { gunzipSync } from 'node:zlib';
 
 const maxArchiveBytes = 32 * 1024 * 1024;
 
+/** Prereleases must never replace the stable npm latest channel. */
+export function publicationDistTag(version: string): 'latest' | 'next' {
+  const parsed = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(version);
+  if (!parsed || parsed[4]?.split('.').some(identifier => /^\d+$/.test(identifier) && identifier.length > 1 && identifier.startsWith('0'))) throw new Error(`Invalid canonical package version: ${version}`);
+  return parsed[4] ? 'next' : 'latest';
+}
+
 /** A registry metadata 404 is the only condition that permits a new publication. */
 export async function isIdenticalPublishedPackage(
   name: string, version: string, testedTarball: Uint8Array, fetcher: typeof fetch = fetch,

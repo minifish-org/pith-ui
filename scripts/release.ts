@@ -4,7 +4,8 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isIdenticalPublishedPackage } from './published-package.ts';
+import { isIdenticalPublishedPackage, publicationDistTag } from './published-package.ts';
+import { verifyInstalledPackageConsumer } from './verify-package.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const artifacts = resolve(root, 'artifacts');
@@ -41,7 +42,7 @@ async function verify(): Promise<void> {
   const archive = join(artifacts, value.filename);
   const paths = run('tar', ['-tzf', archive]).trim().split('\n');
   assert(paths.length > 0 && paths.every(path => path.startsWith('package/') && !path.split('/').includes('..')), 'Archive contains an unsafe file path');
-  assert(paths.every(path => path.startsWith('package/dist/') || ['package/package.json', 'package/README.md', 'package/AI.md', 'package/API.md', 'package/LICENSE'].includes(path)), 'Archive contains unpublished source, tests or gallery code');
+  assert(paths.every(path => path.startsWith('package/dist/') || ['package/package.json', 'package/README.md', 'package/AI.md', 'package/API.md', 'package/APP.md', 'package/APP-API.md', 'package/LICENSE'].includes(path)), 'Archive contains unpublished source, tests or gallery code');
   const temporary = await mkdtemp(join(tmpdir(), 'pith-ui-package-'));
   try {
     await writeFile(join(temporary, 'package.json'), JSON.stringify({ private: true, type: 'module', dependencies: { [metadata.name]: `file:${archive}` } }));
@@ -50,27 +51,10 @@ async function verify(): Promise<void> {
     const installedMetadata = JSON.parse(await readFile(join(installed, 'package.json'), 'utf8')) as { name: string; version: string; dependencies: Record<string, string> };
     assert(installedMetadata.name === metadata.name && installedMetadata.version === metadata.version, 'Installed package metadata differs');
     assert(Object.values(installedMetadata.dependencies).every(version => /^\d+\.\d+\.\d+$/.test(version)), 'Runtime dependencies must use exact versions');
-    for (const required of ['dist/index.js', 'dist/index.d.ts', 'dist/styles.css', 'README.md', 'AI.md', 'API.md', 'LICENSE']) assert((await readFile(join(installed, required))).byteLength > 0, `Missing or empty package file: ${required}`);
-    await writeFile(join(temporary, 'probe.ts'), `import * as ui from 'pith-ui';
-if (typeof ui.createConversationView !== 'function' || typeof ui.createTextEditDialog !== 'function') throw new Error('Missing public factories');
-if ('reconcileViews' in ui || 'clearViews' in ui) throw new Error('Internal HTML reconciliation must not be public');
-`);
-    run(process.execPath, [join(temporary, 'probe.ts')], temporary);
-    await writeFile(join(temporary, 'consumer.ts'), `import { createConversationView, createTextEditDialog, setAppearance, type ActionResult } from 'pith-ui';
-import 'pith-ui/styles.css';
-setAppearance(document.body, 'light');
-const view = createConversationView();
-view.update({ id: 'package-consumer', messages: [{ id: 'answer', role: 'assistant', text: 'Package consumer', actions: { copy: 'Copy response' } }], working: false });
-document.body.append(view.element);
-const dialog = createTextEditDialog({ onSubmit: async (): Promise<ActionResult> => ({ ok: true }) });
-dialog.open({ value: 'Typed package consumer' });
-dialog.destroy();
-`);
-    await writeFile(join(temporary, 'index.html'), '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Pith UI package consumer</title></head><body><script type="module" src="/consumer.ts"></script></body></html>');
-    run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2022', '--module', 'ESNext', '--moduleResolution', 'Bundler', '--lib', 'ES2022,DOM,DOM.Iterable', 'consumer.ts'], temporary);
-    run(process.execPath, [join(root, 'node_modules/vite/bin/vite.js'), 'build'], temporary);
-    assert((await readFile(join(temporary, 'dist/index.html'))).byteLength > 0, 'Consumer production build is empty');
-    console.log(`Verified exact tarball ${value.filename}: exports, types, CSS, runtime dependency pins and isolated production build.`);
+    for (const required of ['dist/index.js', 'dist/index.d.ts', 'dist/app/index.js', 'dist/app/index.d.ts', 'dist/styles.css', 'README.md', 'AI.md', 'API.md', 'APP.md', 'APP-API.md', 'LICENSE']) assert((await readFile(join(installed, required))).byteLength > 0, `Missing or empty package file: ${required}`);
+    const verification = await verifyInstalledPackageConsumer(root, temporary);
+    await writeFile(join(artifacts, 'package-consumer-verification.json'), JSON.stringify({filename: value.filename, sha256: value.sha256, commit: value.commit, version: value.version, ...verification}, null, 2) + '\n');
+    console.log(`Verified exact tarball ${value.filename}: root and app ESM/types/CSS, complete reference, strict declarations, ${verification.rejectedTypeCases} rejected UI escape cases, callback compatibility and both isolated production builds.`);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 }
 function verifyTag(): void {
@@ -90,7 +74,7 @@ switch (process.argv[2]) {
     // Only a registry 404 permits publication; an existing archive payload must match exactly.
     if (await isIdenticalPublishedPackage(metadata.name, metadata.version, await readFile(join(artifacts, value.filename)))) {
       console.log(`Already published ${metadata.name}@${metadata.version}: registry SHA-512 verified; the complete decompressed TAR payload is byte-identical to the tested artifact (gzip encoding may differ). Skipped immutable re-publication.`);
-    } else execFileSync('npm', ['publish', join(artifacts, value.filename), '--access', 'public', '--ignore-scripts'], { cwd: root, stdio: 'inherit' });
+    } else execFileSync('npm', ['publish', join(artifacts, value.filename), '--access', 'public', '--ignore-scripts', '--tag', publicationDistTag(metadata.version)], { cwd: root, stdio: 'inherit' });
     break;
   }
   default: throw new Error('Usage: node scripts/release.ts <verify-tag|pack|verify|publish>');

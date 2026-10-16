@@ -41,7 +41,7 @@ after(() => {if (temporary) rmSync(temporary, {recursive: true, force: true});})
 
 test('the actual npm archive carries the independent app ESM/declarations and portable CSS', () => {
   const paths = new Set(packed.files.map(file => file.path));
-  for (const path of ['dist/app/index.js', 'dist/app/index.d.ts', 'dist/index.js', 'dist/index.d.ts', 'dist/styles.css']) assert.ok(paths.has(path), `Missing packed public entry ${path}`);
+  for (const path of ['dist/app/index.js', 'dist/app/index.d.ts', 'dist/index.js', 'dist/index.d.ts', 'dist/styles.css', 'APP.md', 'APP-API.md']) assert.ok(paths.has(path), `Missing packed public entry ${path}`);
   assert.ok([...paths].every(path => !/^(?:src|tests|showroom|examples|node_modules)\//.test(path)), 'Development and reference sources do not belong in the runtime package');
   const installed = join(consumer, 'node_modules/pith-ui');
   const pkg = JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8'));
