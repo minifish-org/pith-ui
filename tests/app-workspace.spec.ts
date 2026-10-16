@@ -267,7 +267,7 @@ test('mixed drops preserve empty-MIME image recognition and workspace URI intent
     document.querySelector('.pui-composer')!.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: transfer}));
     app.destroy(); return {images, references};
   });
-  expect(result).toEqual({images: [['photo.PNG']], references: [{paths: [], uris: 'file:///work/readme.md'}]});
+  expect(result).toEqual({images: [['photo.PNG']], references: [{paths: [], uris: 'file:///work/readme.md', hasUnidentifiedFiles: true}]});
 });
 
 test('controlled brand marks preserve the existing narrow-screen welcome dimensions', async ({page}) => {
