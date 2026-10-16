@@ -2,7 +2,7 @@ import type { UIBlock, UIAction } from '../core.js';
 import { escape, setText } from '../dom.js';
 import {adoptAction, type ActionController} from '../foundations.js';
 import {reconcileKeyed} from '../reconcile.js';
-export interface ProviderActionsState {id: string; oauth: boolean; signedIn: boolean; custom: boolean}
+export interface ProviderActionsState {id: string; oauth: boolean; signedIn: boolean; custom: boolean; disabled?: boolean}
 export type ResourceKind = 'instructions' | 'skill' | 'template';
 export interface ResourceActionsState {kind: string; resource: {name: string; path: string}; workspaceId: string}
 export type ProviderAction = 'login' | 'logout' | 'custom' | 'remove-connection';
@@ -17,7 +17,7 @@ export function resourceActionsMarkup(kind: string, resource: {name: string; pat
 export interface FeatureActionOptions {onAction?: (action: string, target: DOMStringMap) => ReturnType<UIAction>; onError?: (message: string) => void}
 export interface ProviderActionOptions extends FeatureActionOptions {onProviderAction?: (action: ProviderAction, target: ProviderActionTarget) => ReturnType<UIAction>}
 export interface ResourceActionOptions extends FeatureActionOptions {onResourceAction?: (action: ResourceAction, target: ResourceActionTarget) => ReturnType<UIAction>}
-type ActionView<Action, Target> = {key: string; action: Action; label: string; target: Target; dataset: Record<string,string>; destructive?: boolean};
+type ActionView<Action, Target> = {key: string; action: Action; label: string; target: Target; dataset: Record<string,string>; destructive?: boolean; disabled?: boolean};
 function actions<State, Action extends string, Target>(initial: State, className: string, describe: (state: Readonly<State>) => readonly ActionView<Action,Target>[], options: FeatureActionOptions, onAction?: (action: Action,target: Target) => ReturnType<UIAction>): UIBlock<State> {
  const element = document.createElement('div'); element.className = 'pui-feature-actions'; const toolbar = document.createElement('div'); toolbar.className = className; element.append(toolbar);
  type Row = {element: HTMLButtonElement; view: ActionView<Action,Target>; handle: ActionController; stop?: (event: Event) => void};
@@ -31,14 +31,14 @@ function actions<State, Action extends string, Target>(initial: State, className
      // Stop before the callback: it can synchronously destroy this owner.
      if (stop) button.addEventListener('click',stop);
      const row: Row = {element:button,view,handle:adoptAction(button,{onAction:stop ? () => onAction ? onAction(row.view.action,row.view.target) : options.onAction!(row.view.action,button.dataset) : undefined,onError:options.onError}),stop}; return row;
-   },update(row,view) {row.view = view; row.element.className = `pui-secondary-button${view.destructive ? ' pui-destructive-button' : ''}`; setText(row.element,view.label); for (const [name,value] of Object.entries(view.dataset)) row.element.dataset[name] = value;},destroy:release});
+   },update(row,view) {row.view = view; row.element.className = `pui-secondary-button${view.destructive ? ' pui-destructive-button' : ''}`; setText(row.element,view.label); for (const [name,value] of Object.entries(view.dataset)) row.element.dataset[name] = value; if (view.disabled !== undefined) row.handle.update({disabled:view.disabled});},destroy:release});
  }; update(initial);
  return {element, update, destroy() {if (destroyed) return; destroyed = true; for (const row of rows.values()) release(row); rows.clear(); element.remove();}};
 }
 export function createProviderActions(state: ProviderActionsState, options: ProviderActionOptions = {}): UIBlock<ProviderActionsState> {
  return actions(state,'pui-feature-toolbar',value => {
    const target = Object.freeze({id:value.id}); const result: ActionView<ProviderAction,ProviderActionTarget>[] = [];
-   const add = (action: ProviderAction,label: string,destructive = false) => result.push({key:JSON.stringify([value.id,action]),action,label,target,dataset:{sdk:action,id:value.id},destructive});
+   const add = (action: ProviderAction,label: string,destructive = false) => result.push({key:JSON.stringify([value.id,action]),action,label,target,dataset:{sdk:action,id:value.id},destructive,disabled:!!value.disabled});
    if (value.oauth) add(value.signedIn ? 'logout' : 'login',value.signedIn ? 'Sign out' : 'Sign in with provider');
    if (value.custom) {add('custom','Edit models and prices'); add('remove-connection','Remove connection',true);} return result;
  },options,options.onProviderAction);

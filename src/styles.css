@@ -30,6 +30,9 @@
 .pui .pui-sidebar { width: var(--pui-sidebar-width); background: var(--pui-bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; padding: var(--pui-space-xl) var(--pui-space-lg) var(--pui-space-lg); border-right: 1px solid var(--pui-border); }
 .pui .pui-brand { display: flex; align-items: center; gap: var(--pui-space-md); text-decoration: none; color: var(--pui-text); font-size: var(--pui-text-large); letter-spacing: normal; font-weight: var(--pui-weight-strong); padding: 0 var(--pui-space-sm); }
 .pui .pui-brand-light { font-weight: var(--pui-weight-regular); color: var(--pui-muted); }
+.pui .pui-app-brand { display: contents; }
+.pui .pui-app-brand-image { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+.pui .pui-welcome-mark .pui-app-brand-image { width: 32px; height: 32px; }
 .pui .pui-logo-mark { display: inline-grid; width: 24px; height: 24px; grid-template-columns: 1fr 1fr; gap: 3px; transform: rotate(-8deg); }
 .pui .pui-logo-mark i { background: var(--pui-accent); border-radius: 2px; }
 .pui .pui-logo-mark i:nth-child(2) { border-radius: 2px 9px 2px 2px; opacity: .7; }
@@ -412,7 +415,7 @@
   .pui .pui-chat-scroll { padding: 0 var(--pui-space-lg); }
   .pui .pui-welcome { padding-top: var(--pui-space-xl); padding-bottom: var(--pui-space-xl); }
   .pui .pui-welcome-mark { width: 52px; height: 52px; border-radius: 14px; margin-bottom: var(--pui-space-xl); }
-  .pui .pui-welcome-mark .pui-logo-mark { width: 27px; height: 27px; }
+  .pui .pui-welcome-mark .pui-logo-mark, .pui .pui-welcome-mark .pui-app-brand-image { width: 27px; height: 27px; }
   .pui .pui-setup-card { margin-top: var(--pui-space-xl); padding: var(--pui-space-lg) var(--pui-space-md) var(--pui-space-xs); }
   .pui .pui-setup-step small { max-width: 230px; font-size: var(--pui-text-small); }
   .pui .pui-setup-card-heading { font-size: var(--pui-text-small); }
