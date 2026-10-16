@@ -280,3 +280,22 @@ test('controlled brand marks preserve the existing narrow-screen welcome dimensi
   const mark = page.locator('.pui-welcome-mark img');
   await expect(mark).toHaveCSS('width', '27px'); await expect(mark).toHaveCSS('height', '27px');
 });
+
+test('attachment availability gates both the owned chooser button and application intent', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const original = HTMLInputElement.prototype.click; let choices = 0;
+    HTMLInputElement.prototype.click = function () {if (this.type === 'file') choices++; else original.call(this);};
+    const app = createApplication(document.body), counts: number[] = [];
+    try {
+      app.workspace.updateAttachments({items: [], disabled: true});
+      app.workspace.pickImages(); counts.push(choices);
+      document.querySelector<HTMLButtonElement>('[aria-label="Attach images"]')!.click(); counts.push(choices);
+      app.workspace.updateAttachments({items: [], disabled: false});
+      app.workspace.pickImages(); counts.push(choices);
+      document.querySelector<HTMLButtonElement>('[aria-label="Attach images"]')!.click(); counts.push(choices);
+      return counts;
+    } finally {app.destroy(); HTMLInputElement.prototype.click = original;}
+  });
+  expect(result).toEqual([0, 0, 1, 2]);
+});
