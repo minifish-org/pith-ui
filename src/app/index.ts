@@ -8,6 +8,7 @@ import {createSettingsScene, type SettingsScene} from './settings.js';
 import {createResourcesScene, type ResourcesScene} from './resources.js';
 import {createFilesScene, type FilesScene} from './files.js';
 import type {AppEnvironment, HostResult, OwnedContent, OwnedSurface} from './internal.js';
+import {createApplicationBrandMark} from './brand.js';
 export type {LoadingState, LoadingSession} from './session.js';
 
 export type {ActionResult} from '../core.js';
@@ -22,7 +23,9 @@ export {thinkingLabel} from '../forms/model-editor.js';
 export interface ApplicationBrand {
   readonly name: string;
   readonly qualifier?: string;
-  readonly mark?: {readonly src: string; readonly darkSrc?: string; readonly alt: string};
+  readonly mark?:
+    | {readonly src: string; readonly darkSrc?: string; readonly alt: string; readonly symbol?: never}
+    | {readonly symbol: 'pith'; readonly alt: string; readonly src?: never; readonly darkSrc?: never};
 }
 export interface ApplicationHost {
   copyText?(text: string): HostResult;
@@ -64,10 +67,8 @@ export function createApplication(mount: HTMLElement, options: ApplicationOption
   let openingSequence = 0;
   const brand = document.createElement('span'); brand.className = 'pui-app-brand';
   const brandData = options.brand ?? {name: 'Pith'};
-  if (brandData.mark) {
-    const image = document.createElement('img'); image.className = 'pui-app-brand-image';
-    image.src = brandData.mark.src; image.alt = brandData.mark.alt; brand.append(image);
-  }
+  const brandMark = createApplicationBrandMark(brandData.mark);
+  if (brandMark) brand.append(brandMark);
   const wordmark = document.createElement('span'); wordmark.textContent = brandData.name;
   if (brandData.qualifier) {const suffix = document.createElement('span'); suffix.className = 'pui-brand-light'; suffix.textContent = ' ' + brandData.qualifier; wordmark.append(suffix);}
   brand.append(wordmark);
@@ -87,7 +88,8 @@ export function createApplication(mount: HTMLElement, options: ApplicationOption
   const themeRoot = mount.ownerDocument.documentElement;
   setAppearance(themeRoot, appearance);
   const media = matchMedia('(prefers-color-scheme: dark)');
-  const brandMarkSource = () => (appearance === 'dark' || appearance === 'system' && media.matches) && brandData.mark?.darkSrc ? brandData.mark.darkSrc : brandData.mark?.src || '';
+  const assetMark = brandData.mark?.symbol === 'pith' ? undefined : brandData.mark;
+  const brandMarkSource = () => (appearance === 'dark' || appearance === 'system' && media.matches) && assetMark?.darkSrc ? assetMark.darkSrc : assetMark?.src || '';
   const syncTheme = () => {
     themeRoot.dataset.theme = appearance === 'system' ? media.matches ? 'dark' : 'light' : appearance;
     const source = brandMarkSource();

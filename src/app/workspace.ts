@@ -16,6 +16,7 @@ import {createTextEditDialog, createConfirmDialog, type TextEditState, type Text
 import {createBranchHistory, type BranchHistoryState} from '../forms/history.js';
 import type {AppEnvironment, HostResult, OwnedSurface} from './internal.js';
 import type {ApplicationBrand} from './index.js';
+import {createApplicationBrandMark} from './brand.js';
 
 export type {ComposerViewState, WorkspaceShellState, WelcomeState, PendingMessagesState, AttachmentsState, PermissionControlState, FullAccessState, TaskFailureState, ApprovalPanelState, RuntimePanelState, CostLedgerState, CompletionNoticeDisplay, ConversationMessage, ConversationAction, ConversationActionAvailability, WorkspacePickerState, RenameConversationState, RenameConversationDraft, BranchHistoryState};
 export interface NavigationStatus {readonly kind: 'approval' | 'running' | 'unread' | 'idle'}
@@ -164,8 +165,8 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
     onCopyCode(text, button) {void copyAction(button, () => callbacks.onCopyCode ? callbacks.onCopyCode(text) : env.copyText(text), 'Code copied');},
   });
   const reader = installConversationReader(env.part('chat-scroll'), env.part('messages'), env.part('conversation-find'), env.part<HTMLButtonElement>('back-to-latest'), {isKeyboardBlocked: env.hasModal});
-  let logo: HTMLImageElement | undefined;
-  if (brand.mark) {logo = document.createElement('img'); logo.className = 'pui-app-brand-image'; logo.src = env.brandMarkSource(); logo.alt = brand.mark.alt;}
+  const logo = createApplicationBrandMark(brand.mark);
+  if (logo instanceof HTMLImageElement) logo.src = env.brandMarkSource();
   const welcome = createWelcomeView({container: env.part('welcome'), logo, onAction: action => {void run(() => callbacks.onAction?.(action));}, onPrompt: text => {if (composerUnavailable()) return; shell.composer.reset(text); callbacks.onInput?.(text); shell.composer.focus();}});
   const menu = createContextMenu({element: env.part('conversation-menu'), onDismiss: () => {menuTarget = undefined; renderNavigation();}, onAction(item) {
     const target = menuTarget; closeMenu(); if (!target) return;
@@ -325,7 +326,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
     },
     updateMessageAvailability(state) {messageAvailability = state; messages.updateActionAvailability(state);},
     pruneConversations(ids) {const keep = new Set(ids); for (const id of folds.keys()) if (!keep.has(id)) folds.delete(id); reader.prune([...ids]);},
-    updateWelcome(state) {if (destroyed) return; if (logo) logo.src = env.brandMarkSource(); welcome.update(state);}, followLatest: reader.followLatest, openFind: reader.openFind, closeFind: reader.closeFind,
+    updateWelcome(state) {if (destroyed) return; if (logo instanceof HTMLImageElement) logo.src = env.brandMarkSource(); welcome.update(state);}, followLatest: reader.followLatest, openFind: reader.openFind, closeFind: reader.closeFind,
     updatePending: pending.update,
     updateAttachments(state) {if (!destroyed) {attachmentsDisabled = !!state.disabled; attachments.update(state); syncAttachment();}},
     updateImageGuidance(message) {const element = env.part('image-guidance'); element.textContent = message; element.hidden = !message;},
