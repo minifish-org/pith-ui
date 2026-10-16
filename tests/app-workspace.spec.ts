@@ -193,3 +193,18 @@ test('connection and resource loading use the shared feature surface with target
   });
   expect(result).toEqual({first: 'Edit model connection', second: 'Create skill', retained: true, old: false, resource: false, history: true, leakedError: false});
 });
+
+test('changing the conversation closes its image zoom before retiring image data', async ({page}) => {
+  await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='), char => char.charCodeAt(0));
+    const app = createApplication(document.body, {workspace: {onLoadImage: async () => new Blob([bytes], {type: 'image/png'})}});
+    app.workspace.updateConversation({id: 'first', messages: [{id: 'image', role: 'user', text: '', images: [{index: 0}]}], working: false});
+    (window as unknown as {switchConversation(): void}).switchConversation = () => app.workspace.updateConversation({id: 'second', messages: [], working: false});
+  });
+  const image = page.locator('.pui-history-image');
+  await expect(image).toHaveAttribute('src', /^blob:/);
+  await image.click(); await expect(page.getByRole('dialog', {name: 'Image 1', exact: true})).toBeVisible();
+  await page.evaluate(() => (window as unknown as {switchConversation(): void}).switchConversation());
+  await expect(page.locator('.pui-image-viewer[open]')).toHaveCount(0);
+});
