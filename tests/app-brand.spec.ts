@@ -1,6 +1,11 @@
 import {test, expect} from '@playwright/test';
 
-test.beforeEach(async ({page}) => {await page.goto('/tests/fixture.html');});
+test.beforeEach(async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  // createApplication owns the document theme root, as in the real host. A
+  // second .pui root on the generic fixture body would reset inherited tokens.
+  await page.evaluate(() => document.body.classList.remove('pui'));
+});
 
 for (const viewport of [{width: 1280, welcome: 32}, {width: 600, welcome: 27}]) {
   test(`the named Pith mark preserves the original geometry at ${viewport.width}px`, async ({page}) => {
@@ -33,10 +38,15 @@ for (const viewport of [{width: 1280, welcome: 32}, {width: 600, welcome: 27}]) 
       app.destroy(); original.remove(); return {actual, expected, images};
     });
     expect(result.images).toBe(0);
-    expect(result.actual).toEqual(result.expected);
     for (const [index, size] of [24, viewport.welcome].entries()) {
       const mark = result.actual[index];
       expect(mark).not.toBeNull();
+      const original = result.expected[index]!;
+      expect({...mark, bounds: undefined}).toEqual({...original, bounds: undefined});
+      // The reference is at a different page position; transformed DOMRect
+      // subtraction may differ below one hundredth of a CSS pixel.
+      expect(mark!.bounds.width).toBeCloseTo(original.bounds.width, 2);
+      expect(mark!.bounds.height).toBeCloseTo(original.bounds.height, 2);
       expect(mark).toMatchObject({tag: 'SPAN', width: `${size}px`, height: `${size}px`, gap: index ? '4px' : '3px', overflow: 'visible', hidden: 'true'});
       expect(mark!.bounds.width).toBeGreaterThan(size);
       expect(mark!.bounds.height).toBeGreaterThan(size);
