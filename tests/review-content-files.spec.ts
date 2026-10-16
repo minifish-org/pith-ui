@@ -105,6 +105,22 @@ test('explicit fold state updates apply independently of message text changes', 
   expect(result).toEqual({opened:{group:true, tool:true}, closed:{group:false, tool:false}, stable:true});
 });
 
+test('a newly reinserted tool group cannot steal the retained key of another group', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const {createConversationView} = await import('../src/content/conversation-view.js'); const view = createConversationView(); document.body.append(view.element);
+    const a = {id:'a', role:'tool', toolName:'read_file', text:'A output', status:'done'}, b = {id:'b', role:'tool', toolName:'read_file', text:'B output', status:'done'};
+    view.update({id:'chat', messages:[a,b], working:false});
+    view.update({id:'chat', messages:[b], working:false});
+    const tool = view.element.querySelector<HTMLDetailsElement>('[data-reading-id="b"]')!, group = tool.closest<HTMLDetailsElement>('.pui-tool-group')!;
+    group.open = true; tool.open = true; const summary = tool.querySelector('summary')!; summary.focus();
+    view.update({id:'chat', messages:[a,{id:'separator', role:'user', text:'Later'},b], working:false});
+    const result = {sameGroup:group === view.element.querySelector('[data-reading-id="b"]')!.closest('.pui-tool-group'), sameTool:tool === view.element.querySelector('[data-reading-id="b"]'), open:group.open && tool.open, focused:document.activeElement === summary, keys:[...view.element.querySelectorAll<HTMLDetailsElement>('.pui-tool-group')].map(group => group.dataset.toolFold)};
+    view.destroy(); return result;
+  });
+  expect(result).toMatchObject({sameGroup:true, sameTool:true, open:true, focused:true});
+  expect(new Set(result.keys).size).toBe(2);
+});
+
 test('appending to the selected streaming message preserves its own DOM, selection, code scroll and focus', async ({page}) => {
   const result = await page.evaluate(async () => {
     const {createConversationView} = await import('../src/content/conversation-view.js'); const view = createConversationView(); document.body.append(view.element);
@@ -237,12 +253,12 @@ test('resource and file content close requests belong to their own dialog identi
 test('file actions expose disabled state without clearing copy or host restrictions', async ({page}) => {
   const result = await page.evaluate(async () => {
     const {createFileActions} = await import('../src/files/panels.js'); let calls = 0;
-    const block = createFileActions({kind:'resource', ownerId:'workspace', path:'/demo/AGENTS.md', preview:true, copyMode:'file', onAction() {calls++;}}) as ReturnType<typeof createFileActions> & {setDisabled?: (disabled:boolean) => void};
+    const block = createFileActions({kind:'resource', ownerId:'workspace', path:'/demo/AGENTS.md', preview:true, copyMode:'file', onAction() {calls++;}});
     document.body.append(block.element); const buttons = [...block.element.querySelectorAll('button')];
-    block.setDisabled?.(true); buttons.forEach(button => button.click()); const disabled = {all:buttons.every(button => button.disabled), calls};
+    block.setDisabled(true); buttons.forEach(button => button.click()); const disabled = {all:buttons.every(button => button.disabled), calls};
     const copy = block.element.querySelector<HTMLButtonElement>('[data-file-action="copy"]')!; copy.dataset.copyPending = 'true';
-    block.setDisabled?.(false); copy.click(); const pending = {copy:copy.disabled, others:buttons.filter(button => button !== copy).every(button => !button.disabled), calls};
-    delete copy.dataset.copyPending; block.setDisabled?.(false); copy.click(); const enabled = {copy:copy.disabled, calls};
+    block.setDisabled(false); copy.click(); const pending = {copy:copy.disabled, others:buttons.filter(button => button !== copy).every(button => !button.disabled), calls};
+    delete copy.dataset.copyPending; block.setDisabled(false); copy.click(); const enabled = {copy:copy.disabled, calls};
     block.destroy(); copy.click(); return {supported:typeof block.setDisabled === 'function', disabled, pending, enabled, afterDestroy:calls};
   });
   expect(result).toEqual({supported:true, disabled:{all:true,calls:0}, pending:{copy:true,others:true,calls:0}, enabled:{copy:false,calls:1}, afterDestroy:1});
