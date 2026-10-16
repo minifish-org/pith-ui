@@ -160,3 +160,36 @@ test('a throwing host close callback cannot leave an empty fixed or feature dial
   });
   expect(result).toEqual([{open: false, hasModal: false, emptyDialogs: 0}, {open: false, hasModal: false, emptyDialogs: 0}]);
 });
+
+test('destroy releases the whole application even when host close cleanup throws', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const mount = document.createElement('div'); document.body.append(mount);
+    const app = createApplication(mount);
+    const onClose = () => {throw new Error('Host cleanup failure');};
+    app.settings.openSettings({baseUrl: '', hasApiKey: false}, {onClose});
+    app.workspace.openHistory({nodes: []}, {onClose});
+    try {app.destroy();} catch {}
+    app.destroy();
+    return {remaining: mount.childElementCount, modals: document.querySelectorAll('dialog[open]').length, state: app.read().hasModal};
+  });
+  expect(result).toEqual({remaining: 0, modals: 0, state: false});
+});
+
+test('connection and resource loading use the shared feature surface with target ownership', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const app = createApplication(document.body);
+    const connection = app.settings.openConnectionLoading({editing: true});
+    const first = document.querySelector('dialog[open] h2')?.textContent;
+    const resource = app.resources.openEditorLoading({kind: 'skill'});
+    connection.fail('Old connection error'); connection.close(); connection.destroy();
+    const second = document.querySelector('dialog[open] h2')?.textContent;
+    const retained = resource.isOpen(), old = connection.isOpen();
+    const history = app.workspace.openHistory({nodes: [], loading: true});
+    resource.fail('Old resource error'); resource.close();
+    const result = {first, second, retained, old, resource: resource.isOpen(), history: history.isOpen(), leakedError: document.body.textContent?.includes('Old resource error') || document.body.textContent?.includes('Old connection error')};
+    app.destroy(); return result;
+  });
+  expect(result).toEqual({first: 'Edit model connection', second: 'Create skill', retained: true, old: false, resource: false, history: true, leakedError: false});
+});
