@@ -133,7 +133,7 @@ export interface WorkspaceScene {
 }
 
 export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<typeof createWorkspaceShell>, callbacks: WorkspaceCallbacks, brand: ApplicationBrand): WorkspaceScene {
-  let destroyed = false, activeId = '', query = '', dropPending = false, attachmentsDisabled = false;
+  let destroyed = false, activeId = '', query = '', dropPending = false, attachmentsDisabled = false, conversationWorking = false;
   let navigationState: NavigationState = {groups: [], empty: 'workspaces'};
   let navigationConversation = '';
   let composerState: ComposerViewState = {};
@@ -222,12 +222,15 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
   const costs = env.part<HTMLDetailsElement>('cost-requests'), runDetails = env.part<HTMLDetailsElement>('run-status');
   const costsChanged = () => callbacks.onCostsChange?.(); costs.addEventListener('toggle', costsChanged, {signal: abort.signal}); runDetails.addEventListener('toggle', costsChanged, {signal: abort.signal});
   const notices = createCompletionNotices({container: env.part('completion-notices'), onOpen: callbacks.onCompletionOpen, onDismiss: callbacks.onCompletionDismiss});
+  const compactAction = adoptAction(shell.element.querySelector<HTMLButtonElement>('[data-sdk="compact"]')!, {onAction: () => callbacks.onAction?.('compact'), onError: fail});
+  const syncCompact = () => compactAction.update({disabled: !!availability.busy || !!availability.active || conversationWorking || !activeId || !currentMessages.length});
+  syncCompact();
   shell.element.addEventListener('click', event => {
-    const target = (event.target as Element).closest<HTMLElement>('[data-action], [data-sdk="compact"], a[data-download-path]');
+    const target = (event.target as Element).closest<HTMLElement>('[data-action], a[data-download-path]');
     if (!target || target instanceof HTMLButtonElement && target.disabled) return;
     if (target.matches('a[data-download-path]')) {event.preventDefault(); const link = Object.freeze({conversationId: target.dataset.downloadConversation!, path: target.dataset.downloadPath!}); void run(() => callbacks.onLocalFile?.(link)); return;}
-    const action = target.dataset.sdk === 'compact' ? 'compact' : target.dataset.action;
-    if (action && ['workspace', 'resources', 'connections', 'settings'].includes(action) || action === 'compact') {event.stopPropagation(); void run(() => callbacks.onAction?.(action as WorkspaceAction));}
+    const action = target.dataset.action;
+    if (action && ['workspace', 'resources', 'connections', 'settings'].includes(action)) {event.stopPropagation(); void run(() => callbacks.onAction?.(action as WorkspaceAction));}
   }, {signal: abort.signal});
   const input = shell.composer.input, form = shell.composer.element;
   const attachmentAction = adoptAction(env.part<HTMLButtonElement>('attach-images'));
@@ -320,7 +323,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
     updateConversation(state) {
       if (destroyed) return; collectFolds();
       if (state.id !== activeId) {env.closeImage(); clearImages(); costs.open = false; ledger.clear();}
-      activeId = state.id; currentMessages = state.messages; reader.beforeRender(state.id);
+      activeId = state.id; currentMessages = state.messages; conversationWorking = state.working; syncCompact(); reader.beforeRender(state.id);
       env.part('welcome').hidden = state.messages.length > 0; env.part('messages').hidden = !state.messages.length;
       messages.update({...state, folds: folds.get(state.id)}); loadImages(); reader.afterRender();
     },
@@ -331,7 +334,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
     updateAttachments(state) {if (!destroyed) {attachmentsDisabled = !!state.disabled; attachments.update(state); syncAttachment();}},
     updateImageGuidance(message) {const element = env.part('image-guidance'); element.textContent = message; element.hidden = !message;},
     updatePermission: permission.update, updateApproval: approval.update, updateFailure: failure.update, updateRuntime: runtime.update, updateTiming: runtime.updateTiming, updateNotices: notices.update,
-    updateAvailability(state) {if (destroyed) return; availability = state; const conversations = new Set(state.conversations), workspaces = new Set(state.workspaces); shell.updateActionAvailability(scope => !!state.busy || (scope.kind === 'global' ? !!state.global : scope.kind === 'conversation' ? conversations.has(scope.id || '') : scope.kind === 'workspace' ? workspaces.has(scope.id || '') : !!state.active)); syncAttachment(); renderNavigation();},
+    updateAvailability(state) {if (destroyed) return; availability = state; const conversations = new Set(state.conversations), workspaces = new Set(state.workspaces); shell.updateActionAvailability(scope => !!state.busy || (scope.kind === 'global' ? !!state.global : scope.kind === 'conversation' ? conversations.has(scope.id || '') : scope.kind === 'workspace' ? workspaces.has(scope.id || '') : !!state.active)); syncAttachment(); syncCompact(); renderNavigation();},
     readCosts: () => ({open: costs.open, runtimeOpen: runDetails.open}),
     updateCosts(state) {if (destroyed) return; costs.hidden = !state.visible; if (state.error) ledger.setError(state.error); else if (state.loading) ledger.loading(); else if (state.report) ledger.update(state.report);},
     resetCosts() {costs.open = false; ledger.clear();},
@@ -356,6 +359,6 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
       surface = env.openFeature('Conversation branches', block, actions.onClose);
       return {isOpen: surface.isOpen, close: surface.close, destroy: surface.destroy, fail: surface.fail, update(next) {if (surface.isOpen()) block.update(next);}};
     },
-    destroy() {if (destroyed) return; destroyed = true; abort.abort(); for (const session of [...sessions]) session.close(); sessions.clear(); clearImages(); folds.clear(); expanded.clear(); menu.destroy(); navigation.destroy(); copy.destroy(); reader.destroy(); messages.destroy(); welcome.destroy(); pending.destroy(); attachments.destroy(); attachmentAction.destroy(); drop.destroy(); permission.destroy(); approval.destroy(); failure.destroy(); runtime.destroy(); ledger.destroy(); notices.destroy();},
+    destroy() {if (destroyed) return; destroyed = true; abort.abort(); for (const session of [...sessions]) session.close(); sessions.clear(); clearImages(); folds.clear(); expanded.clear(); menu.destroy(); navigation.destroy(); copy.destroy(); reader.destroy(); messages.destroy(); welcome.destroy(); pending.destroy(); attachments.destroy(); attachmentAction.destroy(); compactAction.destroy(); drop.destroy(); permission.destroy(); approval.destroy(); failure.destroy(); runtime.destroy(); ledger.destroy(); notices.destroy();},
   };
 }
