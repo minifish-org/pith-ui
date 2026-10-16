@@ -20,7 +20,7 @@ npm run dev
 ## Use the package
 
 ```sh
-npm install --save-exact pith-ui@0.1.1
+npm install --save-exact pith-ui@0.1.2
 ```
 
 ```ts
