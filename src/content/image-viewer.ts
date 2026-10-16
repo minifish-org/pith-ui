@@ -1,5 +1,6 @@
 import { escape, icon } from '../dom.js';
 import { installDialogLifecycle } from '../surface.js';
+import {adoptFeedback} from '../foundations.js';
 
 export interface ImageViewerOptions { dialog?: HTMLDialogElement; headingId?: string }
 export interface ImageViewerInput { src: string; alt?: string; returnFocus?: HTMLElement }
@@ -18,6 +19,7 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
   const viewport = dialog.querySelector<HTMLElement>('.pui-image-viewer-viewport')!;
   const title = dialog.querySelector<HTMLElement>('h2')!;
   const status = dialog.querySelector<HTMLElement>('[data-image-scale]')!;
+  const feedback = adoptFeedback(status, {presentation:'inline', autoHide:false});
   const listeners = new AbortController();
   const signal = listeners.signal;
   let destroyed = false;
@@ -27,7 +29,7 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
     if (fitted) scale = Math.min(1, viewport.clientWidth / image.naturalWidth, viewport.clientHeight / image.naturalHeight);
     image.style.width = `${image.naturalWidth * scale}px`;
     image.style.height = `${image.naturalHeight * scale}px`;
-    status.textContent = `${Math.round(scale * 100)}% · ${image.naturalWidth} × ${image.naturalHeight}`;
+    feedback.update({message:`${Math.round(scale * 100)}% · ${image.naturalWidth} × ${image.naturalHeight}`, tone:'info'});
   }
   function resize(factor: number): void { fitted = false; const next = scale * factor; if (Number.isFinite(next) && next > 0) scale = next; update(); }
   dialog.querySelector('[data-image-fit]')!.addEventListener('click', () => { fitted = true; update(); }, { signal });
@@ -43,8 +45,10 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
     image.removeAttribute('style');
     source = null;
   } });
-  document.addEventListener('keydown', (event) => {
+  dialog.addEventListener('keydown', (event) => {
     if (!dialog.open || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('dialog') !== dialog || target.closest('input, textarea, [contenteditable]:not([contenteditable="false"])')) return;
     if (event.key === '+' || event.key === '=') { event.preventDefault(); resize(1.25); }
     if (event.key === '-') { event.preventDefault(); resize(1 / 1.25); }
   }, { signal });
@@ -62,7 +66,7 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
       image.alt = input.alt || '';
       scale = 1;
       fitted = true;
-      status.textContent = 'Loading…';
+      feedback.update({message:'Loading…', tone:'info'});
       image.src = input.src;
       lifecycle.open();
       viewport.scrollTop = viewport.scrollLeft = 0;
@@ -78,9 +82,11 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
       source = null;
       destroyed = true;
       observer.disconnect();
+      feedback.destroy();
       lifecycle.destroy();
       listeners.abort();
       dialog.replaceChildren();
+      if (!options.dialog) dialog.remove();
     },
   };
 }

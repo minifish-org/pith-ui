@@ -4,6 +4,7 @@ import { Lifetime } from '../src/core.js';
 import { createButton, createDialog, createNotice, createTextEditDialog, createToolbar } from '../src/primitives.js';
 import { createWorkspaceShell } from '../src/workspace.js';
 import { createWorkspaceNavigation } from '../src/navigation/navigation.js';
+import { createContextMenu } from '../src/navigation/context-menu.js';
 import { createConversationView } from '../src/content/conversation-view.js';
 import type { ConversationMessage } from '../src/content/conversation-view.js';
 import { installConversationReader } from '../src/content/conversation-reader.js';
@@ -54,7 +55,12 @@ function workspacePage(context: DemoContext, mode: 'chat' | 'reading' | 'task'):
   const render = (): void => { reader.beforeRender(activeId); view.update({ id: activeId, messages, working: mode === 'task' && context.state === 'loading' }); reader.afterRender(); };
   const conversations = [{ id: a, title: mode === 'reading' ? 'Long conversation / 长会话' : 'Review existing behavior', active: true }, ...(mode === 'task' ? [] : [{ id: b, title: 'Another conversation', active: false }])];
   const navState = () => ({ groups: [{ id: workspaceId, name: 'Example workspace', path: '/demo/workspace', expanded, selected: true, children: conversations.filter(item => item.title.toLowerCase().includes(query)).map(item => ({ ...item, active: item.id === activeId })) }], empty: (query && !conversations.some(item => item.title.toLowerCase().includes(query)) ? 'search' : null) as 'search' | null, disabled: context.state === 'disabled' });
-  const navigation = createWorkspaceNavigation(navState(), { element: shell.part('history-list'), onToggle() { expanded = !expanded; navigation.update(navState()); }, onSelect(id) { activeId = id; messages = id === a ? original : alternate; navigation.update(navState()); shell.update({ conversation: conversations.find(item => item.id === id)?.title ?? 'Conversation' }); render(); } }); owned.push(navigation);
+  const contextMenu = createContextMenu({onAction:item=>{context.log(`Demonstration navigation action: ${item.action}`);contextMenu.close(true);}});owned.push(contextMenu);root.append(contextMenu.element);
+  const navigation = createWorkspaceNavigation(navState(), { element: shell.part('history-list'), onToggle() { expanded = !expanded; navigation.update(navState()); }, onSelect(id) { activeId = id; messages = id === a ? original : alternate; navigation.update(navState()); shell.update({ conversation: conversations.find(item => item.id === id)?.title ?? 'Conversation' }); render(); },onAction(event) {
+    if(event.action==='workspace-menu') contextMenu.open(event.trigger,{label:'Example workspace actions',items:[{id:'rename',label:'Rename workspace',action:'rename-workspace'},{id:'remove',label:'Remove workspace',action:'remove-workspace',danger:true}]});
+    else if(event.action==='conversation-menu') contextMenu.open(event.trigger,{label:'Example conversation actions',items:[{id:'rename',label:'Rename conversation',action:'rename-conversation'},{id:'delete',label:'Delete conversation',action:'delete-conversation',danger:true}]});
+    else context.log(event.action==='new-conversation'?`Demonstration new conversation in ${event.workspaceId}`:'Demonstration add workspace');
+  } }); owned.push(navigation);
   shell.update({ workspace: 'Example workspace', conversation: conversations[0]!.title, reconnecting: context.state === 'loading' });
   const permission = createPermissionControl({ mode: 'ask', description: 'Demonstration: changes and commands require approval.', disabled: context.state === 'disabled' }, { element: shell.part('permission-control'), descriptionElement: shell.part('permission-description'), onChange: mode => context.log(`Demonstration permissions: ${mode}`) }); owned.push(permission);
   const model = createModelEditor({ providers: [{ id: 'example', name: 'Example provider' }], models: [{ id: 'example-model', provider: 'example', name: 'Example model', thinkingLevels: ['low', 'medium', 'high'], supportsImages: true, contextWindow: 128000, maxTokens: 16000 }], selection: { provider: 'example', model: 'example-model', thinkingLevel: 'high' } }, { prefix: prefix + 'model', onChange: selection => context.log(`Model: ${selection.model}; effort: ${selection.thinkingLevel}`) }); owned.push(model);

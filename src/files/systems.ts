@@ -2,6 +2,7 @@ import { icon, setText } from '../dom.js';
 import type { UIBlock } from '../core.js';
 import { adoptAction, adoptFeedback, adoptProductParts } from '../foundations.js';
 import type { ActionController } from '../foundations.js';
+import { reconcileKeyed } from '../reconcile.js';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 });
 const numbers = new Intl.NumberFormat();
@@ -48,31 +49,26 @@ export function createCostLedger(options: { container?: HTMLElement } = {}) {
     setError(message: string): void { if (!destroyed) { clear(); element.textContent = message; } },
     update(report: Readonly<CostLedgerState>): void {
       if (destroyed) return;
-      const focused = document.activeElement;
       ensure();
       setText(note!, `USD estimates for recorded requests, not a provider bill. Prices are saved per request; retries and context summaries are included when usage is reported. ${report.unknownRequests ? `${report.unknownRequests} request(s) have unknown prices or usage and are excluded. ` : ''}Older requests made before recording began are not reconstructed.`);
       const requests = report.requests || [];
-      const keep = new Set(requests.map(request => request.id));
-      for (const [id, row] of rows) if (!keep.has(id)) { row.element.remove(); rows.delete(id); }
-      if (!requests.length) { if (!empty!.parentElement) table!.append(empty!); return; }
       empty!.remove();
-      let cursor = table!.firstElementChild;
       const n = (value: number) => numbers.format(value || 0);
-      for (const request of requests) {
-        let row = rows.get(request.id);
-        if (!row) { row = makeRow(request.id); rows.set(request.id, row); }
-        setText(row.purpose, `${request.purpose} · ${request.status}`);
-        setText(row.identity, `${request.providerName || request.provider} / ${request.modelName || request.model}`);
-        setText(row.time, request.time); setText(row.source, request.source); setText(row.price, JSON.stringify(request.price, null, 2));
-        row.reasoning.hidden = request.usage.reasoning == null;
-        setText(row.reasoning, request.usage.reasoning == null ? '' : `Reasoning tokens: ${n(request.usage.reasoning)} (included in output)`);
-        setText(row.cells[1]!, n(request.usage.input)); setText(row.cells[2]!, n(request.usage.output));
-        setText(row.cells[3]!, `${n(request.usage.cacheRead)} / ${n(request.usage.cacheWrite)}`);
-        setText(row.cells[4]!, request.known ? currency.format(request.usage.cost.total) : 'Unknown');
-        if (row.element !== cursor) table!.insertBefore(row.element, cursor);
-        cursor = row.element.nextElementSibling;
-      }
-      if (focused instanceof HTMLElement && element.contains(focused) && document.activeElement !== focused) focused.focus({ preventScroll: true });
+      reconcileKeyed(table!, rows, requests, {
+        key: request => request.id, element: row => row.element, create: request => makeRow(request.id),
+        update(row, request) {
+          setText(row.purpose, `${request.purpose} · ${request.status}`);
+          setText(row.identity, `${request.providerName || request.provider} / ${request.modelName || request.model}`);
+          setText(row.time, request.time); setText(row.source, request.source); setText(row.price, JSON.stringify(request.price, null, 2));
+          row.reasoning.hidden = request.usage.reasoning == null;
+          setText(row.reasoning, request.usage.reasoning == null ? '' : `Reasoning tokens: ${n(request.usage.reasoning)} (included in output)`);
+          setText(row.cells[1]!, n(request.usage.input)); setText(row.cells[2]!, n(request.usage.output));
+          setText(row.cells[3]!, `${n(request.usage.cacheRead)} / ${n(request.usage.cacheWrite)}`);
+          setText(row.cells[4]!, request.known ? currency.format(request.usage.cost.total) : 'Unknown');
+        },
+        destroy() {},
+      });
+      if (!requests.length) table!.append(empty!);
     },
     destroy(): void { if (!destroyed) clear(); destroyed = true; },
   };
@@ -101,7 +97,7 @@ export function createUpdatePanel(options: { container?: HTMLElement; productNam
     parts.feedback(message).update({message:error || state.message,tone:'info'});
     const busy = ['checking', 'installing', 'restarting'].includes(state.phase);
     parts.action(check).update({disabled:!state.enabled || (busy && !retryCheck),pending});
-    install.hidden = !state.availableVersion; parts.action(install).update({disabled:busy,pending,label:'Update and restart'});
+    install.hidden = !state.availableVersion; parts.action(install).update({disabled:!state.enabled || busy,pending,label:'Update and restart'});
     progress.hidden = state.phase !== 'installing'; progress.value = state.progress;
   }
   return {
@@ -136,28 +132,23 @@ export function createCompletionNotices(options: { container?: HTMLElement; onOp
     element,
     update(notices): void {
       if (destroyed) return;
-      const focused = document.activeElement;
-      const keep = new Set(notices.map(notice => notice.runID));
-      for (const [id, entry] of entries) if (!keep.has(id)) { entry.element.remove(); entries.delete(id); }
-      let cursor = element.firstElementChild;
-      for (const notice of notices) {
-        let entry = entries.get(notice.runID);
-        if (!entry) {
+      reconcileKeyed(element, entries, notices, {
+        key: notice => notice.runID, element: entry => entry.element,
+        create() {
           const article = document.createElement('article'); article.className = 'pui-completion-notice';
           article.innerHTML = `<span class="pui-completion-check" aria-hidden="true">${icon('check')}</span><div class="pui-completion-content"><strong>Task completed</strong><p></p><button class="pui-text-button" type="button" data-conversation>Open conversation</button></div><button class="pui-quiet-icon pui-completion-dismiss" type="button" data-dismiss-completion aria-label="Dismiss completion notification">${icon('close')}</button>`;
-          entry = { element: article, text: article.querySelector('p')!, open: article.querySelector('[data-conversation]')!, dismiss: article.querySelector('[data-dismiss-completion]')! };
-          entries.set(notice.runID, entry);
-        }
-        setText(entry.text, `${notice.workspace} · ${notice.title}`);
-        parts.action(entry.open).update({label:'Open conversation'});
-        parts.action(entry.dismiss).update({label:'Dismiss completion notification'});
-        if (entry.open.dataset.conversation !== notice.id) entry.open.dataset.conversation = notice.id;
-        if (entry.dismiss.dataset.dismissCompletion !== notice.runID) entry.dismiss.dataset.dismissCompletion = notice.runID;
-        if (entry.element !== cursor) element.insertBefore(entry.element, cursor);
-        cursor = entry.element.nextElementSibling;
-      }
+          return { element: article, text: article.querySelector('p')!, open: article.querySelector<HTMLButtonElement>('[data-conversation]')!, dismiss: article.querySelector<HTMLButtonElement>('[data-dismiss-completion]')! };
+        },
+        update(entry, notice) {
+          setText(entry.text, `${notice.workspace} · ${notice.title}`);
+          parts.action(entry.open).update({label:'Open conversation'});
+          parts.action(entry.dismiss).update({label:'Dismiss completion notification'});
+          if (entry.open.dataset.conversation !== notice.id) entry.open.dataset.conversation = notice.id;
+          if (entry.dismiss.dataset.dismissCompletion !== notice.runID) entry.dismiss.dataset.dismissCompletion = notice.runID;
+        },
+        destroy() {},
+      });
       parts.update();
-      if (focused instanceof HTMLElement && element.contains(focused) && document.activeElement !== focused) focused.focus({ preventScroll: true });
     },
     destroy(): void { if (destroyed) return; destroyed = true; parts.destroy(); entries.clear(); element.removeEventListener?.('click', click); element.replaceChildren(); },
   };

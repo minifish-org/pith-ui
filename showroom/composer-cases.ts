@@ -44,7 +44,7 @@ export const composerCases: ShowcaseCase[] = [
   { id:'drop-feedback',title:'拖放反馈',layer:'blocks',category:'输入与队列',description:'拖放外观由库维护；文件身份、路径验证和附件处理由应用执行。体验区只报告演示文件名，不读文件内容。',states:['normal','disabled'],related:['composer','attachments'],
     code:`const feedback = createDropFeedback({ container: composer.element });\nfeedback.update({ active: true, disabled: false });\nfeedback.destroy();`,
     mount(context){
-      const composer=createComposerView();composer.reset('把演示文件拖到这里，或点击模拟按钮。');const feedback=createDropFeedback({container:composer.element});
+      const composer=createComposerView({onSubmit:()=>{context.log('演示发送：仅体验拖放，不发送真实请求。');return{ok:true};}});composer.reset('把演示文件拖到这里，或点击模拟按钮。');composer.update({disabled:context.state==='disabled'});const feedback=createDropFeedback({container:composer.element});
       const abort=new AbortController();const update=(active:boolean)=>feedback.update({active,disabled:context.state==='disabled'});
       composer.element.addEventListener('dragover',event=>{event.preventDefault();update(true);},{signal:abort.signal});
       composer.element.addEventListener('dragleave',()=>update(false),{signal:abort.signal});

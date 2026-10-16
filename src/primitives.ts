@@ -3,6 +3,8 @@ import type { ActionResult, Density, Intent, UIAction, UIBlock } from './core.js
 import { element, iconElement, setText, uniqueId } from './dom.js';
 import { adoptAction, adoptActionLayout, adoptFeedback, adoptNativeControl, reconcileSelectOptions } from './foundations.js';
 import { installAnchoredSurface, installDialogLifecycle, installMenuNavigation } from './surface.js';
+import { reconcileKeyed } from './reconcile.js';
+import { createOperation } from './operation.js';
 
 export interface ButtonState {
   label: string;
@@ -80,13 +82,10 @@ export interface KeyValueState { items: readonly { key: string; label: string; v
 export function createKeyValue(options: KeyValueState): UIBlock<KeyValueState> {
   const root = element('dl', 'pui-key-value'); const rows = new Map<string, { node: HTMLElement; label: HTMLElement; value: HTMLElement }>();
   const update = (state: Readonly<KeyValueState>): void => {
-    const keep = new Set(state.items.map(item => item.key));
-    for (const [key, row] of rows) if (!keep.has(key)) { row.node.remove(); rows.delete(key); }
-    for (const item of state.items) {
-      let row = rows.get(item.key);
-      if (!row) { const label = element('dt'); const value = element('dd'); row = { node: element('div', '', label, value), label, value }; rows.set(item.key, row); }
-      setText(row.label, item.label); setText(row.value, item.value); root.append(row.node);
-    }
+    reconcileKeyed(root, rows, state.items, { key: item => item.key, element: row => row.node,
+      create() { const label = element('dt'), value = element('dd'); return { node: element('div', '', label, value), label, value }; },
+      update(row, item) { setText(row.label, item.label); setText(row.value, item.value); }, destroy() {},
+    });
   };
   update(options); return { element: root, update, destroy() { rows.clear(); } };
 }
@@ -168,7 +167,7 @@ function textControl(options: InputOptions, type: 'text' | 'search' | 'password'
     if (options.step != null) control.step = String(options.step);
   }
   if (options.autocomplete) control.setAttribute('autocomplete', options.autocomplete);
-  control.value = options.value ?? '';
+  control.defaultValue = options.value ?? ''; control.value = options.value ?? '';
   const field = createField({ ...options, control });
   const input = adoptNativeControl(control, { onInput: options.onInput, onChange: options.onChange });
   const update = (state: Readonly<InputState>): void => {
@@ -202,16 +201,26 @@ export function createSecretInput(options: InputOptions): InputBlock {
   block.update = state => { update(state); toggle.update({ label: control.type === 'password' ? 'Show' : 'Hide', disabled: state.disabled }); };
   const destroy = block.destroy;
   block.destroy = () => { destroy(); toggle.destroy(); };
+  block.update(options);
   return block;
 }
 
 export interface SelectOption { value: string; label: string; disabled?: boolean; }
 export interface SelectState extends FieldState { options: readonly SelectOption[]; density?: Density; }
-export interface SelectOptions extends SelectState { value?: string; onChange?: (value: string) => void; multiple?: boolean; size?: number; }
+export interface SelectOptions extends SelectState {
+  value?: string;
+  values?: readonly string[];
+  onChange?: (value: string) => void;
+  onValuesChange?: (values: readonly string[]) => void;
+  multiple?: boolean;
+  size?: number;
+}
 export interface SelectBlock extends UIBlock<SelectState> {
   readonly control: HTMLSelectElement;
   getValue(): string;
+  getValues(): string[];
   reset(value: string): void;
+  resetValues(values: readonly string[]): void;
   focus(): void;
 }
 export function createSelect(options: SelectOptions): SelectBlock {
@@ -219,9 +228,19 @@ export function createSelect(options: SelectOptions): SelectBlock {
   control.multiple = !!options.multiple;
   if (options.size) control.size = options.size;
   const field = createField({ ...options, control });
-  const input = adoptNativeControl(control, { onChange: () => options.onChange?.(control.value) });
+  let disposed = false;
+  const getValues = (): string[] => [...control.selectedOptions].map(option => option.value);
+  const input = adoptNativeControl(control, { onChange: () => { options.onChange?.(control.value); options.onValuesChange?.(getValues()); } });
+  const resetValues = (values: readonly string[]): void => {
+    if (disposed) return;
+    if (!control.multiple) { input.reset(values[0] ?? ''); return; }
+    const selected = new Set(values);
+    for (const option of control.options) option.selected = selected.has(option.value);
+    input.update({});
+  };
   let signature = '';
   const update = (state: Readonly<SelectState>): void => {
+    if (disposed) return;
     field.update(state);
     control.classList.toggle('pui-compact', state.density === 'compact');
     const next = JSON.stringify(state.options);
@@ -233,12 +252,14 @@ export function createSelect(options: SelectOptions): SelectBlock {
     input.update({});
   };
   update(options);
-  if (options.value != null) {
-    for (const option of control.options) option.defaultSelected = option.value === options.value;
-    input.reset(options.value);
+  const initial = options.values ?? (options.value == null ? undefined : [options.value]);
+  if (initial) {
+    const selected = new Set(control.multiple ? initial : initial.slice(0, 1));
+    for (const option of control.options) option.defaultSelected = selected.has(option.value);
+    resetValues(initial);
   }
-  return { element: field.element, control, update, getValue: input.getValue,
-    reset: input.reset, focus: input.focus, destroy() { input.destroy(); field.destroy(); } };
+  return { element: field.element, control, update, getValue: input.getValue, getValues,
+    reset: input.reset, resetValues, focus: input.focus, destroy() { if (disposed) return; disposed = true; input.destroy(); field.destroy(); } };
 }
 
 export interface CheckboxState { label: string; description?: string; disabled?: boolean; }
@@ -249,7 +270,7 @@ export interface CheckboxBlock extends UIBlock<CheckboxState> {
   focus(): void;
 }
 export function createCheckbox(options: CheckboxState & { checked?: boolean; onChange?: (value: boolean) => void }): CheckboxBlock {
-  const control = element('input'); control.type = 'checkbox'; control.checked = !!options.checked;
+  const control = element('input'); control.type = 'checkbox'; control.defaultChecked = !!options.checked; control.checked = !!options.checked;
   const caption = element('span'); const description = element('small');
   const root = element('label', 'pui-checkbox', control, element('span', '', caption, description));
   const input = adoptNativeControl(control, { onChange: () => options.onChange?.(control.checked) });
@@ -405,7 +426,7 @@ export function createTextEditDialog(options: TextEditOptions = {}): TextEditBlo
   const input = adoptNativeControl(control, { label, onInput: value => options.onInput?.(value) });
   const field = element('div', 'pui-field', label, control);
   const note = element('p', 'pui-muted'); const error = createNotice({ message: '', tone: 'error' });
-  const cancel = createButton({ label: 'Cancel', onAction() { dialog.close(); } });
+  const cancel = createButton({ label: 'Cancel', onAction() { if (!state.closeDisabled) dialog.close(); } });
   const submit = createButton({ label: options.submitLabel ?? 'Save', intent: 'primary', type: 'submit' });
   const actions = createActions({ children: [cancel.element, submit.element] });
   const form = element('form', 'pui-text-edit', field, note, error.element, actions.element);
@@ -414,76 +435,72 @@ export function createTextEditDialog(options: TextEditOptions = {}): TextEditBlo
   if (ids?.submit) submit.element.id = ids.submit;
   if (ids?.error) error.element.id = ids.error;
   if (ids?.cancel) cancel.element.id = ids.cancel;
-  const generation = new Generation(); const life = new Lifetime(); let pending = false;
+  const life = new Lifetime(); let pending = false;
   let state: TextEditState = { title: options.title ?? 'Edit message', ...options };
-  const dialog = createDialog({ ...state, dialog: options.dialog, content: form, onClose() { generation.invalidate(); pending = false; update(state); options.onClose?.(); } });
+  const dialog = createDialog({ ...state, dialog: options.dialog, content: form, onClose() { operation.invalidate(); options.onClose?.(); } });
   if (ids?.title) { dialog.element.querySelector('h2')!.id = ids.title; dialog.element.setAttribute('aria-labelledby', ids.title); }
   const update = (next: Readonly<TextEditState>): void => {
     state = next; dialog.update(next); setText(note, next.note); note.hidden = !next.note;
+    cancel.update({ label: 'Cancel', disabled: !!next.closeDisabled });
     error.update({ message: next.error ?? '', tone: 'error' });
     submit.update({ label: next.submitLabel ?? options.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled, pending: !!(next.pending || pending) });
     input.update({ disabled: !!next.inputDisabled });
   };
+  const operation = createOperation({
+    unavailable: () => !!(state.pending || state.disabled || submit.element.disabled || !dialog.element.open),
+    onPending(value) { pending = value; update(state); },
+    onError(error) { if (dialog.element.open) update({ ...state, error }); },
+  });
   life.listen(form, 'submit', (event => {
     event.preventDefault();
-    if (pending || state.pending || state.disabled || submit.element.disabled || !options.onSubmit) return;
-    const seq = generation.next(); const value = control.value; pending = true; update(state);
-    void Promise.resolve().then(() => options.onSubmit!(value)).then(result => {
-      if (!generation.current(seq) || !dialog.element.open) return;
-      if (result.ok) dialog.close(); else { state = { ...state, error: result.error }; }
-    }).catch((reason: unknown) => {
-      if (generation.current(seq)) state = { ...state, error: reason instanceof Error ? reason.message : String(reason) };
-    }).finally(() => { if (generation.current(seq)) { pending = false; update(state); } });
+    if (!options.onSubmit) return;
+    const value = control.value;
+    operation.run(() => options.onSubmit!(value), result => { if (dialog.element.open) { if (result.ok) dialog.close(); else update({ ...state, error: result.error }); } });
   }) as EventListener);
   update(state);
   return { element: dialog.element, control, submitButton: submit.element, update,
     open(target) {
-      generation.invalidate(); pending = false;
+      operation.invalidate();
       update({ ...state, error: '', title: target.title ?? options.title ?? 'Edit message', description: target.description ?? options.description, note: target.note ?? options.note });
       input.reset(target.value); dialog.open(); input.focus();
-    }, close() { generation.invalidate(); dialog.close(); }, getValue: input.getValue, focus: input.focus,
-    destroy() { generation.destroy(); life.destroy(); input.destroy(); dialog.destroy(); cancel.destroy(); submit.destroy(); } };
+    }, close() { operation.invalidate(); dialog.close(); }, getValue: input.getValue, focus: input.focus,
+    destroy() { operation.destroy(); life.destroy(); input.destroy(); dialog.destroy(); cancel.destroy(); submit.destroy(); } };
 }
 
 export interface ConfirmState extends DialogState { message?: string | Node; hint?: string; error?: string; disabled?: boolean; pending?: boolean; confirmLabel?: string; }
 export interface ConfirmBlock extends UIBlock<ConfirmState> { readonly element: HTMLDialogElement; readonly confirmButton: HTMLButtonElement; readonly cancelButton: HTMLButtonElement; open(state?: ConfirmState): void; close(): void; refreshAvailability(): void; }
 export function createConfirmDialog(options: ConfirmState & { dialog?: HTMLDialogElement; ids?: { form?: string; error?: string; title?: string; cancel?: string }; unavailable?: () => boolean; onConfirm: () => Promise<ActionResult> | ActionResult; onClose?: () => void }): ConfirmBlock {
-  const message = element('p', 'pui-modal-description'); const hint = element('p', 'pui-field-hint'); const error = createNotice({ message: '', tone: 'error' }); const generation = new Generation();
+  const message = element('p', 'pui-modal-description'); const hint = element('p', 'pui-field-hint'); const error = createNotice({ message: '', tone: 'error' });
   let state: ConfirmState = options; let pending = false;
-  const cancel = createButton({ label: 'Cancel', onAction() { dialog.close(); } });
+  const cancel = createButton({ label: 'Cancel', onAction() { if (!state.closeDisabled) dialog.close(); } });
   const confirm = createButton({ label: options.confirmLabel ?? 'Remove', intent: 'danger', type: 'submit' });
   const life = new Lifetime();
-  const run = async (): Promise<void> => {
-    if (pending || state.disabled || state.pending || confirm.element.disabled || options.unavailable?.()) return;
-    const seq = generation.next(); pending = true; update(state);
-    try {
-      const result = await options.onConfirm();
-      if (!generation.current(seq) || !dialog.element.open) return;
-      if (result.ok) dialog.close(); else state = { ...state, error: result.error };
-    } catch (reason) {
-      if (generation.current(seq)) state = { ...state, error: reason instanceof Error ? reason.message : String(reason) };
-    } finally { if (generation.current(seq)) { pending = false; update(state); } }
-  };
   const actions = createActions({ children: [cancel.element, confirm.element] });
   const form = element('form', 'pui-confirm', message, hint, error.element, actions.element);
   if (options.ids?.form) form.id = options.ids.form;
   if (options.ids?.error) error.element.id = options.ids.error;
   if (options.ids?.cancel) cancel.element.id = options.ids.cancel;
   const dialog = createDialog({ ...options, content: form,
-    onClose() { generation.invalidate(); pending = false; update(state); options.onClose?.(); } });
+    onClose() { operation.invalidate(); options.onClose?.(); } });
   if (options.ids?.title) { dialog.element.querySelector('h2')!.id = options.ids.title; dialog.element.setAttribute('aria-labelledby', options.ids.title); }
   let currentMessage: string | Node | undefined;
   const update = (next: Readonly<ConfirmState>): void => {
     state = next; dialog.update(next);
+    cancel.update({ label: 'Cancel', disabled: !!next.closeDisabled });
     if (next.message !== currentMessage) { currentMessage = next.message; if (next.message instanceof Node) message.replaceChildren(next.message); else setText(message, next.message); }
     setText(hint, next.hint); hint.hidden = !next.hint;
     error.update({ message: next.error ?? '', tone: 'error' });
     confirm.update({ label: next.confirmLabel ?? 'Remove', intent: 'danger', disabled: !!(next.disabled || options.unavailable?.()), pending: !!(next.pending || pending) });
   };
-  life.listen(form, 'submit', (event => { event.preventDefault(); void run(); }) as EventListener);
+  const operation = createOperation({
+    unavailable: () => !!(state.disabled || state.pending || confirm.element.disabled || options.unavailable?.() || !dialog.element.open),
+    onPending(value) { pending = value; update(state); },
+    onError(error) { if (dialog.element.open) update({ ...state, error }); },
+  });
+  life.listen(form, 'submit', (event => { event.preventDefault(); operation.run(options.onConfirm, result => { if (dialog.element.open) { if (result.ok) dialog.close(); else update({ ...state, error: result.error }); } }); }) as EventListener);
   update(options);
-  return { element: dialog.element, confirmButton: confirm.element, cancelButton: cancel.element, update, open(next) { generation.invalidate(); pending = false; update({ ...(next ?? state), error: '' }); dialog.open(); cancel.element.focus(); },
-    close() { generation.invalidate(); dialog.close(); }, refreshAvailability() { update(state); }, destroy() { generation.destroy(); life.destroy(); dialog.destroy(); confirm.destroy(); cancel.destroy(); } };
+  return { element: dialog.element, confirmButton: confirm.element, cancelButton: cancel.element, update, open(next) { operation.invalidate(); update({ ...(next ?? state), error: '' }); dialog.open(); cancel.element.focus(); },
+    close() { operation.invalidate(); dialog.close(); }, refreshAvailability() { update(state); }, destroy() { operation.destroy(); life.destroy(); dialog.destroy(); confirm.destroy(); cancel.destroy(); } };
 }
 
 export interface PopoverState { label: string; disabled?: boolean; }
@@ -510,28 +527,35 @@ export function createPopover(options: PopoverState & { content: Node; onToggle?
 
 export interface MenuItem { id: string; label: string; disabled?: boolean; intent?: Intent; checked?: boolean; onAction: UIAction; }
 export interface MenuState extends PopoverState { items: readonly MenuItem[]; }
-export function createMenu(options: MenuState): PopoverBlock & UIBlock<MenuState> {
-  const content = element('div', 'pui-menu'); content.setAttribute('role', 'menu');
+export interface MenuOptions extends MenuState { onError?: (message: string) => void; }
+export function createMenu(options: MenuOptions): PopoverBlock & UIBlock<MenuState> {
+  const content = element('div', 'pui-menu'); content.setAttribute('role', 'menu'); content.tabIndex = -1;
   const blocks = new Map<string, ButtonBlock>(); let items: readonly MenuItem[] = options.items;
-  const popover = createPopover({ label: options.label, content, disabled: options.disabled });
+  const session = new Generation();
+  const feedback = createNotice({ message: '', tone: 'error' });
+  const menuBody = element('div', '', content, feedback.element);
+  const popover = createPopover({ label: options.label, content: menuBody, disabled: options.disabled, onToggle() { session.invalidate(); feedback.update({ message: '', tone: 'error' }); } });
   popover.trigger.setAttribute('aria-haspopup', 'menu'); const life = new Lifetime();
   const update = (state: Readonly<MenuState>): void => {
     items = state.items; popover.update(state);
-    const keep = new Set(state.items.map(item => item.id));
-    for (const [id, block] of blocks) if (!keep.has(id)) { block.destroy(); block.element.remove(); blocks.delete(id); }
-    for (const item of state.items) {
-      let block = blocks.get(item.id);
-      if (!block) {
-        block = createButton({ ...item, onAction: async () => {
-          const current = items.find(candidate => candidate.id === item.id); if (!current || current.disabled) return;
-          const result = await current.onAction(); if (!result || result.ok) popover.close(); return result;
-        } });
-        blocks.set(item.id, block);
-      }
-      block.update(item); block.element.setAttribute('role', item.checked == null ? 'menuitem' : 'menuitemcheckbox');
-      if (item.checked != null) block.element.setAttribute('aria-checked', String(item.checked)); else block.element.removeAttribute('aria-checked');
-      content.append(block.element);
-    }
+    reconcileKeyed(content, blocks, state.items, { key: item => item.id, element: block => block.element,
+      create(item) {
+        let sequence = 0;
+        return createButton({ ...item, onAction: async () => {
+          const current = items.find(candidate => candidate.id === item.id); if (!current || current.disabled || !popover.isOpen()) return;
+          // Pending disables the action button. Keep focus inside its menu so
+          // focus-out dismissal cannot discard the eventual result feedback.
+          content.focus({ preventScroll: true });
+          sequence = session.next(); feedback.update({ message: '', tone: 'error' });
+          const result = await current.onAction();
+          if (session.current(sequence) && blocks.has(item.id) && popover.isOpen() && (!result || result.ok)) popover.close();
+          return result;
+        }, onError(message) { if (session.current(sequence) && popover.isOpen()) { feedback.update({ message, tone: 'error' }); options.onError?.(message); } } });
+      },
+      update(block, item) { block.update(item); block.element.setAttribute('role', item.checked == null ? 'menuitem' : 'menuitemcheckbox');
+        if (item.checked != null) block.element.setAttribute('aria-checked', String(item.checked)); else block.element.removeAttribute('aria-checked');
+      }, destroy: block => block.destroy(),
+    });
   };
   life.listen(popover.trigger, 'keydown', (event => {
     const key = (event as KeyboardEvent).key;
@@ -540,5 +564,5 @@ export function createMenu(options: MenuState): PopoverBlock & UIBlock<MenuState
   const navigation = installMenuNavigation(content, { trigger: popover.trigger, isOpen: popover.isOpen,
     onDismiss(restoreFocus) { popover.close(); if (restoreFocus) popover.trigger.focus(); } });
   update(options);
-  return { ...popover, update, destroy() { navigation.destroy(); life.destroy(); popover.destroy(); for (const block of blocks.values()) block.destroy(); } };
+  return { ...popover, update, destroy() { session.destroy(); navigation.destroy(); life.destroy(); popover.destroy(); feedback.destroy(); for (const block of blocks.values()) block.destroy(); blocks.clear(); } };
 }

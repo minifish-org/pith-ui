@@ -3,7 +3,8 @@ import type { UIBlock } from '../core.js';
 import { createPagedPreview, type PreviewKind } from '../content/paged-preview.js';
 import { adoptProductParts } from '../foundations.js';
 import { createButton } from '../primitives.js';
-import { installAnchoredSurface } from '../surface.js';
+import { bindContentClose, installAnchoredSurface } from '../surface.js';
+import { reconcileKeyed } from '../reconcile.js';
 
 export interface FileActionOptions {
   kind: string; ownerId: string; path: string; preview?: boolean;
@@ -21,12 +22,20 @@ export function createFileActions(options: FileActionOptions) {
   const template = document.createElement('template');
   template.innerHTML = fileActionsMarkup(options);
   const element = template.content.firstElementChild as HTMLElement;
+  const parts = adoptProductParts(element);
+  let destroyed = false;
   const click = (event: Event) => {
     const target = (event.target as Element).closest<HTMLElement>('button');
-    if (target && !(target as HTMLButtonElement).disabled) options.onAction?.(target.dataset.fileAction as 'open' | 'reveal' | 'copy' | 'copy-path' || 'preview');
+    if (target && element.contains(target) && !(target as HTMLButtonElement).disabled) {
+      event.stopPropagation(); options.onAction?.(target.dataset.fileAction as 'open' | 'reveal' | 'copy' | 'copy-path' || 'preview');
+    }
   };
   if (options.onAction) element.addEventListener('click', click);
-  return { element, destroy(): void { element.removeEventListener('click', click); element.remove(); } };
+  return {
+    element,
+    setDisabled(disabled: boolean): void { if (!destroyed) for (const button of element.querySelectorAll('button')) parts.action(button).update({disabled}); },
+    destroy(): void { if (destroyed) return; destroyed = true; parts.destroy(); element.removeEventListener('click', click); element.remove(); },
+  };
 }
 
 export interface ArtifactPanelState { ownerId: string; files: readonly { name: string; path: string }[]; loading: boolean; error: string; copyMode: 'file' | 'path' }
@@ -63,7 +72,6 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
     element, setOpen, get open() { return surface.isOpen(); },
     update(state: Readonly<ArtifactPanelState>): void {
       if (destroyed) return;
-      const focused = document.activeElement;
       control.hidden = !state.ownerId || (!state.files.length && !state.error);
       if (control.hidden) setOpen(false);
       const number = `${state.files.length} ${state.files.length === 1 ? 'file' : 'files'}`;
@@ -74,26 +82,23 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
       loading.hidden = !state.loading;
       error.hidden = !state.error;
       parts.feedback(error).update({ message: state.error, tone: 'error' });
-      const keep = new Set(state.files.map(file => `${state.ownerId}/${file.path}`));
-      for (const [key, entry] of entries) if (!keep.has(key)) { entry.element.remove(); entries.delete(key); }
-      let cursor = rows.firstElementChild;
-      for (const file of state.files) {
-        const key = `${state.ownerId}/${file.path}`;
-        let entry = entries.get(key);
-        if (!entry) {
+      reconcileKeyed(rows, entries, state.files, {
+        key: file => `${state.ownerId}/${file.path}`,
+        element: entry => entry.element,
+        create(file) {
           const article = document.createElement('article'); article.className = 'pui-file-card';
           article.innerHTML = `${icon('file')}<div class="pui-file-info"><strong></strong><span class="pui-file-path">${escape(file.path)}</span></div>${fileActionsMarkup({ kind: 'artifact', ownerId: state.ownerId, path: file.path, preview: true, copyMode: state.copyMode })}`;
-          entry = { element: article, name: article.querySelector('strong')!, copy: article.querySelector<HTMLButtonElement>('[data-file-action="copy"], [data-file-action="copy-path"]')! };
-          entries.set(key, entry);
-        }
-        setText(entry.name, file.name);
-        const copyAction = state.copyMode === 'file' ? 'copy' : 'copy-path';
-        if (entry.copy.dataset.fileAction !== copyAction) entry.copy.dataset.fileAction = copyAction;
-        if (entry.copy.dataset.copyPending !== 'true') setText(entry.copy, state.copyMode === 'file' ? 'Copy file' : 'Copy path');
-        if (entry.element !== cursor) rows.insertBefore(entry.element, cursor);
-        cursor = entry.element.nextElementSibling;
-      }
-      if (focused instanceof HTMLElement && element.contains(focused) && document.activeElement !== focused) focused.focus({ preventScroll: true });
+          return { element: article, name: article.querySelector('strong')!, copy: article.querySelector<HTMLButtonElement>('[data-file-action="copy"], [data-file-action="copy-path"]')! };
+        },
+        update(entry, file) {
+          setText(entry.name, file.name);
+          const copyAction = state.copyMode === 'file' ? 'copy' : 'copy-path';
+          if (entry.copy.dataset.fileAction !== copyAction) entry.copy.dataset.fileAction = copyAction;
+          if (entry.copy.dataset.copyPending !== 'true') setText(entry.copy, state.copyMode === 'file' ? 'Copy file' : 'Copy path');
+        },
+        destroy() {},
+      });
+      parts.update();
     },
     destroy(): void { destroyed = true; surface.destroy(); abort.abort(); parts.destroy(); entries.clear(); element.replaceChildren(); },
   };
@@ -108,29 +113,50 @@ export interface ResourcesPanelOptions { container?: HTMLElement; titleId?: stri
 export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
   const element = options.container || document.createElement('div');
   const ids = { titleId: options.titleId || uniqueId('pui-resources-title'), dialogId: options.dialogId || uniqueId('pui-resources-dialog'), listId: options.listId || uniqueId('pui-resources-list'), errorId: options.errorId || uniqueId('pui-resources-error') };
-  const close = (event: Event) => {
-    if (!(event.target as Element).closest('[data-close]')) return;
-    if (options.onClose) options.onClose();
-    else { const dialog = element.closest('dialog'); if (dialog?.open) dialog.close(); else element.hidden = true; }
-  };
-  element.addEventListener('click', close);
+  const close = bindContentClose(element, { dialogId: ids.dialogId, onClose: options.onClose });
   let list: HTMLElement | undefined, error: HTMLElement | undefined;
   let destroyed = false;
   const parts = adoptProductParts(element);
   const buttons: ReturnType<typeof createButton>[] = [];
   const rowButtons: ReturnType<typeof createButton>[] = [];
+  type Slot = { source?: Node; nodes: ChildNode[] };
+  type ResourceRow = { element: HTMLElement; body?: HTMLElement; name?: HTMLElement; description?: HTMLElement; path?: HTMLElement; content?: HTMLElement; slots?: [Slot, Slot] };
+  type Section = { element: HTMLElement; rows: Map<string, ResourceRow>; create: Slot };
+  const sections = new Map<string, Section>();
+  let diagnostics: Section | undefined;
+  let instructionButton: ReturnType<typeof createButton> | undefined;
   const createActions = new Map<ReturnType<typeof createButton>,string>(); let createDisabled = false;
   const button = (label: string, onAction: () => void, row = false, create = false) => { const block = createButton({label,appearance:'secondary',onAction,disabled:create && createDisabled}); (row ? rowButtons : buttons).push(block); if (create) createActions.set(block,label); return block.element; };
   const clearButtons = (list = buttons) => { for (const block of list.splice(0)) {createActions.delete(block); block.destroy();} };
-  function row(entry: ResourceDisplayEntry, type: 'instructions' | 'skill' | 'template'): HTMLElement {
+  function updateSlot(parent: HTMLElement, slot: Slot, source?: Node): void {
+    if (slot.source === source) return;
+    for (const node of slot.nodes) if (node.parentNode === parent) node.remove();
+    slot.source = source;
+    slot.nodes = source ? source instanceof DocumentFragment ? [...source.childNodes] : [source as ChildNode] : [];
+  }
+  function row(type: 'instructions' | 'skill' | 'template'): ResourceRow {
     const outer = document.createElement('article'); outer.className = type === 'instructions' ? 'pui-resource-card' : 'pui-file-card';
     const body = type === 'instructions' ? document.createElement('div') : outer;
     if (type === 'instructions') body.className = 'pui-file-card';
-    body.innerHTML = `${type === 'template' ? '' : icon('file')}<div class="pui-file-info"><strong>${escape(entry.name)}</strong>${type !== 'instructions' ? `<p>${escape(entry.description || '')}</p>` : ''}<span class="pui-file-path">${escape(entry.path)}</span></div>`;
-    if (entry.fileActions) body.append(entry.fileActions);
-    if (entry.actions) body.append(entry.actions);
-    if (type === 'instructions') { outer.append(body); const details = document.createElement('details'); details.className = 'pui-resource-preview'; details.innerHTML = `<summary>View instructions</summary><pre>${escape(entry.content || '')}</pre>`; outer.append(details); }
-    return outer;
+    body.innerHTML = `${type === 'template' ? '' : icon('file')}<div class="pui-file-info"><strong></strong>${type !== 'instructions' ? '<p></p>' : ''}<span class="pui-file-path"></span></div>`;
+    let content: HTMLElement | undefined;
+    if (type === 'instructions') { outer.append(body); const details = document.createElement('details'); details.className = 'pui-resource-preview'; details.innerHTML = '<summary>View instructions</summary><pre></pre>'; outer.append(details); content = details.querySelector('pre')!; }
+    return { element: outer, body, name: body.querySelector('strong')!, description: body.querySelector('p') || undefined, path: body.querySelector<HTMLElement>('.pui-file-path')!, content, slots: [{nodes:[]}, {nodes:[]}] };
+  }
+  function updateRow(row: ResourceRow, entry: ResourceDisplayEntry): void {
+    setText(row.name!, entry.name); setText(row.path!, entry.path);
+    if (row.description) setText(row.description, entry.description || '');
+    if (row.content) setText(row.content, entry.content || '');
+    updateSlot(row.body!, row.slots![0], entry.fileActions); updateSlot(row.body!, row.slots![1], entry.actions);
+    let cursor = row.body!.querySelector('.pui-file-info')!.nextSibling;
+    for (const node of row.slots!.flatMap(slot => slot.nodes)) {
+      if (node !== cursor) row.body!.insertBefore(node, cursor);
+      cursor = node.nextSibling;
+    }
+  }
+  function section(): Section {
+    const element = document.createElement('section'); element.className = 'pui-resource-section';
+    return {element, rows:new Map(), create:{nodes:[]}};
   }
   return {
     element,
@@ -138,6 +164,7 @@ export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
       if (destroyed) return;
       clearButtons();
       clearButtons(rowButtons);
+      instructionButton = undefined; sections.clear(); diagnostics = undefined;
       element.hidden = false;
       element.innerHTML = `${dialogHeading('Workspace resources', ids.titleId, ids.dialogId, workspaceName)}<p class="pui-modal-description">Instructions, skills and prompt templates are loaded by Pith for each task. Edit them here or open their Markdown files.</p><div class="pui-feature-toolbar" data-resources-toolbar></div><div id="${escape(ids.listId)}" data-resources-list><p class="pui-feature-hint">Loading workspace resources…</p></div><div id="${escape(ids.errorId)}" data-resources-error class="pui-form-error" role="alert"></div>`;
       const actions = element.querySelector<HTMLElement>('[data-resources-toolbar]')!;
@@ -151,47 +178,72 @@ export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
     setCreateDisabled(disabled: boolean): void {if (destroyed) return; createDisabled = disabled; for (const [block,label] of createActions) block.update({label,appearance:'secondary',disabled});},
     update(state: Readonly<ResourcesPanelState>): void {
       if (destroyed || !list) return;
-      clearButtons(rowButtons);
-      list.replaceChildren();
+      if (!sections.size) list.replaceChildren();
       for (const [title, entries, type, empty] of [
         ['Instructions', state.instructions, 'instructions', 'No workspace instructions found.'],
         ['Skills', state.skills, 'skill', 'No skills found. Add .pi/skills/<skill-name>/SKILL.md in this workspace, then refresh.'],
         ['Prompt templates', state.templates, 'template', 'No prompt templates yet.'],
       ] as const) {
-        const section = document.createElement('section'); section.className = 'pui-resource-section';
-        const heading = document.createElement('h3'); heading.textContent = title; section.append(heading);
-        if (entries.length) entries.forEach((entry) => section.append(row(entry, type)));
-        else { const hint = document.createElement('p'); hint.className = 'pui-feature-hint'; hint.textContent = empty; section.append(hint); }
-        if (type === 'instructions' && state.createInstructions) section.append(state.createInstructions);
-        else if (type === 'instructions' && state.canCreateInstructions) section.append(button('Create AGENTS.md in this workspace', () => options.onCreate?.('instructions'),true,true));
-        list.append(section);
+        let current = sections.get(type);
+        if (!current) { current = section(); sections.set(type, current); list.append(current.element); }
+        type Item = { key: string; kind: 'heading' | 'empty' | 'entry'; entry?: ResourceDisplayEntry };
+        const items: Item[] = [{key:'heading', kind:'heading'}, ...entries.map(entry => ({key:`entry:${entry.path}`, kind:'entry' as const, entry}))];
+        if (!entries.length) items.push({key:'empty', kind:'empty'});
+        reconcileKeyed(current.element, current.rows, items, {
+          key: item => item.key, element: row => row.element,
+          create(item) {
+            if (item.kind === 'entry') return row(type);
+            const element = document.createElement(item.kind === 'heading' ? 'h3' : 'p');
+            if (item.kind === 'empty') element.className = 'pui-feature-hint';
+            return {element};
+          },
+          update(row, item) { if (item.entry) updateRow(row, item.entry); else setText(row.element, item.kind === 'heading' ? title : empty); },
+          destroy() {},
+        });
+        if (type === 'instructions') {
+          let create = state.createInstructions;
+          if (!create && state.canCreateInstructions) {
+            if (!instructionButton) {
+              const element = button('Create AGENTS.md in this workspace', () => options.onCreate?.('instructions'), true, true);
+              instructionButton = rowButtons.find(block => block.element === element)!;
+            }
+            create = instructionButton.element;
+          }
+          updateSlot(current.element, current.create, create);
+          for (const node of current.create.nodes) if (node.parentNode !== current.element) current.element.append(node);
+        }
       }
-      parts.update();
       if (state.diagnostics.length) {
-        const section = document.createElement('section'); section.className = 'pui-resource-section pui-resource-diagnostics';
-        section.innerHTML = `<h3>Resource notes</h3>${state.diagnostics.map((note) => `<p>${escape(note)}</p>`).join('')}`;
-        list.append(section);
-      }
+        if (!diagnostics) { diagnostics = section(); diagnostics.element.classList.add('pui-resource-diagnostics'); list.append(diagnostics.element); }
+        reconcileKeyed(diagnostics.element, diagnostics.rows, [{key:'heading', text:'Resource notes'}, ...state.diagnostics.map((text,index) => ({key:`note:${index}`, text}))], {
+          key: value => value.key, element: row => row.element,
+          create(value) { return {element:document.createElement(value.key === 'heading' ? 'h3' : 'p')}; },
+          update(row, value) {setText(row.element, value.text);}, destroy() {},
+        });
+      } else if (diagnostics) { diagnostics.element.remove(); diagnostics = undefined; }
+      parts.update();
     },
-    destroy(): void { destroyed = true; clearButtons(); clearButtons(rowButtons); parts.destroy(); element.removeEventListener('click', close); element.replaceChildren(); },
+    destroy(): void { if (destroyed) return; destroyed = true; clearButtons(); clearButtons(rowButtons); sections.clear(); diagnostics = undefined; parts.destroy(); close.destroy(); element.replaceChildren(); },
   };
 }
 
 export interface FilePreviewState { kind: PreviewKind | 'image'; text?: string; imageSrc?: string; imageAlt?: string; truncated?: boolean; error?: string }
-export interface FilePreviewOptions { container?: HTMLElement; titleId?: string; dialogId?: string; bodyId?: string; onClose?: () => void }
+export interface FilePreviewOptions { container?: HTMLElement; titleId?: string; dialogId?: string; bodyId?: string; onClose?: () => void; onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void> }
 export function createFilePreview(options: FilePreviewOptions = {}) {
   const element = options.container || document.createElement('div');
   const ids = { titleId: options.titleId || uniqueId('pui-preview-title'), dialogId: options.dialogId || uniqueId('pui-preview-dialog'), bodyId: options.bodyId || uniqueId('pui-preview-body') };
-  const close = (event: Event) => {
-    if (!(event.target as Element).closest('[data-close]')) return;
-    if (options.onClose) options.onClose();
-    else { const dialog = element.closest('dialog'); if (dialog?.open) dialog.close(); else element.hidden = true; }
-  };
-  element.addEventListener('click', close);
+  const close = bindContentClose(element, { dialogId: ids.dialogId, onClose: options.onClose });
   let body: HTMLElement | undefined;
   let page: UIBlock<{ text: string; kind: PreviewKind }> | undefined;
+  let image: HTMLImageElement | undefined;
+  let note: HTMLElement | undefined;
+  let mode: FilePreviewState['kind'] | 'error' | undefined;
   let destroyed = false;
-  function clear(): void { page?.destroy(); page = undefined; element.replaceChildren(); body = undefined; }
+  function clear(): void {
+    if (destroyed) return;
+    page?.destroy(); page = undefined; image = undefined; note = undefined; mode = undefined;
+    element.replaceChildren(); body = undefined;
+  }
   return {
     element, clear,
     open(input: { name: string; path: string; actions: Node }): void {
@@ -204,15 +256,26 @@ export function createFilePreview(options: FilePreviewOptions = {}) {
     },
     update(state: Readonly<FilePreviewState>): void {
       if (destroyed || !body) return;
-      page?.destroy(); page = undefined; body.replaceChildren();
-      if (state.error) body.textContent = state.error;
+      const nextMode = state.error ? 'error' : state.kind;
+      if (mode !== nextMode) {
+        page?.destroy(); page = undefined; image = undefined; note = undefined;
+        body.replaceChildren(); mode = nextMode;
+      }
+      if (state.error) setText(body, state.error);
       else if (state.kind === 'image') {
-        const image = document.createElement('img'); image.className = 'pui-file-preview-image';
-        image.src = state.imageSrc || ''; image.alt = state.imageAlt || '';
-        image.setAttribute('role', 'button'); image.tabIndex = 0; image.title = 'Click to enlarge'; body.append(image);
-      } else page = createPagedPreview({ container: body, text: state.text || '', kind: state.kind });
-      if (state.truncated) { const note = document.createElement('p'); note.className = 'pui-preview-note'; note.textContent = 'Showing the first 8 MiB. Use Open for the complete file.'; body.append(note); }
+        if (!image) {
+          image = document.createElement('img'); image.className = 'pui-file-preview-image';
+          image.setAttribute('role', 'button'); image.tabIndex = 0; image.title = 'Click to enlarge'; body.append(image);
+        }
+        if (image.getAttribute('src') !== (state.imageSrc || '')) image.src = state.imageSrc || '';
+        if (image.alt !== (state.imageAlt || '')) image.alt = state.imageAlt || '';
+      } else if (page) page.update({ text: state.text || '', kind: state.kind });
+      else page = createPagedPreview({ container: body, text: state.text || '', kind: state.kind, onCopyCode: options.onCopyCode });
+      if (state.truncated) {
+        if (!note) { note = document.createElement('p'); note.className = 'pui-preview-note'; note.textContent = 'Showing the first 8 MiB. Use Open for the complete file.'; }
+        if (note.parentElement !== body) body.append(note);
+      } else { note?.remove(); note = undefined; }
     },
-    destroy(): void { if (destroyed) return; clear(); element.removeEventListener('click', close); destroyed = true; },
+    destroy(): void { if (destroyed) return; clear(); close.destroy(); destroyed = true; },
   };
 }

@@ -1,5 +1,6 @@
 import { escape, icon } from '../dom.js';
 import type { UIBlock } from '../core.js';
+import {patchChildren} from './views.js';
 
 export interface WelcomeState {
   workspace?: { name: string; path: string };
@@ -31,7 +32,8 @@ export function createWelcomeView(options: WelcomeOptions = {}): UIBlock<Welcome
       const next = JSON.stringify(state); if (next === signature) return; signature = next;
       const workspace = state.workspace;
       const ready = !!workspace && state.hasApiKey;
-      element.innerHTML = `<div class="pui-welcome-mark"></div>
+      const template = document.createElement('template');
+      template.innerHTML = `<div class="pui-welcome-mark"></div>
         <p class="pui-eyebrow">YOUR LOCAL WORK COMPANION</p>
         <h1>${ready ? 'What are we working on?' : 'Your work. A little more possible.'}</h1>
         <p class="pui-welcome-description">An agent that works alongside you, with your files<br class="pui-desktop-break"> and the tools you choose.</p>
@@ -42,7 +44,8 @@ export function createWelcomeView(options: WelcomeOptions = {}): UIBlock<Welcome
         </div>` : `<div class="pui-welcome-workspace">${icon('folder')}<span>Working in <strong>${escape(workspace.name)}</strong></span><button class="pui-secondary-button" type="button" data-welcome-action="workspace">Change</button></div>
         <div class="pui-suggestions"><button type="button" data-prompt="Explore this workspace and give me a concise overview of its files.">${icon('file')}Explore my workspace</button><button type="button" data-prompt="Help me plan a task. Start by asking what I want to accomplish.">${icon('chat')}Think through a task</button><button type="button" data-prompt="I'd like help creating a document in this workspace. Ask me what it should cover.">${icon('plus')}Create something</button></div>`}
         <div class="pui-welcome-footnote">${icon('shield')}Local workspace. Your choice of model.</div>`;
-      if (options.logo) element.querySelector('.pui-welcome-mark')!.append(options.logo.cloneNode(true));
+      if (options.logo) template.content.querySelector('.pui-welcome-mark')!.append(options.logo.cloneNode(true));
+      patchChildren(element, template.content);
     },
     destroy(): void {
       if (destroyed) return;

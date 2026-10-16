@@ -13,16 +13,21 @@ const disabled=(context:DemoContext)=>context.state==='disabled'||context.state=
 export const navigationCases:ShowcaseCase[]=[
   {
     id:'workspace-navigation',title:'工作区与会话导航',layer:'blocks',category:'应用与导航',description:'工作区展开、当前会话、菜单入口和空列表；排序与筛选结果由宿主提供。',states:['normal','disabled','empty','long'],related:['workspace-picker','context-menu'],
-    code:`const navigation = createWorkspaceNavigation({ groups, empty: null }, { onToggle: id => toggleWorkspace(id), onSelect: id => openConversation(id) });\ncontainer.append(navigation.element);`,
+    code:`const navigation = createWorkspaceNavigation({ groups, empty: null }, {\n  onToggle: id => toggleWorkspace(id),\n  onSelect: id => openConversation(id),\n  onAction: event => {\n    if (event.action === 'conversation-menu') menu.open(event.trigger, conversationActions(event.conversationId));\n    else handleNavigationAction(event);\n  },\n});\ncontainer.append(navigation.element);`,
     mount(context){
       const state={groups:context.state==='empty'?[]:[{id:'demo-workspace',name:long(context,'Pith workspace'),path:'/demo/workspace',expanded:true,selected:true,children:[{id:'chat-1',title:long(context,'正在讨论的会话'),active:true},{id:'chat-2',title:'已经保存的另一段讨论',active:false}]},{id:'other-workspace',name:'Another workspace',path:'/demo/other',expanded:false,selected:false,children:[]}],empty:context.state==='empty'?'workspaces' as const:null,disabled:disabled(context)};
-      const navigation=createWorkspaceNavigation(state,{onToggle:id=>{const group=state.groups.find(entry=>entry.id===id);if(group){group.expanded=!group.expanded;navigation.update(state);context.log(`工作区 ${id}: ${group.expanded?'展开':'收起'}`);}},onSelect:id=>{for(const group of state.groups)for(const entry of group.children)entry.active=entry.id===id;navigation.update(state);context.log(`选择会话：${id}`);}});
-      const element=document.createElement('aside');element.className='pui-sidebar';element.style.width='min(300px, 100%)';element.append(navigation.element);return{element,destroy(){navigation.destroy();element.remove();}};
+      const menu=createContextMenu({onAction:item=>{context.log(`演示导航菜单：${item.action}`);menu.close(true);}});
+      const navigation=createWorkspaceNavigation(state,{onToggle:id=>{const group=state.groups.find(entry=>entry.id===id);if(group){group.expanded=!group.expanded;navigation.update(state);context.log(`工作区 ${id}: ${group.expanded?'展开':'收起'}`);}},onSelect:id=>{for(const group of state.groups)for(const entry of group.children)entry.active=entry.id===id;navigation.update(state);context.log(`选择会话：${id}`);},onAction:event=>{
+        if(event.action==='conversation-menu') menu.open(event.trigger,{label:'演示会话操作',items:[{id:'rename',label:'Rename conversation',action:'rename'},{id:'delete',label:'Delete conversation',action:'delete',danger:true}]});
+        else if(event.action==='workspace-menu') menu.open(event.trigger,{label:'演示工作区操作',items:[{id:'rename',label:'Rename workspace',action:'rename-workspace'},{id:'remove',label:'Remove workspace',action:'remove-workspace',danger:true}]});
+        else context.log(event.action==='new-conversation'?`演示新建会话：${event.workspaceId}`:'演示添加工作区；原生目录由宿主提供');
+      }});
+      const element=document.createElement('aside');element.className='pui-sidebar';element.style.width='min(300px, 100%)';element.append(navigation.element,menu.element);return{element,destroy(){menu.destroy();navigation.destroy();element.remove();}};
     },
   },
   {
     id:'context-menu',title:'上下文菜单与键盘导航',layer:'blocks',category:'应用与导航',description:'菜单定位不越出窗口；支持方向键、Home/End、Escape 和返回触发按钮。',states:['normal','disabled','long'],related:['workspace-navigation','menu'],
-    code:`const menu = createContextMenu({ onAction: item => handle(item.action) });\ndocument.body.append(menu.element);\nmenu.open(trigger, { label: 'Conversation actions', items: [{ label: 'Rename', action: 'rename' }, { label: 'Delete', action: 'delete', danger: true }] });`,
+    code:`const menu = createContextMenu({ onAction: item => handle(item.action) });\ndocument.body.append(menu.element);\n// Button actions align with the button's lower edge and flip near viewport edges.\nmenu.open(trigger, { label: 'Conversation actions', items: [{ label: 'Rename', action: 'rename' }, { label: 'Delete', action: 'delete', danger: true }] });\n// A context menu on a blank canvas may explicitly use a pointer point:\n// menu.open(focusSource, state, { point: { x: event.clientX, y: event.clientY } });`,
     mount(context){const element=document.createElement('div');const menu=createContextMenu({onAction:item=>{context.log(`菜单操作：${item.action}`);menu.close(true);}});const open=()=>menu.open(button.element,{label:'演示会话操作',items:[{label:long(context,'Rename conversation'),action:'rename',disabled:disabled(context)},{label:'Export Markdown',action:'export'},{label:'Delete conversation',action:'delete',danger:true}]});const button=createButton({label:'打开会话菜单',onAction:open});element.append(button.element,menu.element);return{element,replay:open,destroy(){menu.destroy();button.destroy();element.remove();}};},
   },
   {

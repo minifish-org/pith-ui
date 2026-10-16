@@ -23,7 +23,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 | [`createCompletionNotices`](#createcompletionnotices) | [completion-notices](https://minifish-org.github.io/pith-ui/?item=completion-notices) |
 | [`createComposerView`](#createcomposerview) | [composer](https://minifish-org.github.io/pith-ui/?item=composer), [drop-feedback](https://minifish-org.github.io/pith-ui/?item=drop-feedback) |
 | [`createConfirmDialog`](#createconfirmdialog) | [confirmation](https://minifish-org.github.io/pith-ui/?item=confirmation) |
-| [`createContextMenu`](#createcontextmenu) | [context-menu](https://minifish-org.github.io/pith-ui/?item=context-menu) |
+| [`createContextMenu`](#createcontextmenu) | [context-menu](https://minifish-org.github.io/pith-ui/?item=context-menu), [workspace-navigation](https://minifish-org.github.io/pith-ui/?item=workspace-navigation) |
 | [`createConversationView`](#createconversationview) | [conversation-messages](https://minifish-org.github.io/pith-ui/?item=conversation-messages), [conversation-reader](https://minifish-org.github.io/pith-ui/?item=conversation-reader), [foundation-motion](https://minifish-org.github.io/pith-ui/?item=foundation-motion) |
 | [`createCopyFeedback`](#createcopyfeedback) | [copy-feedback](https://minifish-org.github.io/pith-ui/?item=copy-feedback) |
 | [`createCostLedger`](#createcostledger) | [cost-ledger](https://minifish-org.github.io/pith-ui/?item=cost-ledger) |
@@ -47,7 +47,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 | [`createListRow`](#createlistrow) | [collection-state](https://minifish-org.github.io/pith-ui/?item=collection-state), [list-row](https://minifish-org.github.io/pith-ui/?item=list-row) |
 | [`createMCPConnectionList`](#createmcpconnectionlist) | [mcp-connections](https://minifish-org.github.io/pith-ui/?item=mcp-connections) |
 | [`createMCPConnectionsPanel`](#createmcpconnectionspanel) | [mcp-connections](https://minifish-org.github.io/pith-ui/?item=mcp-connections) |
-| [`createMenu`](#createmenu) | [menu](https://minifish-org.github.io/pith-ui/?item=menu) |
+| [`createMenu`](#createmenu) | [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [menu](https://minifish-org.github.io/pith-ui/?item=menu) |
 | [`createModelEditor`](#createmodeleditor) | [model-picker](https://minifish-org.github.io/pith-ui/?item=model-picker) |
 | [`createModelPicker`](#createmodelpicker) | [model-picker](https://minifish-org.github.io/pith-ui/?item=model-picker) |
 | [`createNotice`](#createnotice) | [notice](https://minifish-org.github.io/pith-ui/?item=notice) |
@@ -68,7 +68,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 | [`createScrollArea`](#createscrollarea) | [scroll-area](https://minifish-org.github.io/pith-ui/?item=scroll-area) |
 | [`createSearchInput`](#createsearchinput) | [search-input](https://minifish-org.github.io/pith-ui/?item=search-input) |
 | [`createSecretInput`](#createsecretinput) | [secret-input](https://minifish-org.github.io/pith-ui/?item=secret-input) |
-| [`createSelect`](#createselect) | [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [select](https://minifish-org.github.io/pith-ui/?item=select) |
+| [`createSelect`](#createselect) | [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [select](https://minifish-org.github.io/pith-ui/?item=select) |
 | [`createSettingsPanel`](#createsettingspanel) | [settings-panel](https://minifish-org.github.io/pith-ui/?item=settings-panel) |
 | [`createStatus`](#createstatus) | [status](https://minifish-org.github.io/pith-ui/?item=status) |
 | [`createTaskFailure`](#createtaskfailure) | [task-failure](https://minifish-org.github.io/pith-ui/?item=task-failure) |
@@ -90,7 +90,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 
 ### createAttachments
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L66)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L67)
 
 ```ts
 export declare function createAttachments(options?: {
@@ -106,7 +106,7 @@ Related gallery: [attachments](https://minifish-org.github.io/pith-ui/?item=atta
 
 ### createDropFeedback
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L56)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L57)
 
 ```ts
 export declare function createDropFeedback(options: {
@@ -123,7 +123,7 @@ Related gallery: [drop-feedback](https://minifish-org.github.io/pith-ui/?item=dr
 
 ### createPendingMessages
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L12)
 
 ```ts
 export declare function createPendingMessages(options?: PendingMessagesOptions): UIBlock<PendingMessagesState>;
@@ -135,7 +135,7 @@ Related gallery: [pending-messages](https://minifish-org.github.io/pith-ui/?item
 
 ### AttachmentItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L54)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L55)
 
 ```ts
 export interface AttachmentItem {
@@ -147,7 +147,7 @@ export interface AttachmentItem {
 
 ### AttachmentsState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L65)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L66)
 
 ```ts
 export interface AttachmentsState {
@@ -160,7 +160,7 @@ Referenced public types and APIs: [`AttachmentItem`](#attachmentitem).
 
 ### PendingMessage
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L6)
 
 ```ts
 export interface PendingMessage {
@@ -173,7 +173,7 @@ export interface PendingMessage {
 
 ### PendingMessagesOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L8)
 
 ```ts
 export interface PendingMessagesOptions {
@@ -184,7 +184,7 @@ export interface PendingMessagesOptions {
 
 ### PendingMessagesState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/composer.ts#L7)
 
 ```ts
 export interface PendingMessagesState {
@@ -361,7 +361,7 @@ export interface ConversationViewOptions {
     container?: HTMLElement;
     markdown?: (conversationId: string) => MarkdownOptions;
     onAction?: (action: ConversationAction, button: HTMLButtonElement) => void;
-    onCopyCode?: (text: string, button: HTMLButtonElement) => void;
+    onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
 }
 ```
 
@@ -386,7 +386,7 @@ Referenced public types and APIs: [`ConversationMessage`](#conversationmessage).
 
 ### createImageViewer
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L10)
 
 ```ts
 /** A modal above either a generated-file preview or a conversation attachment. */
@@ -404,7 +404,7 @@ Related gallery: [image-viewer](https://minifish-org.github.io/pith-ui/?item=ima
 
 ### installImageViewer
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L88)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L94)
 
 ```ts
 export declare function installImageViewer(dialog: HTMLDialogElement, options?: {
@@ -423,7 +423,7 @@ Related gallery: [image-viewer](https://minifish-org.github.io/pith-ui/?item=ima
 
 ### ImageViewerInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L6)
 
 ```ts
 export interface ImageViewerInput {
@@ -435,7 +435,7 @@ export interface ImageViewerInput {
 
 ### ImageViewerOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/image-viewer.ts#L5)
 
 ```ts
 export interface ImageViewerOptions {
@@ -522,7 +522,7 @@ Related gallery: [markdown-content](https://minifish-org.github.io/pith-ui/?item
 ```ts
 export interface PagedPreviewOptions extends PagedPreviewState {
     container?: HTMLElement;
-    onCopyCode?: (text: string) => void;
+    onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
 }
 ```
 
@@ -572,7 +572,7 @@ export declare function previewPageRanges(bytes: Uint8Array, window?: number): A
 
 ### createWelcomeView
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/welcome.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/welcome.ts#L18)
 
 ```ts
 export declare function createWelcomeView(options?: WelcomeOptions): UIBlock<WelcomeState>;
@@ -584,7 +584,7 @@ Related gallery: [welcome](https://minifish-org.github.io/pith-ui/?item=welcome)
 
 ### WelcomeOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/welcome.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/welcome.ts#L11)
 
 ```ts
 export interface WelcomeOptions {
@@ -597,7 +597,7 @@ export interface WelcomeOptions {
 
 ### WelcomeState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/welcome.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/content/welcome.ts#L5)
 
 ```ts
 export interface WelcomeState {
@@ -742,7 +742,7 @@ export declare function element<K extends keyof HTMLElementTagNameMap>(tag: K, c
 
 Referenced public types and APIs: [`DOMChild`](#domchild).
 
-Related gallery: [actions](https://minifish-org.github.io/pith-ui/?item=actions), [artifact-panel](https://minifish-org.github.io/pith-ui/?item=artifact-panel), [button](https://minifish-org.github.io/pith-ui/?item=button), [collection-state](https://minifish-org.github.io/pith-ui/?item=collection-state), [completion-notices](https://minifish-org.github.io/pith-ui/?item=completion-notices), [composer](https://minifish-org.github.io/pith-ui/?item=composer), [context-menu](https://minifish-org.github.io/pith-ui/?item=context-menu), [conversation-messages](https://minifish-org.github.io/pith-ui/?item=conversation-messages), [conversation-reader](https://minifish-org.github.io/pith-ui/?item=conversation-reader), [copy-feedback](https://minifish-org.github.io/pith-ui/?item=copy-feedback), [dialog](https://minifish-org.github.io/pith-ui/?item=dialog), [disclosure](https://minifish-org.github.io/pith-ui/?item=disclosure), [drop-feedback](https://minifish-org.github.io/pith-ui/?item=drop-feedback), [feature-dialog](https://minifish-org.github.io/pith-ui/?item=feature-dialog), [file-actions](https://minifish-org.github.io/pith-ui/?item=file-actions), [file-preview](https://minifish-org.github.io/pith-ui/?item=file-preview), [form-section](https://minifish-org.github.io/pith-ui/?item=form-section), [foundation-borders](https://minifish-org.github.io/pith-ui/?item=foundation-borders), [foundation-colors](https://minifish-org.github.io/pith-ui/?item=foundation-colors), [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-motion](https://minifish-org.github.io/pith-ui/?item=foundation-motion), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [foundation-surfaces](https://minifish-org.github.io/pith-ui/?item=foundation-surfaces), [foundation-typography](https://minifish-org.github.io/pith-ui/?item=foundation-typography), [icon-button](https://minifish-org.github.io/pith-ui/?item=icon-button), [icons](https://minifish-org.github.io/pith-ui/?item=icons), [image-viewer](https://minifish-org.github.io/pith-ui/?item=image-viewer), [list-row](https://minifish-org.github.io/pith-ui/?item=list-row), [mcp-connections](https://minifish-org.github.io/pith-ui/?item=mcp-connections), [pending-messages](https://minifish-org.github.io/pith-ui/?item=pending-messages), [permission-control](https://minifish-org.github.io/pith-ui/?item=permission-control), [popover](https://minifish-org.github.io/pith-ui/?item=popover), [provider-resource-actions](https://minifish-org.github.io/pith-ui/?item=provider-resource-actions), [resources-panel](https://minifish-org.github.io/pith-ui/?item=resources-panel), [runtime-panel](https://minifish-org.github.io/pith-ui/?item=runtime-panel), [scroll-area](https://minifish-org.github.io/pith-ui/?item=scroll-area), [toolbar](https://minifish-org.github.io/pith-ui/?item=toolbar), [updates](https://minifish-org.github.io/pith-ui/?item=updates), [workspace-navigation](https://minifish-org.github.io/pith-ui/?item=workspace-navigation).
+Related gallery: [actions](https://minifish-org.github.io/pith-ui/?item=actions), [artifact-panel](https://minifish-org.github.io/pith-ui/?item=artifact-panel), [button](https://minifish-org.github.io/pith-ui/?item=button), [collection-state](https://minifish-org.github.io/pith-ui/?item=collection-state), [completion-notices](https://minifish-org.github.io/pith-ui/?item=completion-notices), [composer](https://minifish-org.github.io/pith-ui/?item=composer), [context-menu](https://minifish-org.github.io/pith-ui/?item=context-menu), [conversation-reader](https://minifish-org.github.io/pith-ui/?item=conversation-reader), [copy-feedback](https://minifish-org.github.io/pith-ui/?item=copy-feedback), [dialog](https://minifish-org.github.io/pith-ui/?item=dialog), [disclosure](https://minifish-org.github.io/pith-ui/?item=disclosure), [drop-feedback](https://minifish-org.github.io/pith-ui/?item=drop-feedback), [feature-dialog](https://minifish-org.github.io/pith-ui/?item=feature-dialog), [file-preview](https://minifish-org.github.io/pith-ui/?item=file-preview), [form-section](https://minifish-org.github.io/pith-ui/?item=form-section), [foundation-borders](https://minifish-org.github.io/pith-ui/?item=foundation-borders), [foundation-colors](https://minifish-org.github.io/pith-ui/?item=foundation-colors), [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-motion](https://minifish-org.github.io/pith-ui/?item=foundation-motion), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [foundation-surfaces](https://minifish-org.github.io/pith-ui/?item=foundation-surfaces), [foundation-typography](https://minifish-org.github.io/pith-ui/?item=foundation-typography), [icon-button](https://minifish-org.github.io/pith-ui/?item=icon-button), [icons](https://minifish-org.github.io/pith-ui/?item=icons), [image-viewer](https://minifish-org.github.io/pith-ui/?item=image-viewer), [list-row](https://minifish-org.github.io/pith-ui/?item=list-row), [mcp-connections](https://minifish-org.github.io/pith-ui/?item=mcp-connections), [pending-messages](https://minifish-org.github.io/pith-ui/?item=pending-messages), [permission-control](https://minifish-org.github.io/pith-ui/?item=permission-control), [popover](https://minifish-org.github.io/pith-ui/?item=popover), [provider-resource-actions](https://minifish-org.github.io/pith-ui/?item=provider-resource-actions), [resources-panel](https://minifish-org.github.io/pith-ui/?item=resources-panel), [runtime-panel](https://minifish-org.github.io/pith-ui/?item=runtime-panel), [scroll-area](https://minifish-org.github.io/pith-ui/?item=scroll-area), [toolbar](https://minifish-org.github.io/pith-ui/?item=toolbar), [updates](https://minifish-org.github.io/pith-ui/?item=updates), [workspace-navigation](https://minifish-org.github.io/pith-ui/?item=workspace-navigation).
 
 ### escape
 
@@ -817,7 +817,7 @@ Related gallery: [foundation-focus](https://minifish-org.github.io/pith-ui/?item
 
 ### createArtifactPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L34)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L43)
 
 ```ts
 export declare function createArtifactPanel(options: ArtifactPanelOptions): {
@@ -835,11 +835,12 @@ Related gallery: [artifact-panel](https://minifish-org.github.io/pith-ui/?item=a
 
 ### createFileActions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L20)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L21)
 
 ```ts
 export declare function createFileActions(options: FileActionOptions): {
     element: HTMLElement;
+    setDisabled(disabled: boolean): void;
     destroy(): void;
 };
 ```
@@ -850,7 +851,7 @@ Related gallery: [file-actions](https://minifish-org.github.io/pith-ui/?item=fil
 
 ### createFilePreview
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L182)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L232)
 
 ```ts
 export declare function createFilePreview(options?: FilePreviewOptions): {
@@ -872,7 +873,7 @@ Related gallery: [file-preview](https://minifish-org.github.io/pith-ui/?item=fil
 
 ### createResourcesPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L108)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L113)
 
 ```ts
 export declare function createResourcesPanel(options?: ResourcesPanelOptions): {
@@ -891,7 +892,7 @@ Related gallery: [resources-panel](https://minifish-org.github.io/pith-ui/?item=
 
 ### ArtifactPanelOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L33)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L42)
 
 ```ts
 export interface ArtifactPanelOptions {
@@ -906,7 +907,7 @@ export interface ArtifactPanelOptions {
 
 ### ArtifactPanelState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L41)
 
 ```ts
 export interface ArtifactPanelState {
@@ -923,7 +924,7 @@ export interface ArtifactPanelState {
 
 ### FileActionOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L9)
 
 ```ts
 export interface FileActionOptions {
@@ -938,7 +939,7 @@ export interface FileActionOptions {
 
 ### fileActionsMarkup
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L13)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L14)
 
 ```ts
 export declare function fileActionsMarkup(options: FileActionOptions): string;
@@ -948,7 +949,7 @@ Referenced public types and APIs: [`FileActionOptions`](#fileactionoptions).
 
 ### FilePreviewOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L181)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L231)
 
 ```ts
 export interface FilePreviewOptions {
@@ -957,12 +958,13 @@ export interface FilePreviewOptions {
     dialogId?: string;
     bodyId?: string;
     onClose?: () => void;
+    onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
 }
 ```
 
 ### FilePreviewState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L180)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L230)
 
 ```ts
 export interface FilePreviewState {
@@ -979,7 +981,7 @@ Referenced public types and APIs: [`PreviewKind`](#previewkind).
 
 ### ResourceDisplayEntry
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L102)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L107)
 
 ```ts
 export interface ResourceDisplayEntry {
@@ -994,7 +996,7 @@ export interface ResourceDisplayEntry {
 
 ### ResourcesPanelOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L107)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L112)
 
 ```ts
 export interface ResourcesPanelOptions {
@@ -1011,7 +1013,7 @@ export interface ResourcesPanelOptions {
 
 ### ResourcesPanelState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L103)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/panels.ts#L108)
 
 ```ts
 export interface ResourcesPanelState {
@@ -1030,7 +1032,7 @@ Referenced public types and APIs: [`ResourceDisplayEntry`](#resourcedisplayentry
 
 ### createCompletionNotices
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L123)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L119)
 
 ```ts
 export declare function createCompletionNotices(options?: {
@@ -1046,7 +1048,7 @@ Related gallery: [completion-notices](https://minifish-org.github.io/pith-ui/?it
 
 ### createCopyFeedback
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L166)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L157)
 
 ```ts
 export declare function createCopyFeedback(options: {
@@ -1063,7 +1065,7 @@ Related gallery: [copy-feedback](https://minifish-org.github.io/pith-ui/?item=co
 
 ### createCostLedger
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L24)
 
 ```ts
 export declare function createCostLedger(options?: {
@@ -1084,7 +1086,7 @@ Related gallery: [cost-ledger](https://minifish-org.github.io/pith-ui/?item=cost
 
 ### createUpdatePanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L82)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L78)
 
 ```ts
 export declare function createUpdatePanel(options?: {
@@ -1109,7 +1111,7 @@ Related gallery: [settings-panel](https://minifish-org.github.io/pith-ui/?item=s
 
 ### CompletionNoticeDisplay
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L116)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L112)
 
 ```ts
 export interface CompletionNoticeDisplay {
@@ -1124,7 +1126,7 @@ Related gallery: [completion-notices](https://minifish-org.github.io/pith-ui/?it
 
 ### CostLedgerState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L22)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L23)
 
 ```ts
 export interface CostLedgerState {
@@ -1137,7 +1139,7 @@ Referenced public types and APIs: [`CostRequestDisplay`](#costrequestdisplay).
 
 ### CostRequestDisplay
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L18)
 
 ```ts
 export interface CostRequestDisplay {
@@ -1167,7 +1169,7 @@ export interface CostRequestDisplay {
 
 ### CostSummaryDisplay
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L9)
 
 ```ts
 export interface CostSummaryDisplay {
@@ -1183,7 +1185,7 @@ export interface CostSummaryDisplay {
 
 ### formatCost
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L10)
 
 ```ts
 export declare function formatCost(cost: CostSummaryDisplay | undefined, latestTask?: boolean): string;
@@ -1193,7 +1195,7 @@ Referenced public types and APIs: [`CostSummaryDisplay`](#costsummarydisplay).
 
 ### historyStatusMarkup
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L117)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L113)
 
 ```ts
 export declare function historyStatusMarkup(status: 'approval' | 'running' | 'unread' | 'idle'): string;
@@ -1203,7 +1205,7 @@ Related gallery: [completion-notices](https://minifish-org.github.io/pith-ui/?it
 
 ### UpdatePanelState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L81)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/files/systems.ts#L77)
 
 ```ts
 export interface UpdatePanelState {
@@ -1220,31 +1222,31 @@ export interface UpdatePanelState {
 
 ### createProviderActions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L38)
 
 ```ts
-export declare function createProviderActions(state: ProviderActionsState, options?: FeatureActionOptions): UIBlock<ProviderActionsState>;
+export declare function createProviderActions(state: ProviderActionsState, options?: ProviderActionOptions): UIBlock<ProviderActionsState>;
 ```
 
-Referenced public types and APIs: [`FeatureActionOptions`](#featureactionoptions), [`ProviderActionsState`](#provideractionsstate), [`UIBlock`](#uiblock).
+Referenced public types and APIs: [`ProviderActionOptions`](#provideractionoptions), [`ProviderActionsState`](#provideractionsstate), [`UIBlock`](#uiblock).
 
 Related gallery: [provider-resource-actions](https://minifish-org.github.io/pith-ui/?item=provider-resource-actions).
 
 ### createResourceActions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L46)
 
 ```ts
-export declare function createResourceActions(state: ResourceActionsState, options?: FeatureActionOptions): UIBlock<ResourceActionsState>;
+export declare function createResourceActions(state: ResourceActionsState, options?: ResourceActionOptions): UIBlock<ResourceActionsState>;
 ```
 
-Referenced public types and APIs: [`FeatureActionOptions`](#featureactionoptions), [`ResourceActionsState`](#resourceactionsstate), [`UIBlock`](#uiblock).
+Referenced public types and APIs: [`ResourceActionOptions`](#resourceactionoptions), [`ResourceActionsState`](#resourceactionsstate), [`UIBlock`](#uiblock).
 
 Related gallery: [provider-resource-actions](https://minifish-org.github.io/pith-ui/?item=provider-resource-actions), [resources-panel](https://minifish-org.github.io/pith-ui/?item=resources-panel).
 
 ### FeatureActionOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L17)
 
 ```ts
 export interface FeatureActionOptions {
@@ -1255,9 +1257,29 @@ export interface FeatureActionOptions {
 
 Referenced public types and APIs: [`UIAction`](#uiaction).
 
+### ProviderAction
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L8)
+
+```ts
+export type ProviderAction = 'login' | 'logout' | 'custom' | 'remove-connection';
+```
+
+### ProviderActionOptions
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L18)
+
+```ts
+export interface ProviderActionOptions extends FeatureActionOptions {
+    onProviderAction?: (action: ProviderAction, target: ProviderActionTarget) => ReturnType<UIAction>;
+}
+```
+
+Referenced public types and APIs: [`FeatureActionOptions`](#featureactionoptions), [`ProviderAction`](#provideraction), [`ProviderActionTarget`](#provideractiontarget), [`UIAction`](#uiaction).
+
 ### providerActionsMarkup
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L12)
 
 ```ts
 export declare function providerActionsMarkup(provider: ProviderActionsState): string;
@@ -1267,7 +1289,7 @@ Referenced public types and APIs: [`ProviderActionsState`](#provideractionsstate
 
 ### ProviderActionsState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L5)
 
 ```ts
 export interface ProviderActionsState {
@@ -1278,9 +1300,39 @@ export interface ProviderActionsState {
 }
 ```
 
+### ProviderActionTarget
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L10)
+
+```ts
+export interface ProviderActionTarget {
+    readonly id: string;
+}
+```
+
+### ResourceAction
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L9)
+
+```ts
+export type ResourceAction = 'use-resource' | 'resource';
+```
+
+### ResourceActionOptions
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L19)
+
+```ts
+export interface ResourceActionOptions extends FeatureActionOptions {
+    onResourceAction?: (action: ResourceAction, target: ResourceActionTarget) => ReturnType<UIAction>;
+}
+```
+
+Referenced public types and APIs: [`FeatureActionOptions`](#featureactionoptions), [`ResourceAction`](#resourceaction), [`ResourceActionTarget`](#resourceactiontarget), [`UIAction`](#uiaction).
+
 ### resourceActionsMarkup
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L14)
 
 ```ts
 export declare function resourceActionsMarkup(kind: string, resource: {
@@ -1291,7 +1343,7 @@ export declare function resourceActionsMarkup(kind: string, resource: {
 
 ### ResourceActionsState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L7)
 
 ```ts
 export interface ResourceActionsState {
@@ -1302,6 +1354,30 @@ export interface ResourceActionsState {
     };
     workspaceId: string;
 }
+```
+
+### ResourceActionTarget
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L11)
+
+```ts
+export interface ResourceActionTarget {
+    readonly workspaceId: string;
+    readonly kind: string;
+    readonly resource: {
+        readonly name: string;
+        readonly path: string;
+    };
+    readonly command?: string;
+}
+```
+
+### ResourceKind
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/actions.ts#L6)
+
+```ts
+export type ResourceKind = 'instructions' | 'skill' | 'template';
 ```
 
 ## src/forms/custom-connection.ts
@@ -1675,19 +1751,19 @@ export declare function thinkingLabel(level: string): string;
 
 ### createMCPConnectionList
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L195)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L202)
 
 ```ts
-export declare function createMCPConnectionList(initial: MCPConnectionListState): UIBlock<MCPConnectionListState>;
+export declare function createMCPConnectionList(initial: MCPConnectionListState, options?: MCPConnectionListOptions): UIBlock<MCPConnectionListState>;
 ```
 
-Referenced public types and APIs: [`MCPConnectionListState`](#mcpconnectionliststate), [`UIBlock`](#uiblock).
+Referenced public types and APIs: [`MCPConnectionListOptions`](#mcpconnectionlistoptions), [`MCPConnectionListState`](#mcpconnectionliststate), [`UIBlock`](#uiblock).
 
 Related gallery: [mcp-connections](https://minifish-org.github.io/pith-ui/?item=mcp-connections).
 
 ### createMCPConnectionsPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L142)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L146)
 
 ```ts
 export declare function createMCPConnectionsPanel(state?: MCPConnectionsState, options?: FormOptions & {
@@ -1701,7 +1777,7 @@ Related gallery: [mcp-connections](https://minifish-org.github.io/pith-ui/?item=
 
 ### createModelPicker
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L178)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L182)
 
 ```ts
 export declare function createModelPicker(state?: ModelPickerState, options?: FormOptions & {
@@ -1715,7 +1791,7 @@ Related gallery: [model-picker](https://minifish-org.github.io/pith-ui/?item=mod
 
 ### createSettingsPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L45)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L47)
 
 ```ts
 export declare function createSettingsPanel(state: SettingsPanelState, options?: SettingsPanelOptions): SettingsPanel;
@@ -1727,7 +1803,7 @@ Related gallery: [settings-panel](https://minifish-org.github.io/pith-ui/?item=s
 
 ### FormDOMBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L11)
 
 ```ts
 export interface FormDOMBlock<State extends FormFeedback> extends UIBlock<State> {
@@ -1740,7 +1816,7 @@ Referenced public types and APIs: [`FormFeedback`](#formfeedback), [`UIBlock`](#
 
 ### FormFeedback
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L10)
 
 ```ts
 export interface FormFeedback {
@@ -1751,7 +1827,7 @@ export interface FormFeedback {
 
 ### FormOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L39)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L41)
 
 ```ts
 export interface FormOptions {
@@ -1759,9 +1835,17 @@ export interface FormOptions {
 }
 ```
 
+### MCPConnectionAction
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L198)
+
+```ts
+export type MCPConnectionAction = 'mcp-login' | 'mcp-logout' | 'mcp-edit' | 'mcp-toggle' | 'mcp-remove';
+```
+
 ### MCPConnectionDraft
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L139)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L143)
 
 ```ts
 export interface MCPConnectionDraft {
@@ -1783,7 +1867,7 @@ export interface MCPConnectionDraft {
 
 ### MCPConnectionItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L189)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L193)
 
 ```ts
 export interface MCPConnectionItem {
@@ -1803,9 +1887,21 @@ export interface MCPConnectionItem {
 }
 ```
 
+### MCPConnectionListOptions
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L200)
+
+```ts
+export interface MCPConnectionListOptions {
+    onAction?: (action: MCPConnectionAction, target: MCPConnectionTarget) => ReturnType<UIAction>;
+}
+```
+
+Referenced public types and APIs: [`MCPConnectionAction`](#mcpconnectionaction), [`MCPConnectionTarget`](#mcpconnectiontarget), [`UIAction`](#uiaction).
+
 ### MCPConnectionListState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L193)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L197)
 
 ```ts
 export interface MCPConnectionListState extends FormFeedback {
@@ -1817,7 +1913,7 @@ Referenced public types and APIs: [`FormFeedback`](#formfeedback), [`MCPConnecti
 
 ### MCPConnectionsPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L141)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L145)
 
 ```ts
 export interface MCPConnectionsPanel extends FormDOMBlock<MCPConnectionsState> {
@@ -1835,7 +1931,7 @@ Referenced public types and APIs: [`FormDOMBlock`](#formdomblock), [`MCPConnecti
 
 ### MCPConnectionsState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L140)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L144)
 
 ```ts
 export interface MCPConnectionsState extends FormFeedback {
@@ -1845,9 +1941,19 @@ export interface MCPConnectionsState extends FormFeedback {
 
 Referenced public types and APIs: [`FormFeedback`](#formfeedback).
 
+### MCPConnectionTarget
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L199)
+
+```ts
+export interface MCPConnectionTarget {
+    readonly name: string;
+}
+```
+
 ### MCPEditorValue
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L138)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L142)
 
 ```ts
 export interface MCPEditorValue {
@@ -1867,7 +1973,7 @@ export interface MCPEditorValue {
 
 ### ModelPicker
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L177)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L181)
 
 ```ts
 export interface ModelPicker extends FormDOMBlock<ModelPickerState> {
@@ -1881,7 +1987,7 @@ Referenced public types and APIs: [`FormDOMBlock`](#formdomblock), [`ModelPicker
 
 ### ModelPickerState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L176)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L180)
 
 ```ts
 export interface ModelPickerState extends FormFeedback {
@@ -1894,7 +2000,7 @@ Referenced public types and APIs: [`FormFeedback`](#formfeedback), [`ModelEditor
 
 ### SettingsCredentialView
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L42)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L44)
 
 ```ts
 export interface SettingsCredentialView {
@@ -1910,7 +2016,7 @@ export interface SettingsCredentialView {
 
 ### SettingsDraft
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L40)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L42)
 
 ```ts
 export interface SettingsDraft {
@@ -1922,7 +2028,7 @@ export interface SettingsDraft {
 
 ### SettingsPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L43)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L45)
 
 ```ts
 export interface SettingsPanel extends FormDOMBlock<SettingsPanelState> {
@@ -1944,7 +2050,7 @@ Referenced public types and APIs: [`FormDOMBlock`](#formdomblock), [`SettingsCre
 
 ### SettingsPanelOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L44)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L46)
 
 ```ts
 export interface SettingsPanelOptions extends FormOptions {
@@ -1961,7 +2067,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult), [`FormOptions
 
 ### SettingsPanelState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L38)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L40)
 
 ```ts
 export interface SettingsPanelState extends FormFeedback {
@@ -1985,7 +2091,7 @@ Referenced public types and APIs: [`FormFeedback`](#formfeedback).
 
 ### SettingsProviderOption
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L41)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/panels.ts#L43)
 
 ```ts
 export interface SettingsProviderOption {
@@ -2000,7 +2106,7 @@ export interface SettingsProviderOption {
 
 ### createProviderLoginPanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/provider-login.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/provider-login.ts#L8)
 
 ```ts
 export declare function createProviderLoginPanel(initial: ProviderLoginState, options?: {
@@ -2017,7 +2123,7 @@ Related gallery: [provider-login](https://minifish-org.github.io/pith-ui/?item=p
 
 ### ProviderLoginState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/provider-login.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/forms/provider-login.ts#L7)
 
 ```ts
 export interface ProviderLoginState {
@@ -2092,7 +2198,7 @@ export interface ResourceEditorState {
 
 ### createContextMenu
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L11)
 
 ```ts
 export declare function createContextMenu(options?: {
@@ -2100,18 +2206,18 @@ export declare function createContextMenu(options?: {
     onDismiss?: (restoreFocus: boolean) => void;
     onAction?: (item: ContextMenuItem) => void;
 }): UIBlock<ContextMenuState> & {
-    open(trigger: HTMLElement, state: ContextMenuState): void;
+    open(trigger: HTMLElement, state: ContextMenuState, options?: ContextMenuOpenOptions): void;
     close(restoreFocus?: boolean): void;
 };
 ```
 
-Referenced public types and APIs: [`ContextMenuItem`](#contextmenuitem), [`ContextMenuState`](#contextmenustate), [`UIBlock`](#uiblock).
+Referenced public types and APIs: [`ContextMenuItem`](#contextmenuitem), [`ContextMenuOpenOptions`](#contextmenuopenoptions), [`ContextMenuState`](#contextmenustate), [`UIBlock`](#uiblock).
 
-Related gallery: [context-menu](https://minifish-org.github.io/pith-ui/?item=context-menu).
+Related gallery: [context-menu](https://minifish-org.github.io/pith-ui/?item=context-menu), [workspace-navigation](https://minifish-org.github.io/pith-ui/?item=workspace-navigation).
 
 ### ContextMenuItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L5)
 
 ```ts
 export interface ContextMenuItem {
@@ -2128,9 +2234,22 @@ export interface ContextMenuItem {
 }
 ```
 
+### ContextMenuOpenOptions
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L10)
+
+```ts
+export interface ContextMenuOpenOptions {
+    point?: {
+        x: number;
+        y: number;
+    };
+}
+```
+
 ### ContextMenuState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/context-menu.ts#L9)
 
 ```ts
 export interface ContextMenuState {
@@ -2145,7 +2264,7 @@ Referenced public types and APIs: [`ContextMenuItem`](#contextmenuitem).
 
 ### createRenameConversation
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L85)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L101)
 
 ```ts
 export declare function createRenameConversation(initial: RenameConversationState, options?: RenameConversationOptions): RenameConversationBlock;
@@ -2157,7 +2276,7 @@ Related gallery: [rename-conversation](https://minifish-org.github.io/pith-ui/?i
 
 ### createWorkspaceNavigation
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L17)
 
 ```ts
 export declare function createWorkspaceNavigation(initial: WorkspaceNavigationState, options?: {
@@ -2165,16 +2284,17 @@ export declare function createWorkspaceNavigation(initial: WorkspaceNavigationSt
     idPrefix?: string;
     onToggle?: (id: string) => void;
     onSelect?: (id: string) => void;
+    onAction?: (action: WorkspaceNavigationAction) => void;
 }): UIBlock<WorkspaceNavigationState>;
 ```
 
-Referenced public types and APIs: [`UIBlock`](#uiblock), [`WorkspaceNavigationState`](#workspacenavigationstate).
+Referenced public types and APIs: [`UIBlock`](#uiblock), [`WorkspaceNavigationAction`](#workspacenavigationaction), [`WorkspaceNavigationState`](#workspacenavigationstate).
 
 Related gallery: [workspace-navigation](https://minifish-org.github.io/pith-ui/?item=workspace-navigation).
 
 ### createWorkspacePicker
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L137)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L151)
 
 ```ts
 export declare function createWorkspacePicker(initial: WorkspacePickerState, options?: WorkspacePickerOptions): WorkspacePickerBlock;
@@ -2186,7 +2306,7 @@ Related gallery: [workspace-picker](https://minifish-org.github.io/pith-ui/?item
 
 ### NavigationConversation
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L8)
 
 ```ts
 export interface NavigationConversation {
@@ -2200,7 +2320,7 @@ export interface NavigationConversation {
 
 ### NavigationWorkspace
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L9)
 
 ```ts
 export interface NavigationWorkspace {
@@ -2218,7 +2338,7 @@ Referenced public types and APIs: [`NavigationConversation`](#navigationconversa
 
 ### RenameConversationBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L76)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L92)
 
 ```ts
 export interface RenameConversationBlock extends UIBlock<RenameConversationState> {
@@ -2236,7 +2356,7 @@ Referenced public types and APIs: [`RenameConversationDraft`](#renameconversatio
 
 ### RenameConversationDraft
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L67)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L83)
 
 ```ts
 export interface RenameConversationDraft {
@@ -2247,7 +2367,7 @@ export interface RenameConversationDraft {
 
 ### RenameConversationOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L68)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L84)
 
 ```ts
 export interface RenameConversationOptions {
@@ -2264,7 +2384,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult), [`RenameConve
 
 ### RenameConversationState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L66)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L82)
 
 ```ts
 export interface RenameConversationState {
@@ -2275,9 +2395,28 @@ export interface RenameConversationState {
 }
 ```
 
+### WorkspaceNavigationAction
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L11)
+
+```ts
+export type WorkspaceNavigationAction = {
+    action: 'add-workspace';
+    trigger: HTMLButtonElement;
+} | {
+    action: 'new-conversation' | 'workspace-menu';
+    workspaceId: string;
+    trigger: HTMLButtonElement;
+} | {
+    action: 'conversation-menu';
+    conversationId: string;
+    trigger: HTMLButtonElement;
+};
+```
+
 ### WorkspaceNavigationState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L10)
 
 ```ts
 export interface WorkspaceNavigationState {
@@ -2291,7 +2430,7 @@ Referenced public types and APIs: [`NavigationWorkspace`](#navigationworkspace).
 
 ### WorkspacePickerBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L127)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L141)
 
 ```ts
 export interface WorkspacePickerBlock extends UIBlock<WorkspacePickerState> {
@@ -2312,7 +2451,7 @@ Referenced public types and APIs: [`UIBlock`](#uiblock), [`WorkspacePickerState`
 
 ### WorkspacePickerOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L117)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L131)
 
 ```ts
 export interface WorkspacePickerOptions {
@@ -2334,7 +2473,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult).
 
 ### WorkspacePickerState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L116)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/navigation/navigation.ts#L130)
 
 ```ts
 export interface WorkspacePickerState {
@@ -2352,7 +2491,7 @@ export interface WorkspacePickerState {
 
 ### createActions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L298)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L319)
 
 ```ts
 export declare function createActions(options?: ActionsState & {
@@ -2366,7 +2505,7 @@ Related gallery: [actions](https://minifish-org.github.io/pith-ui/?item=actions)
 
 ### createButton
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L27)
 
 ```ts
 export declare function createButton(options: ButtonOptions): ButtonBlock;
@@ -2378,7 +2517,7 @@ Related gallery: [actions](https://minifish-org.github.io/pith-ui/?item=actions)
 
 ### createCheckbox
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L251)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L272)
 
 ```ts
 export declare function createCheckbox(options: CheckboxState & {
@@ -2393,7 +2532,7 @@ Related gallery: [checkbox](https://minifish-org.github.io/pith-ui/?item=checkbo
 
 ### createCollectionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L335)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L356)
 
 ```ts
 export declare function createCollectionState(options: CollectionState & {
@@ -2408,7 +2547,7 @@ Related gallery: [collection-state](https://minifish-org.github.io/pith-ui/?item
 
 ### createConfirmDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L450)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L472)
 
 ```ts
 export declare function createConfirmDialog(options: ConfirmState & {
@@ -2431,7 +2570,7 @@ Related gallery: [confirmation](https://minifish-org.github.io/pith-ui/?item=con
 
 ### createDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L357)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L378)
 
 ```ts
 export declare function createDialog(options: DialogOptions): DialogBlock;
@@ -2443,7 +2582,7 @@ Related gallery: [dialog](https://minifish-org.github.io/pith-ui/?item=dialog).
 
 ### createDisclosure
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L306)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L327)
 
 ```ts
 export declare function createDisclosure(options: DisclosureState & {
@@ -2459,7 +2598,7 @@ Related gallery: [disclosure](https://minifish-org.github.io/pith-ui/?item=discl
 
 ### createDivider
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L73)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L75)
 
 ```ts
 export declare function createDivider(state?: {
@@ -2475,7 +2614,7 @@ Related gallery: [divider](https://minifish-org.github.io/pith-ui/?item=divider)
 
 ### createField
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L120)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L119)
 
 ```ts
 export declare function createField(options: FieldState & {
@@ -2489,7 +2628,7 @@ Related gallery: [number-input](https://minifish-org.github.io/pith-ui/?item=num
 
 ### createFormSection
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L290)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L311)
 
 ```ts
 export declare function createFormSection(options: FormSectionState & {
@@ -2503,7 +2642,7 @@ Related gallery: [form-section](https://minifish-org.github.io/pith-ui/?item=for
 
 ### createIcon
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L62)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L64)
 
 ```ts
 export declare function createIcon(state: IconState): UIBlock<IconState>;
@@ -2515,7 +2654,7 @@ Related gallery: [foundation-sizing](https://minifish-org.github.io/pith-ui/?ite
 
 ### createIconButton
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L40)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L42)
 
 ```ts
 export declare function createIconButton(options: ButtonOptions & {
@@ -2529,7 +2668,7 @@ Related gallery: [icon-button](https://minifish-org.github.io/pith-ui/?item=icon
 
 ### createKeyValue
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L80)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L82)
 
 ```ts
 export declare function createKeyValue(options: KeyValueState): UIBlock<KeyValueState>;
@@ -2541,7 +2680,7 @@ Related gallery: [foundation-motion](https://minifish-org.github.io/pith-ui/?ite
 
 ### createListRow
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L320)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L341)
 
 ```ts
 export declare function createListRow(options: ListRowState & {
@@ -2555,19 +2694,19 @@ Related gallery: [collection-state](https://minifish-org.github.io/pith-ui/?item
 
 ### createMenu
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L513)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L531)
 
 ```ts
-export declare function createMenu(options: MenuState): PopoverBlock & UIBlock<MenuState>;
+export declare function createMenu(options: MenuOptions): PopoverBlock & UIBlock<MenuState>;
 ```
 
-Referenced public types and APIs: [`MenuState`](#menustate), [`PopoverBlock`](#popoverblock), [`UIBlock`](#uiblock).
+Referenced public types and APIs: [`MenuOptions`](#menuoptions), [`MenuState`](#menustate), [`PopoverBlock`](#popoverblock), [`UIBlock`](#uiblock).
 
-Related gallery: [menu](https://minifish-org.github.io/pith-ui/?item=menu).
+Related gallery: [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [menu](https://minifish-org.github.io/pith-ui/?item=menu).
 
 ### createNotice
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L266)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L287)
 
 ```ts
 export declare function createNotice(state: NoticeState): UIBlock<NoticeState>;
@@ -2579,7 +2718,7 @@ Related gallery: [notice](https://minifish-org.github.io/pith-ui/?item=notice).
 
 ### createNumberInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L186)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L185)
 
 ```ts
 export declare const createNumberInput: (options: InputOptions) => InputBlock;
@@ -2591,7 +2730,7 @@ Related gallery: [number-input](https://minifish-org.github.io/pith-ui/?item=num
 
 ### createPopover
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L497)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L514)
 
 ```ts
 export declare function createPopover(options: PopoverState & {
@@ -2606,7 +2745,7 @@ Related gallery: [popover](https://minifish-org.github.io/pith-ui/?item=popover)
 
 ### createProgress
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L279)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L300)
 
 ```ts
 export declare function createProgress(state: ProgressState): UIBlock<ProgressState>;
@@ -2618,7 +2757,7 @@ Related gallery: [progress](https://minifish-org.github.io/pith-ui/?item=progres
 
 ### createScrollArea
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L103)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L102)
 
 ```ts
 export declare function createScrollArea(options: ScrollAreaState & {
@@ -2632,7 +2771,7 @@ Related gallery: [scroll-area](https://minifish-org.github.io/pith-ui/?item=scro
 
 ### createSearchInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L185)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L184)
 
 ```ts
 export declare const createSearchInput: (options: InputOptions) => InputBlock;
@@ -2644,7 +2783,7 @@ Related gallery: [search-input](https://minifish-org.github.io/pith-ui/?item=sea
 
 ### createSecretInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L189)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L188)
 
 ```ts
 export declare function createSecretInput(options: InputOptions): InputBlock;
@@ -2656,7 +2795,7 @@ Related gallery: [secret-input](https://minifish-org.github.io/pith-ui/?item=sec
 
 ### createSelect
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L217)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L226)
 
 ```ts
 export declare function createSelect(options: SelectOptions): SelectBlock;
@@ -2664,11 +2803,11 @@ export declare function createSelect(options: SelectOptions): SelectBlock;
 
 Referenced public types and APIs: [`SelectBlock`](#selectblock), [`SelectOptions`](#selectoptions).
 
-Related gallery: [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [select](https://minifish-org.github.io/pith-ui/?item=select).
+Related gallery: [foundation-focus](https://minifish-org.github.io/pith-ui/?item=foundation-focus), [foundation-sizing](https://minifish-org.github.io/pith-ui/?item=foundation-sizing), [foundation-spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing), [select](https://minifish-org.github.io/pith-ui/?item=select).
 
 ### createStatus
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L272)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L293)
 
 ```ts
 export declare function createStatus(state: StatusState): UIBlock<StatusState>;
@@ -2680,7 +2819,7 @@ Related gallery: [status](https://minifish-org.github.io/pith-ui/?item=status).
 
 ### createTextAction
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L53)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L55)
 
 ```ts
 export declare function createTextAction(options: ButtonOptions): ButtonBlock;
@@ -2692,7 +2831,7 @@ Related gallery: [text-action](https://minifish-org.github.io/pith-ui/?item=text
 
 ### createTextArea
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L187)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L186)
 
 ```ts
 export declare const createTextArea: (options: InputOptions) => InputBlock;
@@ -2704,7 +2843,7 @@ Related gallery: [foundation-typography](https://minifish-org.github.io/pith-ui/
 
 ### createTextEditDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L399)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L420)
 
 ```ts
 export declare function createTextEditDialog(options?: TextEditOptions): TextEditBlock;
@@ -2716,7 +2855,7 @@ Related gallery: [pending-messages](https://minifish-org.github.io/pith-ui/?item
 
 ### createTextInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L184)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L183)
 
 ```ts
 export declare const createTextInput: (options: InputOptions) => InputBlock;
@@ -2728,7 +2867,7 @@ Related gallery: [form-section](https://minifish-org.github.io/pith-ui/?item=for
 
 ### createToolbar
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L95)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L94)
 
 ```ts
 export declare function createToolbar(options: ToolbarState & {
@@ -2742,7 +2881,7 @@ Related gallery: [button](https://minifish-org.github.io/pith-ui/?item=button), 
 
 ### ActionsState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L297)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L318)
 
 ```ts
 export interface ActionsState {
@@ -2752,7 +2891,7 @@ export interface ActionsState {
 
 ### ButtonBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L25)
 
 ```ts
 export interface ButtonBlock extends UIBlock<ButtonState> {
@@ -2764,7 +2903,7 @@ Referenced public types and APIs: [`ButtonState`](#buttonstate), [`UIBlock`](#ui
 
 ### ButtonOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L20)
 
 ```ts
 export interface ButtonOptions extends ButtonState {
@@ -2778,7 +2917,7 @@ Referenced public types and APIs: [`ButtonState`](#buttonstate), [`UIAction`](#u
 
 ### ButtonState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L9)
 
 ```ts
 export interface ButtonState {
@@ -2798,7 +2937,7 @@ Referenced public types and APIs: [`Density`](#density), [`Intent`](#intent).
 
 ### CheckboxBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L245)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L266)
 
 ```ts
 export interface CheckboxBlock extends UIBlock<CheckboxState> {
@@ -2813,7 +2952,7 @@ Referenced public types and APIs: [`CheckboxState`](#checkboxstate), [`UIBlock`]
 
 ### CheckboxState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L244)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L265)
 
 ```ts
 export interface CheckboxState {
@@ -2825,7 +2964,7 @@ export interface CheckboxState {
 
 ### CollectionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L334)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L355)
 
 ```ts
 export interface CollectionState {
@@ -2837,7 +2976,7 @@ export interface CollectionState {
 
 ### ConfirmBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L449)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L471)
 
 ```ts
 export interface ConfirmBlock extends UIBlock<ConfirmState> {
@@ -2854,7 +2993,7 @@ Referenced public types and APIs: [`ConfirmState`](#confirmstate), [`UIBlock`](#
 
 ### ConfirmState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L448)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L470)
 
 ```ts
 export interface ConfirmState extends DialogState {
@@ -2871,7 +3010,7 @@ Referenced public types and APIs: [`DialogState`](#dialogstate).
 
 ### DialogBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L351)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L372)
 
 ```ts
 export interface DialogBlock extends UIBlock<DialogState> {
@@ -2886,7 +3025,7 @@ Referenced public types and APIs: [`DialogState`](#dialogstate), [`UIBlock`](#ui
 
 ### DialogOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L350)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L371)
 
 ```ts
 export interface DialogOptions extends DialogState {
@@ -2902,7 +3041,7 @@ Referenced public types and APIs: [`DialogState`](#dialogstate).
 
 ### DialogState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L349)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L370)
 
 ```ts
 export interface DialogState {
@@ -2915,7 +3054,7 @@ export interface DialogState {
 
 ### DisclosureBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L305)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L326)
 
 ```ts
 export interface DisclosureBlock extends UIBlock<DisclosureState> {
@@ -2928,7 +3067,7 @@ Referenced public types and APIs: [`DisclosureState`](#disclosurestate), [`UIBlo
 
 ### DisclosureState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L304)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L325)
 
 ```ts
 export interface DisclosureState {
@@ -2940,7 +3079,7 @@ export interface DisclosureState {
 
 ### FieldBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L116)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L115)
 
 ```ts
 export interface FieldBlock extends UIBlock<FieldState> {
@@ -2952,7 +3091,7 @@ Referenced public types and APIs: [`FieldState`](#fieldstate), [`UIBlock`](#uibl
 
 ### FieldState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L109)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L108)
 
 ```ts
 export interface FieldState {
@@ -2966,7 +3105,7 @@ export interface FieldState {
 
 ### FormSectionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L289)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L310)
 
 ```ts
 export interface FormSectionState {
@@ -2977,7 +3116,7 @@ export interface FormSectionState {
 
 ### IconState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L61)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L63)
 
 ```ts
 export interface IconState {
@@ -2989,7 +3128,7 @@ export interface IconState {
 
 ### InputBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L155)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L154)
 
 ```ts
 export interface InputBlock extends UIBlock<InputState> {
@@ -3004,7 +3143,7 @@ Referenced public types and APIs: [`InputState`](#inputstate), [`UIBlock`](#uibl
 
 ### InputOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L146)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L145)
 
 ```ts
 export interface InputOptions extends InputState {
@@ -3022,7 +3161,7 @@ Referenced public types and APIs: [`InputState`](#inputstate).
 
 ### InputState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L141)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L140)
 
 ```ts
 export interface InputState extends FieldState {
@@ -3036,7 +3175,7 @@ Referenced public types and APIs: [`Density`](#density), [`FieldState`](#fieldst
 
 ### KeyValueState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L79)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L81)
 
 ```ts
 export interface KeyValueState {
@@ -3050,7 +3189,7 @@ export interface KeyValueState {
 
 ### ListRowState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L319)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L340)
 
 ```ts
 export interface ListRowState {
@@ -3064,7 +3203,7 @@ export interface ListRowState {
 
 ### MenuItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L511)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L528)
 
 ```ts
 export interface MenuItem {
@@ -3079,9 +3218,21 @@ export interface MenuItem {
 
 Referenced public types and APIs: [`Intent`](#intent), [`UIAction`](#uiaction).
 
+### MenuOptions
+
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L530)
+
+```ts
+export interface MenuOptions extends MenuState {
+    onError?: (message: string) => void;
+}
+```
+
+Referenced public types and APIs: [`MenuState`](#menustate).
+
 ### MenuState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L512)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L529)
 
 ```ts
 export interface MenuState extends PopoverState {
@@ -3093,7 +3244,7 @@ Referenced public types and APIs: [`MenuItem`](#menuitem), [`PopoverState`](#pop
 
 ### NoticeState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L265)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L286)
 
 ```ts
 export interface NoticeState {
@@ -3104,7 +3255,7 @@ export interface NoticeState {
 
 ### PopoverBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L490)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L507)
 
 ```ts
 export interface PopoverBlock extends UIBlock<PopoverState> {
@@ -3120,7 +3271,7 @@ Referenced public types and APIs: [`PopoverState`](#popoverstate), [`UIBlock`](#
 
 ### PopoverState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L489)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L506)
 
 ```ts
 export interface PopoverState {
@@ -3131,7 +3282,7 @@ export interface PopoverState {
 
 ### ProgressState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L278)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L299)
 
 ```ts
 export interface ProgressState {
@@ -3143,7 +3294,7 @@ export interface ProgressState {
 
 ### ScrollAreaState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L102)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L101)
 
 ```ts
 export interface ScrollAreaState {
@@ -3154,13 +3305,15 @@ export interface ScrollAreaState {
 
 ### SelectBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L211)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L218)
 
 ```ts
 export interface SelectBlock extends UIBlock<SelectState> {
     readonly control: HTMLSelectElement;
     getValue(): string;
+    getValues(): string[];
     reset(value: string): void;
+    resetValues(values: readonly string[]): void;
     focus(): void;
 }
 ```
@@ -3186,7 +3339,9 @@ export interface SelectOption {
 ```ts
 export interface SelectOptions extends SelectState {
     value?: string;
+    values?: readonly string[];
     onChange?: (value: string) => void;
+    onValuesChange?: (values: readonly string[]) => void;
     multiple?: boolean;
     size?: number;
 }
@@ -3209,7 +3364,7 @@ Referenced public types and APIs: [`Density`](#density), [`FieldState`](#fieldst
 
 ### StatusState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L271)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L292)
 
 ```ts
 export interface StatusState {
@@ -3220,7 +3375,7 @@ export interface StatusState {
 
 ### TextEditBlock
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L390)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L411)
 
 ```ts
 export interface TextEditBlock extends Omit<UIBlock<TextEditState>, 'element'> {
@@ -3238,7 +3393,7 @@ Referenced public types and APIs: [`TextEditInput`](#texteditinput), [`TextEditS
 
 ### TextEditInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L381)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L402)
 
 ```ts
 export interface TextEditInput {
@@ -3251,7 +3406,7 @@ export interface TextEditInput {
 
 ### TextEditOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L382)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L403)
 
 ```ts
 export interface TextEditOptions extends Partial<TextEditState> {
@@ -3275,7 +3430,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult), [`TextEditSta
 
 ### TextEditState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L380)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L401)
 
 ```ts
 export interface TextEditState extends DialogState {
@@ -3292,7 +3447,7 @@ Referenced public types and APIs: [`DialogState`](#dialogstate).
 
 ### ToolbarState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L94)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/primitives.ts#L93)
 
 ```ts
 export interface ToolbarState {
@@ -3359,7 +3514,7 @@ export interface ApprovalView {
 
 ### createFullAccessConfirmation
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L9)
 
 ```ts
 export declare function createFullAccessConfirmation(initial: FullAccessState, options?: FullAccessOptions): UIBlock<FullAccessState> & {
@@ -3373,7 +3528,7 @@ Related gallery: [full-access-confirmation](https://minifish-org.github.io/pith-
 
 ### createPermissionControl
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L40)
 
 ```ts
 export declare function createPermissionControl(initial: PermissionControlState, options?: {
@@ -3389,7 +3544,7 @@ Related gallery: [permission-control](https://minifish-org.github.io/pith-ui/?it
 
 ### createTaskFailure
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L19)
 
 ```ts
 export declare function createTaskFailure(initial: TaskFailureState, options?: {
@@ -3406,7 +3561,7 @@ Related gallery: [task-failure](https://minifish-org.github.io/pith-ui/?item=tas
 
 ### FullAccessOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L8)
 
 ```ts
 export interface FullAccessOptions {
@@ -3419,7 +3574,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult).
 
 ### FullAccessState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L7)
 
 ```ts
 export interface FullAccessState {
@@ -3431,7 +3586,7 @@ export interface FullAccessState {
 
 ### PermissionControlState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L24)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L39)
 
 ```ts
 export interface PermissionControlState {
@@ -3443,7 +3598,7 @@ export interface PermissionControlState {
 
 ### TaskFailureState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/permission.ts#L18)
 
 ```ts
 export interface TaskFailureState {
@@ -3459,7 +3614,7 @@ export interface TaskFailureState {
 
 ### createRuntimePanel
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/runtime.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/runtime.ts#L6)
 
 ```ts
 export declare function createRuntimePanel(initial: RuntimePanelState, options?: {
@@ -3481,7 +3636,7 @@ Related gallery: [runtime-panel](https://minifish-org.github.io/pith-ui/?item=ru
 
 ### RuntimePanelState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/runtime.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/tasks/runtime.ts#L5)
 
 ```ts
 export interface RuntimePanelState {
@@ -3531,7 +3686,7 @@ Related gallery: [foundation-colors](https://minifish-org.github.io/pith-ui/?ite
 
 ### createComposerView
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L33)
 
 ```ts
 export declare function createComposerView(options?: ComposerViewOptions): {
@@ -3553,7 +3708,7 @@ Related gallery: [composer](https://minifish-org.github.io/pith-ui/?item=compose
 
 ### createWorkspaceShell
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L122)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L121)
 
 ```ts
 export declare function createWorkspaceShell(options: WorkspaceShellOptions): {
@@ -3586,7 +3741,7 @@ Related gallery: [workspace-chat](https://minifish-org.github.io/pith-ui/?item=w
 
 ### ActionScope
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L119)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L118)
 
 ```ts
 export interface ActionScope {
@@ -3597,7 +3752,7 @@ export interface ActionScope {
 
 ### ComposerViewOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L15)
 
 ```ts
 export interface ComposerViewOptions {
@@ -3616,7 +3771,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult).
 
 ### ComposerViewState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L9)
 
 ```ts
 export interface ComposerViewState {
@@ -3643,7 +3798,7 @@ export interface ComposerViewState {
 
 ### WorkspaceDialogName
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L118)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L117)
 
 ```ts
 export type WorkspaceDialogName = 'model' | 'settings' | 'workspace' | 'permissions' | 'delete' | 'rename' | 'queue-edit' | 'message-edit' | 'resources' | 'connections' | 'preview' | 'image';
@@ -3651,7 +3806,7 @@ export type WorkspaceDialogName = 'model' | 'settings' | 'workspace' | 'permissi
 
 ### WorkspaceShellOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L120)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L119)
 
 ```ts
 export interface WorkspaceShellOptions {
@@ -3668,7 +3823,7 @@ Referenced public types and APIs: [`ComposerViewOptions`](#composerviewoptions),
 
 ### WorkspaceShellState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L121)
+[Source](https://github.com/minifish-org/pith-ui/blob/main/src/workspace.ts#L120)
 
 ```ts
 export interface WorkspaceShellState {

@@ -1,6 +1,7 @@
 import type { UIBlock } from './core.js';
-import { escape, icon } from './dom.js';
+import { icon, setText } from './dom.js';
 import { adoptProductParts } from './foundations.js';
+import { reconcileKeyed } from './reconcile.js';
 
 export interface PendingMessage { id: string; text: string; mode: string; imageCount?: number; }
 export interface PendingMessagesState { items: readonly PendingMessage[]; running: boolean; busy: boolean; }
@@ -67,27 +68,32 @@ export function createAttachments(options: { container?: HTMLElement; onRemove?:
   const element = options.container ?? document.createElement('div'); element.classList.add('pui-draft-images'); element.setAttribute('aria-label', 'Image attachments');
   const parts = adoptProductParts(element);
   let destroyed = false;
+  const figures = new Map([...element.querySelectorAll<HTMLElement>('[data-attachment-id]')].map(node => [node.dataset.attachmentId!, node]));
   const click = (event: Event) => {
     const target = event.target as Element;
     const button = target.closest<HTMLButtonElement>('[data-remove-image]');
-    if (button && !button.disabled) options.onRemove?.(button.dataset.removeImage!);
-    if (target instanceof HTMLImageElement) options.onOpen?.(target);
+    if (button && !button.disabled && options.onRemove) {event.stopPropagation(); options.onRemove(button.dataset.removeImage!);}
+    if (target instanceof HTMLImageElement && options.onOpen) {event.stopPropagation(); options.onOpen(target);}
+  };
+  const keydown = (event: KeyboardEvent) => {
+    if (!options.onOpen || !(event.target instanceof HTMLImageElement) || event.isComposing || !['Enter',' '].includes(event.key)) return;
+    event.preventDefault(); event.stopPropagation();
+    if (!event.repeat) options.onOpen(event.target);
   };
   element.addEventListener('click', click);
+  element.addEventListener('keydown', keydown);
   return { element, update(state) {
     if (destroyed) return;
     element.hidden = !state.items.length;
-    const keys = new Set(state.items.map(item => item.id));
-    for (const node of element.querySelectorAll<HTMLElement>('[data-attachment-id]')) if (!keys.has(node.dataset.attachmentId!)) node.remove();
-    for (const item of state.items) {
-      let figure = [...element.children].find(node => (node as HTMLElement).dataset.attachmentId === item.id) as HTMLElement | undefined;
-      if (!figure) { figure = document.createElement('figure'); figure.className = 'pui-draft-image'; figure.dataset.attachmentId = item.id;
-        figure.innerHTML = `<img role="button" tabindex="0" title="Click to enlarge" /><figcaption></figcaption><button type="button" class="pui-remove-image">${icon('close')}</button>`; }
+    reconcileKeyed(element,figures,state.items,{key:item=>item.id,element:figure=>figure,
+      create(item) {const figure = document.createElement('figure'); figure.className = 'pui-draft-image'; figure.dataset.attachmentId = item.id;
+        figure.innerHTML = `<img role="button" tabindex="0" title="Click to enlarge" /><figcaption></figcaption><button type="button" class="pui-remove-image">${icon('close')}</button>`;return figure;},
+      update(figure,item) {
       const image = figure.querySelector('img')!; if (image.getAttribute('src') !== item.url) image.src = item.url; image.alt = item.name;
-      figure.querySelector('figcaption')!.textContent = item.name;
+      setText(figure.querySelector('figcaption')!,item.name);
       const button = figure.querySelector('button')!; button.dataset.removeImage = item.id; button.setAttribute('aria-label', 'Remove ' + item.name); parts.action(button).update({ disabled: !!state.disabled });
-      if (element.children[state.items.indexOf(item)] !== figure) element.insertBefore(figure, element.children[state.items.indexOf(item)] ?? null);
-    }
+      },destroy() {},
+    });
     parts.update();
-  }, destroy() { if (destroyed) return; destroyed = true; parts.destroy(); element.removeEventListener('click', click); element.replaceChildren(); } };
+  }, destroy() { if (destroyed) return; destroyed = true; parts.destroy(); element.removeEventListener('click', click); element.removeEventListener('keydown', keydown); figures.clear(); element.replaceChildren(); } };
 }

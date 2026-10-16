@@ -20,6 +20,8 @@ npm run showroom:build
 
 Playwright runs the actual components in Chromium and WebKit. These are browser-engine checks, not a claim that every native application or physical device has been tested. Keep browser errors, failed requests and trace evidence when investigating failures.
 
+Theme colors have one build-only source in `scripts/palette.ts`; Vite and the package builder generate the same ordinary CSS rules. Theme tests cover explicit and nested appearances, missing/invalid preferences and live system changes. Multi-row select checks measure actual option bounds and native selection, since WebKit ignores option-padding declarations; a tall empty control is not evidence of readable row spacing.
+
 Maintained visual comparison is separate: `node scripts/visual.ts` checks 30 PNGs across five complete pages, two themes and three viewports. It requires the recorded macOS/Apple Silicon environment; Linux CI does not compare Mac system-font pixels. Only explicit `node scripts/visual.ts --update` records candidate baseline changes. See `visual-baselines/README.md`. No image update implies human acceptance.
 
 ## Shared behavior matrix

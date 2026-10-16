@@ -16,7 +16,7 @@ export const filesCases: ShowcaseCase[] = [
     code: `const actions = createFileActions({ kind: 'artifact', ownerId, path, preview: true, copyMode: 'file', onAction: handleFileAction });`,
     mount(context) {
       const block = actions(context, 'artifact', context.state === 'long' ? 'output/很长的目录/'.repeat(10) + '报告.md' : 'output/报告.md');
-      if (context.state === 'disabled') block.element.querySelectorAll('button').forEach((button) => { button.disabled = true; });
+      block.setDisabled(context.state === 'disabled');
       return block;
     },
   },
@@ -83,7 +83,7 @@ export const filesCases: ShowcaseCase[] = [
   },
   {
     id: 'cost-ledger', title: '请求费用明细', layer: 'blocks', category: '系统信息',
-    description: '估算说明、已知与未知费用、缓存用量和费率来源；重绘保留展开项。', states: ['normal', 'loading', 'error', 'empty', 'long'], related: ['runtime-details'],
+    description: '估算说明、已知与未知费用、缓存用量和费率来源；重绘保留展开项。', states: ['normal', 'loading', 'error', 'empty', 'long'], related: ['runtime-panel'],
     code: `const ledger = createCostLedger();\nledger.update({ unknownRequests: 1, requests });\n// 请求、计算和懒加载由应用负责。`,
     mount(context) {
       const block = createCostLedger();

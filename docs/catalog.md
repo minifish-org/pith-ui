@@ -34,6 +34,8 @@ See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showro
 
 `createSelect` uses the shared floating option surface for a single-choice dropdown, including selection, disabled items, keyboard navigation and focus. Permission, provider, theme and other product choices reuse this implementation. Use the block's `focus()` method to reach its visible control; `control` retains the native form value and validation adapter. Explicit `multiple: true` or `size > 1` produces a visible native listbox, preserving platform multi-selection and multiline navigation rather than squeezing a list into a dropdown. See [Select](https://minifish-org.github.io/pith-ui/?item=select) and [conversation permissions](https://minifish-org.github.io/pith-ui/?item=permission-control) together.
 
+Multi-select uses `values`, `getValues()`, `resetValues(values)` and `onValuesChange(values)` for complete selections. Scalar value methods remain compatible; `values` takes precedence at construction. Explicit resets do not emit change callbacks or replace native form-reset defaults. File actions expose `setDisabled(boolean)` and combine it with copy-pending restrictions.
+
 ## 3. Product blocks
 
 | Product category | Public factories | Showroom item IDs |
@@ -53,6 +55,8 @@ See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showro
 | Shared feature surface | `createFeatureDialogFrame`, `createFeatureStatus` | `feature-dialog` |
 
 The complete current set of page IDs is defined by the catalog itself, rather than a second copied implementation. The composed workspace case uses the same shell, message, composer, task and notification blocks.
+
+Provider/resource action factories expose typed `onProviderAction`/`onResourceAction` callbacks; MCP connection lists expose typed `onAction`. Navigation's `onAction` receives a `WorkspaceNavigationAction` with semantic IDs and its trigger. These callbacks consume their owned action event; legacy dataset routing remains available when callbacks are omitted. Code-copy callbacks consistently receive the text and actual button through conversation, paged and file previews; the host supplies clipboard access and feedback.
 
 Case implementations:
 

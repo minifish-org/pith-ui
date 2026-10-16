@@ -90,8 +90,8 @@ export const primitiveCases: ShowcaseCase[] = [
   },
   {
     id: 'select', title: '选择器 Select', layer: 'components', category: '输入',
-    description: '单选下拉复用统一浮层、选中状态与键盘导航；多行列表保留原生列表操作。可体验禁用选项、错误与长内容。', states: inputStates, related: ['permission-control', 'model-picker', 'popover'],
-    code: `import { createSelect } from 'pith-ui';\nconst provider = createSelect({\n  label: '提供商', value: 'pith',\n  options: [\n    { value: 'pith', label: 'Pith' },\n    { value: 'unavailable', label: '暂不可用', disabled: true },\n    { value: 'example', label: '示例提供商' },\n  ],\n  onChange: value => console.log(value),\n});\ndocument.body.append(provider.element);\n// 多行或多选列表显式使用 size / multiple，保持原生列表交互。\n// 调用 provider.focus() 聚焦实际可操作的选择器。`,
+    description: '单选下拉复用统一浮层、选中状态与键盘导航；多行列表使用 16 CSS px 字体并保留原生操作。WebKit 原生行距由系统绘制，不能保证与 Chromium 的 32 CSS px 行高一致。', states: inputStates, related: ['permission-control', 'model-picker', 'popover'],
+    code: `import { createSelect } from 'pith-ui';\nconst provider = createSelect({\n  label: '提供商', value: 'pith',\n  options: [\n    { value: 'pith', label: 'Pith' },\n    { value: 'unavailable', label: '暂不可用', disabled: true },\n    { value: 'example', label: '示例提供商' },\n  ],\n  onChange: value => console.log(value),\n});\ndocument.body.append(provider.element);\nconst models = createSelect({\n  label: 'Models', size: 5, multiple: true, values: ['first', 'third'],\n  options: [{ value: 'first', label: 'First model' }, { value: 'second', label: 'Second model' }, { value: 'third', label: 'Third model' }],\n  onValuesChange: values => console.log(values), // The complete selection.\n});\nmodels.resetValues(['second']); // Explicit draft reset, no change callback.\nconsole.log(models.getValues());\n// 多行或多选列表保留原生列表交互；focus() 聚焦实际控件。`,
     mount(context) {
       const options = Array.from({ length: context.state === 'long' ? 20 : 6 }, (_, index) => ({ value: String(index), label: sample(context, `Model ${index + 1}`) }));
       const providerOptions = [
@@ -102,7 +102,7 @@ export const primitiveCases: ShowcaseCase[] = [
       ];
       const error = context.state === 'error' ? '演示读取失败；当前选择保留，可以重新选择。' : '';
       return group([createSelect({ label: 'Provider', description: '单选下拉：点击或按 Enter 打开；方向键移动，Enter 确认，Esc 取消。禁用项不可选择。', value: 'pith', options: providerOptions, density: context.density, disabled: disabled(context), error, onChange: value => context.log(`Provider: ${value}`) }),
-        createSelect({ label: 'Models (multi-row)', description: '原生多选列表：使用系统键盘与修饰键选择多项。', options, size: 5, multiple: true, disabled: disabled(context), error, onChange: value => context.log(`Model: ${value}`) })]);
+        createSelect({ label: 'Models (multi-row)', description: '16 CSS px 原生多选列表，使用系统键盘与修饰键；WebKit 不应用选项内边距，行距由平台决定。回调提供全部选中项，初始选中 Model 1、Model 3。', options, size: 5, multiple: true, values:['0','2'], disabled: disabled(context), error, onValuesChange: values => context.log(`演示所选模型：${values.join(', ') || '未选择'}`) })]);
     },
   },
   {

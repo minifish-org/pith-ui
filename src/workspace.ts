@@ -1,9 +1,10 @@
-import { Generation, type UIBlock, type ActionResult } from './core.js';
-import { icon } from './dom.js';
+import { type UIBlock, type ActionResult } from './core.js';
+import { focusableElements, icon } from './dom.js';
 import { controlDisabled } from './core.js';
 import { adoptProductParts, reconcileSelectOptions } from './foundations.js';
 import { installDialogLifecycle } from './surface.js';
 import { permissionControlElement } from './tasks/permission-element.js';
+import { createOperation } from './operation.js';
 
 export interface ComposerViewState {
   placeholder?: string; disabled?: boolean; readOnly?: boolean;
@@ -53,13 +54,14 @@ export function createComposerView(options: ComposerViewOptions = {}) {
   const thinkingLabel = thinking.closest<HTMLLabelElement>('label')!;
   const imagePicker = element.querySelector<HTMLInputElement>('[type="file"]')!;
   identify(element, options.prefix ?? 'pui-composer-' + ++sequence + '-');
-  const generation = new Generation();
   const parts = adoptProductParts(element);
   parts.control(element.querySelector<HTMLSelectElement>('[id$="permission-mode"]')!);
   parts.control(thinking);
   let destroyed = false;
-  let pending = false, last: ComposerViewState = {}, lastAction = 'send';
+  let last: ComposerViewState = {}, lastAction = 'send';
   const error = document.createElement('div'); error.className = 'pui-form-error'; error.setAttribute('role','alert'); error.hidden = true; element.insertBefore(error, element.firstChild);
+  const feedback = parts.feedback(error);
+  const setError = (message:string) => {feedback.update({message,tone:'error'});error.hidden=!message;};
   const resize = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; };
   const update = (state: ComposerViewState) => {
     if (destroyed) return;
@@ -68,7 +70,7 @@ export function createComposerView(options: ComposerViewOptions = {}) {
     if (state.action && state.action !== lastAction) { lastAction = state.action; action.type = state.action === 'stop' ? 'button' : 'submit'; action.innerHTML = icon(state.action === 'stop' ? 'stop' : 'arrow'); action.classList.toggle('pui-is-stop', state.action === 'stop'); }
     const actionLabel = lastAction === 'stop' ? 'Stop agent' : lastAction === 'queue' ? 'Queue message' : 'Send message';
     action.setAttribute('aria-label', actionLabel); action.title = actionLabel;
-    parts.action(action).update({ disabled: !!(state.actionDisabled || state.disabled), pending });
+    parts.action(action).update({ disabled: !!(state.actionDisabled || state.disabled), pending: operation.pending });
     if (state.model) {
       parts.action(model).update({ label: state.model.label, title: state.model.description, disabled: !!state.model.disabled });
     }
@@ -79,16 +81,13 @@ export function createComposerView(options: ComposerViewOptions = {}) {
     }
     parts.update();
   };
+  const operation = createOperation({unavailable: () => destroyed || action.disabled, onPending: () => update(last), onError: setError});
   const onInput = () => { resize(); options.onInput?.(input.value); };
-  const run = async (callback: (() => void | ActionResult | Promise<void | ActionResult>) | undefined, textSubmission = true) => {
-    if (!callback || pending || action.disabled || (textSubmission && (input.disabled || input.readOnly))) return;
-    const seq = generation.next(); pending = true; error.hidden = true; error.textContent = ''; update(last);
-    try {
-      const result = await callback();
-      if (generation.current(seq) && result && !result.ok) { error.textContent = result.error; error.hidden = false; }
-    } catch (reason) {
-      if (generation.current(seq)) { error.textContent = reason instanceof Error ? reason.message : String(reason); error.hidden = false; }
-    } finally { if (generation.current(seq)) { pending = false; update(last); } }
+  const run = (callback: (() => void | ActionResult | Promise<void | ActionResult>) | undefined, textSubmission = true) => {
+    if (!callback || (textSubmission && (input.disabled || input.readOnly))) return;
+    operation.run(() => {setError('');return callback();}, result => {
+      if (result && !result.ok) setError(result.error);
+    });
   };
   const submit = (event: SubmitEvent) => { if (options.onSubmit) { event.preventDefault(); const text = input.value; void run(() => options.onSubmit!(text)); } };
   const stop = () => { if (action.type === 'button') void run(options.onStop, false); };
@@ -109,9 +108,9 @@ export function createComposerView(options: ComposerViewOptions = {}) {
   element.addEventListener('click', click); thinking.addEventListener('change', chooseThinking); imagePicker.addEventListener('change', images);
   input.addEventListener('input', onInput); input.addEventListener('keydown', keydown); element.addEventListener('submit', submit); action.addEventListener('click', stop);
   return { element, input, update, getValue: () => input.value,
-    reset(value: string) { if (destroyed) return; generation.invalidate(); pending = false; error.hidden = true; error.textContent = ''; input.value = value; update(last); resize(); }, focus: () => { if (!destroyed) input.focus(); }, resize,
+    reset(value: string) { if (destroyed) return; operation.invalidate(); setError(''); input.value = value; update(last); resize(); }, focus: () => { if (!destroyed) input.focus(); }, resize,
     pickImages() { if (!destroyed) imagePicker.click(); },
-    destroy() { if (destroyed) return; destroyed = true; generation.destroy(); parts.destroy(); input.removeEventListener('input', onInput); input.removeEventListener('keydown', keydown); element.removeEventListener('submit', submit); action.removeEventListener('click', stop); element.removeEventListener('click', click); thinking.removeEventListener('change', chooseThinking); imagePicker.removeEventListener('change', images); element.remove(); } };
+    destroy() { if (destroyed) return; destroyed = true; operation.destroy(); parts.destroy(); input.removeEventListener('input', onInput); input.removeEventListener('keydown', keydown); element.removeEventListener('submit', submit); action.removeEventListener('click', stop); element.removeEventListener('click', click); thinking.removeEventListener('change', chooseThinking); imagePicker.removeEventListener('change', images); element.remove(); } };
 
 }
 
@@ -192,8 +191,43 @@ export function createWorkspaceShell(options: WorkspaceShellOptions) {
     const name = dialog.id.slice(prefix.length).replace(/-dialog$/, '') as WorkspaceDialogName;
     return [name, installDialogLifecycle(dialog, { onClose: () => options.onDialogClose?.(name) })] as const;
   }));
-  const setSidebarOpen = (open: boolean) => { if (destroyed) return; part('sidebar').classList.toggle('pui-open', open); part('sidebar-scrim').classList.toggle('pui-visible', open); };
-  const sidebarClick = (event: MouseEvent) => { const target = event.target as Element; if (target === part('sidebar-scrim') || target.closest('[data-action="menu"]')) { setSidebarOpen(target !== part('sidebar-scrim')); event.stopPropagation(); } };
+  const sidebar = part('sidebar'), scrim = part('sidebar-scrim');
+  const main = element.querySelector<HTMLElement>('.pui-main')!;
+  const sidebarTrigger = element.querySelector<HTMLButtonElement>('.pui-mobile-menu')!;
+  const narrow = matchMedia('(max-width: 720px)');
+  let sidebarOpen = false;
+  sidebarTrigger.setAttribute('aria-controls', sidebar.id);
+  scrim.setAttribute('aria-hidden','true');
+  const sidebarControls = () => focusableElements(sidebar);
+  const syncSidebar = () => {
+    if (destroyed) return;
+    const open = narrow.matches && sidebarOpen;
+    main.inert = open;
+    sidebar.inert = narrow.matches && !open;
+    sidebarTrigger.setAttribute('aria-expanded',String(sidebarOpen));
+    sidebar.classList.toggle('pui-open', sidebarOpen); scrim.classList.toggle('pui-visible', sidebarOpen);
+  };
+  const setSidebarOpen = (open: boolean) => {
+    if (destroyed) return;
+    const wasOpen = sidebarOpen; sidebarOpen = open;
+    if (!open && narrow.matches && sidebar.contains(document.activeElement)) {main.inert=false;sidebarTrigger.focus({preventScroll:true});}
+    syncSidebar();
+    if (narrow.matches && open && !wasOpen) sidebarControls()[0]?.focus({preventScroll:true});
+  };
+  const onBreakpoint = () => {
+    if (narrow.matches && !sidebarOpen && sidebar.contains(document.activeElement)) {main.inert=false;sidebarTrigger.focus({preventScroll:true});}
+    syncSidebar();
+  };
+  const sidebarKeydown = (event: KeyboardEvent) => {
+    if (!narrow.matches || !sidebarOpen || event.defaultPrevented || element.querySelector('dialog[open]')) return;
+    if (event.key === 'Escape') {event.preventDefault();event.stopPropagation();setSidebarOpen(false);return;}
+    if (event.key !== 'Tab') return;
+    const controls=sidebarControls(), first=controls[0],last=controls.at(-1);
+    if (event.shiftKey && document.activeElement===first) {event.preventDefault();last?.focus();}
+    else if (!event.shiftKey && document.activeElement===last) {event.preventDefault();first?.focus();}
+  };
+  const sidebarClick = (event: MouseEvent) => { const target = event.target as Element; if (target === scrim || target.closest('[data-action="menu"]')) { setSidebarOpen(target !== scrim && !sidebarOpen); event.stopPropagation(); } };
+  narrow.addEventListener('change',onBreakpoint); element.addEventListener('keydown',sidebarKeydown); syncSidebar();
   const search = part<HTMLInputElement>('history-search'); const onSearch = () => options.onSearch?.(search.value);
   search.addEventListener('input', onSearch); element.addEventListener('click', sidebarClick);
   const busy = part('workspace-busy');
@@ -227,5 +261,5 @@ export function createWorkspaceShell(options: WorkspaceShellOptions) {
     }
     for (const link of root.querySelectorAll<HTMLAnchorElement>('a[data-download-conversation]')) link.setAttribute('aria-disabled', String(unavailable({ kind: 'conversation', id: link.dataset.downloadConversation })));
   },
-  destroy() { if (destroyed) return; destroyed = true; for (const dialog of dialogs.values()) dialog.destroy(); parts.destroy(); search.removeEventListener('input', onSearch); element.removeEventListener('click', sidebarClick); busy.removeEventListener('click', onBusy); composer.destroy(); element.remove(); } };
+  destroy() { if (destroyed) return; destroyed = true; narrow.removeEventListener('change',onBreakpoint);element.removeEventListener('keydown',sidebarKeydown);sidebar.inert=false;main.inert=false;for (const dialog of dialogs.values()) dialog.destroy(); parts.destroy(); search.removeEventListener('input', onSearch); element.removeEventListener('click', sidebarClick); busy.removeEventListener('click', onBusy); composer.destroy(); element.remove(); } };
 }

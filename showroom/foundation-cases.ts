@@ -1,7 +1,7 @@
 import type { DemoContext, MountedDemo, ShowcaseCase } from './types.js';
 import { element, uniqueId } from '../src/dom.js';
 import { setAppearance } from '../src/theme.js';
-import { createButton, createCheckbox, createIcon, createKeyValue, createSelect, createTextArea, createTextInput, createToolbar } from '../src/primitives.js';
+import { createButton, createCheckbox, createIcon, createKeyValue, createMenu, createSelect, createTextArea, createTextInput, createToolbar } from '../src/primitives.js';
 import { createConversationView } from '../src/content/conversation-view.js';
 
 type Owned = { destroy(): void };
@@ -137,16 +137,18 @@ export const foundationCases: ShowcaseCase[] = [
   },
   {
     id: 'foundation-focus', title: '焦点与可访问性 Focus', layer: 'foundations', category: '焦点与可访问性',
-    description: '请用 Tab、Shift+Tab 和空格体验焦点顺序、可见焦点、禁用项跳过及标签关联。', states: ['normal'], related: ['text-input', 'checkbox', 'menu', 'dialog'],
-    code: `import { createTextInput, createCheckbox } from 'pith-ui';\nconst name = createTextInput({ label: 'Name' });\nconst enable = createCheckbox({ label: 'Enabled' });\n// Native labels, disabled semantics and :focus-visible remain intact.`,
+    description: '请用 Tab、Shift+Tab、方向键和空格体验真实输入、选择器、菜单与禁用项。统一焦点线宽 1 CSS px、外移 2 CSS px，沿用强调色。', states: ['normal'], related: ['text-input', 'select', 'checkbox', 'menu', 'dialog'],
+    code: `import { createTextInput, createCheckbox, createSelect, createMenu } from 'pith-ui';\nconst name = createTextInput({ label: 'Name' });\nconst enable = createCheckbox({ label: 'Enabled' });\nconst choice = createSelect({ label: 'Scope', options: [{ value: 'workspace', label: 'Workspace' }] });\nconst menu = createMenu({ label: 'Actions', items: [{ id: 'open', label: 'Open', onAction: openWorkspace }] });\n// One shared :focus-visible outline: 1 CSS px, 2 CSS px offset, accent color.`,
     mount(context) {
       const root = exhibit('Focus foundations'); const start = createButton({ label: '从这里开始，然后按 Tab' }); const input = createTextInput({ label: '工作区名称', value: 'Example workspace' });
       const checked = createCheckbox({ label: 'Enable connection', checked: true }); const unavailable = createButton({ label: 'Disabled · should be skipped', disabled: true }); const save = createButton({ label: 'Save', intent: 'primary', onAction: () => context.action() });
+      const select = createSelect({label:'工作区范围',value:'workspace',options:[{value:'workspace',label:'当前工作区'},{value:'all',label:'全部工作区'},{value:'unavailable',label:'不可用范围',disabled:true}],onChange:value=>context.log(`演示范围：${value}`)});
+      const menu = createMenu({label:'操作菜单 · 方向键选择',items:[{id:'open',label:'Open workspace',onAction:()=>context.log('演示打开工作区')},{id:'disabled',label:'Unavailable action',disabled:true,onAction:()=>{}},{id:'copy',label:'Copy path',onAction:()=>context.log('演示复制路径')}]});
       start.element.id = uniqueId('pui-demo-focus-start'); save.element.id = uniqueId('pui-demo-focus-save');
       const status = element('output', 'pui-muted', '点击起点后按 Tab。鼠标与键盘的焦点提示由 :focus-visible 区分。');
       const abort = new AbortController(); root.addEventListener('focusin', event => { const target = event.target as HTMLElement; status.textContent = `焦点：${target.getAttribute('aria-label') || target.id || target.tagName} · ${target.matches(':focus-visible') ? 'focus-visible' : 'pointer focus'}`; }, { signal: abort.signal });
-      root.append(start.element, input.element, checked.element, unavailable.element, save.element, status);
-      return mounted(root, [start, input, checked, unavailable, save, { destroy: () => abort.abort() }]);
+      root.append(element('p','pui-muted','键盘焦点：1 CSS px 实线，2 CSS px 外移，使用 --pui-accent；每个控件只显示一圈。鼠标操作不额外强制显示键盘焦点线。'),start.element, input.element, select.element, checked.element, unavailable.element, menu.element, save.element, status);
+      return mounted(root, [start, input, select, checked, unavailable, menu, save, { destroy: () => abort.abort() }]);
     },
   },
   {

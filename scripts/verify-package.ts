@@ -59,8 +59,11 @@ document.body.append(block.element, models.element);
 save.element.addEventListener('click', () => editor.open({ value: '中文 example 🐟' }));
 `;
 await writeFile(join(consumer, 'main.ts'), source);
+// Compile the complete maintained examples against the installed declarations,
+// including callback targets and methods beyond this small runtime entry.
+await writeFile(join(consumer, 'public-examples.ts'), (await readFile(join(root, 'docs/examples.ts'), 'utf8')).replaceAll("'../src/index.js'", "'pith-ui'"));
 await writeFile(join(consumer, 'index.html'), '<!doctype html><html><head><meta charset="utf-8"><title>Package consumer</title></head><body><script type="module" src="/main.ts"></script></body></html>');
-await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, noEmit: true, lib: ['ES2022', 'DOM', 'DOM.Iterable'], skipLibCheck: false }, include: ['main.ts'] }, null, 2));
+await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions: { target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, noEmit: true, lib: ['ES2022', 'DOM', 'DOM.Iterable'], skipLibCheck: false }, include: ['main.ts', 'public-examples.ts'] }, null, 2));
 await run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--project', join(consumer, 'tsconfig.json')], consumer);
 await run(process.execPath, [join(root, 'node_modules/vite/bin/vite.js'), 'build', '--outDir', 'dist'], consumer);
 

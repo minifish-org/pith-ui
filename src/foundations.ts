@@ -1,7 +1,8 @@
-import { controlDisabled, Generation, Lifetime, setControlPending } from './core.js';
+import { controlDisabled, Lifetime, setControlPending } from './core.js';
 import type { ActionResult, Density, Intent, UIAction } from './core.js';
 import { iconElement, setText, uniqueId } from './dom.js';
 import { adoptSelect, refreshSelect } from './select.js';
+import { createOperation } from './operation.js';
 
 /** Private controllers shared by factories and the retained product templates.
  * Retained nodes keep their identity; single selects get one owned wrapper.
@@ -27,7 +28,6 @@ export function adoptAction(node: HTMLButtonElement, options: {
   onError?: (message: string) => void;
 } = {}): ActionController {
   const life = options.onAction ? new Lifetime() : undefined;
-  const generation = options.onAction ? new Generation() : undefined;
   let state: ActionState = { disabled: node.disabled };
   let localPending = false; let disposed = false;
   let glyph = node.querySelector<SVGSVGElement>(':scope > svg') ?? undefined;
@@ -65,30 +65,17 @@ export function adoptAction(node: HTMLButtonElement, options: {
       if (glyph) node.prepend(glyph);
     }
   };
+  const operation = options.onAction ? createOperation({
+    unavailable: () => node.disabled || disposed,
+    onPending(value) { localPending = value; update({ ...state, disabled: !!state.disabled, pending: !!state.pending }); },
+    onError: options.onError,
+  }) : undefined;
   // A delegated product action has no local handler and needs no second listener.
   if (options.onAction) life!.listen(node, 'click', (() => {
     if (node.disabled || localPending || disposed) return;
-    const seq = generation!.next(); localPending = true; update(state);
-    const complete = (result: void | ActionResult): void => {
-      if (generation!.current(seq) && result && !result.ok) options.onError?.(result.error);
-    };
-    const failed = (reason: unknown): void => {
-      if (generation!.current(seq)) options.onError?.(reason instanceof Error ? reason.message : String(reason));
-    };
-    const finish = (): void => {
-      if (!generation!.current(seq)) return;
-      localPending = false;
-      // Include both properties so releasing local pending can enable an action,
-      // while a newer external disabled state remains authoritative.
-      update({ ...state, disabled: !!state.disabled, pending: !!state.pending });
-    };
-    try {
-      const result = options.onAction!();
-      if (result && 'then' in result) void result.then(complete).catch(failed).finally(finish);
-      else { complete(result); finish(); }
-    } catch (reason) { failed(reason); finish(); }
+    operation!.run(options.onAction!, (result: void | ActionResult) => { if (result && !result.ok) options.onError?.(result.error); });
   }) as EventListener);
-  return { element: node, update, destroy() { disposed = true; generation?.destroy(); life?.destroy(); } };
+  return { element: node, update, destroy() { disposed = true; operation?.destroy(); life?.destroy(); } };
 }
 
 export type NativeControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;

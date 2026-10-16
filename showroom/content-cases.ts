@@ -24,7 +24,7 @@ export const contentCases: ShowcaseCase[] = [
         { id: 'response', role: 'assistant', status: context.state === 'loading' ? 'streaming' : 'done', text: context.state === 'long' ? `${prose}\n\n${'长内容检验 · long-content/报告.md\n\n'.repeat(30)}` : prose, actions: { copy: context.state === 'loading' ? false : 'Copy response', branch: { key: 'demo-branch' } } },
       ];
       block.update({ id: 'demo', messages, working: context.state === 'loading', folds: new Map([['group-0', true], ['group-0-tool-tool', true]]) });
-      if (context.state === 'disabled') block.element.querySelectorAll('button').forEach((button) => { button.disabled = true; });
+      block.updateActionAvailability({copy:context.state==='disabled',edit:context.state==='disabled',branch:context.state==='disabled'});
       return block;
     },
   },

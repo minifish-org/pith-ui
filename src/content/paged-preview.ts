@@ -26,7 +26,7 @@ export function previewPageRanges(bytes: Uint8Array, window = previewPageBytes):
 
 export type PreviewKind = 'text' | 'markdown' | 'diff';
 export interface PagedPreviewState { text: string; kind: PreviewKind }
-export interface PagedPreviewOptions extends PagedPreviewState { container?: HTMLElement; onCopyCode?: (text: string) => void }
+export interface PagedPreviewOptions extends PagedPreviewState { container?: HTMLElement; onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void> }
 
 export function createPagedPreview(options: PagedPreviewOptions): UIBlock<PagedPreviewState> {
   const element = options.container || document.createElement('div');
@@ -35,7 +35,7 @@ export function createPagedPreview(options: PagedPreviewOptions): UIBlock<PagedP
   let dispose = renderPreview(element, current.text, current.kind);
   const click = (event: Event) => {
     const button = (event.target as Element).closest<HTMLButtonElement>('[data-copy-code]');
-    if (button && !button.disabled && element.contains(button)) options.onCopyCode?.(button.closest('.pui-code-block')?.querySelector('code')?.textContent || '');
+    if (button && !button.disabled && element.contains(button) && options.onCopyCode) {event.stopPropagation(); void options.onCopyCode(button.closest('.pui-code-block')?.querySelector('code')?.textContent || '', button);}
   };
   if (options.onCopyCode) element.addEventListener('click', click);
   return {

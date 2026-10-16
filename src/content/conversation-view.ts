@@ -36,7 +36,7 @@ export interface ConversationViewOptions {
   container?: HTMLElement;
   markdown?: (conversationId: string) => MarkdownOptions;
   onAction?: (action: ConversationAction, button: HTMLButtonElement) => void;
-  onCopyCode?: (text: string, button: HTMLButtonElement) => void;
+  onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
 }
 
 
@@ -60,37 +60,56 @@ export function createConversationView(options: ConversationViewOptions = {}): C
   };
   container.addEventListener('click', click);
   let activeId = '';
-  function update(id: string, messages: readonly ConversationMessage[], working: boolean, folds: ReadonlyMap<string, boolean>): void {
+  let groups = new Map<string, Set<string>>();
+  function update(id: string, messages: readonly ConversationMessage[], working: boolean, folds?: ReadonlyMap<string, boolean>): void {
     if (destroyed) return;
-    if (id !== activeId) { clearViews(container); activeId = id; }
+    if (id !== activeId) { clearViews(container); groups.clear(); activeId = id; }
     const views: View[] = [];
-    const messageView = (message: ConversationMessage, key = message.id, foldKey = ''): View => ({
-      key, signature: JSON.stringify(message), html: () => renderMessage(id, message, folds.get(foldKey), foldKey, (text, conversationId) => renderMarkdown(text, options.markdown?.(conversationId))),
+    const aliases = new Map<string, string>();
+    const expanded = (key: string, legacy = '') => folds?.get(key) ?? folds?.get(legacy) ?? false;
+    const messageView = (message: ConversationMessage, key = `message:${message.id}`, foldKey = '', legacyFoldKey = ''): View => ({
+      key, signature: JSON.stringify(message), html: () => renderMessage(id, message, expanded(foldKey, legacyFoldKey), foldKey, (text, conversationId) => renderMarkdown(text, options.markdown?.(conversationId))),
     });
+    const nextGroups = new Map<string, Set<string>>();
     let groupIndex = 0;
     for (let index = 0; index < messages.length;) {
       if (messages[index].role !== 'tool') { views.push(messageView(messages[index++])); continue; }
       const start = index;
       while (index < messages.length && messages[index].role === 'tool') index++;
-      const tools = messages.slice(start, index), key = `group-${groupIndex++}`;
+      const tools = messages.slice(start, index), members = new Set(tools.map(tool => tool.id));
+      // A group can gain results or have earlier history inserted. Reuse its
+      // identity through an existing member instead of its current list index.
+      const retained = [...groups].find(([key, previous]) => !nextGroups.has(key) && [...members].some(id => previous.has(id)));
+      const baseKey = `group-${tools[0].id}`;
+      let key = retained?.[0] ?? baseKey;
+      // A retained group's first member may no longer be present. A newly
+      // inserted group using that member must not take its still-owned key.
+      if (!retained) for (let suffix = 2; groups.has(key) || nextGroups.has(key); suffix++) key = `${baseKey}-${suffix}`;
+      const legacyKey = `group-${groupIndex++}`;
+      nextGroups.set(key, members); aliases.set(key, legacyKey);
       const running = tools.filter((tool) => tool.status === 'running').length;
       const failed = tools.filter((tool) => tool.status === 'error').length;
       const label = toolGroupLabel(tools);
-      views.push({ key, signature: JSON.stringify([label, tools.length, failed, running]),
-        html: () => `<details class="pui-tool-group" data-tool-fold="${key}" ${folds.get(key) ? 'open' : ''}><summary>${icon('terminal')}<span class="pui-tool-group-label">${label}</span><span class="pui-tool-group-count">${tools.length} ${tools.length === 1 ? 'call' : 'calls'}</span>${failed ? `<span class="pui-tool-group-failed">${failed} failed</span>` : ''}${running ? `<span class="pui-tool-group-running">${running} running</span>` : ''}${icon('down')}</summary><div class="pui-tool-group-content" data-view-children></div></details>`,
-        children: tools.map((tool) => { const toolKey = `${key}-tool-${tool.toolCallId || tool.id}`; return messageView(tool, toolKey, toolKey); }),
+      views.push({ key:`tools:${key}`, signature: JSON.stringify([label, tools.length, failed, running]),
+        html: () => `<details class="pui-tool-group" data-tool-fold="${escape(key)}" ${expanded(key, legacyKey) ? 'open' : ''}><summary>${icon('terminal')}<span class="pui-tool-group-label">${label}</span><span class="pui-tool-group-count">${tools.length} ${tools.length === 1 ? 'call' : 'calls'}</span>${failed ? `<span class="pui-tool-group-failed">${failed} failed</span>` : ''}${running ? `<span class="pui-tool-group-running">${running} running</span>` : ''}${icon('down')}</summary><div class="pui-tool-group-content" data-view-children></div></details>`,
+        children: tools.map((tool) => { const toolKey = `${key}-tool-${tool.toolCallId || tool.id}`, legacyToolKey = `${legacyKey}-tool-${tool.toolCallId || tool.id}`; aliases.set(toolKey, legacyToolKey); return messageView(tool, `tool:${tool.id}`, toolKey, legacyToolKey); }),
       });
     }
     if (working) views.push({ key: 'working', signature: 'working', html: () => '<div class="pui-agent-working" role="status"><span class="pui-working-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Working…</span></div>' });
     reconcileViews(container, views);
+    groups = nextGroups;
+    if (folds) for (const details of container.querySelectorAll<HTMLDetailsElement>('[data-tool-fold]')) {
+      const key = details.dataset.toolFold!, legacy = aliases.get(key);
+      const value = folds.get(key) ?? (legacy ? folds.get(legacy) : undefined);
+      if (value !== undefined && details.open !== value) details.open = value;
+    }
     actionButtons = [...container.querySelectorAll<HTMLButtonElement>('[data-message-action]')];
     parts.update(); syncAvailability();
   }
   return {
     element: container,
     update(state): void {
-      const folds = state.folds || new Map(Array.from(container.querySelectorAll<HTMLDetailsElement>('[data-tool-fold]'), (element) => [element.dataset.toolFold!, element.open] as const));
-      update(state.id, state.messages, state.working, folds);
+      update(state.id, state.messages, state.working, state.folds);
     },
     updateActionAvailability(disabled): void {
       if (destroyed || (disabled.copy === disabledActions.copy && disabled.edit === disabledActions.edit && disabled.branch === disabledActions.branch)) return;
@@ -108,7 +127,7 @@ export function createConversationView(options: ConversationViewOptions = {}): C
       destroyed = true;
       container.removeEventListener('click', click);
       clearViews(container);
-      parts.destroy(); actionButtons = [];
+      parts.destroy(); actionButtons = []; groups.clear();
     },
   };
 }

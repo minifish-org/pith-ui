@@ -1,4 +1,4 @@
-import type {ActionResult,ConversationViewState,CustomConnectionDraft,CustomConnectionState,ModelEditorState,ModelSelection,SettingsPanelState,SettingsProviderOption,SettingsDraft,MCPConnectionDraft,MCPEditorValue,ResourceEditorState,ResourceDraft} from '../src/index.js';
+import type {ActionResult,ConversationViewState,CustomConnectionDraft,CustomConnectionState,ModelEditorState,ModelSelection,SettingsPanelState,SettingsProviderOption,SettingsDraft,MCPConnectionDraft,MCPEditorValue,ResourceEditorState,ResourceDraft,ProviderActionsState,ProviderActionOptions,ResourceActionsState,ResourceActionOptions,MCPConnectionListState,MCPConnectionListOptions,WorkspaceNavigationState,WorkspaceNavigationAction,FilePreviewState} from '../src/index.js';
 type PithUI = typeof import('../src/index.js');
 
 /** A single choice uses the shared option surface; form adapters stay private to the composition. */
@@ -16,6 +16,48 @@ export function mountProviderChoice(ui: PithUI, host: HTMLElement, onChange: (va
   host.append(provider.element);
   provider.focus();
   return () => provider.destroy();
+}
+
+/** Native multi-selection reports every selected value; updates do not reset the draft. */
+export function mountMultipleChoices(ui: PithUI, host: HTMLElement, onChange: (values: readonly string[]) => void): () => void {
+  const choice = ui.createSelect({ label: 'Models', multiple: true, size: 5, values: ['a', 'c'],
+    options: [{ value: 'a', label: 'Model A' }, { value: 'b', label: 'Model B' }, { value: 'c', label: 'Model C' }], onValuesChange: onChange });
+  host.append(choice.element);
+  choice.resetValues(['a', 'b']); // Explicit draft change, without emitting a user-change event.
+  return () => choice.destroy();
+}
+
+/** Menu errors stay visible in the current surface and can also notify its owner. */
+export function mountActionsMenu(ui: PithUI, host: HTMLElement, rename: () => Promise<ActionResult>, onError: (message: string) => void): () => void {
+  const menu = ui.createMenu({ label: 'Actions', onError, items: [{ id: 'rename', label: 'Rename', onAction: rename }] });
+  host.append(menu.element); return () => menu.destroy();
+}
+
+/** Owned semantic callbacks replace dataset routing, with typed target snapshots. */
+export function mountProviderActions(ui: PithUI, host: HTMLElement, state: ProviderActionsState, onAction: NonNullable<ProviderActionOptions['onProviderAction']>): () => void {
+  const block = ui.createProviderActions(state, { onProviderAction: onAction }); host.append(block.element);
+  return () => block.destroy();
+}
+export function mountResourceActions(ui: PithUI, host: HTMLElement, state: ResourceActionsState, onAction: NonNullable<ResourceActionOptions['onResourceAction']>): () => void {
+  const block = ui.createResourceActions(state, { onResourceAction: onAction }); host.append(block.element);
+  return () => block.destroy();
+}
+export function mountMCPList(ui: PithUI, host: HTMLElement, state: MCPConnectionListState, onAction: NonNullable<MCPConnectionListOptions['onAction']>): () => void {
+  const block = ui.createMCPConnectionList(state, { onAction }); host.append(block.element);
+  return () => block.destroy();
+}
+export function mountNavigation(ui: PithUI, host: HTMLElement, state: WorkspaceNavigationState, onAction: (action: WorkspaceNavigationAction) => void): () => void {
+  const block = ui.createWorkspaceNavigation(state, { onAction }); host.append(block.element);
+  return () => block.destroy();
+}
+
+/** The host supplies native copying; one feedback owner handles pending, success and errors. */
+export function mountFilePreview(ui: PithUI, host: HTMLElement, state: FilePreviewState, writeText: (text: string) => Promise<void>): () => void {
+  const status = document.createElement('p'); status.setAttribute('role', 'status');
+  const feedback = ui.createCopyFeedback({ status, isDisabled: () => false, onError: error => { status.textContent = error instanceof Error ? error.message : String(error); } });
+  const preview = ui.createFilePreview({ onCopyCode: (text, button) => feedback.copy(button, () => writeText(text), 'Code copied') });
+  host.append(preview.element, status); preview.update(state);
+  return () => { preview.destroy(); feedback.destroy(); status.remove(); };
 }
 
 /** Complete API usage; the application supplies only its save operation. */

@@ -63,6 +63,7 @@ let epoch = 0;
 let observing: ResizeObserver | undefined;
 let target: HTMLElement | undefined;
 let inspecting = false;
+let inspectedActivation = false;
 let measuring = false;
 function log(message: string): void {
   const entry = element('li', '', message); eventLog.prepend(entry);
@@ -200,11 +201,23 @@ function render(): void {
   if (!related.children.length) related.append(element('p', '', '可在左侧分类中继续查找。'));
   renderControls(); renderNavigation(); mountPreview();
 }
-preview.addEventListener('pointerdown', event => {
-  if (!inspecting || !(event.target instanceof HTMLElement) || !event.target.closest('.gallery-demo-host')) return;
-  event.preventDefault(); event.stopPropagation();
-  target = event.target; observing?.observe(target); inspecting = false;
+function inspectTarget(event: Event): boolean {
+  const node = event.target instanceof HTMLElement ? event.target : event.target instanceof Element ? event.target.parentElement : null;
+  if (!inspecting || !node?.closest('.gallery-demo-host')) return false;
+  event.preventDefault(); event.stopImmediatePropagation();
+  if (target) observing?.unobserve(target);
+  target = node; observing?.observe(target); inspecting = false;
   chooseTarget.update({label:'选择测量目标'}); measure();
+  return true;
+}
+preview.addEventListener('pointerdown', event => {
+  inspectedActivation = inspectTarget(event);
+}, true);
+preview.addEventListener('click', event => {
+  // Prevent the complete activation, including the click after pointerdown.
+  // Keyboard-generated clicks select a measurement target through the same path.
+  if (inspectedActivation) {inspectedActivation=false;event.preventDefault();event.stopImmediatePropagation();}
+  else inspectTarget(event);
 }, true);
 preview.addEventListener('transitionrun', applyMotion);
 preview.addEventListener('animationstart', applyMotion);

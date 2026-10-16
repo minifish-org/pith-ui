@@ -57,7 +57,7 @@ export function setText(node: HTMLElement, value: unknown): void {
 
 export function focusableElements(owner: HTMLElement): HTMLElement[] {
   return [...owner.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), a[href], [tabindex="0"]')]
-    .filter(node => !node.hidden && !node.closest('[hidden], [inert]'));
+    .filter(node => node.tabIndex >= 0 && !node.matches(':disabled') && !node.closest('[hidden], [inert], [aria-hidden="true"]') && !!node.getClientRects().length && getComputedStyle(node).visibility !== 'hidden');
 }
 
 let nextId = 0;

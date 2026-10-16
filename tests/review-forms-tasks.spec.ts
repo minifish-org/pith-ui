@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { ActionResult } from '../src/core.js';
-import type { createProviderActions, ProviderActionsState, FeatureActionOptions } from '../src/forms/actions.js';
+import type { createProviderActions, ProviderActionsState, ProviderAction, ResourceAction, ResourceActionTarget } from '../src/forms/actions.js';
 import type { createSettingsPanel, SettingsPanelState } from '../src/forms/panels.js';
 import type { createResourceEditor, ResourceEditorState } from '../src/forms/resource-editor.js';
 import type { createFeatureDialogFrame } from '../src/forms/dialog-frame.js';
@@ -234,22 +234,15 @@ test('runtime value updates preserve selection in an unchanged value and keep th
   expect(result).toEqual({ selected: 'Demo provider', sameNode: true, open: true, updated: true });
 });
 
-type ReviewProviderAction = 'login' | 'logout' | 'custom' | 'remove-connection';
-type ReviewResourceAction = 'use-resource' | 'resource';
-type ReviewResourceTarget = { workspaceId: string; kind: string; resource: { name: string; path: string }; command?: string };
+
 
 test('typed provider actions take precedence over legacy callbacks and DOM delegation', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const { createProviderActions } = await import('../src/forms/actions.js');
-    // The regression is written before the additive public interface exists.
-    // Remove this localized compatibility cast when the typed API is implemented.
-    const create = createProviderActions as unknown as (state: ProviderActionsState, options: FeatureActionOptions & {
-      onProviderAction(action: ReviewProviderAction, target: { id: string }): void;
-    }) => ReturnType<typeof createProviderActions>;
-    const received: Array<{ action: ReviewProviderAction; id: string }> = []; let legacy = 0, delegated = 0;
+    const received: Array<{ action: ProviderAction; id: string }> = []; let legacy = 0, delegated = 0;
     document.addEventListener('click', event => { if ((event.target as Element).closest('[data-sdk]')) delegated++; });
     const state = { id: 'provider', oauth: true, signedIn: false, custom: true };
-    const block = create(state, { onProviderAction(action, target) { received.push({ action, id: target.id }); }, onAction() { legacy++; } });
+    const block = createProviderActions(state, { onProviderAction(action, target) { received.push({ action, id: target.id }); }, onAction() { legacy++; } });
     document.body.append(block.element);
     for (const action of ['login', 'custom', 'remove-connection']) block.element.querySelector<HTMLButtonElement>(`[data-sdk="${action}"]`)!.click();
     block.update({ ...state, signedIn: true }); block.element.querySelector<HTMLButtonElement>('[data-sdk="logout"]')!.click();
@@ -263,12 +256,9 @@ test('typed provider actions take precedence over legacy callbacks and DOM deleg
 test('typed resource actions expose resource identity and command without DOM datasets', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const { createResourceActions } = await import('../src/forms/actions.js');
-    const create = createResourceActions as unknown as (state: Parameters<typeof createResourceActions>[0], options: FeatureActionOptions & {
-      onResourceAction(action: ReviewResourceAction, target: ReviewResourceTarget): void;
-    }) => ReturnType<typeof createResourceActions>;
-    const received: Array<{ action: ReviewResourceAction; target: ReviewResourceTarget }> = []; let legacy = 0, delegated = 0;
+    const received: Array<{ action: ResourceAction; target: ResourceActionTarget }> = []; let legacy = 0, delegated = 0;
     document.addEventListener('click', event => { if ((event.target as Element).closest('[data-sdk]')) delegated++; });
-    const block = create({ kind: 'skill', workspaceId: 'workspace', resource: { name: 'demo', path: '/demo/skill.md' } }, {
+    const block = createResourceActions({ kind: 'skill', workspaceId: 'workspace', resource: { name: 'demo', path: '/demo/skill.md' } }, {
       onResourceAction(action, target) { received.push({ action, target }); }, onAction() { legacy++; },
     });
     document.body.append(block.element); for (const button of block.element.querySelectorAll<HTMLButtonElement>('button')) button.click();
@@ -283,15 +273,12 @@ test('typed resource actions expose resource identity and command without DOM da
 test('MCP typed actions own their callbacks, retain pending through status updates and honor disabled state', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const { createMCPConnectionList } = await import('../src/forms/panels.js');
-    type Action = 'mcp-login' | 'mcp-logout' | 'mcp-edit' | 'mcp-toggle' | 'mcp-remove';
-    const create = createMCPConnectionList as unknown as (state: Parameters<typeof createMCPConnectionList>[0], options: {
-      onAction(action: Action, target: { name: string }): void | Promise<ActionResult>;
-    }) => ReturnType<typeof createMCPConnectionList>;
+    type Action = import('../src/forms/panels.js').MCPConnectionAction;
     const received: Array<{ action: Action; name: string }> = []; let delegated = 0;
     document.addEventListener('click', event => { if ((event.target as Element).closest('[data-sdk^="mcp-"], [data-mcp-edit], [data-mcp-toggle], [data-mcp-remove]')) delegated++; });
     const entry = { name: 'tools', type: 'http', url: 'https://example.test/mcp', enabled: true, status: 'connected', statusLabel: 'Connected', oauth: true, signedIn: true };
     let finish!: (result: ActionResult) => void;
-    const block = create({ entries: [entry] }, { onAction(action, target) {
+    const block = createMCPConnectionList({ entries: [entry] }, { onAction(action, target) {
       received.push({ action, name: target.name });
       if (action === 'mcp-toggle') return new Promise(resolve => { finish = resolve; });
     } });
@@ -301,9 +288,7 @@ test('MCP typed actions own their callbacks, retain pending through status updat
     block.update({ entries: [{ ...entry, statusLabel: 'Still connected' }] }); toggle.click();
     const pending = toggle.disabled;
     block.update({ entries: [entry], disabled: true });
-    // Only a typed action supplies this resolver; leave the baseline executable
-    // while the missing options API is characterized by the received assertions.
-    finish?.({ ok: true }); await new Promise(resolve => setTimeout(resolve, 0));
+    finish({ ok: true }); await new Promise(resolve => setTimeout(resolve, 0));
     const externalDisabled = [...block.element.querySelectorAll<HTMLButtonElement>('button')].every(button => button.disabled);
     const retained = block.element.querySelector('[data-mcp-toggle]') === toggle;
     block.destroy(); return { received, pending, externalDisabled, retained, delegated };

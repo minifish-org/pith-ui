@@ -13,7 +13,8 @@ export function localField<T extends HTMLElement = HTMLElement>(root: HTMLElemen
   if (!found) throw new Error(`Unknown component field: ${id}`);
   return found as T;
 }
-import {Generation,type ActionResult} from '../core.js';
+import {type ActionResult} from '../core.js';
+import {createOperation} from '../operation.js';
 
 
 /** Shared form lifetime; business writes and target identity remain with the caller. */
@@ -24,13 +25,11 @@ export function bindFormSubmission<Value>(form:HTMLFormElement,options:{
   onPending:(pending:boolean)=>void;
   onError:(error:string)=>void;
 }):{invalidate():void;destroy():void} {
-  const generation = new Generation(),abort = new AbortController(); let pending = false;
-  if (options.onSubmit) form.addEventListener('submit',async event=>{
-    event.preventDefault(); if (pending || options.unavailable() || !form.reportValidity()) return;
-    const sequence = generation.next(); pending = true; options.onError(''); options.onPending(true);
-    try {const result = await options.onSubmit!(options.read()); if (generation.current(sequence) && !result.ok) options.onError(result.error);}
-    catch (error) {if (generation.current(sequence)) options.onError(error instanceof Error ? error.message : String(error));}
-    finally {if (generation.current(sequence)) {pending = false; options.onPending(false);}}
+  const abort = new AbortController();
+  const operation = createOperation({unavailable:options.unavailable,onPending:options.onPending,onError:options.onError});
+  if (options.onSubmit) form.addEventListener('submit',event=>{
+    event.preventDefault(); if (operation.pending || options.unavailable() || !form.reportValidity()) return;
+    operation.run(() => {options.onError(''); return options.onSubmit!(options.read());}, result => {if (!result.ok) options.onError(result.error);});
   },{signal:abort.signal});
-  return {invalidate() {generation.invalidate(); pending = false; options.onPending(false);},destroy() {generation.destroy(); abort.abort();}};
+  return {invalidate() {operation.invalidate();},destroy() {operation.destroy(); abort.abort();}};
 }

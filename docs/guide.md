@@ -46,6 +46,10 @@ Use a product form's typed callbacks (`onSubmit`, `onProviderChange`, `onTest`, 
 
 Use explicit IDs/prefix options when adopting an existing application's elements. For independent instances, keep generated defaults and distinct model-editor prefixes. Do not query app-fixed global IDs inside a new library component.
 
+Navigation's `onAction` receives finite actions and semantic IDs plus the trigger button. `createContextMenu.open(trigger, state)` anchors to that button's lower edge and flips at viewport boundaries. Supply `{ point: { x, y } }` as the third argument only for an explicit pointer-positioned menu. Provider/resource actions use `onProviderAction`/`onResourceAction`; MCP lists use `onAction`. Supplying these callbacks owns the event. Omitting one preserves the compatibility dataset route; do not bind both routes for the same action.
+
+Single-choice selectors share the floating Select implementation. Multi-row and multiple selections retain the browser's native list, 16 CSS px text and system keyboard behavior; WebKit controls its own row metrics and ignores option padding. Use `values`, `getValues`, `resetValues` and `onValuesChange` for all selected values. `values` wins over scalar `value` at construction. Explicit resets change the draft without emitting change callbacks or changing the construction baseline restored by native `form.reset()`.
+
 `createUpdatePanel` does not fetch or poll. The controller passes fresh status through `update`, local submission through `setPending`, and errors through `setError`. For a failed status read, `setError(message, { allowCheckRetry: true })` allows a manual check while retaining external disabled state, local pending and protection against another install. A fresh status clears that temporary read-error state.
 
 ## Node extension ownership
@@ -67,6 +71,8 @@ Local file links are opt-in through `resolveLocalLink`. Its `{ path, conversatio
 Images in conversation rendering are placeholders with stable keys. The host loads and validates bytes, owns object URLs, rejects late results after a scope change, and revokes URLs when no longer needed. The zoom viewer owns fit/original/zoom/focus interaction, not the data URL's lifetime.
 
 Paged text previews use UTF-8-safe 256 KiB windows. Large Markdown is shown as original text so a split code fence cannot change interpretation. The rendering window is not a file acceptance limit.
+
+Conversation, paged-preview and file-preview code-copy callbacks receive `(text, button)`. Connect native clipboard access through this callback and use `createCopyFeedback` for duplicate prevention and result/error presentation. It is the host's responsibility to handle rejected copy operations; the library does not add another clipboard operation. A supplied callback consumes its code-copy event; an omitted callback leaves existing delegation available. File action groups expose `setDisabled` and retain copy-pending restrictions when re-enabled.
 
 ## Conversation reading
 

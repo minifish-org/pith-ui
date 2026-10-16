@@ -1,14 +1,20 @@
 import {scopeIds} from '../forms/identity.js';
-import { Generation, Lifetime, type ActionResult, type UIBlock } from '../core.js';
+import { Lifetime, type ActionResult, type UIBlock } from '../core.js';
 import {dialogHeading, escape, icon, uniqueId} from '../dom.js';
 import { adoptProductParts } from '../foundations.js';
 import { installDialogLifecycle } from '../surface.js';
+import { createOperation } from '../operation.js';
+import { reconcileKeyed } from '../reconcile.js';
 export interface NavigationConversation {id: string; title?: string; active: boolean; menuOpen?: boolean; status?: Node | null}
 export interface NavigationWorkspace {id: string; name: string; path: string; expanded: boolean; selected: boolean; menuOpen?: boolean; children: readonly NavigationConversation[]}
 export interface WorkspaceNavigationState {groups: readonly NavigationWorkspace[]; empty: 'workspaces' | 'search' | null; disabled?: boolean}
+export type WorkspaceNavigationAction =
+  | {action: 'add-workspace'; trigger: HTMLButtonElement}
+  | {action: 'new-conversation' | 'workspace-menu'; workspaceId: string; trigger: HTMLButtonElement}
+  | {action: 'conversation-menu'; conversationId: string; trigger: HTMLButtonElement};
 type ConversationDOM = {element: HTMLElement; button: HTMLButtonElement; title: HTMLElement; more: HTMLButtonElement; status: Node[]; statusSignature: string; statusSource?: Node | null};
 type WorkspaceDOM = {element: HTMLElement; heading: HTMLElement; toggle: HTMLButtonElement; title: HTMLElement; more: HTMLButtonElement; create: HTMLButtonElement; children: HTMLElement; empty: HTMLElement};
-export function createWorkspaceNavigation(initial: WorkspaceNavigationState, options: {element?: HTMLElement; idPrefix?: string; onToggle?: (id: string) => void; onSelect?: (id: string) => void} = {}): UIBlock<WorkspaceNavigationState> {
+export function createWorkspaceNavigation(initial: WorkspaceNavigationState, options: {element?: HTMLElement; idPrefix?: string; onToggle?: (id: string) => void; onSelect?: (id: string) => void; onAction?: (action: WorkspaceNavigationAction) => void} = {}): UIBlock<WorkspaceNavigationState> {
   const element = options.element || document.createElement('nav');
   if (!options.element) {element.className = 'pui-history-list pui-workspace-navigation'; element.setAttribute('aria-label', 'Workspaces and conversations');}
   const prefix = options.idPrefix ?? uniqueId('pui-nav') + '-';
@@ -57,10 +63,20 @@ export function createWorkspaceNavigation(initial: WorkspaceNavigationState, opt
     for (const [id,row] of conversations) if (!currentConversations.has(id)) {row.element.remove(); conversations.delete(id);}
     for (const [id,group] of workspaces) if (!currentWorkspaces.has(id)) {group.element.remove(); workspaces.delete(id);}
     if (state.empty === 'workspaces') {if (emptyWorkspace.parentElement !== element) element.append(emptyWorkspace);} else emptyWorkspace.remove();
+    parts.action(emptyWorkspace).update({disabled: !!state.disabled});
     if (state.empty === 'search') {if (emptySearch.parentElement !== element) element.append(emptySearch);} else emptySearch.remove();
     parts.update();
   };
-  element.addEventListener('click',event => {const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (target?.disabled) return; if (target?.dataset.toggleWorkspace) options.onToggle?.(target.dataset.toggleWorkspace); if (target?.dataset.conversation) options.onSelect?.(target.dataset.conversation);},{signal:abort.signal});
+  element.addEventListener('click',event => {
+    const target = (event.target as Element).closest<HTMLButtonElement>('button'); if (!target || target.disabled) return;
+    if (target.dataset.toggleWorkspace && options.onToggle) {event.stopPropagation(); options.onToggle(target.dataset.toggleWorkspace); return;}
+    if (target.dataset.conversation && options.onSelect) {event.stopPropagation(); options.onSelect(target.dataset.conversation); return;}
+    const action: WorkspaceNavigationAction | undefined = target === emptyWorkspace ? {action:'add-workspace',trigger:target}
+      : target.dataset.newWorkspace ? {action:'new-conversation',workspaceId:target.dataset.newWorkspace,trigger:target}
+      : target.dataset.workspaceMenu ? {action:'workspace-menu',workspaceId:target.dataset.workspaceMenu,trigger:target}
+      : target.dataset.conversationMenu ? {action:'conversation-menu',conversationId:target.dataset.conversationMenu,trigger:target} : undefined;
+    if (action && options.onAction) {event.stopPropagation(); options.onAction(action);}
+  },{signal:abort.signal});
   update(initial); return {element,update,destroy() {if (destroyed) return; destroyed = true; abort.abort(); parts.destroy(); workspaces.clear(); conversations.clear(); if (!options.element) element.remove();}};
 }
 export interface RenameConversationState {id: string; title: string; error?: string; disabled?: boolean}
@@ -88,30 +104,28 @@ export function createRenameConversation(initial: RenameConversationState, optio
  scopeIds(element, options.idPrefix ?? uniqueId('pui-rename') + '-');
  const parts = adoptProductParts(element); const control = parts.control(input); const feedback = parts.feedback(error);
  const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!; const action = parts.action(button);
- const generation = new Generation(); const life = new Lifetime();
- let current = initial; let targetId = initial.id; let pending = false; let destroyed = false;
- const sync = () => {action.update({disabled: !!current.disabled || !!options.unavailable?.(), pending}); feedback.update({message: current.error || '', tone: 'error'});};
- const lifecycle = options.dialog ? installDialogLifecycle(options.dialog, {onOpen() {generation.invalidate(); pending = false; sync();}, onClose() {generation.invalidate(); pending = false; sync();}}) : undefined;
+ const life = new Lifetime();
+ let current = initial; let targetId = initial.id; let destroyed = false;
+ const sync = () => {action.update({disabled: !!current.disabled || !!options.unavailable?.(), pending:operation.pending}); feedback.update({message: current.error || '', tone: 'error'});};
+ const operation = createOperation({unavailable:()=>destroyed || !!current.disabled || !!options.unavailable?.(),onPending:sync,onError(message) {current={...current,error:message};sync();}});
+ const lifecycle = options.dialog ? installDialogLifecycle(options.dialog, {onOpen() {operation.invalidate();}, onClose() {operation.invalidate();}}) : undefined;
  const update = (next: Readonly<RenameConversationState>) => {if (destroyed) return; current = {...next, error: next.error ?? current.error}; sync();};
- const reset = (next: RenameConversationState) => {if (destroyed) return; generation.invalidate(); pending = false; targetId = next.id; current = next; control.reset(next.title); button.dataset.idleConversation = next.id; sync();};
- const close = () => {generation.invalidate(); pending = false; lifecycle?.close(); sync();};
- if (options.onSubmit) life.listen(form, 'submit', (async event => {
+ const reset = (next: RenameConversationState) => {if (destroyed) return; operation.invalidate(); targetId = next.id; current = next; control.reset(next.title); button.dataset.idleConversation = next.id; sync();};
+ const close = () => {operation.invalidate(); lifecycle?.close();};
+ if (options.onSubmit) life.listen(form, 'submit', (event => {
    event.preventDefault();
    const title = control.getValue().trim();
-   if (destroyed || pending || current.disabled || options.unavailable?.() || !title) return;
-   const seq = generation.next(); pending = true; current = {...current, error: ''}; sync();
-   let result: ActionResult;
-   try {result = await options.onSubmit!({id: targetId, title});}
-   catch (reason) {result = {ok: false, error: reason instanceof Error ? reason.message : String(reason)};}
-   if (!generation.current(seq) || (options.dialog && !options.dialog.open)) return;
-   pending = false;
-   if (result.ok) {lifecycle?.close(); options.onSubmitted?.();}
-   else current = {...current, error: result.error};
-   sync();
+   if (!title) return;
+   operation.run(()=>{current = {...current, error: ''}; sync(); return options.onSubmit!({id: targetId, title});},result=>{
+     if (options.dialog && !options.dialog.open) return;
+     if (result.ok) {lifecycle?.close(); options.onSubmitted?.();}
+     else current = {...current, error: result.error};
+     sync();
+   });
  }) as EventListener);
- life.listen(element, 'click', (event => {if ((event.target as Element).closest('[data-close]')) {generation.invalidate(); pending = false; options.onCancel?.(); lifecycle?.close();}}) as EventListener);
+ life.listen(element, 'click', (event => {if ((event.target as Element).closest('[data-close]')) {operation.invalidate(); options.onCancel?.(); lifecycle?.close();}}) as EventListener);
  update(initial);
- return {element, input, form, update, read: () => ({id: targetId, title: control.getValue()}), reset, open(next) {if (next) reset(next); lifecycle?.open(); input.select();}, close, focus() {input.select();}, destroy() {if (destroyed) return; destroyed = true; generation.destroy(); life.destroy(); lifecycle?.close(); lifecycle?.destroy(); parts.destroy(); element.remove();}};
+ return {element, input, form, update, read: () => ({id: targetId, title: control.getValue()}), reset, open(next) {if (next) reset(next); lifecycle?.open(); input.select();}, close, focus() {input.select();}, destroy() {if (destroyed) return; destroyed = true; operation.destroy(); life.destroy(); lifecycle?.close(); lifecycle?.destroy(); parts.destroy(); element.remove();}};
 }
 export interface WorkspacePickerState {workspaces: readonly {id: string; name: string; path: string}[]; error?: string; disabled?: boolean}
 export interface WorkspacePickerOptions {
@@ -142,55 +156,53 @@ export function createWorkspacePicker(initial: WorkspacePickerState, options: Wo
  const rows = new Map([...list.querySelectorAll<HTMLButtonElement>('[data-modal-workspace]')].map(row => [row.dataset.modalWorkspace!, row]));
  const parts = adoptProductParts(element); const control = parts.control(input); const feedback = parts.feedback(error);
  const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
- const generation = new Generation(); const life = new Lifetime();
- let current = initial; let pending = false; let destroyed = false;
- const sync = () => {const disabled = !!current.disabled || !!options.unavailable?.(); parts.action(submitButton).update({disabled, pending}); parts.action(pickButton).update({disabled, pending}); for (const row of rows.values()) parts.action(row).update({disabled: disabled || pending}); feedback.update({message: current.error || '', tone: 'error'});};
- const lifecycle = options.dialog ? installDialogLifecycle(options.dialog, {onOpen() {generation.invalidate(); pending = false; sync();}, onClose() {generation.invalidate(); pending = false; sync();}}) : undefined;
+ const life = new Lifetime();
+ let current = initial; let destroyed = false;
+ const unavailable = () => destroyed || !!current.disabled || !!options.unavailable?.();
+ const sync = () => {const disabled = unavailable(), pending = pickOperation.pending || submitOperation.pending; parts.action(submitButton).update({disabled, pending}); parts.action(pickButton).update({disabled, pending}); for (const row of rows.values()) parts.action(row).update({disabled: disabled || pending}); feedback.update({message: current.error || '', tone: 'error'});};
+ const fail = (message: string) => {current={...current,error:message};sync();};
+ const pickOperation = createOperation({unavailable:()=>unavailable() || submitOperation.pending,onPending:sync,onError(message) {fail(`${message} You can enter the path below.`);control.focus();}});
+ const submitOperation = createOperation({unavailable:()=>unavailable() || pickOperation.pending,onPending:sync,onError:fail});
+ const invalidate = () => {pickOperation.invalidate();submitOperation.invalidate();};
+ const lifecycle = options.dialog ? installDialogLifecycle(options.dialog, {onOpen:invalidate,onClose:invalidate}) : undefined;
  const update = (next: Readonly<WorkspacePickerState>) => {
    if (destroyed) return; current = {...next, error: next.error ?? current.error};
-   const keep = new Set(next.workspaces.map(entry => entry.id));
-   for (const [id, row] of rows) if (!keep.has(id)) {row.remove(); rows.delete(id);}
-   let cursor = list.firstElementChild;
-   for (const entry of next.workspaces) {
-     let row = rows.get(entry.id);
-     if (!row) {row = document.createElement('button'); row.type = 'button'; row.className = 'pui-modal-workspace'; row.dataset.modalWorkspace = entry.id; row.innerHTML = `${icon('folder')}<span><strong></strong><small></small></span>${icon('chevron')}`; rows.set(entry.id, row);}
+   reconcileKeyed(list,rows,next.workspaces,{key:entry=>entry.id,element:row=>row,
+     create(entry) {const row=document.createElement('button'); row.type = 'button'; row.className = 'pui-modal-workspace'; row.dataset.modalWorkspace = entry.id; row.innerHTML = `${icon('folder')}<span><strong></strong><small></small></span>${icon('chevron')}`;return row;},
+     update(row,entry) {
      const name = row.querySelector('strong')!; const path = row.querySelector('small')!;
      if (name.textContent !== entry.name) name.textContent = entry.name;
      if (path.textContent !== entry.path) path.textContent = entry.path;
-     if (cursor !== row) list.insertBefore(row, cursor); cursor = row.nextElementSibling;
-   }
+     },destroy() {},
+   });
    parts.update(); sync();
  };
- const submit = async (path: string, owner?: number): Promise<void> => {
-   if (!options.onSubmit || destroyed || (pending && owner === undefined) || current.disabled || options.unavailable?.() || !path.trim()) return;
-   const seq = owner ?? generation.next(); pending = true; current = {...current, error: ''}; sync();
-   let result: ActionResult;
-   try {result = await options.onSubmit(path.trim());}
-   catch (reason) {result = {ok: false, error: reason instanceof Error ? reason.message : String(reason)};}
-   if (!generation.current(seq) || (options.dialog && !options.dialog.open)) return;
-   pending = false;
-   if (result.ok) {lifecycle?.close(); options.onSubmitted?.();}
-   else current = {...current, error: result.error};
-   sync();
+ const submit = (path: string): void => {
+   if (!options.onSubmit || !path.trim()) return;
+   submitOperation.run(()=>{current = {...current, error: ''}; sync(); return options.onSubmit!(path.trim());},result=>{
+     if (options.dialog && !options.dialog.open) return;
+     if (result.ok) {lifecycle?.close(); options.onSubmitted?.();}
+     else current = {...current, error: result.error};
+     sync();
+   });
  };
  if (options.onSubmit) life.listen(form, 'submit', (event => {event.preventDefault(); void submit(control.getValue());}) as EventListener);
- if (options.onPick) life.listen(pickButton, 'click', (async () => {
-   if (destroyed || pending || current.disabled || options.unavailable?.()) return;
-   const seq = generation.next(); pending = true; current = {...current, error: ''}; sync();
-   let result: {path?: string; error?: string};
-   try {result = await options.onPick!();}
-   catch (reason) {result = {error: `${reason instanceof Error ? reason.message : String(reason)} You can enter the path below.`};}
-   if (!generation.current(seq) || (options.dialog && !options.dialog.open)) return;
-   if (result.error) {pending = false; current = {...current, error: result.error}; sync(); control.focus();}
-   else if (result.path) {control.reset(result.path); if (options.onSubmit) await submit(result.path, seq); else {pending = false; sync();}}
-   else {pending = false; sync();}
+ if (options.onPick) life.listen(pickButton, 'click', (() => {
+   pickOperation.run(()=>{current = {...current, error: ''}; sync(); return options.onPick!();},result=>{
+     // End the picker ownership before handing a valid path to submission.
+     // A newly disabled target can refuse the write without retaining pending.
+     pickOperation.invalidate();
+     if (options.dialog && !options.dialog.open) return;
+     if (result.error) {fail(result.error);control.focus();}
+     else if (result.path) {control.reset(result.path);submit(result.path);}
+   });
  }) as EventListener);
  life.listen(element, 'click', (event => {
    const target = event.target as Element;
    const selection = target.closest<HTMLButtonElement>('[data-modal-workspace]');
-   if (selection && options.onSelect) {event.stopPropagation(); if (!pending && !current.disabled && !options.unavailable?.()) options.onSelect(selection.dataset.modalWorkspace!);}
-   if (target.closest('[data-close]')) {generation.invalidate(); pending = false; options.onCancel?.(); lifecycle?.close();}
+   if (selection && options.onSelect) {event.stopPropagation(); if (!pickOperation.pending && !submitOperation.pending && !unavailable()) options.onSelect(selection.dataset.modalWorkspace!);}
+   if (target.closest('[data-close]')) {invalidate(); options.onCancel?.(); lifecycle?.close();}
  }) as EventListener);
  update(initial);
- return {element, input, form, pickButton, update, read: () => ({path: control.getValue()}), reset(path = '') {if (destroyed) return; generation.invalidate(); pending = false; current = {...current, error: ''}; control.reset(path); sync();}, open() {lifecycle?.open();}, close() {generation.invalidate(); pending = false; lifecycle?.close(); sync();}, focus: control.focus, destroy() {if (destroyed) return; destroyed = true; generation.destroy(); life.destroy(); lifecycle?.close(); lifecycle?.destroy(); parts.destroy(); element.remove();}};
+ return {element, input, form, pickButton, update, read: () => ({path: control.getValue()}), reset(path = '') {if (destroyed) return; invalidate(); current = {...current, error: ''}; control.reset(path); sync();}, open() {lifecycle?.open();}, close() {invalidate(); lifecycle?.close();}, focus: control.focus, destroy() {if (destroyed) return; destroyed = true; pickOperation.destroy(); submitOperation.destroy(); life.destroy(); lifecycle?.close(); lifecycle?.destroy(); parts.destroy(); element.remove();}};
 }

@@ -1,10 +1,11 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { themeStyles } from './palette.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 await mkdir(resolve(root, 'dist'), { recursive: true });
-const entry = await readFile(resolve(root, 'src/styles.css'), 'utf8');
+const entry = (await readFile(resolve(root, 'src/styles.css'), 'utf8')).replace('/* PUI_THEME_PALETTE */', themeStyles());
 // Resolve local CSS imports so the package has one portable stylesheet.
 async function inlineCSS(source: string, base: string, seen = new Set<string>()): Promise<string> {
   const imports = [...source.matchAll(/@import\s+['"]([^'"]+)['"];?/g)];

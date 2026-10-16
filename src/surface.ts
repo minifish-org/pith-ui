@@ -5,10 +5,13 @@ interface AnchoredSurfaceOptions {
   panel: HTMLElement;
   closeOnFocusOut?: boolean;
   exclusions?: readonly Node[];
-  onToggle?: (open: boolean) => void;
+  onToggle?: (open: boolean, restoreFocus?: boolean) => void;
   position?: boolean;
   canOpen?: () => boolean;
   canEscape?: () => boolean;
+  getAnchor?: () => Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom' | 'width' | 'height'>;
+  anchorElement?: HTMLElement;
+  dismissOnMove?: boolean;
 }
 interface AnchoredSurface {
   open(): void;
@@ -41,7 +44,7 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
   const place = () => {
     if (!opened || !position) return;
     if (!trigger.isConnected || !trigger.getClientRects().length) { close(); return; }
-    const anchor = trigger.getBoundingClientRect();
+    const anchor = options.getAnchor?.() ?? options.anchorElement?.getBoundingClientRect() ?? trigger.getBoundingClientRect();
     const viewport = view.visualViewport;
     const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? doc.documentElement.clientWidth;
@@ -59,7 +62,8 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
     const available = Math.max(0, upwards ? above : below);
     style('max-height', `${Math.min(320, available)}px`);
     const bounds = panel.getBoundingClientRect();
-    style('left', `${Math.max(left + margin, Math.min(anchor.left, left + width - margin - bounds.width))}px`);
+    const horizontal = anchor.left + bounds.width > left + width - margin ? anchor.right - bounds.width : anchor.left;
+    style('left', `${Math.max(left + margin, Math.min(horizontal, left + width - margin - bounds.width))}px`);
     style('top', `${upwards ? Math.max(top + margin, anchor.top - gap - bounds.height) : anchor.bottom + gap}px`);
     panel.scrollTop = scrollTop; panel.scrollLeft = scrollLeft;
   };
@@ -70,7 +74,7 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
     const index = stack.indexOf(handle); if (index >= 0) stack.splice(index, 1);
     if (topLayer && panel.matches(':popover-open')) panel.hidePopover();
     panel.hidden = true; trigger.setAttribute('aria-expanded', 'false');
-    options.onToggle?.(false);
+    options.onToggle?.(false, restoreFocus);
     if (restoreFocus && trigger.isConnected && !trigger.matches(':disabled')) trigger.focus({ preventScroll: true });
   }
   const handle: AnchoredSurface = {
@@ -87,7 +91,12 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
       events.listen(doc, 'click', outside, { capture: true });
       if (options.closeOnFocusOut !== false) {
         events.listen(doc, 'focusin', outside, { capture: true });
-        const blur = () => queueMicrotask(() => { if (opened && !contains(doc.activeElement)) close(); });
+        const blur = (event: Event) => {
+          // Native pointer focus can briefly expose body between focusout and
+          // focusin. Its related target already identifies an internal move.
+          if (contains((event as FocusEvent).relatedTarget)) return;
+          queueMicrotask(() => { if (opened && !contains(doc.activeElement)) close(); });
+        };
         events.listen(trigger, 'focusout', blur); events.listen(panel, 'focusout', blur);
       }
       events.listen(doc, 'keydown', (event => {
@@ -98,10 +107,12 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
         key.preventDefault(); key.stopPropagation(); close(true);
       }) as EventListener, { capture: true });
       if (position) {
-        events.listen(view, 'resize', place);
-        events.listen(doc, 'scroll', event => { if (!(event.target instanceof Node) || !panel.contains(event.target)) place(); }, { capture: true });
-        if (view.visualViewport) { events.listen(view.visualViewport, 'resize', place); events.listen(view.visualViewport, 'scroll', place); }
+        const move = () => { if (options.dismissOnMove) close(); else place(); };
+        events.listen(view, 'resize', move);
+        events.listen(doc, 'scroll', event => { if (!(event.target instanceof Node) || !panel.contains(event.target)) move(); }, { capture: true });
+        if (view.visualViewport) { events.listen(view.visualViewport, 'resize', move); events.listen(view.visualViewport, 'scroll', move); }
         const observer = new ResizeObserver(place); observer.observe(trigger); observer.observe(panel);
+        if (options.anchorElement && options.anchorElement !== trigger) observer.observe(options.anchorElement);
         events.add(() => observer.disconnect());
       }
       options.onToggle?.(true);
@@ -119,6 +130,30 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
     },
   };
   return handle;
+}
+
+function belongsToCloseScope(owner: HTMLElement, close: HTMLElement, dialogId?: string): boolean {
+  if (!owner.contains(close) || close.matches(':disabled') || close.getAttribute('aria-disabled') === 'true') return false;
+  const dialog = owner.closest('dialog');
+  if (close.closest('dialog') !== dialog) return false;
+  return close.hasAttribute('data-pui-close') || !close.dataset.close || close.dataset.close === (dialogId ?? dialog?.id ?? owner.id);
+}
+
+/** A content block can request closure without guessing its eventual frame ID. */
+export function bindContentClose(owner: HTMLElement, options: { dialogId?: string; onClose?: () => void } = {}): { destroy(): void } {
+  const life = new Lifetime();
+  life.listen(owner, 'click', (event => {
+    if (event.defaultPrevented || !(event.target instanceof Element)) return;
+    const close = event.target.closest<HTMLElement>('[data-pui-close], [data-close]');
+    if (!close || !belongsToCloseScope(owner, close, options.dialogId)) return;
+    const dialog = owner.closest('dialog');
+    if (dialog && ![...(dialogSessions.get(dialog)?.subscribers ?? [])].every(subscriber => subscriber.canClose?.() !== false)) return;
+    event.preventDefault();
+    if (options.onClose) options.onClose();
+    else if (dialog?.open) dialog.close();
+    else owner.hidden = true;
+  }) as EventListener);
+  return { destroy: () => life.destroy() };
 }
 
 export interface DialogLifecycleOptions {
@@ -175,12 +210,12 @@ export function installDialogLifecycle(dialog: HTMLDialogElement, options: Dialo
     current.listeners.listen(dialog, 'cancel', (event => { if (!canClose()) event.preventDefault(); }) as EventListener);
     current.listeners.listen(dialog, 'focusin', (() => { if (dialog.open) current.active = true; }) as EventListener);
     current.listeners.listen(dialog, 'click', (event => {
-      if (!dialog.open || !canClose()) return;
+      if (!dialog.open || !canClose() || event.defaultPrevented) return;
       const target = event.target;
       if (target instanceof Element) {
         for (const subscriber of current.subscribers) {
-          const close = target.closest<HTMLElement>(subscriber.closeButtonSelector ?? '[data-close]');
-          if (close && dialog.contains(close) && (!close.dataset.close || close.dataset.close === dialog.id)) {
+          const close = target.closest<HTMLElement>(subscriber.closeButtonSelector ?? '[data-pui-close], [data-close]');
+          if (close && belongsToCloseScope(dialog, close, dialog.id)) {
             dialog.close();
             return;
           }

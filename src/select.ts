@@ -51,12 +51,17 @@ function installSelect(control: HTMLSelectElement): SelectController {
   const hidden = (option: HTMLOptionElement) => option.hidden || (option.parentElement instanceof HTMLOptGroupElement && option.parentElement.hidden);
   const enabled = () => [...control.options].filter(option => !hidden(option) && !option.disabled && !(option.parentElement instanceof HTMLOptGroupElement && option.parentElement.disabled));
   const surface = installAnchoredSurface({ trigger, panel, canOpen: () => !control.matches(':disabled') && !control.hidden,
+    anchorElement: control.closest<HTMLElement>('[data-pui-select-anchor]') ?? undefined,
     onToggle(open) {
+      scopeObserver.disconnect();
       if (!open) { trigger.removeAttribute('aria-activedescendant'); search = ''; return; }
+      for (let parent = control.parentElement; parent; parent = parent.parentElement) if (parent instanceof HTMLFieldSetElement) scopeObserver.observe(parent, { attributes: true, attributeFilter: ['disabled'] });
       active = enabled().find(option => option.selected) ?? enabled()[0];
       highlight();
     },
   });
+  const scopeObserver = new MutationObserver(() => { if (control.matches(':disabled')) surface.close(); });
+  life.add(() => scopeObserver.disconnect());
   const attribute = (node: HTMLElement, name: string, value: string | null) => {
     if (value === null) { if (node.hasAttribute(name)) node.removeAttribute(name); }
     else if (node.getAttribute(name) !== value) node.setAttribute(name, value);
@@ -84,7 +89,9 @@ function installSelect(control: HTMLSelectElement): SelectController {
     const classes = [...control.classList].filter(name => name !== 'pui-select-backing');
     const nextClasses = [...classes, 'pui-select-trigger'].join(' ');
     if (trigger.className !== nextClasses) trigger.className = nextClasses;
-    trigger.disabled = control.matches(':disabled'); wrapper.hidden = control.hidden;
+    // Both controls inherit fieldset disabling natively. Do not turn an inherited
+    // condition into a sticky own disabled attribute on the visible trigger.
+    trigger.disabled = control.disabled; wrapper.hidden = control.hidden;
     const labelledBy = control.getAttribute('aria-labelledby');
     const labels = new Set(control.labels ?? []);
     const implicit = control.closest('label'); if (implicit) labels.add(implicit);
@@ -119,7 +126,7 @@ function installSelect(control: HTMLSelectElement): SelectController {
       if (node !== cursor) panel.insertBefore(node, cursor);
       cursor = node.nextElementSibling;
     }
-    if (trigger.disabled || control.hidden || (surface.isOpen() && !trigger.getClientRects().length)) surface.close();
+    if (control.matches(':disabled') || control.hidden || (surface.isOpen() && !trigger.getClientRects().length)) surface.close();
     if (active && !enabled().includes(active)) active = enabled().find(option => option.selected) ?? enabled()[0];
     highlight();
   }

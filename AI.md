@@ -17,6 +17,7 @@ Product blocks and standalone factories share the same private action, native-fi
 - Settings and MCP expose typed drafts, credential presentation and explicit reset/edit operations. Use their callbacks and methods; `field()`/`id()` remain compatibility adapters, not the default integration route.
 - Messages expose action/code callbacks, action availability and image state. Preserve the host's per-message eligibility rules; do not decorate rendered buttons with a second event-routing scheme.
 - Resources provide their own standard refresh/create toolbar. Node slots remain available for additional compositions, with explicit host ownership.
+- Provider/resource action blocks and MCP lists expose finite action types with semantic target snapshots. Navigation exposes `WorkspaceNavigationAction`, including its triggering button for anchored menus. Prefer these callbacks to dataset inspection; owned callbacks consume their event, while omitted callbacks preserve legacy host delegation.
 
 | Task | First API to inspect |
 |---|---|
@@ -43,6 +44,7 @@ Most views expose `{ element, update(state), destroy() }`; dialogs add open/clos
 
 - Call `update` on the existing instance; do not rebuild the entire page on streamed snapshots.
 - Input `value` initializes a draft. Use `reset` or `open({ value })` explicitly for a new target. Feedback updates must not replace user input.
+- Native `form.reset()` restores construction values. Component `reset` changes the current draft without changing that baseline or emitting a user-change callback. For multi-select, use `values`, `getValues`, `resetValues` and `onValuesChange`; the scalar methods remain available for single-choice compatibility.
 - Stable message IDs and collection keys protect selection, focus, decoded images and scroll positions.
 - An async submit returns `{ ok: true }` or `{ ok: false, error }`. A failed operation retains the draft. Closing or changing the view prevents a stale response from changing new UI; it does not undo a completed business write.
 - Combine external disabled state with local pending state. Do not automatically replay a write because the following refresh failed.
@@ -55,6 +57,10 @@ Call `setAppearance(root, 'light' | 'dark' | 'system')` on an ancestor containin
 
 Use supported density/intent/size options only. Different blocks support different options; the showroom enables controls only when implemented. Single-choice dropdowns share the same Select surface across base components and product blocks. Use `createSelect` for another ordinary choice rather than building a second options popup; call its `focus()` method to focus the visible control. Its native `control` remains a form-value and validation adapter. Explicit `multiple: true` or `size > 1` retains a native visible listbox. Native lists and compact chat actions intentionally have different sizing rules from ordinary fields. CSS px is a layout unit, not a physical screen-pixel measurement.
 
+Keyboard targets share a 1 CSS px focus outline with a 2 CSS px offset, without an additional glow. Permission controls show a single outline around their complete control. Keep this keyboard indication when composing controls. `focusableElements` returns visible, enabled, non-inert tab targets; hidden native select adapters are excluded.
+
+Native multi-row lists use 16 CSS px text. Row spacing follows platform capabilities: Chromium applies option padding; WebKit owns its native row metrics. Do not add empty container height to simulate spacing or replace native keyboard behavior implicitly.
+
 Do not add app-wide resets, new fonts, arbitrary animation timings, internal-class overrides or a UI framework to style these blocks. If a product brand needs a theme, centralize overrides in one reviewed token scope and inspect both themes and relevant states.
 
 ## Security and host boundaries
@@ -63,6 +69,7 @@ Do not add app-wide resets, new fonts, arbitrary animation timings, internal-cla
 - `renderMarkdown` sanitizes content; embedded media, executable markup, forms and arbitrary CSS are excluded. Local file links require the host's explicit resolver and authenticated download validation.
 - A resolved local link is a UI affordance, not permission to access a file. The host owns native file open/reveal/copy/download actions and cancellation.
 - The host acquires image data, validates supported MIME types and owns object URLs. Revoke URLs when their host scope ends; closing the zoom view does not establish file ownership.
+- Code-copy callbacks on conversations, paged previews and file previews receive `(text, button)`. The host owns clipboard access and error handling; reuse `createCopyFeedback` with that actual button for pending and result feedback. An owned callback consumes the code-copy event; without one, existing host delegation remains available. Do not install a second copy handler or change per-message eligibility rules.
 - Never log credentials, save them in the showroom, or place them in URLs. Empty credential fields and explicit removal actions must preserve the application's existing distinction.
 - Older safe markup helpers remain for application adapters. Prefer factories and Node composition. Never invent a generic raw-HTML extension point or bypass sanitization.
 

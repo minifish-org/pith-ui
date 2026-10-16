@@ -74,6 +74,7 @@ export function installConversationReader(scroll: HTMLElement, messages: HTMLEle
     updateLatest();
   }
   function followLatest(): void {
+    if (destroyed) return;
     const position = { top: 0, follow: true };
     if (pendingPosition) pendingPosition = position;
     restore(position);
@@ -155,12 +156,14 @@ export function installConversationReader(scroll: HTMLElement, messages: HTMLEle
     reveal();
   }
   function openFind(): void {
+    if (destroyed) return;
     bar.hidden = false;
     markMatches();
     field.focus();
     field.select();
   }
   function closeFind(): void {
+    if (destroyed) return;
     bar.hidden = true;
     clearMarks();
     matches = [];
@@ -222,7 +225,7 @@ export function installConversationReader(scroll: HTMLElement, messages: HTMLEle
         else updateLatest();
       });
     },
-    prune(ids: string[]): void { const keep = new Set(ids); for (const id of positions.keys()) if (!keep.has(id)) positions.delete(id); },
+    prune(ids: string[]): void { if (destroyed) return; const keep = new Set(ids); for (const id of positions.keys()) if (!keep.has(id)) positions.delete(id); },
     followLatest,
     openFind,
     closeFind,
