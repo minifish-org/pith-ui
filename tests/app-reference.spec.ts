@@ -15,7 +15,7 @@ test('the constrained reference sends and streams, edits a queued message and co
   await expect(queue.getByText('接下来检查错误', {exact: true})).toBeVisible();
   await queue.getByRole('button', {name: 'Edit pending message', exact: true}).click();
   const editor = page.getByRole('dialog', {name: 'Edit pending message', exact: true});
-  await editor.getByRole('textbox', {name: 'Message', exact: true}).fill('检查失败后保留草稿');
+  await editor.getByRole('textbox', {name: 'Pending message', exact: true}).fill('检查失败后保留草稿');
   await editor.getByRole('button', {name: 'Save message', exact: true}).click();
   await expect(editor).toHaveCount(0); await expect(queue.getByText('检查失败后保留草稿', {exact: true})).toBeVisible();
   await page.getByRole('button', {name: 'Allow this action', exact: true}).click();
@@ -94,13 +94,13 @@ test('conversation files and branch history are complete semantic compositions',
   const preview = page.getByRole('dialog', {name: '报告.md', exact: true});
   await expect(preview.getByRole('heading', {name: '模拟报告', exact: true})).toBeVisible();
   await preview.getByRole('button', {name: 'Copy code', exact: true}).click();
-  await expect(preview.getByRole('button', {name: 'Copied', exact: true})).toBeVisible();
-  await preview.getByRole('button', {name: 'Close dialog', exact: true}).click();
+  await expect(preview.getByRole('button', {name: 'Code copied.', exact: true})).toHaveText('Copied');
+  await preview.getByRole('button', {name: 'Close 报告.md', exact: true}).click();
   await page.getByRole('button', {name: 'Actions for 模拟会话', exact: true}).click();
   await page.getByRole('menuitem', {name: 'Conversation branches', exact: true}).click();
   const history = page.getByRole('dialog', {name: 'Conversation branches', exact: true});
   await expect(history.getByText('之前的模拟分支', {exact: true})).toBeVisible();
-  await history.getByRole('button', {name: 'Continue from here', exact: true}).first().click();
+  await history.getByRole('button', {name: 'Continue here', exact: true}).first().click();
   await expect(history).toHaveCount(0); await expect(page.getByText('已从选中的模拟历史节点继续。', {exact: true})).toBeVisible();
 });
 
