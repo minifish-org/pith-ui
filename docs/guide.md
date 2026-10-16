@@ -1,5 +1,21 @@
 # Integrating Pith UI
 
+## Application integrations
+
+Pith Desk integrations must follow the bundled [application consumption contract](../APP.md), not the general composition instructions below. UI imports are only `pith-ui/app` and `pith-ui/styles.css`. One checked mount enters `createApplication`; the four plain scene handles project existing controller state and return semantic intents. No internal node, Node slot, HTML, selector, dataset routing or custom styling is part of that boundary.
+
+Use `workspace` for navigation, conversation reading, composer/queue, tasks/approval, owned dialogs, branch history, costs and completion notices; `settings` for appearance/provider/model/MCP/login/independent connections and updates; `resources` for inventory/source editing; `files` for artifact actions and previews. The contract lists exact methods and lifecycle rules; the installed `dist/app/index.d.ts` remains authoritative. `setAppearance` is an application method; branding is a finite asset/text object rather than a Node.
+
+Keep application controllers for protocols, identity/permission/target validation, drafts, persistence, credentials/login transactions, file acquisition/native capabilities, costs, update polling and completion acknowledgments. A missing scene capability needs a tested library port. Do not fall back to the root factories or duplicate a component to finish a migration.
+
+The [complete reference](../examples/application/main.ts) is TypeScript compiled against public package exports and exercised through the [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference) showroom case. It uses in-memory simulation rather than real services or native writes. A local passing example is not a release, deployment, Pith Desk parity or human-acceptance claim.
+
+Install the approved verified registry version or prerelease exactly, commit its lockfile, and validate that artifact's API/CSS/types. Pith Desk must not depend on a local tarball, `file:`/`link:`, workspace/source alias or symlink. Migrate view assembly while preserving business controllers and regression assertions, delete the replaced view implementation, and verify behavior/visual/native/resource evidence separately. Detailed steps are in [APP.md](../APP.md#migration-and-validation).
+
+## General component compositions
+
+The remainder of this guide applies to independent consumers of the unrestricted root entry. It does not relax the application contract.
+
 ## Installation and scope
 
 Install a released, exact version, commit the consumer lockfile, and import only the package entry and `pith-ui/styles.css`. The generated ESM is for a browser DOM; Node can inspect exports but cannot mount a UI without a browser document.

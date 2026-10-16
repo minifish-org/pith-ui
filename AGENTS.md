@@ -2,6 +2,8 @@
 
 Read `AI.md`, the relevant entry in `docs/catalog.md`, and the actual implementation before changing a block. Use `rg` and targeted reads. Prefer RTK when available for supported terminal commands.
 
+- Pith Desk and approved application consumers follow `APP.md`: UI imports are only `pith-ui/app` and `pith-ui/styles.css`, with one checked mount and pure semantic scenes/sessions. Preserve the existing controllers. A missing port needs a regression and a narrow library change; do not bypass it through root factories, generated nodes or CSS. The unrestricted root entry remains for general component consumers.
+
 - Handwritten logic, configuration scripts and new tests use TypeScript. CSS owns presentation; use HTML native behavior before adding TS. Generated JavaScript/declarations live in `dist/`.
 - Preserve observed correct behavior and historical regression assertions. Characterize a concrete behavior gap before fixing it. Keep business protocol, identity and persistence out of the library.
 - Prefer an existing full block, then a base component. Do not copy a component into a consumer, introduce a UI framework, or add a broad DSL for a single use case.

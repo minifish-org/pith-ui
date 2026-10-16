@@ -1,6 +1,21 @@
 # Catalog and taxonomy
 
-The public entry is `pith-ui`; exact options and return types are in its declarations. Interactive links below use the same stable `item` IDs as the typed showroom catalog. Source examples are the real case mounts in `showroom/`, which are type-checked with the library.
+There are two consumption contracts. Pith Desk's UI must use only `pith-ui/app` and `pith-ui/styles.css`; general component consumers use `pith-ui`. Their installed declarations define exact options and return types. Interactive links below use the same stable `item` IDs as the typed showroom catalog. Match the documentation and deployed showroom to the package version being reviewed.
+
+## Application entry
+
+Read the bundled [application contract](../APP.md) and installed `dist/app/index.d.ts`. `createApplication(mount, options)` owns one complete interface and returns four plain semantic scenes. The root factories cataloged below remain public for general composition; they must not be used to bypass an application scene's boundary.
+
+| Scene | Feature groups | Reference |
+|---|---|---|
+| `workspace` | Navigation/search/menus/welcome; messages/tools/commands/Markdown/reading; composer/attachments/drop/queue; permissions/approval/runtime/failure; owned edit/confirm/workspace/rename dialogs; branches, costs and completion notices | `Application.workspace`, `WorkspaceScene` |
+| `settings` | Appearance/provider credentials/test/update display; model/effort; independent connections/model definitions/prices; MCP and provider sign-in | `Application.settings`, `SettingsScene` |
+| `resources` | Instructions/skills/templates/diagnostics, inventory actions, read-only/source editing and editor loading | `Application.resources`, `ResourcesScene` |
+| `files` | Conversation artifacts/actions, text/Markdown/diff/image previews, UTF-8 paging, copy feedback and image zoom | `Application.files`, `FilesScene` |
+
+The complete [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference) case is classified as **pages / 应用集成**. It embeds the [compiled reference application](../examples/application/main.ts), with a full-page link. All business actions are explicitly simulated. It uses only the approved public entry and CSS; its harness and gallery measurement code stay outside the application package.
+
+The following four design/component layers document the general library. Their Node slots, DOM handles, compatibility markup and density options are not application-consumption permissions.
 
 ## 1. Design foundations
 
@@ -73,6 +88,6 @@ Case implementations:
 - Safe DOM: `element`, `setText`, `iconElement`, `uniqueId`, `focusableElements`, `escape`, `escapeHTML`.
 - Ownership/state: `UIBlock`, `ActionResult`, `UIAction`, `Generation`, `Lifetime`, `controlDisabled`, `setControlPending`.
 - Adapter factories: `createSDKDialogElements`, `installImageViewer`, `mountPagedPreview`. Prefer `createFeatureDialogFrame`, `createImageViewer` and `createPagedPreview` for new independently owned instances. `mountPagedPreview` replaces a prior mount; factory instances expose explicit cleanup.
-- Safe markup adapters: `icon`, `dialogHeading`, `modelEditorMarkup`, `providerActionsMarkup`, `resourceActionsMarkup`, `fileActionsMarkup`, `showDialogError`. These support the existing consumer's event routing while factories are the default composition API.
+- Safe markup adapters: `icon`, `dialogHeading`, `modelEditorMarkup`, `providerActionsMarkup`, `resourceActionsMarkup`, `fileActionsMarkup`, `showDialogError`. These support general component compatibility routing while factories are the default composition API. They are not approved Pith Desk imports.
 
 Private message reconciliation is not a public HTML extension mechanism. Raw strings from users, files, models or providers must never be assigned to trusted markup sinks.

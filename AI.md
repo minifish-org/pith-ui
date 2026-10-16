@@ -1,8 +1,22 @@
 # Pith UI: instructions for consumers
 
-Pith UI supplies native TypeScript product blocks and base components. Import from `pith-ui`; import CSS once from `pith-ui/styles.css`. Consult the bundled [API reference](./API.md) for exact factory signatures, state, options, callbacks and handles; the installed `.d.ts` files remain authoritative. Do not guess parameter names, import private package paths or generate parallel JavaScript implementations.
+## Choose the consumption contract first
 
-## Choose the largest appropriate block
+Pith Desk and approved application integrations must read the bundled [application contract](./APP.md). Import UI values and types only from `pith-ui/app`, plus `pith-ui/styles.css`. Obtain and validate one mount, call `createApplication`, and use the plain `workspace`, `settings`, `resources` and `files` scenes. Their named state methods and session callbacks own the UI. Use the installed `dist/app/index.d.ts` from the exact registry dependency in the consumer lockfile; do not guess methods from a newer source checkout.
+
+Applications supply finite brand data (`name`, optional `qualifier`, optional static `mark: {src, alt}`), appearance and pure host capabilities. They retain request protocols, identity, versioned drafts, permissions, persistence, credentials, login transactions, file acquisition, native actions, costs, update polling and completion/read acknowledgments. The library owns structure, presentation, focus, local pending/errors, menus/disclosures, navigation expansion, reading and image zoom. The [complete compiled reference](./examples/application/main.ts) demonstrates these boundaries with simulated data; the showroom item is [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference).
+
+Do not add UI DOM outside the sole checked mount or inspect generated nodes, selectors, datasets, forms, fields, parts, controls, HTML, classes or styles. Do not import root factories, private paths, markup helpers or a copied component as a workaround. If a scene lacks a real capability, first add a permanent regression and a narrow semantic library port, reusing its existing component. Keep application business logic in its controller. Node slots, render callbacks, arbitrary CSS/density/size options and a UI description DSL are not part of `pith-ui/app`.
+
+Keep stable business keys. Update feedback without replacing a live draft; explicitly reset/edit or open a new session for a new target. Combine external availability with local pending, retain failed input, and preserve successful-write/failed-refresh semantics without replaying writes. A closed or replaced session cannot update a later opening; controller generations, cancellation and target checks still remain necessary. Follow the exact typed result of each callback: some return `ActionResult`, while void callbacks are business intents that need authoritative availability updates.
+
+Install only the approved published registry version or prerelease with an exact version and lockfile. Pith Desk must not use local tarballs, `file:`/`link:`, aliases, symlinks or source-path mappings. Build/test/package proof, npm publication, deployed showroom, native acceptance and human review are separate evidence; do not infer one from another.
+
+## General component consumers
+
+The remaining instructions describe the unrestricted `pith-ui` root entry for independent component compositions. They do not grant Pith Desk an escape from the application contract. Pith UI supplies native TypeScript product blocks and base components; these consumers import from `pith-ui` and import CSS once from `pith-ui/styles.css`. Consult the bundled [general API reference](./API.md) for exact factory signatures, state, options, callbacks and handles; the installed declarations remain authoritative. Do not guess parameter names, import private package paths or generate parallel JavaScript implementations.
+
+### Choose the largest appropriate block
 
 1. Locate the intended task in the catalog below and inspect its interactive case.
 2. Prefer the complete product block. Compose base components only when no product block fits.
@@ -38,7 +52,7 @@ Full catalog: https://github.com/minifish-org/pith-ui/blob/main/docs/catalog.md
 
 Showroom: https://minifish-org.github.io/pith-ui/?item=text-edit-dialog&theme=light&state=normal&width=800
 
-## State and lifecycle
+### State and lifecycle
 
 Most views expose `{ element, update(state), destroy() }`; dialogs add open/close and editors expose read/getValue/reset as declared. Pass complete state values of the concrete component type. Do not assume a method exists on every block.
 
@@ -51,7 +65,7 @@ Most views expose `{ element, update(state), destroy() }`; dialogs add open/clos
 - Call `destroy()` before releasing an instance. Destroy child block handles supplied through ordinary Node slots yourself; the parent cannot infer their ownership. A `DialogContent` handle passed to `createFeatureDialogFrame` is an explicit ownership transfer and is destroyed when replaced or closed.
 - Use distinct generated prefixes or supported ID options for coexisting instances. Leave legacy unprefixed IDs to the existing application adapter.
 
-## Theme and layout
+### Theme and layout
 
 Call `setAppearance(root, 'light' | 'dark' | 'system')` on an ancestor containing the view. Include `document.body` when a dialog is mounted there. This establishes the `.pui` boundary and `--pui-*` tokens.
 
@@ -67,7 +81,7 @@ Native multi-row lists use 16 CSS px text. Row spacing follows platform capabili
 
 Do not add app-wide resets, new fonts, arbitrary animation timings, internal-class overrides or a UI framework to style these blocks. If a product brand needs a theme, centralize overrides in one reviewed token scope and inspect both themes and relevant states.
 
-## Security and host boundaries
+### Security and host boundaries
 
 - Set ordinary text through typed factory inputs or `textContent`. Node slots accept trusted nodes constructed by the caller, not untrusted HTML.
 - `renderMarkdown` sanitizes content; embedded media, executable markup, forms and arbitrary CSS are excluded. Local file links require the host's explicit resolver and authenticated download validation.
@@ -75,9 +89,9 @@ Do not add app-wide resets, new fonts, arbitrary animation timings, internal-cla
 - The host acquires image data, validates supported MIME types and owns object URLs. Revoke URLs when their host scope ends; closing the zoom view does not establish file ownership.
 - Code-copy callbacks on conversations, paged previews and file previews receive `(text, button)`. The host owns clipboard access and error handling; reuse `createCopyFeedback` with that actual button for pending and result feedback. An owned callback consumes the code-copy event; without one, existing host delegation remains available. Do not install a second copy handler or change per-message eligibility rules.
 - Never log credentials, save them in the showroom, or place them in URLs. Empty credential fields and explicit removal actions must preserve the application's existing distinction.
-- Older safe markup helpers remain for application adapters. Prefer factories and Node composition. Never invent a generic raw-HTML extension point or bypass sanitization.
+- Older safe markup helpers remain for general component compatibility adapters. They are not allowed in Pith Desk's application boundary. Prefer factories and Node composition for unrestricted compositions; never invent a generic raw-HTML extension point or bypass sanitization.
 
-## Validate a change
+### Validate a change
 
 Type-check the public example, run the related component tests, experience normal/error/loading/disabled/long-content states, and check keyboard, focus, repeated actions and destruction. Preserve existing application behavior tests; changing a selector mechanically is different from weakening its assertion.
 
