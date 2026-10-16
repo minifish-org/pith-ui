@@ -5,9 +5,9 @@ This is the constrained application contract for Pith Desk and applications choo
 The allowed UI imports are `pith-ui/app` and `pith-ui/styles.css`. The general `pith-ui` entry remains available for independent component compositions; Pith Desk must not use it, private package paths, copied components or internal CSS to bypass this contract. A missing application capability needs a tested semantic port in the library before the application consumes it.
 
 <!-- PUI_APP_VERSION_START -->
-This contract accompanies `pith-ui@0.2.0-app.1`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
+This contract accompanies `pith-ui@0.2.0-app.2`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
 
-The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/examples/application/index.html). These sources are not bundled into the npm runtime package.
+The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/examples/application/index.html). These sources are not bundled into the npm runtime package.
 <!-- PUI_APP_VERSION_END -->
 
 ## One mount, four scenes
