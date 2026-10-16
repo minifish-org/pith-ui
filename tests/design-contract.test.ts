@@ -13,16 +13,18 @@ const sourceFiles = ['src','showroom'].flatMap(directory => files(join(root,dire
 const cssFiles = ['src','showroom'].flatMap(directory => files(join(root,directory),'.css'));
 const sizeTokens = ['--pui-text-small','--pui-text-medium','--pui-text-large','--pui-font-size','--pui-form-font-size'];
 const familyTokens = ['--pui-font-ui','--pui-font-code','--pui-font-family'];
+const weightTokens = ['--pui-weight-regular','--pui-weight-strong'];
 const spaceTokens = ['--pui-space-xs','--pui-space-sm','--pui-space-md','--pui-space-lg','--pui-space-xl','--pui-field-gap'];
 function token(value: string, names: readonly string[]): boolean { return names.some(name => value === `var(${name})`); }
 function permitted(property: string, value: string): boolean {
-  value = value.trim().replace(/\s+/g,' ');
-  if (['inherit','initial','unset','revert','revert-layer'].includes(value)) return true;
-  if (property === 'font-size') return token(value,sizeTokens);
+  value = value.trim().replace(/var\(\s*(--[\w-]+)\s*\)/g,'var($1)').replace(/\s+/g,' ');
+  if (value === 'inherit') return true;
+  if (property === 'font-size') return value === '0' || token(value,sizeTokens);
   if (property === 'font-family') return token(value,familyTokens);
+  if (property === 'font-weight') return token(value,weightTokens);
   if (property === 'line-height') return ['0','normal'].includes(value) || token(value,['--pui-line-height']);
   if (property === 'font') {
-    const withoutTokens = value.replace(/var\((--[\w-]+)\)/g,(match,name:string) => [...sizeTokens,...familyTokens,'--pui-line-height','--pui-weight-regular','--pui-weight-strong'].includes(name) ? '' : match);
+    const withoutTokens = value.replace(/var\((--[\w-]+)\)/g,(match,name:string) => [...sizeTokens,...familyTokens,...weightTokens,'--pui-line-height'].includes(name) ? '' : match);
     return withoutTokens.replace(/[\s/]/g,'') === '';
   }
   if (property === 'gap' || property === 'row-gap' || property === 'column-gap') {
@@ -58,7 +60,7 @@ test('authored CSS consumes shared type and gap tokens instead of adding local s
   assert.deepEqual(violations,[]);
 });
 
-const styleProperties = new Map([['fontSize','font-size'],['fontFamily','font-family'],['lineHeight','line-height'],['font','font'],['gap','gap'],['rowGap','row-gap'],['columnGap','column-gap']]);
+const styleProperties = new Map([['fontSize','font-size'],['fontFamily','font-family'],['fontWeight','font-weight'],['lineHeight','line-height'],['font','font'],['gap','gap'],['rowGap','row-gap'],['columnGap','column-gap']]);
 test('authored inline styles cannot reintroduce a fixed typography or spacing scale', () => {
   const violations: string[] = [];
   for (const file of sourceFiles) {
@@ -75,7 +77,7 @@ test('authored inline styles cannot reintroduce a fixed typography or spacing sc
         const literal = expression.head.text + expression.templateSpans.map(span=>span.literal.text).join('');
         if (literal.startsWith('var(') && !/\d|px|rem|em/.test(literal)) return;
         value = expression.getText(source);
-      } else return;
+      } else value = expression.getText(source);
       if (!permitted(property,value)) {const line=source.getLineAndCharacterOfPosition(expression.getStart(source)).line+1;violations.push(`${relative(root,file)}:${line} ${property}: ${value}`);}
     };
     const visit = (node:ts.Node):void => {
