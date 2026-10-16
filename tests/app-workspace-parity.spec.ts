@@ -101,10 +101,12 @@ test('an unrelated running target leaves inactive conversation and workspace men
   await page.getByRole('button', {name: 'Actions for Running chat', exact: true}).click();
   await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeDisabled();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', {name: 'Actions for Idle chat', exact: true}).click();
   await page.evaluate(() => (window as unknown as {availabilityFixture: {busy(value: boolean): void}}).availabilityFixture.busy(true));
+  await page.getByRole('button', {name: 'Actions for Idle chat', exact: true}).click();
   await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeDisabled();
+  await page.keyboard.press('Escape');
   await page.evaluate(() => (window as unknown as {availabilityFixture: {busy(value: boolean): void}}).availabilityFixture.busy(false));
+  await page.getByRole('button', {name: 'Actions for Idle chat', exact: true}).click();
   await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeEnabled();
 });
 
@@ -125,4 +127,59 @@ test('global and active run gates preserve permitted message and code copies', a
   expect(await page.evaluate(() => (window as unknown as {copyAvailabilityFixture: {calls: string[]}}).copyAvailabilityFixture.calls)).toEqual(['message', 'code']);
   await expect(page.locator('[data-message-action="copy"]')).toBeEnabled();
   await expect(page.locator('[data-copy-code]')).toBeEnabled();
+});
+
+test('pending native references still accept the matching image drop without resolving paths twice', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const images: string[][] = [], references: unknown[] = [];
+    const app = createApplication(document.body, {workspace: {
+      onImages: (files: File[]) => images.push(files.map(file => file.name)),
+      onDropReferences(value: unknown) {references.push(value); app.workspace.setDropPending(true);},
+    }});
+    const form = document.querySelector<HTMLElement>('.pui-composer')!;
+    const drop = () => {
+      const transfer = new DataTransfer(); transfer.items.add(new File(['image'], 'photo.png', {type: 'image/png'}));
+      transfer.items.add(new File(['text'], '中文 draft.md', {type: 'text/markdown'}));
+      form.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: transfer}));
+    };
+    app.workspace.resetDraft('Review OLD please');
+    const input = document.querySelector<HTMLTextAreaElement>('[aria-label="Message Pith"]')!;
+    input.setSelectionRange(7, 10);
+    const rect = form.getBoundingClientRect();
+    app.workspace.receiveNativeDrop({paths: ['/workspace/docs/中文 draft.md', '/workspace/photo.png'], x: rect.x + 8, y: rect.y + 8});
+    drop();
+    const pending = {images: [...images], references: [...references]};
+    app.workspace.setDropPending(false); app.workspace.insertReferences(['docs/中文 draft.md']);
+    const draft = app.workspace.readDraft();
+    for (const state of [{readOnly: true}, {disabled: true}]) {app.workspace.updateComposer(state); drop();}
+    app.workspace.updateComposer({}); app.workspace.updateAvailability({busy: true}); drop();
+    const final = {images, references, draft};
+    app.destroy(); return {pending, final};
+  });
+  const references = [{paths: ['/workspace/docs/中文 draft.md', '/workspace/photo.png'], hasUnidentifiedFiles: false}];
+  expect(result).toEqual({
+    pending: {images: [['photo.png']], references},
+    final: {images: [['photo.png']], references, draft: 'Review `docs/中文 draft.md` please'},
+  });
+});
+
+test('welcome suggestions preserve a restoring draft until the composer becomes available', async ({page}) => {
+  await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const inputs: string[] = [];
+    const app = createApplication(document.body, {workspace: {onInput: (text: string) => inputs.push(text)}});
+    app.workspace.updateWelcome({workspace: {name: 'Work', path: '/work'}, hasApiKey: true, hasConnections: true});
+    app.workspace.resetDraft('restoring draft'); app.workspace.updateComposer({readOnly: true});
+    (window as unknown as {welcomeParity: {inputs: string[]; draft(): string; ready(): void}}).welcomeParity = {
+      inputs, draft: app.workspace.readDraft, ready() {app.workspace.updateComposer({});},
+    };
+  });
+  await page.getByRole('button', {name: 'Explore my workspace', exact: true}).click();
+  expect(await page.evaluate(() => {const fixture = (window as unknown as {welcomeParity: {inputs: string[]; draft(): string}}).welcomeParity; return {draft: fixture.draft(), inputs: fixture.inputs};})).toEqual({draft: 'restoring draft', inputs: []});
+  await page.evaluate(() => (window as unknown as {welcomeParity: {ready(): void}}).welcomeParity.ready());
+  await page.getByRole('button', {name: 'Explore my workspace', exact: true}).click();
+  await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toHaveValue('Explore this workspace and give me a concise overview of its files.');
+  await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeFocused();
+  expect(await page.evaluate(() => (window as unknown as {welcomeParity: {inputs: string[]}}).welcomeParity.inputs)).toEqual(['Explore this workspace and give me a concise overview of its files.']);
 });
