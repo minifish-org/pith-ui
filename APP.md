@@ -78,6 +78,10 @@ These are named methods, not a UI description language. Pass the concrete export
 
 Navigation state supplies workspace/conversation identity, selection, status and allowed actions. Disclosure state and menu anchoring stay in the library; do not drive an `expanded` field or retain the menu's trigger. `setSidebarOpen` expresses an application intent, not a node-access escape hatch.
 
+`updateAvailability({busy, global, active, conversations, workspaces})` keeps mutation and run scopes separate. `busy` blocks all action scopes during a host mutation. `global` blocks global actions while any task runs; `active` and the two identity lists block only their matching targets. An unrelated inactive conversation or workspace keeps its actions. Message copy/edit/branch eligibility still comes from `updateMessageAvailability`.
+
+`onDropReferences` receives pure `{paths, uris?, hasUnidentifiedFiles}` data. Native validated paths set `hasUnidentifiedFiles: false`; browser drops set it when they contain non-image files whose identities the host must resolve. A URI-only drag does not imply unidentified files. The host retains path validation and error policy. `setDropPending(true)` blocks another reference resolution while still permitting available image attachments from the matching drop. Release it before calling `insertReferences`; the scene owns selection and focus.
+
 Every opening returns a plain session with `update(state)`, `fail(message)`, `isOpen()`, `close()` and `destroy()`. Only declared additions exist:
 
 | Session | Additional semantic methods |

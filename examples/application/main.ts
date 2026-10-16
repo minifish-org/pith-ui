@@ -101,7 +101,10 @@ const app: Application = createApplication(mount, {
     onSelectConversation() {app.workspace.setSidebarOpen(false);},
     onSelectWorkspace() {app.workspace.setSidebarOpen(false);},
     onImages(files) {announce(`模拟收到 ${files.length} 个图片附件；本参考应用不读取或上传图片内容。`);},
-    onDropReferences(input) {app.workspace.insertReferences(input.paths);},
+    onDropReferences(input) {
+      if (input.hasUnidentifiedFiles && !input.paths.length) announce('模拟文件拖放：浏览器未提供可验证的文件路径；没有猜测文件身份。');
+      else app.workspace.insertReferences(input.paths);
+    },
     onError(message) {announce(`模拟界面反馈：${message}`);},
   },
 });
@@ -116,6 +119,7 @@ function renderComposer(): void {
     thinking: {options: (selection.model === 'demo-fast' ? ['off'] : ['off', 'medium', 'high']).map(value => ({value, label: value})), value: selection.thinkingLevel},
     placeholder: '模拟消息：发送后可排队、编辑和审批；不会访问真实模型。',
   });
+  app.workspace.updateAvailability({busy: false, global: working, active: working, conversations: working ? [conversationId] : [], workspaces: working ? [workspace.id] : []});
 }
 function renderPermission(): void {app.workspace.updatePermission({mode: permission, description: '仅模拟权限状态，不授予真实文件或网络访问。'});}
 function render(): void {

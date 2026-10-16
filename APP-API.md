@@ -798,7 +798,7 @@ export type UpdateAction = 'check' | 'install';
 
 ### ApplicationConversation
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L21)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L22)
 
 ```ts
 export interface ApplicationConversation {
@@ -819,7 +819,7 @@ Referenced types and APIs: [`NavigationStatus`](#navigationstatus).
 
 ### ApplicationWorkspace
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L26)
 
 ```ts
 export interface ApplicationWorkspace {
@@ -836,7 +836,7 @@ Referenced types and APIs: [`ApplicationConversation`](#applicationconversation)
 
 ### ConfirmationState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L78)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L79)
 
 ```ts
 export interface ConfirmationState {
@@ -855,7 +855,7 @@ export interface ConfirmationState {
 
 ### ConversationNavigationAction
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L34)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L35)
 
 ```ts
 export type ConversationNavigationAction = 'rename' | 'history' | 'export' | 'delete';
@@ -863,7 +863,7 @@ export type ConversationNavigationAction = 'rename' | 'history' | 'export' | 'de
 
 ### ConversationState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L31)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L32)
 
 ```ts
 export interface ConversationState {
@@ -877,7 +877,7 @@ Referenced types and APIs: [`ConversationMessage`](#conversationmessage).
 
 ### ImageTarget
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L33)
 
 ```ts
 export interface ImageTarget {
@@ -889,7 +889,7 @@ export interface ImageTarget {
 
 ### MessageEditorSession
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L77)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L78)
 
 ```ts
 export interface MessageEditorSession extends SceneSession<MessageEditorState> {
@@ -903,7 +903,7 @@ Referenced types and APIs: [`MessageEditorState`](#messageeditorstate), [`SceneS
 
 ### MessageEditorState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L72)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L73)
 
 ```ts
 export interface MessageEditorState {
@@ -921,7 +921,7 @@ export interface MessageEditorState {
 
 ### NavigationState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L30)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L31)
 
 ```ts
 export interface NavigationState {
@@ -935,7 +935,7 @@ Referenced types and APIs: [`ApplicationWorkspace`](#applicationworkspace).
 
 ### NavigationStatus
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L20)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L21)
 
 ```ts
 export interface NavigationStatus {
@@ -945,7 +945,7 @@ export interface NavigationStatus {
 
 ### SceneSession
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L65)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L66)
 
 ```ts
 export interface SceneSession<State> {
@@ -959,7 +959,7 @@ export interface SceneSession<State> {
 
 ### WorkspaceAction
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L33)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L34)
 
 ```ts
 export type WorkspaceAction = 'workspace' | 'resources' | 'connections' | 'settings' | 'model' | 'compact' | 'continue' | 'diagnostics';
@@ -967,10 +967,13 @@ export type WorkspaceAction = 'workspace' | 'resources' | 'connections' | 'setti
 
 ### WorkspaceAvailability
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L83)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L84)
 
 ```ts
 export interface WorkspaceAvailability {
+    /** A host mutation blocks actions in every scope. A running task is scoped below. */
+    readonly busy?: boolean;
+    /** Global actions only; unrelated inactive targets keep their own availability. */
     readonly global?: boolean;
     readonly active?: boolean;
     readonly conversations?: readonly string[];
@@ -980,7 +983,7 @@ export interface WorkspaceAvailability {
 
 ### WorkspaceCallbacks
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L35)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L36)
 
 ```ts
 export interface WorkspaceCallbacks {
@@ -1008,6 +1011,7 @@ export interface WorkspaceCallbacks {
     onDropReferences?(input: {
         readonly paths: readonly string[];
         readonly uris?: string;
+        readonly hasUnidentifiedFiles: boolean;
     }): void;
     onPermissionChange?(value: string): void;
     onApproval?(id: string, action: 'deny' | 'always' | 'allow'): void;
@@ -1022,7 +1026,7 @@ Referenced types and APIs: [`ConversationAction`](#conversationaction), [`Conver
 
 ### WorkspaceScene
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L84)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.1/src/app/workspace.ts#L91)
 
 ```ts
 export interface WorkspaceScene {

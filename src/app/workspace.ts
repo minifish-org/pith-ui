@@ -1,4 +1,5 @@
 import type {ActionResult} from '../core.js';
+import {adoptAction} from '../foundations.js';
 import {createWorkspaceShell, type ComposerViewState, type WorkspaceShellState} from '../workspace.js';
 import {createWorkspaceNavigation, createWorkspacePicker, createRenameConversation, type NavigationWorkspace, type WorkspacePickerState, type RenameConversationState, type RenameConversationDraft} from '../navigation/navigation.js';
 import {createContextMenu, type ContextMenuItem} from '../navigation/context-menu.js';
@@ -54,7 +55,7 @@ export interface WorkspaceCallbacks {
   onLoadImage?(target: ImageTarget): Promise<Blob | null>;
   onQueueAction?(action: 'edit' | 'delete' | 'steer', id: string): void;
   onRemoveAttachment?(id: string): void;
-  onDropReferences?(input: {readonly paths: readonly string[]; readonly uris?: string}): void;
+  onDropReferences?(input: {readonly paths: readonly string[]; readonly uris?: string; readonly hasUnidentifiedFiles: boolean}): void;
   onPermissionChange?(value: string): void;
   onApproval?(id: string, action: 'deny' | 'always' | 'allow'): void;
   onCompletionOpen?(id: string): void;
@@ -80,7 +81,13 @@ export interface ConfirmationState {
   readonly description: {readonly before: string; readonly subject?: string; readonly after?: string};
   readonly hint?: string; readonly error?: string; readonly disabled?: boolean;
 }
-export interface WorkspaceAvailability {readonly global?: boolean; readonly active?: boolean; readonly conversations?: readonly string[]; readonly workspaces?: readonly string[]}
+export interface WorkspaceAvailability {
+  /** A host mutation blocks actions in every scope. A running task is scoped below. */
+  readonly busy?: boolean;
+  /** Global actions only; unrelated inactive targets keep their own availability. */
+  readonly global?: boolean;
+  readonly active?: boolean; readonly conversations?: readonly string[]; readonly workspaces?: readonly string[];
+}
 export interface WorkspaceScene {
   updateShell(state: Readonly<WorkspaceShellState>): void;
   updateComposer(state: Readonly<ComposerViewState>): void;
@@ -131,6 +138,8 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
   let navigationConversation = '';
   let composerState: ComposerViewState = {};
   let availability: WorkspaceAvailability = {};
+  let messageAvailability: ConversationActionAvailability = {};
+  const composerUnavailable = () => destroyed || !!composerState.disabled || !!composerState.readOnly || !!availability.busy || env.hasModal();
   const abort = new AbortController();
   const folds = new Map<string, Map<string, boolean>>(), expanded = new Map<string, boolean>();
   const imageData = new Map<string, Promise<string | null>>();
@@ -145,7 +154,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
     try {const result = await action(); if (result && !result.ok) throw new Error(result.error);}
     catch (error) {fail(error);}
   };
-  const copy = createCopyFeedback({status: env.part('copy-status'), isDisabled: button => !!availability.global || (button.hasAttribute('data-message-action') && !!availability.active), onError: fail});
+  const copy = createCopyFeedback({status: env.part('copy-status'), isDisabled: button => !!availability.busy || (button.hasAttribute('data-message-action') && !!messageAvailability[button.dataset.messageAction as ConversationAction['action']]), onError: fail});
   const copyAction = (button: HTMLButtonElement, action: () => HostResult, label: string) => copy.copy(button, async () => {const result = await action(); if (result && !result.ok) throw new Error(result.error);}, label);
   const messages = createConversationView({container: env.part('messages'), markdown: id => ({resolveLocalLink: href => callbacks.resolveLocalLink?.(href, id) ?? null}),
     onAction(action, button) {
@@ -158,7 +167,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
   const reader = installConversationReader(env.part('chat-scroll'), env.part('messages'), env.part('conversation-find'), env.part<HTMLButtonElement>('back-to-latest'), {isKeyboardBlocked: env.hasModal});
   let logo: HTMLImageElement | undefined;
   if (brand.mark) {logo = document.createElement('img'); logo.className = 'pui-app-brand-image'; logo.src = env.brandMarkSource(); logo.alt = brand.mark.alt;}
-  const welcome = createWelcomeView({container: env.part('welcome'), logo, onAction: action => {void run(() => callbacks.onAction?.(action));}, onPrompt: text => {shell.composer.reset(text); callbacks.onInput?.(text); shell.composer.focus();}});
+  const welcome = createWelcomeView({container: env.part('welcome'), logo, onAction: action => {void run(() => callbacks.onAction?.(action));}, onPrompt: text => {if (composerUnavailable()) return; shell.composer.reset(text); callbacks.onInput?.(text); shell.composer.focus();}});
   const menu = createContextMenu({element: env.part('conversation-menu'), onDismiss: () => {menuTarget = undefined; renderNavigation();}, onAction(item) {
     const target = menuTarget; closeMenu(); if (!target) return;
     if (target.kind === 'conversation') void run(() => callbacks.onConversationAction?.(item.action as ConversationNavigationAction, target.id));
@@ -181,12 +190,12 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
   function menuItems(target: {kind: 'workspace' | 'conversation'; id: string}): ContextMenuItem[] {
     if (target.kind === 'workspace') {
       const group = navigationState.groups.find(group => group.id === target.id);
-      return [{id: 'remove', label: 'Remove workspace', action: 'remove', danger: true, disabled: !!navigationState.disabled || !!availability.global || availability.workspaces?.includes(target.id) || group?.canRemove === false}];
+      return [{id: 'remove', label: 'Remove workspace', action: 'remove', danger: true, disabled: !!navigationState.disabled || !!availability.busy || availability.workspaces?.includes(target.id) || group?.canRemove === false}];
     }
     const entry = navigationState.groups.flatMap(group => group.children).find(item => item.id === target.id);
     return ([['rename', 'Rename conversation'], ['history', 'Conversation branches'], ['export', 'Export conversation'], ['delete', 'Delete conversation']] as const)
       .filter(([action]) => action !== 'history' || entry?.active)
-      .map(([action, label]) => ({id: action, action, label, danger: action === 'delete', disabled: !!navigationState.disabled || !!availability.global || availability.conversations?.includes(target.id) || entry?.actions?.[action] === false}));
+      .map(([action, label]) => ({id: action, action, label, danger: action === 'delete', disabled: !!navigationState.disabled || !!availability.busy || availability.conversations?.includes(target.id) || entry?.actions?.[action] === false}));
   }
   function renderNavigation(): void {
     if (destroyed) return;
@@ -221,18 +230,22 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
     if (action && ['workspace', 'resources', 'connections', 'settings'].includes(action) || action === 'compact') {event.stopPropagation(); void run(() => callbacks.onAction?.(action as WorkspaceAction));}
   }, {signal: abort.signal});
   const input = shell.composer.input, form = shell.composer.element;
+  const attachmentAction = adoptAction(env.part<HTMLButtonElement>('attach-images'));
+  const syncAttachment = () => attachmentAction.update({disabled: attachmentsDisabled || !!composerState.disabled || !!composerState.readOnly || !!availability.busy});
   input.addEventListener('blur', () => callbacks.onBlur?.(), {signal: abort.signal});
   input.addEventListener('paste', event => {const files = [...event.clipboardData?.items || []].filter(item => item.type.startsWith('image/')).map(item => item.getAsFile()).filter((file): file is File => !!file); if (files.length) {event.preventDefault(); callbacks.onImages?.(files);}}, {signal: abort.signal});
-  const dropUnavailable = () => destroyed || !!composerState.disabled || !!composerState.readOnly || dropPending || env.hasModal();
+  const dropUnavailable = () => composerUnavailable() || dropPending;
   form.addEventListener('dragover', event => {if (dropUnavailable()) return; event.preventDefault(); drop.update({active: true});}, {signal: abort.signal});
   form.addEventListener('dragleave', event => {if (!form.contains(event.relatedTarget as Node | null)) drop.update({active: false});}, {signal: abort.signal});
   form.addEventListener('drop', event => {
-    event.preventDefault(); drop.update({active: false}); if (dropUnavailable()) return;
+    event.preventDefault(); drop.update({active: false}); if (composerUnavailable()) return;
     const files = [...event.dataTransfer?.files || []];
     const isImage = (file: File) => ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(file.type) || !file.type && /\.(?:png|jpe?g|gif|webp)$/i.test(file.name);
     const images = files.filter(isImage), uris = event.dataTransfer?.getData('text/uri-list') || '';
-    if (images.length) callbacks.onImages?.(images);
-    if (uris || files.some(file => !isImage(file))) callbacks.onDropReferences?.({paths: [], uris});
+    if (images.length && !attachmentsDisabled) callbacks.onImages?.(images);
+    if (dropPending) return;
+    const hasUnidentifiedFiles = files.some(file => !isImage(file));
+    if (uris || hasUnidentifiedFiles) callbacks.onDropReferences?.({paths: [], uris, hasUnidentifiedFiles});
   }, {signal: abort.signal});
   const collectFolds = () => {if (!activeId) return; const map = new Map<string, boolean>(); for (const item of env.part('messages').querySelectorAll<HTMLDetailsElement>('[data-tool-fold]')) map.set(item.dataset.toolFold!, item.open); folds.set(activeId, map);};
   const clearImages = () => {imageGeneration++; imageData.clear(); requestedImages = new WeakSet(); for (const url of imageURLs) URL.revokeObjectURL(url); imageURLs.clear();};
@@ -290,17 +303,17 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
   }
   return {
     updateShell: state => {if (!destroyed) shell.update(state);},
-    updateComposer(state) {if (!destroyed) {composerState = state; shell.composer.update(state); drop.update({active: false, disabled: dropUnavailable()});}},
+    updateComposer(state) {if (!destroyed) {composerState = state; shell.composer.update(state); syncAttachment(); drop.update({active: false, disabled: dropUnavailable()});}},
     readDraft: () => shell.composer.getValue(), resetDraft: text => {if (!destroyed) shell.composer.reset(text);}, focusComposer: shell.composer.focus,
-    pickImages() {if (!dropUnavailable() && !attachmentsDisabled) shell.composer.pickImages();},
+    pickImages() {if (!composerUnavailable() && !attachmentsDisabled) shell.composer.pickImages();},
     insertReferences(paths) {
       if (dropUnavailable() || !paths.length) return;
-      const reference = paths.map(path => {const ticks = Math.max(0, ...[...path.matchAll(/`+/g)].map(match => match[0].length)) + 1; const delimiter = '`'.repeat(ticks); return delimiter + (/^`|`$|^ | $/.test(path) ? ' ' + path + ' ' : path) + delimiter;}).join(' ');
+      const reference = paths.map(path => {const ticks = Math.max(0, ...[...path.matchAll(/`+/g)].map(match => match[0].length)) + 1; const delimiter = '`'.repeat(ticks); return delimiter + (/^`|`$|^ | $/.test(path) && !/^ +$/.test(path) ? ' ' + path + ' ' : path) + delimiter;}).join(' ');
       const value = input.value, start = input.selectionStart, end = input.selectionEnd;
       const before = value.slice(0, start), after = value.slice(end), inserted = (before && !/\s$/.test(before) ? ' ' : '') + reference + (after && !/^\s/.test(after) ? ' ' : '');
       shell.composer.reset(before + inserted + after); input.setSelectionRange(before.length + inserted.length, before.length + inserted.length); shell.composer.focus(); callbacks.onInput?.(input.value);
     },
-    receiveNativeDrop({paths, x, y}) {if (dropUnavailable() || !Number.isFinite(x) || !Number.isFinite(y) || !form.contains(document.elementFromPoint(x, y))) return; callbacks.onDropReferences?.({paths: [...paths]});},
+    receiveNativeDrop({paths, x, y}) {if (dropUnavailable() || !Number.isFinite(x) || !Number.isFinite(y) || !form.contains(document.elementFromPoint(x, y))) return; callbacks.onDropReferences?.({paths: [...paths], hasUnidentifiedFiles: false});},
     setDropPending(value) {dropPending = value; if (value) drop.update({active: false});},
     updateNavigation(state) {navigationState = state; const active = state.groups.flatMap(group => group.children.filter(item => item.active).map(item => ({workspace: group.id, conversation: item.id})))[0]; if (active && active.conversation !== navigationConversation) expanded.set(active.workspace, true); navigationConversation = active?.conversation || ''; const ids = new Set(state.groups.map(group => group.id)); for (const id of expanded.keys()) if (!ids.has(id)) expanded.delete(id); if (menuTarget && !state.groups.some(group => menuTarget!.kind === 'workspace' ? group.id === menuTarget!.id : group.children.some(item => item.id === menuTarget!.id))) closeMenu(); renderNavigation();},
     search(value) {query = value; renderNavigation(); callbacks.onSearch?.(value);}, closeNavigationMenu: closeMenu, setSidebarOpen: shell.setSidebarOpen,
@@ -311,14 +324,14 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
       env.part('welcome').hidden = state.messages.length > 0; env.part('messages').hidden = !state.messages.length;
       messages.update({...state, folds: folds.get(state.id)}); loadImages(); reader.afterRender();
     },
-    updateMessageAvailability: messages.updateActionAvailability,
+    updateMessageAvailability(state) {messageAvailability = state; messages.updateActionAvailability(state);},
     pruneConversations(ids) {const keep = new Set(ids); for (const id of folds.keys()) if (!keep.has(id)) folds.delete(id); reader.prune([...ids]);},
     updateWelcome(state) {if (destroyed) return; if (logo) logo.src = env.brandMarkSource(); welcome.update(state);}, followLatest: reader.followLatest, openFind: reader.openFind, closeFind: reader.closeFind,
     updatePending: pending.update,
-    updateAttachments(state) {if (!destroyed) {attachmentsDisabled = !!state.disabled; attachments.update(state);}},
+    updateAttachments(state) {if (!destroyed) {attachmentsDisabled = !!state.disabled; attachments.update(state); syncAttachment();}},
     updateImageGuidance(message) {const element = env.part('image-guidance'); element.textContent = message; element.hidden = !message;},
     updatePermission: permission.update, updateApproval: approval.update, updateFailure: failure.update, updateRuntime: runtime.update, updateTiming: runtime.updateTiming, updateNotices: notices.update,
-    updateAvailability(state) {if (destroyed) return; availability = state; const conversations = new Set(state.conversations), workspaces = new Set(state.workspaces); shell.updateActionAvailability(scope => !!state.global || (scope.kind === 'conversation' ? conversations.has(scope.id || '') : scope.kind === 'workspace' ? workspaces.has(scope.id || '') : scope.kind === 'active' ? !!state.active : false)); renderNavigation();},
+    updateAvailability(state) {if (destroyed) return; availability = state; const conversations = new Set(state.conversations), workspaces = new Set(state.workspaces); shell.updateActionAvailability(scope => !!state.busy || (scope.kind === 'global' ? !!state.global : scope.kind === 'conversation' ? conversations.has(scope.id || '') : scope.kind === 'workspace' ? workspaces.has(scope.id || '') : !!state.active)); syncAttachment(); renderNavigation();},
     readCosts: () => ({open: costs.open, runtimeOpen: runDetails.open}),
     updateCosts(state) {if (destroyed) return; costs.hidden = !state.visible; if (state.error) ledger.setError(state.error); else if (state.loading) ledger.loading(); else if (state.report) ledger.update(state.report);},
     resetCosts() {costs.open = false; ledger.clear();},
@@ -343,6 +356,6 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
       surface = env.openFeature('Conversation branches', block, actions.onClose);
       return {isOpen: surface.isOpen, close: surface.close, destroy: surface.destroy, fail: surface.fail, update(next) {if (surface.isOpen()) block.update(next);}};
     },
-    destroy() {if (destroyed) return; destroyed = true; abort.abort(); for (const session of [...sessions]) session.close(); sessions.clear(); clearImages(); folds.clear(); expanded.clear(); menu.destroy(); navigation.destroy(); copy.destroy(); reader.destroy(); messages.destroy(); welcome.destroy(); pending.destroy(); attachments.destroy(); drop.destroy(); permission.destroy(); approval.destroy(); failure.destroy(); runtime.destroy(); ledger.destroy(); notices.destroy();},
+    destroy() {if (destroyed) return; destroyed = true; abort.abort(); for (const session of [...sessions]) session.close(); sessions.clear(); clearImages(); folds.clear(); expanded.clear(); menu.destroy(); navigation.destroy(); copy.destroy(); reader.destroy(); messages.destroy(); welcome.destroy(); pending.destroy(); attachments.destroy(); attachmentAction.destroy(); drop.destroy(); permission.destroy(); approval.destroy(); failure.destroy(); runtime.destroy(); ledger.destroy(); notices.destroy();},
   };
 }
