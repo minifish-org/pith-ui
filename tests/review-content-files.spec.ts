@@ -138,6 +138,21 @@ test('appending to the selected streaming message preserves its own DOM, selecti
   expect(result.result.text).toContain('Streaming next token');
 });
 
+test('a message root tag can change without interrupting later keyed updates', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const {createConversationView} = await import('../src/content/conversation-view.js'); const view = createConversationView(); document.body.append(view.element);
+    const remaining = {id:'remaining', role:'assistant', text:'Remaining before', actions:{copy:true}};
+    view.update({id:'chat', messages:[{id:'changing', role:'user', text:'Before'},remaining], working:false});
+    const button = view.element.querySelector<HTMLButtonElement>('[data-copy-message="remaining"]')!; button.focus();
+    let error: string | null = null;
+    try {view.update({id:'chat', messages:[{id:'changing', role:'system', text:'After'},{...remaining,text:'Remaining after'}], working:false});}
+    catch (reason) {error = reason instanceof Error ? reason.name : String(reason);}
+    const result = {error, tag:view.element.querySelector('[data-reading-id="changing"]')!.tagName, text:view.element.querySelector('[data-reading-id="remaining"]')!.textContent!.trim(), sameButton:button === view.element.querySelector('[data-copy-message="remaining"]'), focused:document.activeElement === button};
+    view.destroy(); return result;
+  });
+  expect(result).toEqual({error:null, tag:'DIV', text:'Remaining after', sameButton:true, focused:true});
+});
+
 test('welcome feedback and metadata changes preserve the existing workspace action and brand node', async ({page}) => {
   const result = await page.evaluate(async () => {
     const {createWelcomeView} = await import('../src/content/welcome.js'); const logo = document.createElement('span'); logo.textContent = 'App logo';

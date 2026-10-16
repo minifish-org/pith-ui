@@ -59,5 +59,6 @@ test('native multi-row choices reserve readable row spacing without losing list 
   const list = page.getByRole('listbox', { name: 'Multiple models' });
   const spacing = await list.evaluate((node: HTMLSelectElement) => node.clientHeight / node.size);
   expect(spacing).toBeGreaterThanOrEqual(28);
+  expect(await list.locator('option').first().evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(28);
   await list.selectOption(['1', '3']); expect(await list.evaluate((node: HTMLSelectElement) => [...node.selectedOptions].map(option => option.value))).toEqual(['1', '3']);
 });
