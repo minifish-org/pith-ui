@@ -49,7 +49,20 @@ test('the actual npm archive carries the independent app ESM/declarations and po
   assert.equal(pkg.exports['./styles.css'], './dist/styles.css');
   for (const path of ['dist/app/index.js', 'dist/app/index.d.ts', 'dist/styles.css']) assert.ok(readFileSync(join(installed, path)).equals(readFileSync(join(root, path))), `Installed bytes differ: ${path}`);
   assert.doesNotMatch(readFileSync(join(installed, 'dist/styles.css'), 'utf8'), /@import\s+['"]\.\//, 'Published CSS must not depend on missing relative sources');
-  const runtime = command(process.execPath, ['--input-type=module', '-e', `const app = await import('pith-ui/app'); const generic = await import('pith-ui'); if (typeof app.createApplication !== 'function' || typeof generic.createButton !== 'function') throw new Error('Missing factory'); if ('createButton' in app || 'createWorkspaceShell' in app || 'createSettingsScene' in app) throw new Error('Low-level application escape'); console.log('both-public-entries');`], consumer);
+  const runtime = command(process.execPath, ['--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    const app = await import('pith-ui/app'); const generic = await import('pith-ui');
+    assert.equal(typeof app.createApplication, 'function');
+    assert.equal(typeof generic.createButton, 'function');
+    assert.equal(typeof app.customModelDefaults, 'function', 'The installed app needs the shared model defaults');
+    assert.equal(generic.customModelDefaults, app.customModelDefaults, 'Both entries must use the same data factory');
+    const defaults = app.customModelDefaults();
+    assert.deepEqual(defaults, {id: '', contextWindow: 128000, maxTokens: 8192});
+    defaults.contextWindow = 1;
+    assert.deepEqual(app.customModelDefaults(), {id: '', contextWindow: 128000, maxTokens: 8192});
+    if ('createButton' in app || 'createWorkspaceShell' in app || 'createSettingsScene' in app) throw new Error('Low-level application escape');
+    console.log('both-public-entries');
+  `], consumer);
   assert.match(runtime.stdout, /both-public-entries/);
 });
 

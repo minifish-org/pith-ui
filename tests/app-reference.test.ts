@@ -12,6 +12,7 @@ function boundaryViolations(text: string): string[] {
   const source = ts.createSourceFile('reference.ts', text, ts.ScriptTarget.Latest, true);
   const violations: string[] = [];
   const imports = new Set(['pith-ui/app', 'pith-ui/styles.css']);
+  const appValues = new Set(['createApplication', 'customModelDefaults']);
   const forbiddenMembers = new Set(['element', 'part', 'field', 'control', 'style', 'className', 'classList', 'innerHTML', 'outerHTML', 'textContent', 'querySelector', 'querySelectorAll', 'closest', 'matches', 'createElement', 'append', 'appendChild', 'replaceChildren', 'setAttribute', 'insertAdjacentHTML', 'getComputedStyle']);
   let mounts = 0;
   function visit(node: ts.Node): void {
@@ -20,7 +21,7 @@ function boundaryViolations(text: string): string[] {
       if (node.importClause?.name || node.importClause?.namedBindings && ts.isNamespaceImport(node.importClause.namedBindings)) violations.push('default or namespace import');
       const bindings = node.importClause?.namedBindings;
       if (bindings && ts.isNamedImports(bindings)) for (const binding of bindings.elements) {
-        if (!node.importClause?.isTypeOnly && !binding.isTypeOnly && (binding.propertyName ?? binding.name).text !== 'createApplication') violations.push('lower-level factory import');
+        if (!node.importClause?.isTypeOnly && !binding.isTypeOnly && !appValues.has((binding.propertyName ?? binding.name).text)) violations.push('lower-level factory import');
       }
     }
     if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) violations.push('dynamic import');
@@ -64,7 +65,8 @@ test('the reference application uses only the constrained public entry and one c
 test('the syntax gate accepts business prose but rejects actual DOM and private-factory escapes', () => {
   const mount = "const mount = document.getElementById('app'); if (!(mount instanceof HTMLElement)) throw new Error('Missing mount');";
   assert.deepEqual(boundaryViolations(`${mount} const content = 'element.style querySelector <style> createButton'; const data = {content: 'render html', id: 'business-id'};`), []);
-  for (const body of ["import {createButton} from 'pith-ui';", "import {createButton} from 'pith-ui/app';", 'app.workspace.element.append(document.createElement("div"));', 'app.workspace["style"] = {};', 'document.querySelector("main");', 'await import("../../src/index.ts");']) {
+  assert.deepEqual(boundaryViolations(`${mount} import {customModelDefaults as defaults} from 'pith-ui/app'; const model = defaults();`), []);
+  for (const body of ["import {createButton} from 'pith-ui';", "import {createButton} from 'pith-ui/app';", "import {createButton as customModelDefaults} from 'pith-ui/app';", "import {customModelDefaults} from 'pith-ui';", 'app.workspace.element.append(document.createElement("div"));', 'app.workspace["style"] = {};', 'document.querySelector("main");', 'await import("../../src/index.ts");']) {
     assert.ok(boundaryViolations(`${mount}${body}`).length, body);
   }
 });
