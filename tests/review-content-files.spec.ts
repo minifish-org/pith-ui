@@ -233,3 +233,17 @@ test('resource and file content close requests belong to their own dialog identi
   });
   expect(result).toEqual({unrelated:{resourcesClosed:0, previewClosed:0, hostCalls:2}, own:{resourcesClosed:1, previewClosed:1, hostCalls:2}});
 });
+
+test('file actions expose disabled state without clearing copy or host restrictions', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const {createFileActions} = await import('../src/files/panels.js'); let calls = 0;
+    const block = createFileActions({kind:'resource', ownerId:'workspace', path:'/demo/AGENTS.md', preview:true, copyMode:'file', onAction() {calls++;}}) as ReturnType<typeof createFileActions> & {setDisabled?: (disabled:boolean) => void};
+    document.body.append(block.element); const buttons = [...block.element.querySelectorAll('button')];
+    block.setDisabled?.(true); buttons.forEach(button => button.click()); const disabled = {all:buttons.every(button => button.disabled), calls};
+    const copy = block.element.querySelector<HTMLButtonElement>('[data-file-action="copy"]')!; copy.dataset.copyPending = 'true';
+    block.setDisabled?.(false); copy.click(); const pending = {copy:copy.disabled, others:buttons.filter(button => button !== copy).every(button => !button.disabled), calls};
+    delete copy.dataset.copyPending; block.setDisabled?.(false); copy.click(); const enabled = {copy:copy.disabled, calls};
+    block.destroy(); copy.click(); return {supported:typeof block.setDisabled === 'function', disabled, pending, enabled, afterDestroy:calls};
+  });
+  expect(result).toEqual({supported:true, disabled:{all:true,calls:0}, pending:{copy:true,others:true,calls:0}, enabled:{copy:false,calls:1}, afterDestroy:1});
+});
