@@ -31,7 +31,11 @@ export function applicationContract(mount: HTMLElement): void {
   // @ts-expect-error The factory does not accept a rendering callback.
   createApplication(mount, {renderHeader: () => document.createElement('header')});
   // @ts-expect-error Status uses a closed semantic type rather than a Node.
-  app.workspace.updateNavigation({groups: [{id: 'workspace', name: 'Work', path: '/work', expanded: true, selected: true, children: [{id: 'conversation', active: true, status: document.createElement('span')}]}], empty: null});
+  app.workspace.updateNavigation({groups: [{id: 'workspace', name: 'Work', path: '/work', selected: true, children: [{id: 'conversation', active: true, status: document.createElement('span')}]}], empty: null});
+  // @ts-expect-error Navigation disclosure state belongs to the library.
+  app.workspace.updateNavigation({groups: [{id: 'workspace', name: 'Work', path: '/work', selected: true, expanded: true, children: []}], empty: null});
+  // @ts-expect-error Draft resets and input resize automatically.
+  app.workspace.resizeComposer();
   const settings = app.settings.openSettings({baseUrl: '', hasApiKey: false}, {});
   // @ts-expect-error Even type-only consumers cannot get a DOM field adapter.
   settings.field('api-key');
