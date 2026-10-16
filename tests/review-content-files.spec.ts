@@ -278,3 +278,16 @@ test('file actions expose disabled state without clearing copy or host restricti
   });
   expect(result).toEqual({supported:true, disabled:{all:true,calls:0}, pending:{copy:true,others:true,calls:0}, enabled:{copy:false,calls:1}, afterDestroy:1});
 });
+
+test('file action callbacks own their route while omitted callbacks retain delegation', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const {createFileActions} = await import('../src/files/panels.js'); let owned = 0, delegated = 0;
+    const host = document.createElement('section'); host.addEventListener('click', () => delegated++); document.body.append(host);
+    const first = createFileActions({kind:'artifact', ownerId:'chat', path:'/report.md', onAction() {owned++;}});
+    const legacy = createFileActions({kind:'artifact', ownerId:'chat', path:'/report.md'});
+    host.append(first.element, legacy.element); first.element.querySelector<HTMLButtonElement>('[data-file-action="open"]')!.click();
+    const afterOwned = {owned, delegated}; legacy.element.querySelector<HTMLButtonElement>('[data-file-action="open"]')!.click();
+    first.destroy(); legacy.destroy(); return {afterOwned, afterLegacy:{owned,delegated}};
+  });
+  expect(result).toEqual({afterOwned:{owned:1,delegated:0}, afterLegacy:{owned:1,delegated:1}});
+});
