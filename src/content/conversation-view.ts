@@ -36,7 +36,7 @@ export interface ConversationViewOptions {
   container?: HTMLElement;
   markdown?: (conversationId: string) => MarkdownOptions;
   onAction?: (action: ConversationAction, button: HTMLButtonElement) => void;
-  onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
+  onCopyCode?: (text: string, button: HTMLButtonElement) => void;
 }
 
 

@@ -361,7 +361,7 @@ export interface ConversationViewOptions {
     container?: HTMLElement;
     markdown?: (conversationId: string) => MarkdownOptions;
     onAction?: (action: ConversationAction, button: HTMLButtonElement) => void;
-    onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
+    onCopyCode?: (text: string, button: HTMLButtonElement) => void;
 }
 ```
 
@@ -522,7 +522,7 @@ Related gallery: [markdown-content](https://minifish-org.github.io/pith-ui/?item
 ```ts
 export interface PagedPreviewOptions extends PagedPreviewState {
     container?: HTMLElement;
-    onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
+    onCopyCode?: (text: string, button: HTMLButtonElement) => void;
 }
 ```
 
@@ -958,7 +958,7 @@ export interface FilePreviewOptions {
     dialogId?: string;
     bodyId?: string;
     onClose?: () => void;
-    onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void>;
+    onCopyCode?: (text: string, button: HTMLButtonElement) => void;
 }
 ```
 

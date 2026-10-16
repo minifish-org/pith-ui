@@ -26,7 +26,7 @@ export function previewPageRanges(bytes: Uint8Array, window = previewPageBytes):
 
 export type PreviewKind = 'text' | 'markdown' | 'diff';
 export interface PagedPreviewState { text: string; kind: PreviewKind }
-export interface PagedPreviewOptions extends PagedPreviewState { container?: HTMLElement; onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void> }
+export interface PagedPreviewOptions extends PagedPreviewState { container?: HTMLElement; onCopyCode?: (text: string, button: HTMLButtonElement) => void }
 
 export function createPagedPreview(options: PagedPreviewOptions): UIBlock<PagedPreviewState> {
   const element = options.container || document.createElement('div');

@@ -228,7 +228,7 @@ export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
 }
 
 export interface FilePreviewState { kind: PreviewKind | 'image'; text?: string; imageSrc?: string; imageAlt?: string; truncated?: boolean; error?: string }
-export interface FilePreviewOptions { container?: HTMLElement; titleId?: string; dialogId?: string; bodyId?: string; onClose?: () => void; onCopyCode?: (text: string, button: HTMLButtonElement) => void | Promise<void> }
+export interface FilePreviewOptions { container?: HTMLElement; titleId?: string; dialogId?: string; bodyId?: string; onClose?: () => void; onCopyCode?: (text: string, button: HTMLButtonElement) => void }
 export function createFilePreview(options: FilePreviewOptions = {}) {
   const element = options.container || document.createElement('div');
   const ids = { titleId: options.titleId || uniqueId('pui-preview-title'), dialogId: options.dialogId || uniqueId('pui-preview-dialog'), bodyId: options.bodyId || uniqueId('pui-preview-body') };
