@@ -124,10 +124,10 @@
 .pui .pui-menu > [aria-checked="true"]::after { content: '✓'; margin-inline-start: auto; }
 .pui [data-pui-floating] { position: fixed; inset: auto; margin: 0; box-sizing: border-box; overflow: auto; overscroll-behavior: contain; }
 .pui .pui-select { position: relative; display: inline-grid; min-width: 0; width: 100%; }
-/* Keep the native control in the shared cell so its widest-option sizing and
-   form-validation anchor survive the presentation change. */
+/* Keep native inline sizing and the validation anchor, but remove block padding
+   from its platform-dependent intrinsic minimum so the visible control owns height. */
 .pui select.pui-select-backing {
-  grid-area: 1 / 1; height: 100%; min-height: 0; opacity: 0; pointer-events: none; clip-path: inset(50%);
+  grid-area: 1 / 1; height: 100%; min-height: 0; padding-block: 0; opacity: 0; pointer-events: none; clip-path: inset(50%);
 }
 .pui .pui-select-trigger {
   display: inline-flex; align-items: center; justify-content: space-between; gap: var(--pui-space-sm); width: 100%; min-width: 0;
