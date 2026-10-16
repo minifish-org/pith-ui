@@ -3,6 +3,45 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { isIdenticalPublishedPackage } from '../scripts/published-package.ts';
+import * as publication from '../scripts/published-package.ts';
+import {readFileSync} from 'node:fs';
+import {resolve} from 'node:path';
+import ts from 'typescript';
+
+function distTag(version: string): string {
+  const policy = (publication as typeof publication & {publicationDistTag?: (version: string) => 'latest' | 'next'}).publicationDistTag;
+  assert.equal(typeof policy, 'function', 'Release tag selection must be an independently tested publication policy.');
+  return policy!(version);
+}
+
+test('stable versions use latest while every prerelease uses next', () => {
+  for (const version of ['0.1.4', '0.2.0', '1.0.0']) assert.equal(distTag(version), 'latest');
+  for (const version of ['0.2.0-next.1', '0.2.0-beta.2', '1.0.0-rc.1', '1.0.0-alpha']) assert.equal(distTag(version), 'next');
+});
+
+test('invalid or noncanonical version text cannot silently choose a publication tag', () => {
+  for (const version of ['', 'v0.2.0', '0.2', '0.2.0 ', ' 0.2.0', '0.2.0-', '0.2.0-next..1', '01.2.3', '1.2.3-01']) {
+    assert.throws(() => distTag(version), /version|semver/i, version);
+  }
+});
+
+test('the real npm publication call explicitly uses the independently tested version tag', () => {
+  const source = ts.createSourceFile('release.ts', readFileSync(resolve('scripts/release.ts'), 'utf8'), ts.ScriptTarget.Latest, true);
+  let tagged = false;
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'execFileSync' && ts.isStringLiteralLike(node.arguments[0]) && node.arguments[0].text === 'npm') {
+      const args = node.arguments[1];
+      if (args && ts.isArrayLiteralExpression(args) && ts.isStringLiteralLike(args.elements[0]) && args.elements[0].text === 'publish') {
+        const index = args.elements.findIndex(item => ts.isStringLiteralLike(item) && item.text === '--tag');
+        const selected = args.elements[index + 1];
+        tagged = index >= 0 && !!selected && ts.isCallExpression(selected) && ts.isIdentifier(selected.expression) && selected.expression.text === 'publicationDistTag' && selected.arguments.length === 1 && ts.isPropertyAccessExpression(selected.arguments[0]) && selected.arguments[0].name.text === 'version' && ts.isIdentifier(selected.arguments[0].expression) && selected.arguments[0].expression.text === 'metadata';
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  assert.equal(tagged, true, 'npm publish must explicitly pass --tag publicationDistTag(metadata.version).');
+});
 
 function tar(content = 'exact tested package\n'.repeat(100), mode = '0000644\0'): Buffer {
   const data = Buffer.from(content);
