@@ -51,14 +51,22 @@ test('keyboard focus is visible, light and consistent across control families', 
   const menuFocus = await page.getByRole('menuitem').evaluate(node => parseFloat(getComputedStyle(node).outlineWidth)); expect(menuFocus).toBeGreaterThan(0); expect(menuFocus).toBeLessThanOrEqual(1.5);
 });
 
-test('native multi-row choices reserve readable row spacing without losing list semantics', async ({ page }) => {
+test('native multi-row choices use readable type and fit their actual platform rows', async ({ page, browserName }) => {
   await page.evaluate(async () => {
     const path = '/src/primitives.ts'; const { createSelect } = await import(path);
     const select = createSelect({ label: 'Multiple models', multiple: true, size: 5, options: Array.from({ length: 8 }, (_, i) => ({ value: String(i), label: `Model ${i}` })) }); document.body.append(select.element);
   });
   const list = page.getByRole('listbox', { name: 'Multiple models' });
-  const spacing = await list.evaluate((node: HTMLSelectElement) => node.clientHeight / node.size);
-  expect(spacing).toBeGreaterThanOrEqual(28);
-  expect(await list.locator('option').first().evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThanOrEqual(28);
+  const metrics = await list.evaluate((node: HTMLSelectElement) => {
+    const style = getComputedStyle(node);
+    return { height: node.clientHeight, rows: node.size, row: node.options[0].getBoundingClientRect().height,
+      font: parseFloat(style.fontSize), padding: parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) };
+  });
+  expect(metrics.font).toBeGreaterThanOrEqual(16);
+  expect(metrics.row).toBeGreaterThanOrEqual(metrics.font + 3);
+  // WebKit's native rows follow system-font metrics and ignore option padding.
+  // Do not conceal cramped rows with a taller empty container or replace its keyboard behavior.
+  if (browserName !== 'webkit') expect(metrics.row).toBeGreaterThanOrEqual(32);
+  expect(metrics.height).toBeLessThanOrEqual(metrics.row * metrics.rows + metrics.padding + 2);
   await list.selectOption(['1', '3']); expect(await list.evaluate((node: HTMLSelectElement) => [...node.selectedOptions].map(option => option.value))).toEqual(['1', '3']);
 });
