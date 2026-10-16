@@ -5,9 +5,9 @@ This is the constrained application contract for Pith Desk and applications choo
 The allowed UI imports are `pith-ui/app` and `pith-ui/styles.css`. The general `pith-ui` entry remains available for independent component compositions; Pith Desk must not use it, private package paths, copied components or internal CSS to bypass this contract. A missing application capability needs a tested semantic port in the library before the application consumes it.
 
 <!-- PUI_APP_VERSION_START -->
-This contract accompanies `pith-ui@0.2.0-app.2`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
+This contract accompanies `pith-ui@0.2.0-app.3`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
 
-The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.2/examples/application/index.html). These sources are not bundled into the npm runtime package.
+The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.3/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.0-app.3/examples/application/index.html). These sources are not bundled into the npm runtime package.
 <!-- PUI_APP_VERSION_END -->
 
 ## One mount, four scenes
@@ -77,6 +77,8 @@ These are named methods, not a UI description language. Pass the concrete export
 - Owned openings: `openMessageEditor`, `openQueueEditor`, `openConfirmation`, `openWorkspacePicker`, `openRename`, `openFullAccess` and `openHistory`.
 
 Navigation state supplies workspace/conversation identity, selection, status and allowed actions. Disclosure state and menu anchoring stay in the library; do not drive an `expanded` field or retain the menu's trigger. `setSidebarOpen` expresses an application intent, not a node-access escape hatch.
+
+Workspace headings only expand or collapse their conversation lists. Selecting a conversation, requesting a new one, and choosing a workspace in `openWorkspacePicker` have separate callbacks. Consumers of the `app.1` or `app.2` prereleases must remove `WorkspaceCallbacks.onSelectWorkspace`; that callback incorrectly coupled disclosure to business navigation and has been removed.
 
 `updateAvailability({busy, global, active, conversations, workspaces})` keeps mutation and run scopes separate. `busy` blocks all action scopes during a host mutation. `global` blocks global actions while any task runs; `active` and the two identity lists block only their matching targets. An unrelated inactive conversation or workspace keeps its actions. Message copy/edit/branch eligibility still comes from `updateMessageAvailability`.
 
