@@ -197,6 +197,76 @@ test('product form actions use ordinary dimensions and resource actions use the 
   for (const sample of samples) {expect.soft(sample.actualHeight,sample.id+' height').toBe(sample.height); expect.soft(sample.actualSize,sample.id+' text size').toBe(sample.size); expect.soft(sample.line,sample.id+' line ratio').toBeCloseTo(sample.actualSize*1.5,3);}
 });
 
+test('file actions keep their compact dimensions inside feature and settings dialogs',async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const ui = await import('../src/index.js'); const samples: Array<{context: string; height: number; size: string; line: string; padding: string}> = []; let calls = 0;
+    for (const context of ['standalone','feature dialog','settings dialog']) {
+      const actions = ui.createResourceActions({kind:'skill',workspaceId:'workspace',resource:{name:'demo',path:'/workspace/demo.md'}},{onResourceAction() {calls++;}});
+      let frame: ReturnType<typeof ui.createFeatureDialogFrame> | undefined;
+      let settings: ReturnType<typeof ui.createSettingsPanel> | undefined;
+      if (context === 'standalone') document.body.append(actions.element);
+      else {
+        frame = ui.createFeatureDialogFrame();
+        if (context === 'settings dialog') {
+          settings = ui.createSettingsPanel({baseUrl:'https://example.test',hasApiKey:true,ready:true});
+          settings.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Saved key',removeVisible:false,actions:actions.element});
+          frame.open({title:'Settings',body:settings});
+        } else frame.open({title:'Resources',body:actions});
+      }
+      const button = actions.element.querySelector<HTMLButtonElement>('[data-sdk="use-resource"]')!, css = getComputedStyle(button);
+      samples.push({context,height:button.getBoundingClientRect().height,size:css.fontSize,line:css.lineHeight,padding:css.padding}); button.click();
+      frame?.destroy(); settings?.destroy(); actions.destroy();
+    }
+    return {samples,calls};
+  });
+  expect(result.calls).toBe(3);
+  for (const sample of result.samples) expect.soft(sample,sample.context).toEqual({context:sample.context,height:30,size:'12px',line:'18px',padding:'4px 8px'});
+});
+
+test('code Copy keeps its compact dimensions inside preview and settings dialogs',async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const ui = await import('../src/index.js'); const samples: Array<{context: string; height: number; size: string; line: string; padding: string}> = []; let calls = 0;
+    for (const context of ['standalone','feature dialog','settings dialog']) {
+      const preview = ui.createFilePreview({onCopyCode() {calls++;}}); preview.open({name:'Example.md',path:'/workspace/Example.md',actions:document.createTextNode('')}); preview.update({kind:'markdown',text:'```ts\nconst value = 1;\n```'});
+      let frame: ReturnType<typeof ui.createFeatureDialogFrame> | undefined;
+      let settings: ReturnType<typeof ui.createSettingsPanel> | undefined;
+      if (context === 'standalone') document.body.append(preview.element);
+      else {
+        frame = ui.createFeatureDialogFrame();
+        if (context === 'settings dialog') {
+          settings = ui.createSettingsPanel({baseUrl:'https://example.test',hasApiKey:true,ready:true});
+          settings.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Saved key',removeVisible:false,actions:preview.element});
+          frame.open({title:'Settings',body:settings});
+        } else frame.open({title:'Preview',body:preview});
+      }
+      const button = preview.element.querySelector<HTMLButtonElement>('[data-copy-code]')!, css = getComputedStyle(button);
+      samples.push({context,height:button.getBoundingClientRect().height,size:css.fontSize,line:css.lineHeight,padding:css.padding}); button.click();
+      frame?.destroy(); settings?.destroy(); preview.destroy();
+    }
+    return {samples,calls};
+  });
+  expect(result.calls).toBe(3);
+  for (const sample of result.samples) expect.soft(sample,sample.context).toEqual({context:sample.context,height:30,size:'12px',line:'18px',padding:'4px 8px'});
+});
+
+test('the retained compact conversation action keeps its compact geometry and text role',async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const {createWorkspaceShell} = await import('../src/index.js'); const shell = createWorkspaceShell({brand:document.createTextNode('Example')}); document.body.append(shell.element);
+    const button = shell.element.querySelector<HTMLButtonElement>('[data-sdk="compact"]')!, css = getComputedStyle(button);
+    const result = {height:button.getBoundingClientRect().height,size:css.fontSize,line:css.lineHeight,padding:css.padding}; shell.destroy(); return result;
+  });
+  expect(result).toEqual({height:30,size:'12px',line:'18px',padding:'4px 8px'});
+});
+
+test('the compatible compact secondary button stays compact inside a feature dialog',async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const ui = await import('../src/index.js'); const button = ui.createButton({label:'Compact action',appearance:'secondary',density:'compact'}), frame = ui.createFeatureDialogFrame();
+    frame.open({title:'Example',body:button}); const css = getComputedStyle(button.element);
+    const result = {height:button.element.getBoundingClientRect().height,size:css.fontSize,line:css.lineHeight,padding:css.padding}; frame.destroy(); return result;
+  });
+  expect(result).toEqual({height:30,size:'12px',line:'18px',padding:'4px 8px'});
+});
+
 test('native multiple-row choice retains 16 px text and platform keyboard selection',async ({page}) => {
   await page.evaluate(async () => {
     const {createSelect} = await import('../src/index.js'); const list = createSelect({label:'Models',size:5,multiple:true,options:Array.from({length:8},(_,index)=>({value:String(index),label:'Model '+index}))}); document.body.append(list.element);
