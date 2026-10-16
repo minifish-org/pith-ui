@@ -208,3 +208,23 @@ test('changing the conversation closes its image zoom before retiring image data
   await page.evaluate(() => (window as unknown as {switchConversation(): void}).switchConversation());
   await expect(page.locator('.pui-image-viewer[open]')).toHaveCount(0);
 });
+
+test('controlled brand assets follow application appearance in the wordmark and welcome view', async ({page}) => {
+  await page.emulateMedia({colorScheme: 'dark'});
+  await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const app = createApplication(document.body, {appearance: 'light', brand: {name: 'Pith', qualifier: 'Desk', mark: {src: '/light-logo.svg', darkSrc: '/dark-logo.svg', alt: ''}}});
+    app.workspace.updateWelcome({hasApiKey: true, hasConnections: true, modelName: 'First'});
+    (window as unknown as {brandFixture: {dark(): void; system(): void}}).brandFixture = {
+      dark() {app.setAppearance('dark'); app.workspace.updateWelcome({hasApiKey: true, hasConnections: true, modelName: 'Changed metadata'});},
+      system() {app.setAppearance('system');},
+    };
+  });
+  const wordmark = page.locator('.pui-brand img'), welcome = page.locator('.pui-welcome-mark img');
+  await expect(wordmark).toHaveAttribute('src', /light-logo\.svg$/); await expect(welcome).toHaveAttribute('src', /light-logo\.svg$/);
+  await page.evaluate(() => (window as unknown as {brandFixture: {dark(): void}}).brandFixture.dark());
+  await expect(wordmark).toHaveAttribute('src', /dark-logo\.svg$/); await expect(welcome).toHaveAttribute('src', /dark-logo\.svg$/);
+  await page.evaluate(() => (window as unknown as {brandFixture: {system(): void}}).brandFixture.system());
+  await page.emulateMedia({colorScheme: 'light'});
+  await expect(wordmark).toHaveAttribute('src', /light-logo\.svg$/); await expect(welcome).toHaveAttribute('src', /light-logo\.svg$/);
+});
