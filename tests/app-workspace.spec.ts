@@ -107,7 +107,7 @@ test('a closed edit session cannot submit or close a new target after a delayed 
   });
   await page.getByRole('button', {name: 'Save message', exact: true}).click();
   await page.evaluate(() => { (window as unknown as {replaceEditor(): void}).replaceEditor(); });
-  await expect(page.getByRole('textbox', {name: /message/i})).toHaveValue('new target');
+  await expect(page.getByRole('dialog').getByRole('textbox', {name: 'Message', exact: true})).toHaveValue('new target');
   await expect(page.getByText('Old target failure')).toHaveCount(0);
   await expect(page.locator('body')).toHaveAttribute('data-sessions', JSON.stringify({old: false, next: true}));
 });
@@ -127,4 +127,36 @@ test('modal state notifications preserve read gating and destroyed sessions cann
   });
   expect(result.opened).toBe(true); expect(result.closed).toBe(false); expect(result.newerStillOpen).toBe(true);
   expect(result.states).toContain(true); expect(result.states.at(-1)).toBe(false); expect(result.dialogs).toBe(0);
+});
+
+test('scene failures belong to the form rather than an unrelated appearance field', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const app = createApplication(document.body);
+    const settings = app.settings.openSettings({baseUrl: 'https://example.test/v1', hasApiKey: true, ready: true});
+    settings.fail('General settings action failed');
+    const result = {
+      form: document.querySelector('[data-dialog-error]')?.textContent,
+      appearance: document.querySelector('[id$="appearance-error"]')?.textContent,
+    };
+    app.destroy(); return result;
+  });
+  expect(result).toEqual({form: 'General settings action failed', appearance: ''});
+});
+
+test('a throwing host close callback cannot leave an empty fixed or feature dialog open', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const app = createApplication(document.body), outcomes: unknown[] = [];
+    for (const open of [
+      () => app.settings.openSettings({baseUrl: 'https://example.test', hasApiKey: true}, {onClose() {throw new Error('host cleanup failed');}}),
+      () => app.workspace.openHistory({nodes: []}, {onClose() {throw new Error('host cleanup failed');}}),
+    ]) {
+      const session = open();
+      try {session.close();} catch {}
+      outcomes.push({open: session.isOpen(), hasModal: app.read().hasModal, emptyDialogs: document.querySelectorAll('dialog[open]').length});
+    }
+    app.destroy(); return outcomes;
+  });
+  expect(result).toEqual([{open: false, hasModal: false, emptyDialogs: 0}, {open: false, hasModal: false, emptyDialogs: 0}]);
 });

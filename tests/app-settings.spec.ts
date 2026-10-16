@@ -15,7 +15,7 @@ interface MCPSession extends Session {read():MCPConnectionDraft;edit(value?:MCPE
 interface ModelSession extends Session {read():ModelSelection;reset(value:ModelSelection):void}
 interface CustomSession extends Session {read():CustomConnectionDraft}
 interface SettingsScene {
-  openSettings(state:SettingsPanelState,callbacks?:{onSubmit?:(draft:SettingsDraft)=>Result;onProviderChange?:(id:string)=>void;onProviderAction?:(action:string,target:{id:string})=>Result;onUpdateAction?:(action:'check'|'install')=>void}):SettingsSession;
+  openSettings(state:SettingsPanelState,callbacks?:{onSubmit?:(draft:SettingsDraft)=>Result;onRemoveKey?:(draft:SettingsDraft)=>Result;onProviderChange?:(id:string)=>void;onProviderAction?:(action:string,target:{id:string})=>Result;onUpdateAction?:(action:'check'|'install')=>void}):SettingsSession;
   openConnections(state:Record<string,unknown>,callbacks?:{onSubmit?:(draft:MCPConnectionDraft)=>Result;onConnectionAction?:(action:string,target:{name:string})=>Result}):MCPSession;
   openModels(state:ModelPickerState,callbacks?:{onSubmit?:(selection:ModelSelection)=>Result}):ModelSession;
   openCustomConnection(state:CustomConnectionState,callbacks?:{onSubmit?:(draft:CustomConnectionDraft)=>Result}):CustomSession;
@@ -104,6 +104,50 @@ test('provider and update actions use semantic data and closing settings clears 
   expect(result).toEqual({open:false,key:''});await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
+test('removing a saved key closes its successful settings session and clears credentials',async ({page})=>{
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings(state,{onRemoveKey:draft=>{h.calls++;h.values.push(draft);return new Promise<ActionResult>(resolve=>{h.release=resolve;});}});h.current=session;
+    session.setProviders([{id:'first',name:'First provider'}],'first');
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:true});
+  },state);
+  await page.getByLabel('API key',{exact:false}).fill('Discard after removal');
+  const remove=page.getByRole('button',{name:'Remove saved API key',exact:true});
+  await remove.click();await expect(remove).toBeDisabled();
+  expect(await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.calls)).toBe(1);
+  await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.release!({ok:true}));
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  expect(await page.evaluate(()=>{const session=(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession;return {open:session.isOpen(),key:session.read().apiKey};})).toEqual({open:false,key:''});
+});
+
+test('a late key removal cannot close or report an error on a replacement settings session',async ({page})=>{
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings(state,{onRemoveKey:()=>new Promise<ActionResult>(resolve=>{h.release=resolve;})});h.current=session;h.previous=session;
+    session.setProviders([{id:'first',name:'First provider'}],'first');
+    session.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep saved key',removeVisible:true});
+  },state);
+  await page.getByLabel('API key',{exact:false}).fill('Old key draft');
+  await page.getByRole('button',{name:'Remove saved API key',exact:true}).click();
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const next=h.app.settings.openSettings({...state,baseUrl:'https://replacement.example/v1'});next.setProviders([{id:'second',name:'Second provider'}],'second');h.current=next;
+    h.release!({ok:false,error:'Old removal error'});
+  },state);
+  await expect(page.getByRole('dialog')).toBeVisible();await expect(page.getByText('Old removal error',{exact:true})).toHaveCount(0);
+  expect(await page.evaluate(()=>{const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;return {oldOpen:h.previous!.isOpen(),oldKey:(h.previous as SettingsSession).read().apiKey,newDraft:(h.current as SettingsSession).read()};})).toEqual({oldOpen:false,oldKey:'',newDraft:{provider:'second',baseUrl:'https://replacement.example/v1',apiKey:''}});
+});
+
+test('custom connection dialogs retain the existing add and edit titles',async ({page})=>{
+  for(const editing of [false,true]) {
+    await page.evaluate((editing)=>{
+      const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+      h.current=h.app.settings.openCustomConnection({name:'Example',baseUrl:'https://example.test/v1',api:'openai-completions',editing,models:[]});
+    },editing);
+    await expect(page.getByRole('heading',{name:editing?'Edit model connection':'Add model connection',exact:true})).toBeVisible();
+  }
+});
+
 test('connections integrate typed actions and explicit edit invalidates old submissions and secrets',async ({page})=>{
   await page.evaluate(()=>{
     const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
@@ -113,7 +157,7 @@ test('connections integrate typed actions and explicit edit invalidates old subm
   await page.getByRole('button',{name:'Edit',exact:true}).click();
   expect(await page.evaluate(()=>(window as unknown as {appSettingsTest:Harness}).appSettingsTest.values)).toEqual([{action:'mcp-edit',target:{name:'tools'}}]);
   await page.evaluate(()=>((window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as MCPSession).edit({name:'tools',type:'stdio',command:'/usr/bin/demo',args:['one'],envKeys:['KEY']}));
-  await page.getByLabel('Environment overrides',{exact:false}).fill('{"KEY":"Private draft"}');
+  await page.getByRole('textbox',{name:'Environment overrides (JSON object, optional)',exact:true}).fill('{"KEY":"Private draft"}');
   await page.getByRole('button',{name:'Save connection',exact:true}).click();await expect(page.getByRole('button',{name:'Save connection',exact:true})).toBeDisabled();
   await page.evaluate(()=>{const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest; (h.current as MCPSession).edit({name:'new-target',type:'http',url:'https://example.test/mcp'});h.release!({ok:false,error:'Old connection error'});});
   await expect(page.getByLabel('Name',{exact:true})).toHaveValue('new-target');await expect(page.getByText('Old connection error',{exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'Save connection',exact:true})).toBeEnabled();
