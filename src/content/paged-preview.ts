@@ -1,5 +1,6 @@
 import { renderDiff, renderMarkdown } from './markdown.js';
 import type { UIBlock } from '../core.js';
+import { adoptProductParts } from '../foundations.js';
 
 // A rendering window, not a file acceptance cap. Large Markdown is shown as
 // original text so page boundaries cannot change the meaning of fenced code.
@@ -76,6 +77,7 @@ function renderPreview(container: HTMLElement, text: string, kind: PreviewKind):
   for (const button of [previous, next]) { button.type = 'button'; button.className = 'pui-secondary-button'; }
   previous.textContent = 'Previous'; next.textContent = 'Next';
   toolbar.append(previous, status, next);
+  const parts = adoptProductParts(container);
   let page = 0;
   const decoder = new TextDecoder('utf-8', { fatal: true });
   const render = () => {
@@ -84,13 +86,14 @@ function renderPreview(container: HTMLElement, text: string, kind: PreviewKind):
     if (kind === 'markdown' && ranges.length === 1) content.innerHTML = renderMarkdown(value);
     else if (kind === 'diff') content.innerHTML = renderDiff(value);
     else content.textContent = value;
-    previous.disabled = page === 0; next.disabled = page === ranges.length - 1;
+    parts.action(previous).update({ disabled: page === 0 }); parts.action(next).update({ disabled: page === ranges.length - 1 });
     status.textContent = `${page + 1} / ${ranges.length}${kind === 'markdown' && ranges.length > 1 ? ' · Plain text preview' : ''}`;
     content.scrollTop = 0;
+    parts.update();
   };
   previous.onclick = () => { page--; render(); };
   next.onclick = () => { page++; render(); };
   container.replaceChildren(...(ranges.length > 1 ? [toolbar, content] : [content]));
   render();
-  return () => { previous.onclick = null; next.onclick = null; };
+  return () => { parts.destroy(); previous.onclick = null; next.onclick = null; };
 }

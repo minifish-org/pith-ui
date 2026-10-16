@@ -16,18 +16,19 @@ export interface WelcomeOptions {
 
 export function createWelcomeView(options: WelcomeOptions = {}): UIBlock<WelcomeState> {
   const element = options.container || document.createElement('div');
-  let destroyed = false;
+  let destroyed = false; let signature = '';
   const click = (event: Event) => {
     const action = (event.target as Element).closest<HTMLElement>('[data-welcome-action], [data-prompt]');
-    if (!action || !element.contains(action)) return;
-    if (action.dataset.prompt) options.onPrompt?.(action.dataset.prompt);
-    else options.onAction?.(action.dataset.welcomeAction as 'model' | 'settings' | 'workspace');
+    if (!action || !element.contains(action) || (action instanceof HTMLButtonElement && action.disabled)) return;
+    if (action.dataset.prompt && options.onPrompt) {event.stopPropagation(); options.onPrompt(action.dataset.prompt);}
+    else if (action.dataset.welcomeAction && options.onAction) {event.stopPropagation(); options.onAction(action.dataset.welcomeAction as 'model' | 'settings' | 'workspace');}
   };
   element.addEventListener('click', click);
   return {
     element,
     update(state): void {
       if (destroyed) return;
+      const next = JSON.stringify(state); if (next === signature) return; signature = next;
       const workspace = state.workspace;
       const ready = !!workspace && state.hasApiKey;
       element.innerHTML = `<div class="pui-welcome-mark"></div>

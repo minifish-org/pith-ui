@@ -5,6 +5,7 @@ import { element } from '../src/dom.js';
 import { setAppearance } from '../src/theme.js';
 import { catalog } from './catalog.js';
 import type { DemoContext, DemoState, MountedDemo, Outcome, ShowcaseLayer } from './types.js';
+import packageMetadata from '../package.json' with { type: 'json' };
 
 const params = new URLSearchParams(location.search);
 const choices = <T extends string>(name: string, values: readonly T[], fallback: T): T => values.includes(params.get(name) as T) ? params.get(name) as T : fallback;
@@ -25,7 +26,7 @@ const sceneNames: Record<string, string> = { normal: '正常', loading: '加载'
 setAppearance(document.documentElement, state.theme);
 const app = document.getElementById('showroom')!;
 const title = element('h1', '', 'Pith UI');
-const version = element('span', 'gallery-version', '0.1.0');
+const version = element('span', 'gallery-version', packageMetadata.version);
 const subtitle = element('p', '', '经过验证的原生 TypeScript 积木 · 展厅数据均为模拟');
 const header = element('header', 'gallery-header', element('div', '', element('div', 'gallery-wordmark', title, version), subtitle));
 const theme = createSelect({ label: '主题', value: state.theme, options: [{ value: 'system', label: '跟随系统' }, { value: 'light', label: '明亮' }, { value: 'dark', label: '深色' }], onChange: value => { state.theme = value as typeof state.theme; setAppearance(document.documentElement, state.theme); render(); } });

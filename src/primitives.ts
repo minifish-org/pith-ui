@@ -1,6 +1,8 @@
-import { Generation, Lifetime, setControlPending } from './core.js';
+import { Generation, Lifetime } from './core.js';
 import type { ActionResult, Density, Intent, UIAction, UIBlock } from './core.js';
-import { element, focusableElements, iconElement, setText, uniqueId } from './dom.js';
+import { element, iconElement, setText, uniqueId } from './dom.js';
+import { adoptAction, adoptActionLayout, adoptFeedback, adoptNativeControl, reconcileSelectOptions } from './foundations.js';
+import { installDialogLifecycle, installMenuNavigation } from './surface.js';
 
 export interface ButtonState {
   label: string;
@@ -10,6 +12,8 @@ export interface ButtonState {
   pending?: boolean;
   icon?: string;
   title?: string;
+  /** Secondary product action, including the accepted compact application style. */
+  appearance?: 'standard' | 'secondary';
 }
 export interface ButtonOptions extends ButtonState {
   type?: 'button' | 'submit' | 'reset';
@@ -23,45 +27,14 @@ export function createButton(options: ButtonOptions): ButtonBlock {
   node.type = options.type ?? 'button';
   const caption = element('span');
   node.append(caption);
-  const life = new Lifetime();
-  const generation = new Generation();
-  let state: ButtonState = options;
-  let localPending = false;
-  let currentIcon = '';
-  let glyph: SVGSVGElement | undefined;
+  const action = adoptAction(node, { caption, onAction: options.onAction, onError: options.onError });
   const update = (next: Readonly<ButtonState>): void => {
-    state = next;
-    setText(caption, next.label);
-    node.className = `pui-button pui-${next.intent ?? 'neutral'} pui-${next.density ?? 'normal'}`;
-    node.disabled = !!(next.disabled || next.pending || localPending);
-    setControlPending(node, !!(next.pending || localPending));
-    node.setAttribute('aria-busy', String(!!(next.pending || localPending)));
-    node.title = next.title ?? '';
-    if (currentIcon !== (next.icon ?? '')) {
-      glyph?.remove();
-      currentIcon = next.icon ?? '';
-      glyph = next.icon ? iconElement(next.icon) : undefined;
-      if (glyph) node.prepend(glyph);
-    }
+    action.update({ ...next, intent: next.intent ?? 'neutral', density: next.density ?? 'normal',
+      disabled: !!next.disabled, pending: !!next.pending, title: next.title ?? '', icon: next.icon ?? '',
+      appearance: next.appearance ?? 'standard' });
   };
-  life.listen(node, 'click', (() => {
-    if (!options.onAction || node.disabled) return;
-    const seq = generation.next();
-    localPending = true;
-    update(state);
-    const complete = (result: void | ActionResult): void => {
-      if (generation.current(seq) && result && !result.ok) options.onError?.(result.error);
-    };
-    const failed = (error: unknown): void => { if (generation.current(seq)) options.onError?.(error instanceof Error ? error.message : String(error)); };
-    const finish = (): void => { if (generation.current(seq)) { localPending = false; update(state); } };
-    try {
-      const result = options.onAction();
-      if (result && 'then' in result) void result.then(complete).catch(failed).finally(finish);
-      else { complete(result); finish(); }
-    } catch (error) { failed(error); finish(); }
-  }) as EventListener);
   update(options);
-  return { element: node, update, destroy() { generation.destroy(); life.destroy(); } };
+  return { element: node, update, destroy() { action.destroy(); } };
 }
 
 export function createIconButton(options: ButtonOptions & { icon: string }): ButtonBlock {
@@ -120,9 +93,10 @@ export function createKeyValue(options: KeyValueState): UIBlock<KeyValueState> {
 
 export interface ToolbarState { label: string; density?: Density; }
 export function createToolbar(options: ToolbarState & { children?: readonly Node[] }): UIBlock<ToolbarState> {
-  const root = element('div', 'pui-toolbar'); root.setAttribute('role', 'group'); root.append(...(options.children ?? []));
-  const update = (state: Readonly<ToolbarState>): void => { root.setAttribute('aria-label', state.label); root.classList.toggle('pui-compact', state.density === 'compact'); };
-  update(options); return { element: root, update, destroy() {} };
+  const root = element('div', 'pui-toolbar'); root.append(...(options.children ?? []));
+  const layout = adoptActionLayout(root, 'toolbar');
+  const update = (state: Readonly<ToolbarState>): void => { layout.update({ ...state, density: state.density ?? 'normal' }); };
+  update(options); return { element: root, update, destroy() { layout.destroy(); } };
 }
 
 export interface ScrollAreaState { label: string; size?: 'small' | 'medium' | 'fill'; }
@@ -149,29 +123,19 @@ export function createField(options: FieldState & { control: FieldBlock['control
   const description = element('div', 'pui-field-description');
   const error = element('div', 'pui-field-error');
   const control = options.control;
-  if (!control.id) control.id = uniqueId('pui-input');
-  label.htmlFor = control.id;
   description.id = uniqueId('pui-description');
   error.id = uniqueId('pui-error');
-  error.setAttribute('role', 'alert');
   control.classList.add('pui-control');
   root.append(label, control, description, error);
+  const field = adoptNativeControl(control, { label, description, error });
   const update = (state: Readonly<FieldState>): void => {
-    setText(label, `${state.label}${state.required ? ' *' : ''}`);
+    field.update({ ...state, label: `${state.label}${state.required ? ' *' : ''}`,
+      description: state.description ?? '', error: state.error ?? '', disabled: !!state.disabled, required: !!state.required });
     label.hidden = !state.label;
-    setText(description, state.description);
-    description.hidden = !state.description;
-    setText(error, state.error);
-    error.hidden = !state.error;
-    control.disabled = !!state.disabled;
-    control.required = !!state.required;
-    control.setAttribute('aria-invalid', String(!!state.error));
-    const describedBy = [state.description ? description.id : '', state.error ? error.id : ''].filter(Boolean).join(' ');
-    if (describedBy) control.setAttribute('aria-describedby', describedBy); else control.removeAttribute('aria-describedby');
     root.classList.toggle('pui-invalid', !!state.error);
   };
   update(options);
-  return { element: root, control, update, destroy() {} };
+  return { element: root, control, update, destroy() { field.destroy(); } };
 }
 
 export interface InputState extends FieldState {
@@ -206,19 +170,16 @@ function textControl(options: InputOptions, type: 'text' | 'search' | 'password'
   if (options.autocomplete) control.setAttribute('autocomplete', options.autocomplete);
   control.value = options.value ?? '';
   const field = createField({ ...options, control });
-  const life = new Lifetime();
-  life.listen(control, 'input', (event => options.onInput?.(control.value, event)) as EventListener);
-  life.listen(control, 'change', (event => options.onChange?.(control.value, event)) as EventListener);
+  const input = adoptNativeControl(control, { onInput: options.onInput, onChange: options.onChange });
   const update = (state: Readonly<InputState>): void => {
     field.update(state);
-    control.placeholder = state.placeholder ?? '';
-    control.readOnly = !!state.readOnly;
+    input.update({ placeholder: state.placeholder ?? '', readOnly: !!state.readOnly });
     control.classList.toggle('pui-compact', state.density === 'compact');
   };
   update(options);
-  return { element: field.element, control, update, getValue: () => control.value,
-    reset(value) { if (control.value !== value) control.value = value; }, focus() { control.focus(); },
-    destroy() { life.destroy(); field.destroy(); } };
+  return { element: field.element, control, update, getValue: input.getValue,
+    reset: input.reset, focus: input.focus,
+    destroy() { input.destroy(); field.destroy(); } };
 }
 export const createTextInput = (options: InputOptions): InputBlock => textControl(options, 'text');
 export const createSearchInput = (options: InputOptions): InputBlock => textControl(options, 'search');
@@ -258,7 +219,7 @@ export function createSelect(options: SelectOptions): SelectBlock {
   control.multiple = !!options.multiple;
   if (options.size) control.size = options.size;
   const field = createField({ ...options, control });
-  const life = new Lifetime();
+  const input = adoptNativeControl(control, { onChange: () => options.onChange?.(control.value) });
   let signature = '';
   const update = (state: Readonly<SelectState>): void => {
     field.update(state);
@@ -266,22 +227,14 @@ export function createSelect(options: SelectOptions): SelectBlock {
     const next = JSON.stringify(state.options);
     if (next !== signature) {
       signature = next;
-      const selected = new Set([...control.selectedOptions].map(option => option.value));
-      const nodes = state.options.map(item => {
-        const option = element('option', '', item.label);
-        option.value = item.value;
-        option.disabled = !!item.disabled;
-        option.selected = selected.has(item.value);
-        return option;
-      });
-      control.replaceChildren(...nodes);
+      reconcileSelectOptions(control, state.options);
+      if (!control.multiple && control.selectedIndex < 0 && control.options.length) control.selectedIndex = 0;
     }
   };
-  life.listen(control, 'change', (() => options.onChange?.(control.value)) as EventListener);
   update(options);
   if (options.value != null) control.value = options.value;
-  return { element: field.element, control, update, getValue: () => control.value,
-    reset(value) { control.value = value; }, focus() { control.focus(); }, destroy() { life.destroy(); } };
+  return { element: field.element, control, update, getValue: input.getValue,
+    reset: input.reset, focus: input.focus, destroy() { input.destroy(); field.destroy(); } };
 }
 
 export interface CheckboxState { label: string; description?: string; disabled?: boolean; }
@@ -295,33 +248,28 @@ export function createCheckbox(options: CheckboxState & { checked?: boolean; onC
   const control = element('input'); control.type = 'checkbox'; control.checked = !!options.checked;
   const caption = element('span'); const description = element('small');
   const root = element('label', 'pui-checkbox', control, element('span', '', caption, description));
-  const life = new Lifetime();
+  const input = adoptNativeControl(control, { onChange: () => options.onChange?.(control.checked) });
   const update = (state: Readonly<CheckboxState>): void => {
     setText(caption, state.label); setText(description, state.description); description.hidden = !state.description;
-    control.disabled = !!state.disabled;
+    input.update({ disabled: !!state.disabled });
   };
-  life.listen(control, 'change', (() => options.onChange?.(control.checked)) as EventListener);
   update(options);
-  return { element: root, control, update, getValue: () => control.checked,
-    reset(value) { control.checked = value; }, focus() { control.focus(); }, destroy() { life.destroy(); } };
+  return { element: root, control, update, getValue: input.getChecked,
+    reset: input.reset, focus: input.focus, destroy() { input.destroy(); } };
 }
 
 export interface NoticeState { message: string; tone?: 'info' | 'success' | 'warning' | 'error'; }
 export function createNotice(state: NoticeState): UIBlock<NoticeState> {
   const root = element('div', 'pui-notice');
-  const update = (next: Readonly<NoticeState>): void => {
-    root.className = `pui-notice pui-notice-${next.tone ?? 'info'}`;
-    root.setAttribute('role', next.tone === 'error' || next.tone === 'warning' ? 'alert' : 'status');
-    root.hidden = !next.message;
-    setText(root, next.message);
-  };
-  update(state); return { element: root, update, destroy() {} };
+  const notice = adoptFeedback(root, { presentation: 'notice' });
+  notice.update(state); return notice;
 }
 export interface StatusState { label: string; tone?: 'neutral' | 'success' | 'warning' | 'error'; }
 export function createStatus(state: StatusState): UIBlock<StatusState> {
   const root = element('span', 'pui-status');
-  const update = (next: Readonly<StatusState>): void => { root.className = `pui-status pui-status-${next.tone ?? 'neutral'}`; setText(root, next.label); };
-  update(state); return { element: root, update, destroy() {} };
+  const status = adoptFeedback(root, { presentation: 'status', autoHide: false });
+  const update = (next: Readonly<StatusState>): void => { status.update({ message: next.label, tone: next.tone }); };
+  update(state); return { element: root, update, destroy() { status.destroy(); } };
 }
 export interface ProgressState { label: string; value?: number; max?: number; }
 export function createProgress(state: ProgressState): UIBlock<ProgressState> {
@@ -345,8 +293,9 @@ export function createFormSection(options: FormSectionState & { content?: Node }
 export interface ActionsState { align?: 'start' | 'end' | 'between'; }
 export function createActions(options: ActionsState & { children?: readonly Node[] } = {}): UIBlock<ActionsState> {
   const root = element('div', 'pui-actions'); root.append(...(options.children ?? []));
-  const update = (state: Readonly<ActionsState>): void => { root.dataset.align = state.align ?? 'end'; };
-  update(options); return { element: root, update, destroy() {} };
+  const layout = adoptActionLayout(root, 'actions');
+  const update = (state: Readonly<ActionsState>): void => { layout.update({ align: state.align ?? 'end' }); };
+  update(options); return { element: root, update, destroy() { layout.destroy(); } };
 }
 export interface DisclosureState { title: string; description?: string; disabled?: boolean; }
 export interface DisclosureBlock extends UIBlock<DisclosureState> { setOpen(open: boolean): void; isOpen(): boolean; }
@@ -410,34 +359,18 @@ export function createDialog(options: DialogOptions): DialogBlock {
   const heading = element('header', 'pui-dialog-heading', element('div', '', eyebrow, title, description), close.element);
   const body = element('div', 'pui-dialog-body'); if (options.content) body.append(options.content);
   root.replaceChildren(heading, body); if (options.actions) root.append(options.actions);
-  const life = new Lifetime(); let state: DialogState = options; let previousFocus: HTMLElement | null = null; let disposed = false;
+  let state: DialogState = options; let disposed = false;
   const update = (next: Readonly<DialogState>): void => {
     state = next; setText(title, next.title); setText(description, next.description); description.hidden = !next.description; setText(eyebrow, next.eyebrow); eyebrow.hidden = !next.eyebrow;
     if (next.description) root.setAttribute('aria-describedby', description.id); else root.removeAttribute('aria-describedby');
     close.update({ label: `Close ${next.title}`, icon: 'close', disabled: next.closeDisabled });
   };
-  life.listen(root, 'cancel', (event => { if (state.closeDisabled) event.preventDefault(); }) as EventListener);
-  life.listen(root, 'click', (event => {
-    if (!options.closeOnBackdrop || state.closeDisabled || event.target !== root) return;
-    const pointer = event as MouseEvent; const rect = root.getBoundingClientRect();
-    if (pointer.clientX < rect.left || pointer.clientX > rect.right || pointer.clientY < rect.top || pointer.clientY > rect.bottom) root.close();
-  }) as EventListener);
-  life.listen(root, 'close', (() => {
-    // Native close events are queued; an old close must not affect a reopened dialog.
-    if (root.open) return;
-    options.onClose?.();
-    if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
-    previousFocus = null;
-  }) as EventListener);
+  const surface = installDialogLifecycle(root, { closeOnBackdrop: options.closeOnBackdrop ?? !!options.dialog,
+    canClose: () => !state.closeDisabled, onClose: options.onClose });
   update(options);
   return { element: root, body, update,
-    open() {
-      if (disposed || root.open) return;
-      previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      if (!root.isConnected) document.body.append(root);
-      root.showModal();
-    }, close() { if (root.open) root.close(); },
-    destroy() { if (disposed) return; disposed = true; if (root.open) root.close(); life.destroy(); close.destroy(); root.remove(); } };
+    open() { if (!disposed) surface.open(); }, close() { surface.close(); },
+    destroy() { if (disposed) return; disposed = true; surface.close(); surface.destroy(); close.destroy(); root.remove(); } };
 }
 
 export interface TextEditState extends DialogState { error?: string; disabled?: boolean; pending?: boolean; inputDisabled?: boolean; note?: string; submitLabel?: string; }
@@ -465,6 +398,7 @@ export function createTextEditDialog(options: TextEditOptions = {}): TextEditBlo
   const control = element('textarea', 'pui-control'); control.rows = 8;
   control.id = options.ids?.control ?? uniqueId('pui-input');
   const label = element('label', 'pui-field-label', options.label ?? 'Message'); label.htmlFor = control.id;
+  const input = adoptNativeControl(control, { label, onInput: value => options.onInput?.(value) });
   const field = element('div', 'pui-field', label, control);
   const note = element('p', 'pui-muted'); const error = createNotice({ message: '', tone: 'error' });
   const cancel = createButton({ label: 'Cancel', onAction() { dialog.close(); } });
@@ -484,9 +418,8 @@ export function createTextEditDialog(options: TextEditOptions = {}): TextEditBlo
     state = next; dialog.update(next); setText(note, next.note); note.hidden = !next.note;
     error.update({ message: next.error ?? '', tone: 'error' });
     submit.update({ label: next.submitLabel ?? options.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled, pending: !!(next.pending || pending) });
-    control.disabled = !!next.inputDisabled;
+    input.update({ disabled: !!next.inputDisabled });
   };
-  life.listen(control, 'input', () => options.onInput?.(control.value));
   life.listen(form, 'submit', (event => {
     event.preventDefault();
     if (pending || state.pending || state.disabled || submit.element.disabled || !options.onSubmit) return;
@@ -500,16 +433,16 @@ export function createTextEditDialog(options: TextEditOptions = {}): TextEditBlo
   }) as EventListener);
   update(state);
   return { element: dialog.element, control, submitButton: submit.element, update,
-    open(input) {
+    open(target) {
       generation.invalidate(); pending = false;
-      update({ ...state, error: '', title: input.title ?? options.title ?? 'Edit message', description: input.description ?? options.description, note: input.note ?? options.note });
-      control.value = input.value; dialog.open(); control.focus();
-    }, close() { generation.invalidate(); dialog.close(); }, getValue: () => control.value, focus() { control.focus(); },
-    destroy() { generation.destroy(); life.destroy(); dialog.destroy(); cancel.destroy(); submit.destroy(); } };
+      update({ ...state, error: '', title: target.title ?? options.title ?? 'Edit message', description: target.description ?? options.description, note: target.note ?? options.note });
+      input.reset(target.value); dialog.open(); input.focus();
+    }, close() { generation.invalidate(); dialog.close(); }, getValue: input.getValue, focus: input.focus,
+    destroy() { generation.destroy(); life.destroy(); input.destroy(); dialog.destroy(); cancel.destroy(); submit.destroy(); } };
 }
 
 export interface ConfirmState extends DialogState { message?: string | Node; hint?: string; error?: string; disabled?: boolean; pending?: boolean; confirmLabel?: string; }
-export interface ConfirmBlock extends UIBlock<ConfirmState> { readonly element: HTMLDialogElement; readonly confirmButton: HTMLButtonElement; readonly cancelButton: HTMLButtonElement; open(state?: ConfirmState): void; close(): void; }
+export interface ConfirmBlock extends UIBlock<ConfirmState> { readonly element: HTMLDialogElement; readonly confirmButton: HTMLButtonElement; readonly cancelButton: HTMLButtonElement; open(state?: ConfirmState): void; close(): void; refreshAvailability(): void; }
 export function createConfirmDialog(options: ConfirmState & { dialog?: HTMLDialogElement; ids?: { form?: string; error?: string; title?: string; cancel?: string }; unavailable?: () => boolean; onConfirm: () => Promise<ActionResult> | ActionResult; onClose?: () => void }): ConfirmBlock {
   const message = element('p', 'pui-modal-description'); const hint = element('p', 'pui-field-hint'); const error = createNotice({ message: '', tone: 'error' }); const generation = new Generation();
   let state: ConfirmState = options; let pending = false;
@@ -541,12 +474,12 @@ export function createConfirmDialog(options: ConfirmState & { dialog?: HTMLDialo
     if (next.message !== currentMessage) { currentMessage = next.message; if (next.message instanceof Node) message.replaceChildren(next.message); else setText(message, next.message); }
     setText(hint, next.hint); hint.hidden = !next.hint;
     error.update({ message: next.error ?? '', tone: 'error' });
-    confirm.update({ label: next.confirmLabel ?? 'Remove', intent: 'danger', disabled: next.disabled, pending: !!(next.pending || pending) });
+    confirm.update({ label: next.confirmLabel ?? 'Remove', intent: 'danger', disabled: !!(next.disabled || options.unavailable?.()), pending: !!(next.pending || pending) });
   };
   life.listen(form, 'submit', (event => { event.preventDefault(); void run(); }) as EventListener);
   update(options);
   return { element: dialog.element, confirmButton: confirm.element, cancelButton: cancel.element, update, open(next) { generation.invalidate(); pending = false; update({ ...(next ?? state), error: '' }); dialog.open(); cancel.element.focus(); },
-    close() { generation.invalidate(); dialog.close(); }, destroy() { generation.destroy(); life.destroy(); dialog.destroy(); confirm.destroy(); cancel.destroy(); } };
+    close() { generation.invalidate(); dialog.close(); }, refreshAvailability() { update(state); }, destroy() { generation.destroy(); life.destroy(); dialog.destroy(); confirm.destroy(); cancel.destroy(); } };
 }
 
 export interface PopoverState { label: string; disabled?: boolean; }
@@ -607,14 +540,10 @@ export function createMenu(options: MenuState): PopoverBlock & UIBlock<MenuState
   };
   life.listen(popover.trigger, 'keydown', (event => {
     const key = (event as KeyboardEvent).key;
-    if (key === 'ArrowDown' || key === 'ArrowUp') { event.preventDefault(); popover.open(); const targets = focusableElements(content); (key === 'ArrowDown' ? targets[0] : targets.at(-1))?.focus(); }
+    if (key === 'ArrowDown' || key === 'ArrowUp') { event.preventDefault(); popover.open(); navigation.focus(key === 'ArrowUp' ? 'last' : 'first'); }
   }) as EventListener);
-  life.listen(content, 'keydown', (event => {
-    const key = (event as KeyboardEvent).key; if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(key)) return;
-    event.preventDefault(); const targets = focusableElements(content); const index = targets.indexOf(document.activeElement as HTMLElement);
-    const next = key === 'Home' ? 0 : key === 'End' ? targets.length - 1 : (index + (key === 'ArrowUp' ? -1 : 1) + targets.length) % targets.length;
-    targets[next]?.focus();
-  }) as EventListener);
+  const navigation = installMenuNavigation(content, { trigger: popover.trigger, isOpen: popover.isOpen,
+    onDismiss(restoreFocus) { popover.close(); if (restoreFocus) popover.trigger.focus(); } });
   update(options);
-  return { ...popover, update, destroy() { life.destroy(); popover.destroy(); for (const block of blocks.values()) block.destroy(); } };
+  return { ...popover, update, destroy() { navigation.destroy(); life.destroy(); popover.destroy(); for (const block of blocks.values()) block.destroy(); } };
 }

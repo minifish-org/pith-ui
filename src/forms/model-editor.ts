@@ -1,68 +1,110 @@
 import type { UIBlock } from '../core.js';
 import { escape, uniqueId } from '../dom.js';
-import { modelEditorMarkup } from './panels.js';
-export interface ModelProviderOption {id: string; name: string; model?: string; thinkingLevel?: string}
-export interface ModelOption {id: string; name: string; provider: string; thinkingLevels?: readonly string[] | null; supportsImages: boolean; contextWindow: number; maxTokens: number}
-export interface ModelEditorState {providers: readonly ModelProviderOption[] | null; models: readonly ModelOption[] | null; selection: ModelSelection}
-export interface ModelSelection {provider: string; model: string; thinkingLevel: string}
+import {adoptProductParts,reconcileSelectOptions as optionsInto} from '../foundations.js';
+export interface ModelProviderOption {
+    id: string;
+    name: string;
+    model?: string;
+    thinkingLevel?: string;
+}
+export interface ModelOption {
+    id: string;
+    name: string;
+    provider: string;
+    thinkingLevels?: readonly string[] | null;
+    supportsImages: boolean;
+    contextWindow: number;
+    maxTokens: number;
+}
+export interface ModelEditorState {
+    providers: readonly ModelProviderOption[] | null;
+    models: readonly ModelOption[] | null;
+    selection: ModelSelection;
+    disabled?: boolean;
+}
+export interface ModelSelection {
+    provider: string;
+    model: string;
+    thinkingLevel: string;
+}
+export interface ModelEditorBlock extends UIBlock<ModelEditorState> {
+    read(): ModelSelection;
+    reset(selection: ModelSelection): void;
+    focus(): void;
+}
 export function thinkingLabel(level: string): string { return level === 'off' ? 'Thinking off' : `Thinking: ${level === 'xhigh' ? 'extra high' : level}`; }
-export function createModelEditor(initial: ModelEditorState, options: {prefix?: string; element?: HTMLElement; onChange?: (selection: ModelSelection) => void} = {}): UIBlock<ModelEditorState> & {read(): ModelSelection} {
- const prefix = options.prefix || uniqueId('pui-model');
- const element = options.element || document.createElement('div');
- if (!options.element) {element.className = 'pui-model-editor'; element.innerHTML = modelEditorMarkup(prefix);}
- const $ = <T extends HTMLElement = HTMLElement>(id: string) => {const field = Array.from(element.querySelectorAll<HTMLElement>('[id]')).find((node) => node.getAttribute('id') === id); if (!field) throw new Error(`Unknown model field: ${id}`); return field as T;};
- let binding = new AbortController(); let destroyed = false; let signature = '';
- const read = (): ModelSelection => ({provider: $<HTMLSelectElement>(`${prefix}-provider`).value, model: $<HTMLSelectElement>(`${prefix}-model`).value, thinkingLevel: $<HTMLSelectElement>(`${prefix}-thinking`).value});
- const update = (state: Readonly<ModelEditorState>) => {
-  if (destroyed) return;
-  const next = JSON.stringify(state); if (next === signature) return; signature = next;
-  binding.abort(); binding = new AbortController();
-  const catalog = state; const selection = state.selection;
-        const providers = catalog.providers || [];
-        const providerSelect = $<HTMLSelectElement>(`${prefix}-provider`);
-        const modelSelect = $<HTMLSelectElement>(`${prefix}-model`);
-        const search = $<HTMLInputElement>(`${prefix}-search`);
-        const effort = $<HTMLSelectElement>(`${prefix}-thinking`);
-        providerSelect.innerHTML = providers.map((entry) => `<option value="${escape(entry.id)}">${escape(entry.name)}</option>`).join('');
-        providerSelect.disabled = providers.length === 0;
-        providerSelect.value = providers.some((entry) => entry.id === selection.provider) ? selection.provider! : providers[0]?.id || '';
-        let selected = '';
-        const capabilities = () => {
-            selected = modelSelect.value;
-            const model = (catalog.models || []).find((entry) => entry.provider === providerSelect.value && entry.id === selected);
-            const previous = effort.value;
-            const levels = model?.thinkingLevels || ['off'];
-            effort.innerHTML = levels.map((level) => `<option value="${escape(level)}">${escape(thinkingLabel(level))}</option>`).join('');
-            effort.value = levels.includes(previous) ? previous : levels.includes('high') ? 'high' : levels.includes('medium') ? 'medium' : levels[0];
-            effort.disabled = levels.length < 2;
-            effort.hidden = levels.length < 2;
-            $(`${prefix}-thinking-label`).hidden = levels.length < 2;
-            $(`${prefix}-capabilities`).textContent = model ? `${model.supportsImages ? 'Text + images' : 'Text only'} · ${new Intl.NumberFormat('en').format(model.contextWindow)} context tokens · ${new Intl.NumberFormat('en').format(model.maxTokens)} max output tokens` : 'No matching models.';
-        };
-        const renderModels = () => {
-            const query = search.value.trim().toLowerCase();
-            const models = (catalog.models || []).filter((entry) => entry.provider === providerSelect.value && (entry.id === selected || `${entry.name} ${entry.id}`.toLowerCase().includes(query)));
-            modelSelect.innerHTML = models.map((entry) => `<option value="${escape(entry.id)}">${escape(entry.name)} — ${escape(entry.id)}</option>`).join('');
-            modelSelect.disabled = models.length === 0;
-            modelSelect.value = models.some((entry) => entry.id === selected) ? selected : models[0]?.id || '';
-            capabilities();
-        };
-        const chooseProvider = () => {
-            const provider = providers.find((entry) => entry.id === providerSelect.value);
-            if (!provider)
-                return;
-            search.value = '';
-            selected = provider.model || (provider.id === selection.provider ? selection.model : '');
-            effort.innerHTML = `<option value="${escape(provider.thinkingLevel || selection.thinkingLevel || 'high')}"></option>`;
-            renderModels();
-        };
-        providerSelect.addEventListener('change', chooseProvider, {signal: binding.signal});
-        modelSelect.addEventListener('change', capabilities, {signal: binding.signal});
-        search.addEventListener('input', renderModels, {signal: binding.signal});
-        chooseProvider();
-
-  if (options.onChange) element.addEventListener('change', () => options.onChange!(read()), {signal: binding.signal});
- };
- update(initial);
- return {element, update, read, destroy() {if (destroyed) return; destroyed = true; binding.abort(); if (!options.element) element.remove();}};
+export function modelEditorMarkup(prefix: string): string { prefix = escape(prefix); return `<label class="pui-field-label" for="${prefix}-provider">Provider</label><select class="pui-feature-select" id="${prefix}-provider" required disabled><option value="">Loading providers…</option></select><label class="pui-field-label" for="${prefix}-search">Model</label><input id="${prefix}-search" type="search" placeholder="Search by model name or ID" autocomplete="off" /><label class="pui-sr-only" for="${prefix}-model">Choose model</label><select id="${prefix}-model" class="pui-model-list" size="6" required disabled></select><p id="${prefix}-capabilities" class="pui-field-hint" aria-live="polite"></p><label class="pui-field-label" id="${prefix}-thinking-label" for="${prefix}-thinking">Thinking effort</label><select id="${prefix}-thinking" class="pui-feature-select" aria-describedby="${prefix}-capabilities" required></select><p class="pui-field-hint">Built-in models come from the Pith SDK catalog. Custom models use your saved definitions. Availability depends on your endpoint and account.</p>`; }
+export function createModelEditor(initial: ModelEditorState, options: {
+    prefix?: string;
+    element?: HTMLElement;
+    onChange?: (selection: ModelSelection) => void;
+} = {}): ModelEditorBlock {
+    const prefix = options.prefix || uniqueId('pui-model');
+    const element = options.element || document.createElement('div');
+    if (!options.element) {
+        element.className = 'pui-model-editor';
+        element.innerHTML = modelEditorMarkup(prefix);
+    }
+    const field = <T extends HTMLElement = HTMLElement>(id: string) => { const result = Array.from(element.querySelectorAll<HTMLElement>('[id]')).find(node => node.id === prefix + '-' + id); if (!result)
+        throw new Error(`Unknown model field: ${id}`); return result as T; };
+    const provider = field<HTMLSelectElement>('provider'), model = field<HTMLSelectElement>('model'), search = field<HTMLInputElement>('search'), effort = field<HTMLSelectElement>('thinking');
+    const parts = adoptProductParts(element), abort = new AbortController();
+    let destroyed = false, initialized = false, signature = '', selected = '';
+    let state: Readonly<ModelEditorState> = initial;
+    const read = (): ModelSelection => ({ provider: parts.control(provider).getValue(), model: parts.control(model).getValue(), thinkingLevel: parts.control(effort).getValue() });
+    const disabled = () => { parts.control(provider).update({ disabled: !!state.disabled || !state.providers?.length }); parts.control(model).update({ disabled: !!state.disabled || !model.options.length }); parts.control(effort).update({ disabled: !!state.disabled || effort.options.length < 2 }); parts.control(search).update({disabled:!!state.disabled}); };
+    const capabilities = (preferred = effort.value) => {
+        selected = model.value;
+        const entry = (state.models || []).find(entry => entry.provider === provider.value && entry.id === selected);
+        const levels = entry?.thinkingLevels?.length ? entry.thinkingLevels : ['off'];
+        optionsInto(effort, levels.map(level => ({ value: level, label: thinkingLabel(level) })));
+        effort.value = levels.includes(preferred) ? preferred : levels.includes('high') ? 'high' : levels.includes('medium') ? 'medium' : levels[0];
+        effort.hidden = levels.length < 2;
+        field('thinking-label').hidden = effort.hidden;
+        field('capabilities').textContent = entry ? `${entry.supportsImages ? 'Text + images' : 'Text only'} · ${new Intl.NumberFormat('en').format(entry.contextWindow)} context tokens · ${new Intl.NumberFormat('en').format(entry.maxTokens)} max output tokens` : 'No matching models.';
+        disabled();
+    };
+    const renderModels = (preferred = effort.value) => {
+        const query = search.value.trim().toLowerCase();
+        const entries = (state.models || []).filter(entry => entry.provider === provider.value && (entry.id === selected || `${entry.name} ${entry.id}`.toLowerCase().includes(query)));
+        optionsInto(model, entries.map(entry => ({ value: entry.id, label: `${entry.name} — ${entry.id}` })));
+        model.value = entries.some(entry => entry.id === selected) ? selected : entries[0]?.id || '';
+        capabilities(preferred);
+    };
+    const chooseProvider = (selection?: ModelSelection) => {
+        const entry = state.providers?.find(entry => entry.id === provider.value);
+        search.value = '';
+        selected = selection && selection.provider === provider.value ? selection.model : entry?.model || '';
+        renderModels(selection && selection.provider === provider.value ? selection.thinkingLevel : entry?.thinkingLevel || 'high');
+    };
+    const reset = (selection: ModelSelection) => { if (destroyed)
+        return; parts.control(provider).reset(state.providers?.some(entry => entry.id === selection.provider) ? selection.provider : state.providers?.[0]?.id || ''); chooseProvider(selection); };
+    const update = (next: Readonly<ModelEditorState>) => {
+        if (destroyed)
+            return;
+        const draft = read();
+        state = next;
+        const nextSignature = JSON.stringify([next.providers, next.models]);
+        if (nextSignature !== signature) {
+            signature = nextSignature;
+            optionsInto(provider, (state.providers || []).map(entry => ({ value: entry.id, label: entry.name })));
+            if (!initialized || !draft.provider)
+                reset(next.selection);
+            else {
+                provider.value = state.providers?.some(entry => entry.id === draft.provider) ? draft.provider : state.providers?.[0]?.id || '';
+                selected = draft.model;
+                renderModels(draft.thinkingLevel);
+            }
+            initialized = true;
+        }
+        disabled();
+    };
+    provider.addEventListener('change', () => chooseProvider(), { signal: abort.signal });
+    model.addEventListener('change', () => capabilities(), { signal: abort.signal });
+    search.addEventListener('input', () => renderModels(), { signal: abort.signal });
+    element.addEventListener('change', () => options.onChange?.(read()), { signal: abort.signal });
+    update(initial);
+    return { element, update, read, reset, focus() { parts.control(search).focus(); }, destroy() { if (destroyed)
+            return; destroyed = true; abort.abort(); parts.destroy(); if (!options.element)
+            element.remove(); } };
 }

@@ -43,6 +43,8 @@ try {
       await expect(page.locator('#composer-input')).toBeEditable();
       if (scene === 'settings') {
         await page.locator('#sidebar [data-action="settings"]').click(); await expect(page.locator('#save-settings')).toBeVisible();
+        await expect(page.locator('#settings-provider')).toHaveValue('custom-test');
+        await expect(page.locator('#settings-dialog [data-update-message]')).toHaveText('Local review fixture');
       } else if (scene === 'model') {
         await page.locator('#composer-model').click(); await expect(page.locator('#picker-model option')).toHaveCount(1);
       } else if (scene === 'message-edit') {

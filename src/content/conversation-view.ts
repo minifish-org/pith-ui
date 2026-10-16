@@ -1,5 +1,6 @@
 import { escape, icon } from '../dom.js';
-import type { UIBlock } from '../core.js';
+import { controlDisabled, type UIBlock } from '../core.js';
+import { adoptProductParts } from '../foundations.js';
 import { renderMarkdown, type MarkdownOptions } from './markdown.js';
 import { reconcileViews, clearViews, type View } from './views.js';
 
@@ -23,27 +24,39 @@ export interface ConversationViewState {
   folds?: ReadonlyMap<string, boolean>;
 }
 export interface ConversationAction { action: 'copy' | 'edit' | 'branch'; messageId: string; branchKey?: string }
+export interface ConversationActionAvailability {copy?: boolean; edit?: boolean; branch?: boolean}
+export type ConversationImageState = {status: 'ready'; src: string} | {status: 'unavailable'};
+export interface ConversationViewBlock extends UIBlock<ConversationViewState> {
+  /** Disabled state, separate from whether an action exists for a message. */
+  updateActionAvailability(disabled: Readonly<ConversationActionAvailability>): void;
+  images(): readonly HTMLImageElement[];
+  setImageState(image: HTMLImageElement, state: ConversationImageState): void;
+}
 export interface ConversationViewOptions {
   container?: HTMLElement;
   markdown?: (conversationId: string) => MarkdownOptions;
-  onAction?: (action: ConversationAction) => void;
-  onCopyCode?: (text: string) => void;
+  onAction?: (action: ConversationAction, button: HTMLButtonElement) => void;
+  onCopyCode?: (text: string, button: HTMLButtonElement) => void;
 }
 
 
-export function createConversationView(options: ConversationViewOptions = {}): UIBlock<ConversationViewState> {
+export function createConversationView(options: ConversationViewOptions = {}): ConversationViewBlock {
   const container = options.container || document.createElement('div');
   container.classList.add('pui-conversation-messages');
+  const parts = adoptProductParts(container);
+  let actionButtons: HTMLButtonElement[] = [];
+  let disabledActions: Readonly<ConversationActionAvailability> = {};
+  const syncAvailability = () => {for (const button of actionButtons) parts.action(button).update({disabled: controlDisabled(button, !!disabledActions[button.dataset.messageAction as ConversationAction['action']])});};
   let destroyed = false;
   const click = (event: Event) => {
-    const target = (event.target as Element).closest<HTMLElement>('[data-message-action], [data-copy-code]');
-    if (!target || !container.contains(target) || (target as HTMLButtonElement).disabled) return;
+    const target = (event.target as Element).closest<HTMLButtonElement>('[data-message-action], [data-copy-code]');
+    if (!target || !container.contains(target) || target.disabled) return;
     if (target.hasAttribute('data-copy-code')) {
       const text = target.closest('.pui-code-block')?.querySelector('pre > code')?.textContent || '';
-      options.onCopyCode?.(text);
+      if (options.onCopyCode) {event.stopPropagation(); options.onCopyCode(text, target);}
       return;
     }
-    options.onAction?.({ action: target.dataset.messageAction as ConversationAction['action'], messageId: target.dataset.messageActionId!, branchKey: target.dataset.branchKey });
+    if (options.onAction) {event.stopPropagation(); options.onAction({ action: target.dataset.messageAction as ConversationAction['action'], messageId: target.dataset.messageActionId!, branchKey: target.dataset.branchKey }, target);}
   };
   container.addEventListener('click', click);
   let activeId = '';
@@ -70,6 +83,8 @@ export function createConversationView(options: ConversationViewOptions = {}): U
     }
     if (working) views.push({ key: 'working', signature: 'working', html: () => '<div class="pui-agent-working" role="status"><span class="pui-working-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>Working…</span></div>' });
     reconcileViews(container, views);
+    actionButtons = [...container.querySelectorAll<HTMLButtonElement>('[data-message-action]')];
+    parts.update(); syncAvailability();
   }
   return {
     element: container,
@@ -77,11 +92,23 @@ export function createConversationView(options: ConversationViewOptions = {}): U
       const folds = state.folds || new Map(Array.from(container.querySelectorAll<HTMLDetailsElement>('[data-tool-fold]'), (element) => [element.dataset.toolFold!, element.open] as const));
       update(state.id, state.messages, state.working, folds);
     },
+    updateActionAvailability(disabled): void {
+      if (destroyed || (disabled.copy === disabledActions.copy && disabled.edit === disabledActions.edit && disabled.branch === disabledActions.branch)) return;
+      disabledActions = {...disabled}; syncAvailability();
+    },
+    images: () => destroyed ? [] : [...container.querySelectorAll<HTMLImageElement>('img[data-image-key]')],
+    setImageState(image, state): void {
+      if (destroyed || !container.contains(image)) return;
+      image.classList.toggle('pui-image-unavailable', state.status === 'unavailable');
+      image.alt = state.status === 'unavailable' ? 'Image unavailable' : `Image ${Number(image.dataset.imageIndex) + 1}`;
+      if (state.status === 'ready') image.src = state.src;
+    },
     destroy(): void {
       if (destroyed) return;
       destroyed = true;
       container.removeEventListener('click', click);
       clearViews(container);
+      parts.destroy(); actionButtons = [];
     },
   };
 }
@@ -100,10 +127,10 @@ function renderMessage(conversationId: string, message: ConversationMessage, exp
   const images = (message.images || []).map((image) => `<img class="pui-history-image" data-image-key="${escape(`${conversationId}/${message.id}/${image.index}`)}" data-message-id="${escape(message.id)}" data-image-index="${image.index}" alt="Image ${image.index + 1}" role="button" tabindex="0" title="Click to enlarge" loading="lazy" />`).join('');
   const gallery = images ? `<div class="pui-message-images">${images}</div>` : '';
   const copyLabel = typeof message.actions?.copy === 'string' ? message.actions.copy : 'Copy message';
-  const copy = message.actions?.copy ? `<button type="button" class="pui-quiet-icon pui-message-action" data-message-action="copy" data-message-action-id="${escape(message.id)}" title="${escape(copyLabel)}" aria-label="${escape(copyLabel)}">${icon('copy')}</button>` : '';
-  const edit = message.actions?.edit ? `<button type="button" class="pui-quiet-icon pui-message-action" data-message-action="edit" data-message-action-id="${escape(message.id)}" title="Edit message" aria-label="Edit message">${icon('edit')}</button>` : '';
+  const copy = message.actions?.copy ? `<button type="button" class="pui-quiet-icon pui-message-action" data-message-action="copy" data-message-action-id="${escape(message.id)}" data-copy-message="${escape(message.id)}" title="${escape(copyLabel)}" aria-label="${escape(copyLabel)}">${icon('copy')}</button>` : '';
+  const edit = message.actions?.edit ? `<button type="button" class="pui-quiet-icon pui-message-action" data-message-action="edit" data-message-action-id="${escape(message.id)}" data-edit-message="${escape(message.id)}" title="Edit message" aria-label="Edit message">${icon('edit')}</button>` : '';
   const branchAction = message.actions?.branch;
-  const branch = branchAction ? `<button type="button" class="pui-quiet-icon pui-message-action" data-message-action="branch" data-message-action-id="${escape(message.id)}" data-branch-key="${escape(branchAction.key)}" title="${escape(branchAction.label || 'Branch from this message')}" aria-label="${escape(branchAction.label || 'Branch from this message')}">${icon('branch')}</button>` : '';
+  const branch = branchAction ? `<button type="button" class="pui-quiet-icon pui-message-action" data-message-action="branch" data-message-action-id="${escape(message.id)}" data-branch-key="${escape(branchAction.key)}" data-node="${escape(branchAction.key)}" title="${escape(branchAction.label || 'Branch from this message')}" aria-label="${escape(branchAction.label || 'Branch from this message')}">${icon('branch')}</button>` : '';
   const actions = copy || edit || branch ? `<div class="pui-message-actions">${copy}${edit}${branch}</div>` : '';
   const date = new Date(message.timestamp || NaN);
   const time = Number.isFinite(date.getTime()) ? `<time class="pui-message-time" datetime="${date.toISOString()}" title="${escape(date.toLocaleString())}">${escape(date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}</time>` : '';

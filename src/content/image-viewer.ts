@@ -1,4 +1,5 @@
 import { escape, icon } from '../dom.js';
+import { installDialogLifecycle } from '../surface.js';
 
 export interface ImageViewerOptions { dialog?: HTMLDialogElement; headingId?: string }
 export interface ImageViewerInput { src: string; alt?: string; returnFocus?: HTMLElement }
@@ -37,18 +38,17 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
   image.addEventListener('load', update, { signal });
   const observer = new ResizeObserver(() => { if (dialog.open && fitted) update(); });
   observer.observe(viewport);
-  dialog.addEventListener('close', () => {
+  const lifecycle = installDialogLifecycle(dialog, { returnFocus: () => source, onClose: () => {
     image.removeAttribute('src');
     image.removeAttribute('style');
-    source?.focus({ preventScroll: true });
     source = null;
-  }, { signal });
+  } });
   document.addEventListener('keydown', (event) => {
     if (!dialog.open || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === '+' || event.key === '=') { event.preventDefault(); resize(1.25); }
     if (event.key === '-') { event.preventDefault(); resize(1 / 1.25); }
   }, { signal });
-  function close(): void { if (dialog.open) dialog.close(); }
+  function close(): void { lifecycle.close(); }
   return {
     element: dialog,
     open(target: HTMLImageElement | ImageViewerInput): void {
@@ -64,7 +64,7 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
       fitted = true;
       status.textContent = 'Loading…';
       image.src = input.src;
-      if (!dialog.open) dialog.showModal();
+      lifecycle.open();
       viewport.scrollTop = viewport.scrollLeft = 0;
       update();
     },
@@ -78,12 +78,24 @@ export function createImageViewer(options: ImageViewerOptions = {}) {
       source = null;
       destroyed = true;
       observer.disconnect();
+      lifecycle.destroy();
       listeners.abort();
       dialog.replaceChildren();
     },
   };
 }
 
-export function installImageViewer(dialog: HTMLDialogElement) {
-  return createImageViewer({ dialog, headingId: dialog.getAttribute('aria-labelledby') || undefined });
+export function installImageViewer(dialog: HTMLDialogElement, options: { triggerRoot?: HTMLElement } = {}) {
+  const viewer = createImageViewer({ dialog, headingId: dialog.getAttribute('aria-labelledby') || undefined });
+  const abort = new AbortController();
+  const trigger = (event: Event) => {
+    const image = event.target;
+    if (!(image instanceof HTMLImageElement) || !image.matches('.pui-history-image, .pui-draft-image img, .pui-file-preview-image')) return;
+    if (event instanceof KeyboardEvent && (event.isComposing || !['Enter', ' '].includes(event.key))) return;
+    if (event instanceof KeyboardEvent) event.preventDefault();
+    viewer.open(image);
+  };
+  options.triggerRoot?.addEventListener('click', trigger, { signal: abort.signal });
+  options.triggerRoot?.addEventListener('keydown', trigger, { signal: abort.signal });
+  return { ...viewer, destroy() { abort.abort(); viewer.destroy(); } };
 }

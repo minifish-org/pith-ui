@@ -10,6 +10,14 @@ Pith UI supplies native TypeScript product blocks and base components. Import fr
 4. Keep business identity, authorization, API calls and persistence in the application.
 5. Change supported options or documented theme tokens. Add a shared variant and its example when new behavior is required; do not patch internal selectors or copy component source into the application.
 
+Product blocks and standalone factories share the same private action, native-field, feedback, layout and floating-surface implementations. A retained product node does not need a second public factory instance or a class patch. Choose the semantic block interface; private controllers and compatibility markup are not consumer APIs.
+
+- Supply `createWorkspaceShell({ composer: { onSubmit, onStop, onInput, onModel, onThinkingChange }, onDialogClose })`; update its composer state for model, effort, send/queue/stop and availability. Use `openDialog`, `closeDialog` and `setSidebarOpen` for the shell-owned surfaces.
+- `createModelPicker` owns its model editor. Supply `editor` catalog state and `onSubmit`; use `read()` or the callback selection instead of constructing another editor over its fields.
+- Settings and MCP expose typed drafts, credential presentation and explicit reset/edit operations. Use their callbacks and methods; `field()`/`id()` remain compatibility adapters, not the default integration route.
+- Messages expose action/code callbacks, action availability and image state. Preserve the host's per-message eligibility rules; do not decorate rendered buttons with a second event-routing scheme.
+- Resources provide their own standard refresh/create toolbar. Node slots remain available for additional compositions, with explicit host ownership.
+
 | Task | First API to inspect |
 |---|---|
 | Workspace and chat layout | `createWorkspaceShell`, `createWorkspaceNavigation`, `createWelcomeView` |

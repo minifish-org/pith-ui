@@ -1,4 +1,4 @@
-import type { ActionResult, ConversationViewState, CustomConnectionDraft, CustomConnectionState } from '../src/index.js';
+import type {ActionResult,ConversationViewState,CustomConnectionDraft,CustomConnectionState,ModelEditorState,ModelSelection,SettingsPanelState,SettingsProviderOption,SettingsDraft,MCPConnectionDraft,MCPEditorValue,ResourceEditorState,ResourceDraft} from '../src/index.js';
 type PithUI = typeof import('../src/index.js');
 
 /** Complete API usage; the application supplies only its save operation. */
@@ -12,24 +12,39 @@ export function mountTextEditor(ui: PithUI, host: HTMLElement, save: (text: stri
 
 /** Public forms retain editable values while the host owns write identity and errors. */
 export function mountConnectionEditor(ui: PithUI, host: HTMLElement, initial: CustomConnectionState, save: (draft: CustomConnectionDraft) => Promise<ActionResult>): () => void {
-  const editor = ui.createCustomConnectionEditor(initial);
-  const life = new ui.Lifetime();
-  const guard = new ui.Generation();
-  let pending = false;
-  life.listen(editor.form, 'submit', (event) => {
-    event.preventDefault();
-    if (pending || initial.disabled) return;
-    pending = true;
-    const generation = guard.next();
-    editor.update({ ...initial, error: '', disabled: true });
-    void save(editor.read()).catch((error: unknown): ActionResult => ({ ok: false, error: error instanceof Error ? error.message : String(error) })).then((result) => {
-      if (!guard.current(generation)) return;
-      pending = false;
-      editor.update({ ...initial, error: result.ok ? '' : result.error, disabled: false });
-    });
-  });
+  const editor = ui.createCustomConnectionEditor(initial,{onSubmit:save});
   host.append(editor.element);
-  return () => { guard.destroy(); life.destroy(); editor.destroy(); };
+  return () => editor.destroy();
+}
+
+/** The picker owns its editor, search, native validation and submission lifetime. */
+export function mountModelPicker(ui:PithUI,host:HTMLElement,editor:ModelEditorState,save:(selection:ModelSelection)=>Promise<ActionResult>):()=>void {
+  const picker = ui.createModelPicker({editor,loading:false},{onSubmit:save});
+  host.append(picker.element);
+  return () => picker.destroy();
+}
+
+/** Credential retention policy stays in the host; no internal field IDs are needed. */
+export function mountSettings(ui:PithUI,host:HTMLElement,initial:SettingsPanelState,providers:readonly SettingsProviderOption[],save:(draft:SettingsDraft)=>Promise<ActionResult>):()=>void {
+  const panel = ui.createSettingsPanel({...initial,ready:true},{onSubmit:save});
+  panel.setProviders(providers);
+  host.append(panel.element);
+  return () => panel.destroy();
+}
+
+/** JSON validation, credentials and the MCP request remain host responsibilities. */
+export function mountMCPEditor(ui:PithUI,host:HTMLElement,entry:MCPEditorValue,save:(draft:MCPConnectionDraft)=>Promise<ActionResult>):()=>void {
+  const panel = ui.createMCPConnectionsPanel({}, {onSubmit:save});
+  host.append(panel.element);
+  panel.edit(entry);
+  return () => panel.destroy();
+}
+
+/** Initial name/content are drafts; feedback updates preserve the edited values. */
+export function mountResourceEditor(ui:PithUI,host:HTMLElement,initial:ResourceEditorState,save:(draft:ResourceDraft)=>Promise<ActionResult>):()=>void {
+  const editor = ui.createResourceEditor(initial,{onSubmit:save});
+  host.append(editor.element);
+  return () => editor.destroy();
 }
 
 /** A composed shell shares the exact message renderer and reader used by the consumer. */

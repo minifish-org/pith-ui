@@ -1,6 +1,7 @@
 import {scopeIds, localField} from './identity.js';
 import {Generation, type ActionResult, type UIBlock} from '../core.js';
 import {uniqueId} from '../dom.js';
+import {adoptProductParts} from '../foundations.js';
 export interface ProviderLoginState {phase: string; message: string; url?: string; code?: string; prompt?: string; promptType?: string; options?: readonly {id: string; label: string}[] | null; error?: string; disabled?: boolean}
 export function createProviderLoginPanel(initial: ProviderLoginState, options: {idPrefix?: string; onAnswer?: (answer: string) => void | ActionResult | Promise<void | ActionResult>; onCancel?: () => void; onClose?: () => void} = {}): UIBlock<ProviderLoginState> {
  const element = document.createElement('div'); element.className = 'pui-provider-login'; const prefix = options.idPrefix ?? uniqueId('pui-login') + '-';
@@ -9,9 +10,9 @@ export function createProviderLoginPanel(initial: ProviderLoginState, options: {
  const field = <T extends HTMLElement = HTMLElement>(id: string): T => localField<T>(element, prefix + id);
  const form = field<HTMLFormElement>('oauth-answer'), status = element.querySelector<HTMLElement>('.pui-provider-login-status')!, inputHost = element.querySelector<HTMLElement>('[data-login-input]')!, submit = form.querySelector<HTMLButtonElement>('button')!;
  const link = element.querySelector<HTMLAnchorElement>('a')!, code = element.querySelector<HTMLElement>('[data-login-code]')!, error = field('oauth-error');
- const generation = new Generation(), abort = new AbortController();
+ const generation = new Generation(), abort = new AbortController(), parts = adoptProductParts(element);
  let signature = '', destroyed = false, pending = false, localError = '', state: Readonly<ProviderLoginState> = initial;
- function renderDisabled(): void { submit.disabled = !!state.disabled || pending; }
+ function renderDisabled(): void {parts.action(submit).update({disabled:state.disabled,pending});}
  const update = (login: Readonly<ProviderLoginState>) => {
   if (destroyed) return; state = login;
   const next = JSON.stringify([login.phase, login.prompt, login.promptType, login.options]);
@@ -30,7 +31,7 @@ export function createProviderLoginPanel(initial: ProviderLoginState, options: {
   link.parentElement!.hidden = !href; if (href) link.href = href; else link.removeAttribute('href');
   code.hidden = !login.code; code.querySelector('strong')!.textContent = login.code || '';
   form.hidden = login.phase !== 'prompt'; form.querySelector('label')!.textContent = login.prompt || '';
-  error.textContent = login.error || localError;
+  parts.update(); parts.feedback(error).update({message:login.error || localError,tone:'error'});
   const complete = ['complete','error'].includes(login.phase);
   element.querySelector<HTMLButtonElement>('[data-close]')!.hidden = !complete;
   element.querySelector<HTMLButtonElement>('[data-sdk]')!.hidden = complete;
@@ -40,10 +41,10 @@ export function createProviderLoginPanel(initial: ProviderLoginState, options: {
   event.preventDefault(); if (pending || state.disabled || state.phase !== 'prompt' || !options.onAnswer) return;
   const input = field<HTMLInputElement | HTMLSelectElement>('oauth-value'); if (!input.checkValidity()) {input.reportValidity(); return;}
   const seq = generation.next(); pending = true; localError = ''; error.textContent = ''; renderDisabled();
-  try { const result = await options.onAnswer(input.value); if (generation.current(seq) && result && !result.ok) {localError = result.error; error.textContent = localError;} }
-  catch (reason) {if (generation.current(seq)) {localError = reason instanceof Error ? reason.message : String(reason); error.textContent = localError;}}
+  try { const result = await options.onAnswer(parts.control(input).getValue()); if (generation.current(seq) && result && !result.ok) {localError = result.error; parts.feedback(error).update({message:localError,tone:'error'});} }
+  catch (reason) {if (generation.current(seq)) {localError = reason instanceof Error ? reason.message : String(reason); parts.feedback(error).update({message:localError,tone:'error'});}}
   finally {if (generation.current(seq)) {pending = false; renderDisabled();}}
  }, {signal:abort.signal});
  element.addEventListener('click', event => {const target = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (target?.dataset.sdk === 'cancel-login') options.onCancel?.(); if (target?.dataset.close === prefix + 'oauth-dialog') options.onClose?.();}, {signal:abort.signal});
- update(initial); return {element, update, destroy() {if (destroyed) return; destroyed = true; generation.destroy(); abort.abort(); for (const input of element.querySelectorAll<HTMLInputElement>('input')) input.value = ''; element.remove();}};
+ update(initial); return {element, update, destroy() {if (destroyed) return; destroyed = true; generation.destroy(); abort.abort(); for (const input of element.querySelectorAll<HTMLInputElement>('input')) parts.control(input).reset(''); parts.destroy(); element.remove();}};
 }

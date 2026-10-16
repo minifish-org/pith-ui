@@ -1,6 +1,8 @@
 import { dialogHeading, escape, icon, uniqueId, setText } from '../dom.js';
 import type { UIBlock } from '../core.js';
 import { createPagedPreview, type PreviewKind } from '../content/paged-preview.js';
+import { adoptProductParts } from '../foundations.js';
+import { createButton } from '../primitives.js';
 
 export interface FileActionOptions {
   kind: string; ownerId: string; path: string; preview?: boolean;
@@ -8,8 +10,9 @@ export interface FileActionOptions {
   onAction?: (action: 'preview' | 'open' | 'reveal' | 'copy' | 'copy-path') => void;
 }
 export function fileActionsMarkup(options: FileActionOptions): string {
-  const attributes = `data-file-kind="${escape(options.kind)}" data-file-owner="${escape(options.ownerId)}" data-file-path="${escape(options.path)}"`;
-  const preview = options.preview ? `<button type="button" class="pui-secondary-button" data-preview-path="${escape(options.path)}" data-preview-id="${escape(options.ownerId)}">Preview</button>` : '';
+  const scope = `data-idle-action ${options.kind === 'resource' ? 'data-idle-workspace' : 'data-idle-conversation'}="${escape(options.ownerId)}"`;
+  const attributes = `${scope} data-file-kind="${escape(options.kind)}" data-file-owner="${escape(options.ownerId)}" data-file-path="${escape(options.path)}"`;
+  const preview = options.preview ? `<button type="button" class="pui-secondary-button" ${scope} data-preview-path="${escape(options.path)}" data-preview-id="${escape(options.ownerId)}">Preview</button>` : '';
   const copy = options.copyMode && options.copyMode !== 'none' ? `<button type="button" class="pui-secondary-button" ${attributes} data-file-action="${options.copyMode === 'file' ? 'copy' : 'copy-path'}">${options.copyMode === 'file' ? 'Copy file' : 'Copy path'}</button>` : '';
   return `<div class="pui-file-actions">${preview}<button type="button" class="pui-secondary-button" ${attributes} data-file-action="open">Open</button><button type="button" class="pui-secondary-button" ${attributes} data-file-action="reveal">Reveal</button>${copy}</div>`;
 }
@@ -26,7 +29,7 @@ export function createFileActions(options: FileActionOptions) {
 }
 
 export interface ArtifactPanelState { ownerId: string; files: readonly { name: string; path: string }[]; loading: boolean; error: string; copyMode: 'file' | 'path' }
-export interface ArtifactPanelOptions { container: HTMLElement; control: HTMLElement; toggle: HTMLElement; count: HTMLElement; headingId?: string }
+export interface ArtifactPanelOptions { container: HTMLElement; control: HTMLElement; toggle: HTMLElement; count: HTMLElement; headingId?: string; dismissExclusions?: readonly HTMLElement[] }
 export function createArtifactPanel(options: ArtifactPanelOptions) {
   const { container: element, control, toggle, count } = options;
   element.innerHTML = `<div class="pui-artifacts-heading"><h2${options.headingId ? ` id="${escape(options.headingId)}"` : ''}>Files <span data-file-count></span></h2><button type="button" class="pui-quiet-icon" data-artifacts-close aria-label="Close files">${icon('close')}</button></div><p class="pui-artifacts-status" role="status" hidden>Looking for files…</p><div class="pui-artifacts-content"><div data-file-rows></div><p class="pui-form-error" role="alert" hidden></p></div>`;
@@ -34,6 +37,7 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
   const loading = element.querySelector<HTMLElement>('[role="status"]')!;
   const rows = element.querySelector<HTMLElement>('[data-file-rows]')!;
   const error = element.querySelector<HTMLElement>('[role="alert"]')!;
+  const parts = adoptProductParts(element);
   const entries = new Map<string, { element: HTMLElement; name: HTMLElement; copy: HTMLButtonElement }>();
   let open = false;
   let destroyed = false;
@@ -45,6 +49,13 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
     if (open) element.focus();
     else if (restoreFocus && !control.hidden) toggle.focus();
   }
+  const abort = new AbortController();
+  toggle.addEventListener('click', () => setOpen(!open), { signal: abort.signal });
+  element.addEventListener('click', event => { if ((event.target as Element).closest('[data-artifacts-close]')) setOpen(false, true); }, { signal: abort.signal });
+  const outside = (event: Event) => { const target = event.target as Node; if (open && !element.contains(target) && !control.contains(target) && !options.dismissExclusions?.some(node => node.contains(target))) setOpen(false); };
+  document.addEventListener('click', outside, { signal: abort.signal });
+  document.addEventListener('focusin', outside, { signal: abort.signal });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && open && !document.querySelector('dialog[open]')) { event.preventDefault(); setOpen(false, true); } }, { signal: abort.signal });
   return {
     element, setOpen, get open() { return open; },
     update(state: Readonly<ArtifactPanelState>): void {
@@ -59,7 +70,7 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
       total.textContent = number;
       loading.hidden = !state.loading;
       error.hidden = !state.error;
-      error.textContent = state.error;
+      parts.feedback(error).update({ message: state.error, tone: 'error' });
       const keep = new Set(state.files.map(file => `${state.ownerId}/${file.path}`));
       for (const [key, entry] of entries) if (!keep.has(key)) { entry.element.remove(); entries.delete(key); }
       let cursor = rows.firstElementChild;
@@ -81,16 +92,16 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
       }
       if (focused instanceof HTMLElement && element.contains(focused) && document.activeElement !== focused) focused.focus({ preventScroll: true });
     },
-    destroy(): void { destroyed = true; entries.clear(); element.replaceChildren(); },
+    destroy(): void { destroyed = true; abort.abort(); parts.destroy(); entries.clear(); element.replaceChildren(); },
   };
 }
 
 export interface ResourceDisplayEntry { name: string; path: string; description?: string; content?: string; fileActions?: Node; actions?: Node }
 export interface ResourcesPanelState {
   instructions: readonly ResourceDisplayEntry[]; skills: readonly ResourceDisplayEntry[]; templates: readonly ResourceDisplayEntry[];
-  diagnostics: readonly string[]; createInstructions?: Node;
+  diagnostics: readonly string[]; createInstructions?: Node; canCreateInstructions?: boolean;
 }
-export interface ResourcesPanelOptions { container?: HTMLElement; titleId?: string; dialogId?: string; listId?: string; errorId?: string; onClose?: () => void }
+export interface ResourcesPanelOptions { container?: HTMLElement; titleId?: string; dialogId?: string; listId?: string; errorId?: string; onClose?: () => void; onRefresh?: () => void; onCreate?: (kind: 'instructions' | 'skill' | 'template') => void }
 export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
   const element = options.container || document.createElement('div');
   const ids = { titleId: options.titleId || uniqueId('pui-resources-title'), dialogId: options.dialogId || uniqueId('pui-resources-dialog'), listId: options.listId || uniqueId('pui-resources-list'), errorId: options.errorId || uniqueId('pui-resources-error') };
@@ -102,6 +113,12 @@ export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
   element.addEventListener('click', close);
   let list: HTMLElement | undefined, error: HTMLElement | undefined;
   let destroyed = false;
+  const parts = adoptProductParts(element);
+  const buttons: ReturnType<typeof createButton>[] = [];
+  const rowButtons: ReturnType<typeof createButton>[] = [];
+  const createActions = new Map<ReturnType<typeof createButton>,string>(); let createDisabled = false;
+  const button = (label: string, onAction: () => void, row = false, create = false) => { const block = createButton({label,appearance:'secondary',onAction,disabled:create && createDisabled}); (row ? rowButtons : buttons).push(block); if (create) createActions.set(block,label); return block.element; };
+  const clearButtons = (list = buttons) => { for (const block of list.splice(0)) {createActions.delete(block); block.destroy();} };
   function row(entry: ResourceDisplayEntry, type: 'instructions' | 'skill' | 'template'): HTMLElement {
     const outer = document.createElement('article'); outer.className = type === 'instructions' ? 'pui-resource-card' : 'pui-file-card';
     const body = type === 'instructions' ? document.createElement('div') : outer;
@@ -114,17 +131,24 @@ export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
   }
   return {
     element,
-    open(workspaceName: string, toolbar: Node): void {
+    open(workspaceName: string, toolbar?: Node): void {
       if (destroyed) return;
+      clearButtons();
+      clearButtons(rowButtons);
       element.hidden = false;
       element.innerHTML = `${dialogHeading('Workspace resources', ids.titleId, ids.dialogId, workspaceName)}<p class="pui-modal-description">Instructions, skills and prompt templates are loaded by Pith for each task. Edit them here or open their Markdown files.</p><div class="pui-feature-toolbar" data-resources-toolbar></div><div id="${escape(ids.listId)}" data-resources-list><p class="pui-feature-hint">Loading workspace resources…</p></div><div id="${escape(ids.errorId)}" data-resources-error class="pui-form-error" role="alert"></div>`;
-      element.querySelector('[data-resources-toolbar]')!.append(toolbar);
+      const actions = element.querySelector<HTMLElement>('[data-resources-toolbar]')!;
+      if (toolbar) actions.append(toolbar);
+      else actions.append(button('Refresh', () => options.onRefresh?.()), button('Add skill', () => options.onCreate?.('skill'),false,true), button('Add prompt template', () => options.onCreate?.('template'),false,true));
       list = element.querySelector<HTMLElement>('[data-resources-list]')!;
       error = element.querySelector<HTMLElement>('[data-resources-error]')!;
+      parts.layout(actions, 'toolbar').update({});
     },
-    setError(message: string): void { if (!destroyed && error) error.textContent = message; },
+    setError(message: string): void { if (!destroyed && error) parts.feedback(error).update({ message, tone: 'error' }); },
+    setCreateDisabled(disabled: boolean): void {if (destroyed) return; createDisabled = disabled; for (const [block,label] of createActions) block.update({label,appearance:'secondary',disabled});},
     update(state: Readonly<ResourcesPanelState>): void {
       if (destroyed || !list) return;
+      clearButtons(rowButtons);
       list.replaceChildren();
       for (const [title, entries, type, empty] of [
         ['Instructions', state.instructions, 'instructions', 'No workspace instructions found.'],
@@ -136,15 +160,17 @@ export function createResourcesPanel(options: ResourcesPanelOptions = {}) {
         if (entries.length) entries.forEach((entry) => section.append(row(entry, type)));
         else { const hint = document.createElement('p'); hint.className = 'pui-feature-hint'; hint.textContent = empty; section.append(hint); }
         if (type === 'instructions' && state.createInstructions) section.append(state.createInstructions);
+        else if (type === 'instructions' && state.canCreateInstructions) section.append(button('Create AGENTS.md in this workspace', () => options.onCreate?.('instructions'),true,true));
         list.append(section);
       }
+      parts.update();
       if (state.diagnostics.length) {
         const section = document.createElement('section'); section.className = 'pui-resource-section pui-resource-diagnostics';
         section.innerHTML = `<h3>Resource notes</h3>${state.diagnostics.map((note) => `<p>${escape(note)}</p>`).join('')}`;
         list.append(section);
       }
     },
-    destroy(): void { destroyed = true; element.removeEventListener('click', close); element.replaceChildren(); },
+    destroy(): void { destroyed = true; clearButtons(); clearButtons(rowButtons); parts.destroy(); element.removeEventListener('click', close); element.replaceChildren(); },
   };
 }
 

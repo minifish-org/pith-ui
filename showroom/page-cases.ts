@@ -11,7 +11,7 @@ import { createPendingMessages } from '../src/composer.js';
 import { createApprovalPanel } from '../src/tasks/approval.js';
 import { createRuntimePanel } from '../src/tasks/runtime.js';
 import { createPermissionControl } from '../src/tasks/permission.js';
-import { createSettingsPanel } from '../src/forms/panels.js';
+import { createSettingsPanel, type SettingsPanelState } from '../src/forms/panels.js';
 import { createProviderActions } from '../src/forms/actions.js';
 import { createProviderLoginPanel } from '../src/forms/provider-login.js';
 import { createModelEditor } from '../src/forms/model-editor.js';
@@ -33,7 +33,8 @@ function fixtureMessages(prefix: string, count = 3): ConversationMessage[] {
 
 function workspacePage(context: DemoContext, mode: 'chat' | 'reading' | 'task'): MountedDemo {
   const root = pageRoot('Interactive workspace composition'); const prefix = uniqueId('pui-page') + '-'; const life = new Lifetime(); const owned: Owned[] = [];
-  const shell = createWorkspaceShell({ brand: brand(), prefix }); owned.push(shell);
+  let submitDraft: ((text: string) => Promise<void>) | undefined;
+  const shell = createWorkspaceShell({ brand: brand(), prefix, onSearch(value) { query = value.toLowerCase(); navigation.update(navState()); }, composer: { onSubmit: text => submitDraft?.(text), onModel: () => picker.open(), onThinkingChange: value => context.log(`Effort: ${value}`) } }); owned.push(shell);
   shell.element.style.height = '660px'; shell.element.style.minHeight = '520px'; shell.element.style.minWidth = '760px';
   root.append(shell.element); shell.part('welcome').hidden = true;
   const workspaceId = `${prefix}workspace`; const a = `${prefix}conversation-a`; const b = `${prefix}conversation-b`; let activeId = a; let expanded = true; let query = ''; let live = true;
@@ -54,27 +55,23 @@ function workspacePage(context: DemoContext, mode: 'chat' | 'reading' | 'task'):
   const conversations = [{ id: a, title: mode === 'reading' ? 'Long conversation / 长会话' : 'Review existing behavior', active: true }, ...(mode === 'task' ? [] : [{ id: b, title: 'Another conversation', active: false }])];
   const navState = () => ({ groups: [{ id: workspaceId, name: 'Example workspace', path: '/demo/workspace', expanded, selected: true, children: conversations.filter(item => item.title.toLowerCase().includes(query)).map(item => ({ ...item, active: item.id === activeId })) }], empty: (query && !conversations.some(item => item.title.toLowerCase().includes(query)) ? 'search' : null) as 'search' | null, disabled: context.state === 'disabled' });
   const navigation = createWorkspaceNavigation(navState(), { element: shell.part('history-list'), onToggle() { expanded = !expanded; navigation.update(navState()); }, onSelect(id) { activeId = id; messages = id === a ? original : alternate; navigation.update(navState()); shell.update({ conversation: conversations.find(item => item.id === id)?.title ?? 'Conversation' }); render(); } }); owned.push(navigation);
-  const search = shell.part<HTMLInputElement>('history-search'); life.listen(search, 'input', () => { query = search.value.toLowerCase(); navigation.update(navState()); });
   shell.update({ workspace: 'Example workspace', conversation: conversations[0]!.title, reconnecting: context.state === 'loading' });
   const permission = createPermissionControl({ mode: 'ask', description: 'Demonstration: changes and commands require approval.', disabled: context.state === 'disabled' }, { element: shell.part('permission-control'), descriptionElement: shell.part('permission-description'), onChange: mode => context.log(`Demonstration permissions: ${mode}`) }); owned.push(permission);
   const model = createModelEditor({ providers: [{ id: 'example', name: 'Example provider' }], models: [{ id: 'example-model', provider: 'example', name: 'Example model', thinkingLevels: ['low', 'medium', 'high'], supportsImages: true, contextWindow: 128000, maxTokens: 16000 }], selection: { provider: 'example', model: 'example-model', thinkingLevel: 'high' } }, { prefix: prefix + 'model', onChange: selection => context.log(`Model: ${selection.model}; effort: ${selection.thinkingLevel}`) }); owned.push(model);
-  const useModel = createButton({ label: 'Use model', intent: 'primary', onAction() { const selection = model.read(); shell.part('composer-model').textContent = 'Example model'; shell.part<HTMLSelectElement>('composer-thinking').value = selection.thinkingLevel; picker.close(); } }); owned.push(useModel);
+  const composerState = { disabled: context.state === 'disabled', action: mode === 'task' ? 'queue' as const : 'send' as const, actionDisabled: context.state === 'disabled' || context.state === 'pending', model: { label: 'Example model', description: '' }, thinking: { options: ['low', 'medium', 'high'].map(value => ({ value, label: value })), value: 'high' } };
+  const useModel = createButton({ label: 'Use model', intent: 'primary', onAction() { const selection = model.read(); composerState.thinking.value = selection.thinkingLevel; shell.composer.update(composerState); picker.close(); } }); owned.push(useModel);
   const picker = createDialog({ title: 'Choose model', content: model.element, actions: useModel.element }); owned.push(picker);
-  shell.part('composer-model').textContent = 'Example model';
-  const effort = shell.part<HTMLSelectElement>('composer-thinking'); for (const level of ['low', 'medium', 'high']) { const option = element('option', '', level); option.value = level; effort.append(option); } effort.value = 'high';
-  life.listen(effort, 'change', () => context.log(`Effort: ${effort.value}`)); life.listen(shell.part('composer-model'), 'click', () => picker.open());
-  shell.composer.update({ disabled: context.state === 'disabled', action: mode === 'task' ? 'queue' : 'send', actionDisabled: context.state === 'disabled' || context.state === 'pending' });
+  shell.composer.update(composerState);
   let queueSubmission: ((text: string) => void) | undefined;
-  life.listen(shell.composer.element, 'submit', (event: Event) => {
-    event.preventDefault(); const text = shell.composer.getValue(); if (!text.trim()) return;
+  submitDraft = async text => {
+    if (!text.trim()) return;
     const destination = messages; const submittedConversation = activeId;
-    shell.composer.update({ actionDisabled: true, action: mode === 'task' ? 'queue' : 'send' });
-    void context.action().then(result => {
+    await context.action().then(result => {
       if (!live) return;
       if (!result.ok) status.update({ message: result.error, tone: 'error' });
       else { if (queueSubmission) queueSubmission(text); else destination.push({ id: uniqueId(prefix + 'sent'), role: 'user', text, actions: { copy: 'Copy message', edit: true } }); if (activeId === submittedConversation && shell.composer.getValue() === text) shell.composer.reset(''); render(); }
-    }).finally(() => { if (live) shell.composer.update({ action: mode === 'task' ? 'queue' : 'send', actionDisabled: context.state === 'disabled' }); });
-  });
+    });
+  };
   const find = createButton({ label: 'Find / 查找', density: context.density, onAction: reader.openFind }); owned.push(find);
   const append = createButton({ label: 'Append a response', density: context.density, onAction() { messages.push({ id: uniqueId(prefix + 'append'), role: 'assistant', text: `新增回复 · a+b · ${prose}`, status: 'done', actions: { copy: 'Copy response' } }); render(); context.log('Appended. Scroll to history and repeat to verify reading position.'); } }); owned.push(append);
   const controls = createToolbar({ label: 'Composition simulation', density: context.density, children: [find.element, append.element] }); owned.push(controls); root.prepend(controls.element);
@@ -102,10 +99,15 @@ function workspacePage(context: DemoContext, mode: 'chat' | 'reading' | 'task'):
 }
 
 function settingsPage(context: DemoContext): MountedDemo {
-  const root = pageRoot('Settings and provider login composition'); root.style.padding = '20px'; const prefix = uniqueId('pui-settings-page') + '-'; const life = new Lifetime(); const owned: Owned[] = []; let live = true; let loginGeneration = 0; let savePending = false;
-  const settings = createSettingsPanel({ baseUrl: 'https://example.test/v1', hasApiKey: true, error: context.state === 'error' ? 'Demonstration: provider save failed. Existing values are kept.' : '', disabled: context.state === 'disabled' }, { idPrefix: prefix }); owned.push(settings);
-  const provider = settings.field<HTMLSelectElement>('settings-provider'); provider.disabled = context.state === 'disabled'; const option = element('option', '', 'Example provider'); option.value = 'example'; provider.replaceChildren(option);
-  const update = createUpdatePanel({ container: settings.field('update-settings'), productName: 'Example app', onCheck: () => context.log('Demonstration: checking available version') }); update.update({ version: '0.1.0', enabled: false, phase: 'disabled', availableVersion: '', progress: 0, message: 'Showroom only. No updates are downloaded.' }); owned.push(update);
+  const root = pageRoot('Settings and provider login composition'); root.style.padding = '20px'; const prefix = uniqueId('pui-settings-page') + '-'; const life = new Lifetime(); const owned: Owned[] = []; let live = true; let loginGeneration = 0;
+  let settingsState: SettingsPanelState = { baseUrl: 'https://example.test/v1', hasApiKey: true, ready: true, error: context.state === 'error' ? 'Demonstration: provider save failed. Existing values are kept.' : '', disabled: context.state === 'disabled' };
+  const settings = createSettingsPanel(settingsState, { idPrefix: prefix, onSubmit: () => context.action(), onAppearanceChange: value => context.log(`Appearance choice: ${value}. Global theme is controlled by the showroom toolbar.`), onTest: async () => {
+    settingsState = {...settingsState, testing: true, testResult: {message: 'Testing demonstration connection…'}}; settings.update(settingsState);
+    const result = await context.action(); if (!live) return;
+    settingsState = {...settingsState, testing: false, testResult: {message: result.ok ? 'Demonstration connection succeeded.' : result.error, ok: result.ok}}; settings.update(settingsState);
+  } }); owned.push(settings);
+  settings.setProviders([{id:'example',name:'Example provider'}], 'example');
+  const update = createUpdatePanel({ container: settings.updates, productName: 'Example app', onCheck: () => context.log('Demonstration: checking available version') }); update.update({ version: '0.1.0', enabled: false, phase: 'disabled', availableVersion: '', progress: 0, message: 'Showroom only. No updates are downloaded.' }); owned.push(update);
   const loginRegion = element('section', 'pui-demo-login-composition'); loginRegion.hidden = true;
   let loginState = { phase: 'prompt', message: 'Demonstration sign-in. Enter any verification code.', prompt: 'Verification code', promptType: 'text', code: 'DEMO-1234', disabled: context.state === 'disabled', error: '' };
   const login = createProviderLoginPanel(loginState, { onAnswer: async answer => {
@@ -115,20 +117,7 @@ function settingsPage(context: DemoContext): MountedDemo {
     if (result.ok) actions.update({ id: 'example', oauth: true, signedIn: true, custom: true });
   }, onCancel() { loginGeneration++; loginRegion.hidden = true; context.log('Cancelled the demonstration login.'); }, onClose() { loginGeneration++; loginRegion.hidden = true; } }); owned.push(login); loginRegion.append(login.element);
   const actions = createProviderActions({ id: 'example', oauth: true, signedIn: false, custom: true }, { onAction(action) { if (action === 'login') { loginGeneration++; loginState = { ...loginState, phase: 'prompt', message: 'Demonstration sign-in. Enter any verification code.', disabled: false, error: '' }; loginRegion.hidden = false; login.update(loginState); } else if (action === 'logout') { loginGeneration++; actions.update({ id: 'example', oauth: true, signedIn: false, custom: true }); context.log('Demonstration: signed out.'); } else context.log(`Provider action: ${action}`); } }); owned.push(actions);
-  const actionsHost = settings.field('provider-actions'); actionsHost.hidden = false; actionsHost.append(actions.element);
-  const keyStatus = settings.field('key-status'); keyStatus.textContent = 'Configured';
-  const test = settings.field<HTMLButtonElement>('test-connection'); delete test.dataset.controlPending; test.disabled = context.state === 'disabled';
-  const save = settings.field<HTMLButtonElement>('save-settings'); delete save.dataset.controlPending; save.disabled = context.state === 'disabled';
-  const feedback = settings.field('connection-test-result');
-  life.listen(test, 'click', () => {
-    test.disabled = true; feedback.textContent = 'Testing demonstration connection…';
-    void context.action().then(result => { if (live) feedback.textContent = result.ok ? 'Demonstration connection succeeded.' : result.error; }).finally(() => { if (live) test.disabled = context.state === 'disabled'; });
-  });
-  life.listen(settings.field('settings-form'), 'submit', event => {
-    event.preventDefault(); if (savePending || context.state === 'disabled') return; savePending = true; settings.update({ baseUrl: '', hasApiKey: true, disabled: true });
-    void context.action().then(result => { if (live) settings.update({ baseUrl: '', hasApiKey: true, disabled: context.state === 'disabled', error: result.ok ? '' : result.error }); }).finally(() => { savePending = false; });
-  });
-  life.listen(settings.field('appearance-mode'), 'change', () => context.log(`Appearance choice: ${settings.field<HTMLSelectElement>('appearance-mode').value}. Global theme is controlled by the showroom toolbar.`));
+  settings.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Leave blank to keep your current key',removeVisible:false,actions:actions.element});
   life.listen(settings.element, 'click', event => { if ((event.target as Element).closest('[data-close]')) context.log('Close settings requested; this inline composition stays visible.'); });
   root.append(settings.element, loginRegion);
   return { element: root, destroy() { live = false; life.destroy(); owned.reverse().forEach(block => block.destroy()); root.remove(); } };

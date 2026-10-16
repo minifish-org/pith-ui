@@ -35,9 +35,7 @@ export const filesCases: ShowcaseCase[] = [
       panel.setOpen(true);
       const click = (event: Event) => {
         const target = (event.target as Element).closest<HTMLElement>('button');
-        if (target === toggle) panel.setOpen(!panel.open);
-        else if (target?.hasAttribute('data-artifacts-close')) panel.setOpen(false, true);
-        else if (target?.dataset.fileAction || target?.dataset.previewPath) context.log(`${target.dataset.fileAction || 'preview'} · ${target.dataset.filePath || target.dataset.previewPath}`);
+        if (target?.dataset.fileAction || target?.dataset.previewPath) context.log(`${target.dataset.fileAction || 'preview'} · ${target.dataset.filePath || target.dataset.previewPath}`);
       };
       element.addEventListener('click', click);
       return { element, destroy() { element.removeEventListener('click', click); panel.destroy(); element.remove(); } };
@@ -45,14 +43,14 @@ export const filesCases: ShowcaseCase[] = [
   },
   {
     id: 'resources-panel', title: '工作区资源', layer: 'blocks', category: '工作区资源',
-    description: '指令、技能、模板和诊断分组展示；展开原文和使用、编辑动作可操作。', states: ['normal', 'loading', 'error', 'empty', 'long'], related: ['resource-editor', 'file-actions'],
-    code: `const panel = createResourcesPanel({ container, titleId, dialogId, listId, errorId });\npanel.pui-open('Workspace', toolbarNode);\npanel.update({ instructions, skills, templates, diagnostics: [] });`,
+    description: '指令、技能、模板和诊断分组展示；标准工具栏提供刷新和创建，创建操作可以独立禁用。', states: ['normal', 'loading', 'error', 'disabled', 'empty', 'long'], related: ['resource-editor', 'file-actions'],
+    code: `const panel = createResourcesPanel({\n  container, onRefresh: refreshResources,\n  onCreate: kind => openResourceEditor(kind),\n});\npanel.open('Workspace');\npanel.update({ instructions, skills, templates, diagnostics: [], canCreateInstructions: instructions.length === 0 });\npanel.setCreateDisabled(workspaceBusy);`,
     mount(context) {
       const element = document.createElement('div'), id = `demo-resources-${++sequence}`;
-      const panel = createResourcesPanel({ container: element, titleId: `${id}-title`, dialogId: `${id}-dialog`, listId: `${id}-list`, errorId: `${id}-error` });
-      const refresh = createButton({ label: 'Refresh', onAction: () => context.log('演示刷新；真实请求由应用拥有') });
-      panel.open('Example workspace', refresh.element);
-      const owned: Array<{ destroy(): void }> = [refresh];
+      const panel = createResourcesPanel({ container: element, titleId: `${id}-title`, dialogId: `${id}-dialog`, listId: `${id}-list`, errorId: `${id}-error`, onRefresh: () => context.log('演示刷新；真实请求由应用拥有'), onCreate: kind => context.log(`演示创建 ${kind}；编辑和保存由应用拥有`) });
+      panel.setCreateDisabled(context.state === 'disabled');
+      panel.open('Example workspace');
+      const owned: Array<{ destroy(): void }> = [];
       const entry = (kind: string, name: string, path: string) => {
         const file = kind === 'template' ? undefined : actions(context, 'resource', path);
         const resource = createResourceActions({ kind, resource: { name, path }, workspaceId: 'demo' }, { onAction: (action) => context.log(`${action}: ${name}`) });
@@ -60,10 +58,11 @@ export const filesCases: ShowcaseCase[] = [
         return { name, path, description: '演示工作区中的可复用资源。', content: context.state === 'long' ? '# Instructions\n\n保留已有行为。\n'.repeat(30) : '# Instructions\n\n保留已有行为。', fileActions: file?.element, actions: resource.element };
       };
       if (context.state !== 'loading') panel.update({
-        instructions: context.state === 'empty' ? [] : [entry('instructions', 'AGENTS.md', '/demo/AGENTS.md')],
+        instructions: context.state === 'empty' || context.state === 'disabled' ? [] : [entry('instructions', 'AGENTS.md', '/demo/AGENTS.md')],
         skills: context.state === 'empty' ? [] : [entry('skill', 'review', '/demo/.pi/skills/review/SKILL.md')],
         templates: context.state === 'empty' ? [] : [entry('template', 'summarize', '/demo/.pi/prompts/summarize.md')],
         diagnostics: context.state === 'error' ? ['A malformed skill was ignored; other resources remain usable.'] : [],
+        canCreateInstructions: context.state === 'empty' || context.state === 'disabled',
       });
       if (context.state === 'error') panel.setError('演示资源读取失败，可使用 Refresh 重试。');
       return { element, destroy() { owned.forEach((block) => block.destroy()); panel.destroy(); element.remove(); } };
@@ -72,7 +71,7 @@ export const filesCases: ShowcaseCase[] = [
   {
     id: 'file-preview', title: '文件预览框架', layer: 'blocks', category: '文件与预览',
     description: '路径、预览内容、截断提示和文件动作统一；读取和图片 URL 生命周期留给宿主。', states: ['normal', 'loading', 'error', 'empty', 'long'], related: ['paged-preview', 'image-viewer'],
-    code: `const preview = createFilePreview({ container, titleId, dialogId, bodyId });\npreview.pui-open({ name: 'report.md', path, actions: fileActions.element });\npreview.update({ kind: 'markdown', text });`,
+    code: `const preview = createFilePreview({ container, titleId, dialogId, bodyId });\npreview.open({ name: 'report.md', path, actions: fileActions.element });\npreview.update({ kind: 'markdown', text });`,
     mount(context) {
       const element = document.createElement('div'), id = `demo-preview-${++sequence}`;
       const file = actions(context, 'artifact', 'output/报告.md');

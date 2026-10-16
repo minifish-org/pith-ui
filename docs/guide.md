@@ -20,7 +20,7 @@ interface UIBlock<State> {
 }
 ```
 
-Methods beyond this contract are explicit in each component's declaration. Text inputs have `getValue`, `reset` and `focus`; some product forms have `read`, `form`, `field` or `part` accessors; dialogs have open/close. Prefer these owned accessors over document-wide ID lookup.
+Methods beyond this contract are explicit in each component's declaration. Text inputs have `getValue`, `reset` and `focus`; product forms expose typed `read`, reset and state methods; dialogs have open/close. Use semantic callbacks and these methods for normal integration. Native `form`, `field` and `part` accessors remain compatibility adapters.
 
 `update` is a presentation update, not an implicit reset of an ongoing edit. Initialize a target once, update error/availability while it remains active, and use an explicit reset/open or a new instance when changing targets. Keep item IDs stable. Do not recreate a whole view for every token or refresh.
 
@@ -42,7 +42,7 @@ The host must validate target identity and current permissions before calling it
 
 Inputs and message drafts remain in place during feedback updates. Local pending and external disabled conditions are combined. Closing, reopening or destroying a surface invalidates old UI results, while the application retains ownership of cancellation and completed writes.
 
-Some migrated product forms expose a native form and local field handles. Bind their submit/action events in the application controller with an owned `AbortController` or `Lifetime`, then dispose those bindings alongside the view. Legacy `data-*` event markers support the existing Pith Desk adapter; new business contracts should be expressed through typed callbacks or the exposed local handles.
+Use a product form's typed callbacks (`onSubmit`, `onProviderChange`, `onTest`, `onRemoveKey`) and its `read`, reset and presentation methods. The form owns native validation, duplicate prevention, pending feedback and stale-result suppression. Do not bind a second submit handler or patch internal fields. Legacy `data-*` routing and local DOM accessors support compatibility; if an unsupported integration still needs native bindings, own and dispose those listeners with the view.
 
 Use explicit IDs/prefix options when adopting an existing application's elements. For independent instances, keep generated defaults and distinct model-editor prefixes. Do not query app-fixed global IDs inside a new library component.
 

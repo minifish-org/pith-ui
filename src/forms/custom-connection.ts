@@ -1,6 +1,7 @@
-import {scopeIds, localField} from './identity.js';
-import type { UIBlock } from '../core.js';
+import {scopeIds,localField,bindFormSubmission} from './identity.js';
+import type {ActionResult,UIBlock} from '../core.js';
 import { escape, uniqueId } from '../dom.js';
+import {adoptProductParts} from '../foundations.js';
 export interface CustomModelValue {id: string; name?: string; contextWindow?: number; maxTokens?: number; reasoning?: boolean; input?: readonly string[]; cost?: {input: number; output: number; cacheRead: number; cacheWrite: number}}
 export interface CustomConnectionState {name: string; baseUrl: string; api: string; editing: boolean; models: readonly CustomModelValue[]; error?: string; disabled?: boolean}
 export interface CustomModelDraft {sourceIndex: number; id: string; name: string; contextWindow: number; maxTokens: number; reasoning: boolean; images: boolean; prices: {input: string; output: string; cacheRead: string; cacheWrite: string}}
@@ -10,31 +11,32 @@ function modelRowMarkup(model: CustomModelValue, index: number): string {return 
 export interface CustomModelRowState extends CustomModelValue {disabled?: boolean; error?: string}
 export function createCustomModelRow(model: CustomModelRowState, index = 0): UIBlock<CustomModelRowState> & {read(): CustomModelDraft; reset(model: CustomModelValue): void} {
   const element = document.createElement('div'); element.className = 'pui-custom-model-row'; element.innerHTML = modelRowMarkup(model,index);
-  const field = element.querySelector<HTMLFieldSetElement>('fieldset')!; const error = document.createElement('p'); error.className = 'pui-form-error'; error.setAttribute('role','alert'); element.append(error); let destroyed = false;
+  const field = element.querySelector<HTMLFieldSetElement>('fieldset')!; const error = document.createElement('p'); error.className = 'pui-form-error'; error.setAttribute('role','alert'); element.append(error); const parts = adoptProductParts(element); let destroyed = false;
   const input = (name: string) => field.querySelector<HTMLInputElement>(`[name="${name}"]`)!;
   const reset = (value: CustomModelValue) => {
     if (destroyed) return;
-    input('id').value = value.id; input('name').value = value.name || '';
-    input('contextWindow').value = value.contextWindow === undefined ? '' : String(value.contextWindow); input('maxTokens').value = value.maxTokens === undefined ? '' : String(value.maxTokens);
-    input('reasoning').checked = !!value.reasoning; input('images').checked = !!value.input?.includes('image');
-    for (const rate of ['input','output','cacheRead','cacheWrite'] as const) input('price-'+rate).value = value.cost?.[rate] === undefined ? '' : String(value.cost[rate]);
+    parts.control(input('id')).reset(value.id); parts.control(input('name')).reset(value.name || '');
+    parts.control(input('contextWindow')).reset(value.contextWindow === undefined ? '' : String(value.contextWindow)); parts.control(input('maxTokens')).reset(value.maxTokens === undefined ? '' : String(value.maxTokens));
+    parts.control(input('reasoning')).reset(!!value.reasoning); parts.control(input('images')).reset(!!value.input?.includes('image'));
+    for (const rate of ['input','output','cacheRead','cacheWrite'] as const) parts.control(input('price-'+rate)).reset(value.cost?.[rate] === undefined ? '' : String(value.cost[rate]));
   };
-  const read = (): CustomModelDraft => ({sourceIndex:index,id:input('id').value.trim(),name:input('name').value.trim(),contextWindow:Number(input('contextWindow').value),maxTokens:Number(input('maxTokens').value),reasoning:input('reasoning').checked,images:input('images').checked,prices:{input:input('price-input').value,output:input('price-output').value,cacheRead:input('price-cacheRead').value,cacheWrite:input('price-cacheWrite').value}});
-  const update = (state: Readonly<CustomModelRowState>) => {if (destroyed) return; if (state.disabled !== undefined) field.disabled = state.disabled; if (state.error !== undefined) error.textContent = state.error;};
-  update(model); return {element,read,reset,update,destroy() {if (destroyed) return; destroyed = true; element.remove();}};
+  const value = (name:string) => parts.control(input(name)).getValue();
+  const read = (): CustomModelDraft => ({sourceIndex:index,id:value('id').trim(),name:value('name').trim(),contextWindow:Number(value('contextWindow')),maxTokens:Number(value('maxTokens')),reasoning:parts.control(input('reasoning')).getChecked(),images:parts.control(input('images')).getChecked(),prices:{input:value('price-input'),output:value('price-output'),cacheRead:value('price-cacheRead'),cacheWrite:value('price-cacheWrite')}});
+  const update = (state: Readonly<CustomModelRowState>) => {if (destroyed) return; if (state.disabled !== undefined) field.disabled = state.disabled; if (state.error !== undefined) parts.feedback(error).update({message:state.error,tone:'error'});};
+  update(model); return {element,read,reset,update,destroy() {if (destroyed) return; destroyed = true; parts.destroy(); element.remove();}};
 }
-export function createCustomConnectionEditor(state: CustomConnectionState, options: {idPrefix?: string} = {}): UIBlock<CustomConnectionState> & {read(): CustomConnectionDraft; readonly form: HTMLFormElement} {
+export function createCustomConnectionEditor(state: CustomConnectionState, options: {idPrefix?: string; onSubmit?: (draft: CustomConnectionDraft) => ActionResult | Promise<ActionResult>} = {}): UIBlock<CustomConnectionState> & {read(): CustomConnectionDraft; readonly form: HTMLFormElement} {
  const element = document.createElement('div'); element.className = 'pui-custom-connection-editor'; element.innerHTML = `<p class="pui-modal-description">Give this endpoint its own name. It can coexist with official providers and other compatible endpoints.</p><form id="custom-form"><label class="pui-field-label">Connection name<input id="custom-name" required value="${escape(state.name)}" /></label><label class="pui-field-label">API base URL<input id="custom-url" type="url" required value="${escape(state.baseUrl)}" placeholder="https://example.com/v1" /></label><label class="pui-field-label">API protocol<select id="custom-api" class="pui-feature-select">${protocols.map((p) => `<option ${state.api === p ? 'selected' : ''}>${p}</option>`).join('')}</select></label><label class="pui-field-label">API key<input id="custom-key" type="password" autocomplete="new-password" placeholder="${state.editing ? 'Leave blank to keep the key at the same endpoint' : 'API key (optional for local endpoints)'}" /></label><div id="custom-models"></div><button type="button" class="pui-secondary-button" id="add-custom-model">Add model</button><p class="pui-field-hint">Limits and capabilities are provided by you. Prices are USD per million tokens. Fill all four rates (0 for free/unused), or leave all four blank for unknown prices.</p><p class="pui-form-error" data-custom-error role="alert"></p><div class="pui-modal-footer"><button type="button" class="pui-secondary-button" data-close="sdk-dialog">Cancel</button><button class="pui-primary-button" type="submit">Save connection</button></div></form>`;
  const prefix = options.idPrefix ?? uniqueId('pui-custom') + '-'; scopeIds(element, prefix);
  const $ = <T extends HTMLElement = HTMLElement>(id: string) => localField<T>(element, prefix + id);
- const form = $<HTMLFormElement>('custom-form'); const models = [...state.models]; let destroyed = false; const abort = new AbortController();
- $('custom-models').innerHTML = models.map(modelRowMarkup).join('');
- $('add-custom-model').addEventListener('click', () => {const model = {id: '', contextWindow: 128000, maxTokens: 8192}; const index = models.length; models.push(model); $('custom-models').insertAdjacentHTML('beforeend', modelRowMarkup(model, index));}, {signal: abort.signal});
- $('custom-models').addEventListener('click', (event) => {(event.target as HTMLElement).closest('[data-remove-model]')?.closest('fieldset')?.remove();}, {signal: abort.signal});
- const read = (): CustomConnectionDraft => ({name: $<HTMLInputElement>('custom-name').value, baseUrl: $<HTMLInputElement>('custom-url').value, api: $<HTMLSelectElement>('custom-api').value, apiKey: $<HTMLInputElement>('custom-key').value, models: Array.from($('custom-models').querySelectorAll<HTMLFieldSetElement>('fieldset')).map((field) => {
- const input = (name: string) => field.querySelector<HTMLInputElement>(`[name="${name}"]`)!;
- return {sourceIndex: Number(field.dataset.modelIndex), id: input('id').value.trim(), name: input('name').value.trim(), contextWindow: Number(input('contextWindow').value), maxTokens: Number(input('maxTokens').value), reasoning: input('reasoning').checked, images: input('images').checked, prices: {input: input('price-input').value, output: input('price-output').value, cacheRead: input('price-cacheRead').value, cacheWrite: input('price-cacheWrite').value}};
- })});
- const update = (state: Readonly<CustomConnectionState>) => {if (destroyed) return; if (state.error !== undefined) element.querySelector<HTMLElement>('[data-custom-error]')!.textContent = state.error; if (state.disabled !== undefined) for (const button of form.querySelectorAll<HTMLButtonElement>('button')) button.disabled = state.disabled;}; update(state);
- return {element, form, read, update, destroy() {if (destroyed) return; destroyed = true; abort.abort(); for (const input of element.querySelectorAll<HTMLInputElement>('input[type="password"]')) input.value = ''; element.remove();}};
+ const form = $<HTMLFormElement>('custom-form'); const parts = adoptProductParts(element), rows = new Map<number, ReturnType<typeof createCustomModelRow>>(); let nextIndex = 0, destroyed = false, pending = false; const abort = new AbortController(); let current = state;
+ const add = (model: CustomModelValue) => {const index = nextIndex++; const row = createCustomModelRow(model,index); rows.set(index,row); $('custom-models').append(row.element); if (current.disabled || pending) for (const button of row.element.querySelectorAll<HTMLButtonElement>('button')) button.disabled = true;};
+ state.models.forEach(add);
+ $('add-custom-model').addEventListener('click', () => {if (!current.disabled && !pending) add({id:'',contextWindow:128000,maxTokens:8192});}, {signal:abort.signal});
+ $('custom-models').addEventListener('click', event => {const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-model]'); if (!target || target.disabled || current.disabled || pending) return; const index = Number(target.closest<HTMLElement>('[data-model-index]')?.dataset.modelIndex); rows.get(index)?.destroy(); rows.delete(index);}, {signal:abort.signal});
+ const read = (): CustomConnectionDraft => ({name:parts.control($<HTMLInputElement>('custom-name')).getValue(),baseUrl:parts.control($<HTMLInputElement>('custom-url')).getValue(),api:parts.control($<HTMLSelectElement>('custom-api')).getValue(),apiKey:parts.control($<HTMLInputElement>('custom-key')).getValue(),models:[...rows.values()].map(row => row.read())});
+ const update = (next: Readonly<CustomConnectionState>) => {if (destroyed) return; current = next; if (next.error !== undefined) parts.feedback(element.querySelector<HTMLElement>('[data-custom-error]')!).update({message:next.error,tone:'error'}); parts.update(); for (const button of form.querySelectorAll<HTMLButtonElement>('button')) parts.action(button).update({disabled:next.disabled,pending:button.hasAttribute('data-close') ? false : pending});};
+ const submission = bindFormSubmission(form,{read,unavailable:()=>!!current.disabled,onSubmit:options.onSubmit,onPending(value) {pending = value; update(current);},onError(error) {update({...current,error});}});
+ update(state);
+ return {element,form,read,update,destroy() {if (destroyed) return; destroyed = true; submission.destroy(); abort.abort(); for (const row of rows.values()) row.destroy(); rows.clear(); for (const input of element.querySelectorAll<HTMLInputElement>('input[type="password"]')) parts.control(input).reset(''); parts.destroy(); element.remove();}};
 }

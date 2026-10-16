@@ -46,7 +46,7 @@ export const contentCases: ShowcaseCase[] = [
   {
     id: 'image-viewer', title: '图片缩放与焦点恢复', layer: 'blocks', category: '文件与预览',
     description: '打开后可适应窗口、查看原图和连续缩放；关闭恢复来源焦点，空白区域不会关闭。', states: ['normal'], related: ['file-preview'],
-    code: `const viewer = createImageViewer();\ndocument.body.append(viewer.element);\nviewer.pui-open({ src: imageURL, alt: 'Generated diagram', returnFocus: trigger });\nviewer.destroy();`,
+    code: `const viewer = createImageViewer();\ndocument.body.append(viewer.element);\nviewer.open({ src: imageURL, alt: 'Generated diagram', returnFocus: trigger });\nviewer.destroy();`,
     mount(context) {
       const element = document.createElement('div');
       const viewer = createImageViewer();

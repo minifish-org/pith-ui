@@ -1,5 +1,7 @@
 import { icon, setText } from '../dom.js';
 import type { UIBlock } from '../core.js';
+import { adoptAction, adoptFeedback, adoptProductParts } from '../foundations.js';
+import type { ActionController } from '../foundations.js';
 
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 });
 const numbers = new Intl.NumberFormat();
@@ -85,6 +87,7 @@ export function createUpdatePanel(options: { container?: HTMLElement; productNam
   const check = element.querySelector<HTMLButtonElement>('[data-update-check]')!;
   const install = element.querySelector<HTMLButtonElement>('[data-update-install]')!;
   const progress = element.querySelector<HTMLProgressElement>('progress')!;
+  const parts = adoptProductParts(element);
   let state: Readonly<UpdatePanelState> | undefined;
   let pending = false, destroyed = false;
   let error = '';
@@ -93,12 +96,12 @@ export function createUpdatePanel(options: { container?: HTMLElement; productNam
   check.addEventListener('click', checkAction); install.addEventListener('click', installAction);
   function render(): void {
     if (destroyed) return;
-    if (!state) { check.disabled = install.disabled = pending; message.textContent = error; return; }
+    if (!state) { parts.action(check).update({pending}); parts.action(install).update({pending}); parts.feedback(message).update({message:error,tone:'info'}); return; }
     version.textContent = `${options.productName || 'Application'} ${state.version}`;
-    message.textContent = error || state.message;
+    parts.feedback(message).update({message:error || state.message,tone:'info'});
     const busy = ['checking', 'installing', 'restarting'].includes(state.phase);
-    check.disabled = !state.enabled || (busy && !retryCheck) || pending;
-    install.hidden = !state.availableVersion; install.disabled = busy || pending; install.textContent = 'Update and restart';
+    parts.action(check).update({disabled:!state.enabled || (busy && !retryCheck),pending});
+    install.hidden = !state.availableVersion; parts.action(install).update({disabled:busy,pending,label:'Update and restart'});
     progress.hidden = state.phase !== 'installing'; progress.value = state.progress;
   }
   return {
@@ -106,7 +109,7 @@ export function createUpdatePanel(options: { container?: HTMLElement; productNam
     update(value: Readonly<UpdatePanelState>): void { state = value; error = ''; retryCheck = false; render(); },
     setPending(value: boolean): void { pending = value; render(); },
     setError(value: string, options: { allowCheckRetry?: boolean } = {}): void { if (!destroyed) { error = value; retryCheck = !!options.allowCheckRetry; render(); } },
-    destroy(): void { if (destroyed) return; destroyed = true; check.removeEventListener('click', checkAction); install.removeEventListener('click', installAction); },
+    destroy(): void { if (destroyed) return; destroyed = true; parts.destroy(); check.removeEventListener('click', checkAction); install.removeEventListener('click', installAction); },
   };
 }
 
@@ -119,6 +122,7 @@ export function historyStatusMarkup(status: 'approval' | 'running' | 'unread' | 
 }
 export function createCompletionNotices(options: { container?: HTMLElement; onOpen?: (id: string) => void; onDismiss?: (runID: string) => void } = {}): UIBlock<readonly CompletionNoticeDisplay[]> {
   const element = options.container || document.createElement('div');
+  const parts = adoptProductParts(element);
   const entries = new Map<string, { element: HTMLElement; text: HTMLElement; open: HTMLButtonElement; dismiss: HTMLButtonElement }>();
   let destroyed = false;
   const click = (event: Event) => {
@@ -145,44 +149,57 @@ export function createCompletionNotices(options: { container?: HTMLElement; onOp
           entries.set(notice.runID, entry);
         }
         setText(entry.text, `${notice.workspace} · ${notice.title}`);
+        parts.action(entry.open).update({label:'Open conversation'});
+        parts.action(entry.dismiss).update({label:'Dismiss completion notification'});
         if (entry.open.dataset.conversation !== notice.id) entry.open.dataset.conversation = notice.id;
         if (entry.dismiss.dataset.dismissCompletion !== notice.runID) entry.dismiss.dataset.dismissCompletion = notice.runID;
         if (entry.element !== cursor) element.insertBefore(entry.element, cursor);
         cursor = entry.element.nextElementSibling;
       }
+      parts.update();
       if (focused instanceof HTMLElement && element.contains(focused) && document.activeElement !== focused) focused.focus({ preventScroll: true });
     },
-    destroy(): void { if (destroyed) return; destroyed = true; entries.clear(); element.removeEventListener?.('click', click); element.replaceChildren(); },
+    destroy(): void { if (destroyed) return; destroyed = true; parts.destroy(); entries.clear(); element.removeEventListener?.('click', click); element.replaceChildren(); },
   };
 }
 
 export function createCopyFeedback(options: { status: HTMLElement; isDisabled: (button: HTMLButtonElement) => boolean; onError: (error: unknown) => void }) {
   let destroyed = false;
-  const timers = new Map<HTMLButtonElement, ReturnType<typeof setTimeout>>();
+  const notice = adoptFeedback(options.status, {presentation:'inline',autoHide:false});
+  type CopyEntry = { controller: ActionController; original: ChildNode[]; label: string | null; title: string; displayed: boolean; timer?: ReturnType<typeof setTimeout> };
+  const entries = new Map<HTMLButtonElement, CopyEntry>();
+  const release = (button: HTMLButtonElement, entry: CopyEntry): void => {
+    if (entry.timer) clearTimeout(entry.timer);
+    if (entry.displayed && button.isConnected) {
+      button.replaceChildren(...entry.original);
+      if (entry.label === null) button.removeAttribute('aria-label'); else button.setAttribute('aria-label', entry.label);
+      button.title = entry.title;
+    }
+    delete button.dataset.copyPending;
+    entry.controller.update({disabled:options.isDisabled(button)});
+    entry.controller.destroy();
+    entries.delete(button);
+  };
   return {
     async copy(button: HTMLButtonElement, action: () => Promise<void>, announcement: string): Promise<void> {
       if (destroyed || button.dataset.copyPending === 'true') return;
-      const original = button.innerHTML, label = button.getAttribute('aria-label'), title = button.title;
-      options.status.textContent = ''; button.dataset.copyPending = 'true'; button.disabled = true;
+      const entry: CopyEntry = { controller:adoptAction(button), original:[...button.childNodes], label:button.getAttribute('aria-label'), title:button.title, displayed:false };
+      entries.set(button, entry);
+      notice.update({message:'',tone:'info'}); button.dataset.copyPending = 'true'; entry.controller.update({disabled:options.isDisabled(button)});
       try {
         await action();
         if (destroyed) return;
-        options.status.textContent = announcement;
-        if (!button.isConnected) return;
+        notice.update({message:announcement,tone:'info'});
+        if (!button.isConnected) { release(button, entry); return; }
         button.innerHTML = button.classList.contains('pui-message-action') ? icon('check') : 'Copied';
         button.setAttribute('aria-label', announcement); button.title = announcement;
-        timers.set(button, setTimeout(() => {
-          timers.delete(button);
-          if (destroyed || !button.isConnected) return;
-          button.innerHTML = original;
-          if (label === null) button.removeAttribute('aria-label'); else button.setAttribute('aria-label', label);
-          button.title = title; delete button.dataset.copyPending; button.disabled = options.isDisabled(button);
-        }, 1500));
+        entry.displayed = true;
+        entry.timer = setTimeout(() => { if (!destroyed && entries.get(button) === entry) release(button, entry); }, 1500);
       } catch (error) {
         if (destroyed) return;
-        delete button.dataset.copyPending; button.disabled = false; options.onError(error);
+        release(button, entry); options.onError(error);
       }
     },
-    destroy(): void { destroyed = true; timers.forEach(clearTimeout); timers.clear(); },
+    destroy(): void { if (destroyed) return; destroyed = true; for (const [button, entry] of entries) release(button, entry); notice.destroy(); },
   };
 }

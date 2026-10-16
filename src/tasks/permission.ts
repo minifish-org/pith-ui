@@ -1,12 +1,17 @@
 import {scopeIds} from '../forms/identity.js';
-import type { UIBlock } from '../core.js';
+import type { ActionResult, UIBlock } from '../core.js';
 import { escape, icon, uniqueId } from '../dom.js';
+import {adoptAction,adoptFeedback,adoptProductParts} from '../foundations.js';
 export interface FullAccessState {title?: string; error?: string; disabled?: boolean}
-export function createFullAccessConfirmation(initial: FullAccessState, options: {idPrefix?: string} = {}): UIBlock<FullAccessState> & {readonly confirmButton: HTMLButtonElement} {
+export interface FullAccessOptions {idPrefix?: string; onConfirm?: () => ActionResult | Promise<ActionResult>}
+export function createFullAccessConfirmation(initial: FullAccessState, options: FullAccessOptions = {}): UIBlock<FullAccessState> & {readonly confirmButton: HTMLButtonElement} {
  const state = initial; const element = document.createElement('div'); element.className = 'pui-full-access-confirmation'; element.innerHTML = `<div class="pui-modal-heading"><div><span class="pui-eyebrow">CONVERSATION PERMISSIONS</span><h2 id="full-access-title">Enable full access?</h2></div><button class="pui-quiet-icon" data-close="permissions-dialog" aria-label="Cancel full access">${icon('close')}</button></div><p class="pui-modal-description">Give Pith permission to run <strong>all enabled tools, including external MCP connections,</strong> without asking in <strong>${escape(state.title || 'this conversation')}</strong>.</p><div class="pui-full-access-explanation">${icon('shield')}<div><strong>This is access to your computer account and connected services.</strong><p>Commands can read, change, or delete files outside the workspace and access the network. External tools can act on their connected services. There is no OS sandbox.</p></div></div><p class="pui-permission-revoke-note">This applies only to the current conversation and stays enabled across app restarts until you revoke it. To revoke it, choose “Ask before changes” or “Allow workspace changes” in the composer. Workspace permission alone never grants external MCP tools access.</p><div id="permissions-error" class="pui-form-error" role="alert"></div><div class="pui-modal-footer"><button class="pui-secondary-button" type="button" data-close="permissions-dialog">Cancel</button><button class="pui-primary-button pui-full-access-confirm" id="enable-full-access" type="button">Enable full access</button></div>`;
  let destroyed = false; const confirmButton = element.querySelector<HTMLButtonElement>('#enable-full-access')!; const error = element.querySelector<HTMLElement>('#permissions-error')!;
- const update = (state: Readonly<FullAccessState>) => {if (destroyed) return; confirmButton.disabled = !!state.disabled; if (state.error !== undefined) error.textContent = state.error;}; update(initial); scopeIds(element, options.idPrefix ?? uniqueId('pui-full-access') + '-');
- return {element, confirmButton, update, destroy() {if (destroyed) return; destroyed = true; element.remove();}};
+ let current = initial;
+ const feedback = adoptFeedback(error,{presentation:'inline',autoHide:false});
+ const action = adoptAction(confirmButton,{onAction:options.onConfirm ? () => {update({...current,error:''}); return options.onConfirm!();} : undefined,onError:message => {update({...current,error:message});}});
+ const update = (state: Readonly<FullAccessState>) => {if (destroyed) return; current = state; action.update({disabled: !!state.disabled}); if (state.error !== undefined) feedback.update({message:state.error,tone:'error'});}; update(initial); scopeIds(element, options.idPrefix ?? uniqueId('pui-full-access') + '-');
+ return {element, confirmButton, update, destroy() {if (destroyed) return; destroyed = true; action.destroy(); feedback.destroy(); element.remove();}};
 }
 export interface TaskFailureState {visible: boolean; message: string; advice: string; canContinue: boolean; workspaceId?: string}
 export function createTaskFailure(initial: TaskFailureState, options: {element?: HTMLElement; onContinue?: () => void; onSettings?: () => void; onDiagnostics?: () => void} = {}): UIBlock<TaskFailureState> {
@@ -20,7 +25,8 @@ export function createPermissionControl(initial: PermissionControlState, options
  const element = options.element || document.createElement('label'); if (!options.element) {element.className = 'pui-permission-control'; element.innerHTML = `${icon('shield')}<span class="pui-sr-only">Conversation permissions</span><select aria-describedby="pui-permission-description"><option value="ask">Ask before changes</option><option value="workspace-write">Allow workspace changes</option><option value="full-access">Full access</option></select>${icon('down')}`;}
  const selector = element.querySelector<HTMLSelectElement>('select')!; const abort = new AbortController(); let destroyed = false;
  if (options.descriptionElement) {if (!options.descriptionElement.id) options.descriptionElement.id = uniqueId('pui-permission-description'); selector.setAttribute('aria-describedby', options.descriptionElement.id);} else selector.removeAttribute('aria-describedby');
- const update = (state: Readonly<PermissionControlState>) => {if (destroyed) return; selector.value = state.mode; selector.disabled = !!state.disabled; element.classList.toggle('pui-full-access', state.mode === 'full-access'); if (options.descriptionElement) {options.descriptionElement.textContent = state.description; options.descriptionElement.classList.toggle('pui-full-access-note', state.mode === 'full-access');} else selector.title = state.description;};
+ const parts = adoptProductParts(element); const control = parts.control(selector);
+ const update = (state: Readonly<PermissionControlState>) => {if (destroyed) return; control.reset(state.mode); control.update({disabled:!!state.disabled}); element.classList.toggle('pui-full-access', state.mode === 'full-access'); if (options.descriptionElement) {options.descriptionElement.textContent = state.description; options.descriptionElement.classList.toggle('pui-full-access-note', state.mode === 'full-access');} else selector.title = state.description;};
  selector.addEventListener('change', () => options.onChange?.(selector.value), {signal:abort.signal}); update(initial);
- return {element, update, destroy() {if (destroyed) return; destroyed = true; abort.abort(); if (!options.element) element.remove();}};
+ return {element, update, destroy() {if (destroyed) return; destroyed = true; parts.destroy(); abort.abort(); if (!options.element) element.remove();}};
 }

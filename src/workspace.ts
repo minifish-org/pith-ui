@@ -1,8 +1,25 @@
 import { Generation, type UIBlock, type ActionResult } from './core.js';
 import { icon } from './dom.js';
+import { controlDisabled } from './core.js';
+import { adoptProductParts, reconcileSelectOptions } from './foundations.js';
+import { installDialogLifecycle } from './surface.js';
 
-export interface ComposerViewState { placeholder?: string; disabled?: boolean; readOnly?: boolean; action?: 'send' | 'queue' | 'stop'; actionDisabled?: boolean; }
-export interface ComposerViewOptions { prefix?: string; onSubmit?: (text: string) => void | ActionResult | Promise<void | ActionResult>; onStop?: () => void | ActionResult | Promise<void | ActionResult>; onInput?: (text: string) => void; }
+export interface ComposerViewState {
+  placeholder?: string; disabled?: boolean; readOnly?: boolean;
+  action?: 'send' | 'queue' | 'stop'; actionDisabled?: boolean;
+  model?: { label: string; description: string; disabled?: boolean };
+  thinking?: { options: readonly { value: string; label: string }[]; value: string; disabled?: boolean };
+}
+export interface ComposerViewOptions {
+  prefix?: string;
+  onSubmit?: (text: string) => void | ActionResult | Promise<void | ActionResult>;
+  onStop?: () => void | ActionResult | Promise<void | ActionResult>;
+  onInput?: (text: string) => void;
+  onModel?: () => void;
+  onAttach?: () => void;
+  onImages?: (files: File[]) => void;
+  onThinkingChange?: (value: string) => void;
+}
 let sequence = 0;
 function identify(root: HTMLElement, prefix: string): void {
   if (!prefix) return;
@@ -27,21 +44,37 @@ export function createComposerView(options: ComposerViewOptions = {}) {
   const element = holder.firstElementChild as HTMLFormElement;
   const input = element.querySelector<HTMLTextAreaElement>('textarea')!;
   const action = element.querySelector<HTMLButtonElement>('[type="submit"]')!;
+  const model = element.querySelector<HTMLButtonElement>('[data-action="model"]')!;
+  const thinking = element.querySelector<HTMLSelectElement>('[aria-label="Thinking effort"]')!;
+  const imagePicker = element.querySelector<HTMLInputElement>('[type="file"]')!;
   identify(element, options.prefix ?? 'pui-composer-' + ++sequence + '-');
   const generation = new Generation();
+  const parts = adoptProductParts(element);
+  let destroyed = false;
   let pending = false, last: ComposerViewState = {}, lastAction = 'send';
   const error = document.createElement('div'); error.className = 'pui-form-error'; error.setAttribute('role','alert'); error.hidden = true; element.insertBefore(error, element.firstChild);
   const resize = () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 180) + 'px'; };
   const update = (state: ComposerViewState) => {
+    if (destroyed) return;
     last = state;
-    if (state.placeholder !== undefined) input.placeholder = state.placeholder;
-    input.disabled = !!state.disabled; input.readOnly = !!state.readOnly;
-    if (state.action && state.action !== lastAction) { lastAction = state.action; action.type = state.action === 'stop' ? 'button' : 'submit'; action.innerHTML = icon(state.action === 'stop' ? 'stop' : 'arrow'); action.classList.toggle('pui-is-stop', state.action === 'stop'); action.setAttribute('aria-label', state.action === 'stop' ? 'Stop agent' : state.action === 'queue' ? 'Queue message' : 'Send message'); }
-    action.disabled = !!(state.actionDisabled || state.disabled || pending);
+    parts.control(input).update({ disabled: !!state.disabled, readOnly: !!state.readOnly, ...(state.placeholder !== undefined ? { placeholder: state.placeholder } : {}) });
+    if (state.action && state.action !== lastAction) { lastAction = state.action; action.type = state.action === 'stop' ? 'button' : 'submit'; action.innerHTML = icon(state.action === 'stop' ? 'stop' : 'arrow'); action.classList.toggle('pui-is-stop', state.action === 'stop'); }
+    const actionLabel = lastAction === 'stop' ? 'Stop agent' : lastAction === 'queue' ? 'Queue message' : 'Send message';
+    action.setAttribute('aria-label', actionLabel); action.title = actionLabel;
+    parts.action(action).update({ disabled: !!(state.actionDisabled || state.disabled), pending });
+    if (state.model) {
+      parts.action(model).update({ label: state.model.label, title: state.model.description, disabled: !!state.model.disabled });
+    }
+    if (state.thinking) {
+      const { options: choices, value, disabled } = state.thinking;
+      reconcileSelectOptions(thinking, choices, value);
+      parts.control(thinking).update({ disabled: !!disabled }); thinking.parentElement!.hidden = choices.length < 2;
+    }
+    parts.update();
   };
   const onInput = () => { resize(); options.onInput?.(input.value); };
-  const run = async (callback: (() => void | ActionResult | Promise<void | ActionResult>) | undefined) => {
-    if (!callback || pending || action.disabled || input.disabled || input.readOnly) return;
+  const run = async (callback: (() => void | ActionResult | Promise<void | ActionResult>) | undefined, textSubmission = true) => {
+    if (!callback || pending || action.disabled || (textSubmission && (input.disabled || input.readOnly))) return;
     const seq = generation.next(); pending = true; error.hidden = true; error.textContent = ''; update(last);
     try {
       const result = await callback();
@@ -51,20 +84,35 @@ export function createComposerView(options: ComposerViewOptions = {}) {
     } finally { if (generation.current(seq)) { pending = false; update(last); } }
   };
   const submit = (event: SubmitEvent) => { if (options.onSubmit) { event.preventDefault(); const text = input.value; void run(() => options.onSubmit!(text)); } };
-  const stop = () => { if (action.type === 'button') void run(options.onStop); };
+  const stop = () => { if (action.type === 'button') void run(options.onStop, false); };
   const keydown = (event: KeyboardEvent) => {
-    if (options.onSubmit && event.key === 'Enter' && !event.shiftKey && !event.isComposing && action.type === 'submit') { event.preventDefault(); element.requestSubmit(); }
+    if (options.onSubmit && event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      if (action.type === 'submit') element.requestSubmit();
+    }
   };
+  const click = (event: MouseEvent) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('button');
+    if (!button || button.disabled) return;
+    const callback = button === model ? options.onModel : button.hasAttribute('data-action') && button.dataset.action === 'attach-images' ? options.onAttach : undefined;
+    if (callback) { event.stopPropagation(); callback(); }
+  };
+  const chooseThinking = () => options.onThinkingChange?.(thinking.value);
+  const images = () => { const files = Array.from(imagePicker.files ?? []); imagePicker.value = ''; options.onImages?.(files); };
+  element.addEventListener('click', click); thinking.addEventListener('change', chooseThinking); imagePicker.addEventListener('change', images);
   input.addEventListener('input', onInput); input.addEventListener('keydown', keydown); element.addEventListener('submit', submit); action.addEventListener('click', stop);
   return { element, input, update, getValue: () => input.value,
-    reset(value: string) { generation.invalidate(); pending = false; error.hidden = true; error.textContent = ''; input.value = value; update(last); resize(); }, focus: () => input.focus(), resize,
-    destroy() { generation.destroy(); input.removeEventListener('input', onInput); input.removeEventListener('keydown', keydown); element.removeEventListener('submit', submit); action.removeEventListener('click', stop); element.remove(); } };
+    reset(value: string) { if (destroyed) return; generation.invalidate(); pending = false; error.hidden = true; error.textContent = ''; input.value = value; update(last); resize(); }, focus: () => { if (!destroyed) input.focus(); }, resize,
+    pickImages() { if (!destroyed) imagePicker.click(); },
+    destroy() { if (destroyed) return; destroyed = true; generation.destroy(); parts.destroy(); input.removeEventListener('input', onInput); input.removeEventListener('keydown', keydown); element.removeEventListener('submit', submit); action.removeEventListener('click', stop); element.removeEventListener('click', click); thinking.removeEventListener('change', chooseThinking); imagePicker.removeEventListener('change', images); element.remove(); } };
 
 }
 
-export interface WorkspaceShellOptions { brand: Node; prefix?: string; }
-export interface WorkspaceShellState { workspace?: string; conversation?: string; reconnecting?: boolean; }
-export function createWorkspaceShell(options: WorkspaceShellOptions): UIBlock<WorkspaceShellState> & { composer: ReturnType<typeof createComposerView>; part<T extends HTMLElement = HTMLElement>(name: string): T } {
+export type WorkspaceDialogName = 'model' | 'settings' | 'workspace' | 'permissions' | 'delete' | 'rename' | 'queue-edit' | 'message-edit' | 'resources' | 'connections' | 'preview' | 'image';
+export interface ActionScope { kind: 'global' | 'conversation' | 'workspace' | 'active'; id?: string; }
+export interface WorkspaceShellOptions { brand: Node; prefix?: string; composer?: ComposerViewOptions; onDialogClose?: (name: WorkspaceDialogName) => void; onSearch?: (query: string) => void; onBusyAction?: (key: string) => void; }
+export interface WorkspaceShellState { workspace?: string; conversation?: string; reconnecting?: boolean; error?: { message: string; hidden?: boolean }; busy?: { key: string; message: string; actionLabel: string } | null; }
+export function createWorkspaceShell(options: WorkspaceShellOptions) {
   const element = document.createElement('div'); element.className = 'pui-app';
   element.innerHTML = `
   <aside class="pui-sidebar" id="sidebar">
@@ -128,12 +176,49 @@ export function createWorkspaceShell(options: WorkspaceShellOptions): UIBlock<Wo
 `;
   element.querySelector('[data-brand-slot]')!.replaceWith(options.brand);
   const prefix = options.prefix ?? 'pui-workspace-' + ++sequence + '-';
-  const composer = createComposerView({ prefix: '' }); element.querySelector('[data-composer-slot]')!.replaceWith(composer.element);
+  const composer = createComposerView({ ...options.composer, prefix: '' }); element.querySelector('[data-composer-slot]')!.replaceWith(composer.element);
   identify(element, prefix);
   const part = <T extends HTMLElement = HTMLElement>(name: string) => element.querySelector<T>('[id="' + prefix + name + '"]')!;
-  return { element, composer, part, update(state) {
+  let destroyed = false;
+  const parts = adoptProductParts(element);
+  const dialogs = new Map(Array.from(element.querySelectorAll<HTMLDialogElement>('dialog'), dialog => {
+    const name = dialog.id.slice(prefix.length).replace(/-dialog$/, '') as WorkspaceDialogName;
+    return [name, installDialogLifecycle(dialog, { onClose: () => options.onDialogClose?.(name) })] as const;
+  }));
+  const setSidebarOpen = (open: boolean) => { if (destroyed) return; part('sidebar').classList.toggle('pui-open', open); part('sidebar-scrim').classList.toggle('pui-visible', open); };
+  const sidebarClick = (event: MouseEvent) => { const target = event.target as Element; if (target === part('sidebar-scrim') || target.closest('[data-action="menu"]')) { setSidebarOpen(target !== part('sidebar-scrim')); event.stopPropagation(); } };
+  const search = part<HTMLInputElement>('history-search'); const onSearch = () => options.onSearch?.(search.value);
+  search.addEventListener('input', onSearch); element.addEventListener('click', sidebarClick);
+  const busy = part('workspace-busy');
+  const onBusy = (event: MouseEvent) => { if ((event.target as Element).closest('button') && busy.dataset.key) { event.stopPropagation(); options.onBusyAction?.(busy.dataset.key); } };
+  busy.addEventListener('click', onBusy);
+  return { element, composer, part, update(state: Readonly<WorkspaceShellState>) {
+    if (destroyed) return;
     if (state.workspace !== undefined) part('workspace-label').textContent = state.workspace;
     if (state.conversation !== undefined) part('conversation-label').textContent = state.conversation;
     part('connection-status').hidden = !state.reconnecting;
-  }, destroy() { composer.destroy(); element.remove(); } };
+    if (state.error) { part('inline-error').textContent = state.error.message; part('inline-error').hidden = !!state.error.hidden || !state.error.message; }
+    if (state.busy !== undefined) {
+      busy.hidden = !state.busy;
+      if (state.busy) {
+        if (!busy.firstChild) { busy.append(document.createElement('span'), document.createElement('button')); const button = busy.lastElementChild as HTMLButtonElement; button.type = 'button'; button.className = 'pui-text-button'; }
+        busy.dataset.key = state.busy.key;
+        if (busy.firstElementChild!.textContent !== state.busy.message) busy.firstElementChild!.textContent = state.busy.message;
+        if (busy.lastElementChild!.textContent !== state.busy.actionLabel) busy.lastElementChild!.textContent = state.busy.actionLabel;
+      }
+    }
+    parts.update();
+  }, setSidebarOpen,
+  openDialog(name: WorkspaceDialogName) { if (!destroyed) { setSidebarOpen(false); dialogs.get(name)?.open(); } },
+  closeDialog(name: WorkspaceDialogName) { if (!destroyed) dialogs.get(name)?.close(); },
+  isDialogOpen(name: WorkspaceDialogName) { return !destroyed && !!dialogs.get(name)?.isOpen(); },
+  updateActionAvailability(unavailable: (scope: ActionScope) => boolean, root: ParentNode = element) {
+    if (destroyed) return;
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-idle-action], [data-global-idle], [data-mcp-edit], [data-action="new-mcp"]')) {
+      const scope: ActionScope = button.hasAttribute('data-global-idle') || button.hasAttribute('data-mcp-edit') || button.dataset.action === 'new-mcp' ? { kind: 'global' } : button.dataset.idleConversation ? { kind: 'conversation', id: button.dataset.idleConversation } : button.dataset.idleWorkspace ? { kind: 'workspace', id: button.dataset.idleWorkspace } : { kind: 'active' };
+      button.disabled = controlDisabled(button, unavailable(scope));
+    }
+    for (const link of root.querySelectorAll<HTMLAnchorElement>('a[data-download-conversation]')) link.setAttribute('aria-disabled', String(unavailable({ kind: 'conversation', id: link.dataset.downloadConversation })));
+  },
+  destroy() { if (destroyed) return; destroyed = true; for (const dialog of dialogs.values()) dialog.destroy(); parts.destroy(); search.removeEventListener('input', onSearch); element.removeEventListener('click', sidebarClick); busy.removeEventListener('click', onBusy); composer.destroy(); element.remove(); } };
 }

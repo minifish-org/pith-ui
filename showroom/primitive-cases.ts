@@ -37,6 +37,7 @@ export const primitiveCases: ShowcaseCase[] = [
         intent, density: context.density, disabled: disabled(context), pending: context.state === 'pending' || context.state === 'loading',
         onAction: () => context.action(), onError: message => context.log(message),
       }));
+      buttons.push(createButton({ label: sample(context, 'Secondary action'), appearance: 'secondary', density: context.density, disabled: disabled(context), pending: context.state === 'pending' || context.state === 'loading', onAction: () => context.action(), onError: message => context.log(message) }));
       const toolbar = createToolbar({ label: 'Button variants', children: buttons.map(button => button.element) });
       return group([{ ...toolbar, destroy() { toolbar.destroy(); buttons.forEach(button => button.destroy()); } }]);
     },
@@ -167,7 +168,7 @@ export const primitiveCases: ShowcaseCase[] = [
   {
     id: 'dialog', title: '普通弹窗 Dialog', layer: 'components', category: '浮层',
     description: '原生 dialog 的模态、Esc、焦点恢复和可滚动内容，业务内容通过 DOM 插槽传入。', states, related: ['text-edit-dialog', 'confirmation'],
-    code: `import { createDialog } from 'pith-ui';\nconst content = document.createElement('p'); content.textContent = 'Dialog content';\nconst dialog = createDialog({ title: 'Details', content });\ndialog.pui-open();`,
+    code: `import { createDialog } from 'pith-ui';\nconst content = document.createElement('p'); content.textContent = 'Dialog content';\nconst dialog = createDialog({ title: 'Details', content });\ndialog.open();`,
     mount(context) {
       const content = element('p', '', sample(context, 'This is real dialog content. Use Tab, Shift+Tab and Escape.'));
       const dialog = createDialog({ title: 'Details', description: 'Demonstration dialog', content });
@@ -178,7 +179,7 @@ export const primitiveCases: ShowcaseCase[] = [
   {
     id: 'text-edit-dialog', title: '文本编辑弹窗 Text edit', layer: 'components', category: '浮层',
     description: '保存失败保留文本，快照保留选区，关闭重开后丢弃旧结果。模拟结果由展厅控制。', states: ['normal', 'error', 'disabled', 'pending', 'long'], related: ['text-area', 'dialog'],
-    code: `import { createTextEditDialog } from 'pith-ui';\nconst editor = createTextEditDialog({ title: 'Edit message', onSubmit: async text => ({ ok: true }) });\neditor.pui-open({ value: 'Original message' });`,
+    code: `import { createTextEditDialog } from 'pith-ui';\nconst editor = createTextEditDialog({ title: 'Edit message', onSubmit: async text => ({ ok: true }) });\neditor.open({ value: 'Original message' });`,
     mount(context) {
       const editor = createTextEditDialog({ title: 'Edit message', onSubmit: () => context.action() });
       const open = (): void => {
@@ -192,7 +193,7 @@ export const primitiveCases: ShowcaseCase[] = [
   {
     id: 'confirmation', title: '危险操作确认 Confirmation', layer: 'components', category: '浮层',
     description: '打开先聚焦 Cancel；危险操作 pending 时禁止重复，关闭后忽略迟到反馈。', states: ['normal', 'error', 'disabled', 'pending', 'long'], related: ['dialog', 'button'],
-    code: `import { createConfirmDialog } from 'pith-ui';\nconst confirm = createConfirmDialog({ title: 'Delete resource?', message: 'This permanently removes the resource.', onConfirm: async () => ({ ok: true }) });\nconfirm.pui-open();`,
+    code: `import { createConfirmDialog } from 'pith-ui';\nconst confirm = createConfirmDialog({ title: 'Delete resource?', message: 'This permanently removes the resource.', onConfirm: async () => ({ ok: true }) });\nconfirm.open();`,
     mount(context) {
       const confirm = createConfirmDialog({ title: 'Delete resource?', onConfirm: () => context.action() });
       const open = (): void => confirm.open({ title: 'Delete resource?', message: sample(context, 'Remove the selected resource permanently? Demonstration data only.'), disabled: disabled(context), pending: context.state === 'pending', error: context.state === 'error' ? 'Removal failed. Please try again.' : '' });
