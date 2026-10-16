@@ -9,6 +9,14 @@ export function applicationContract(mount: HTMLElement): void {
     brand: {name: 'Pith', qualifier: 'Desk', mark: {src: '/brand.svg', alt: 'Pith'}},
     host: {copyText: async (text) => {void text; return {ok: true};}},
   });
+  const namedBrand = createApplication(mount, {brand: {name: 'Pith', mark: {symbol: 'pith', alt: 'Pith'}}});
+  namedBrand.destroy();
+  // @ts-expect-error Named brand resources are a closed set.
+  createApplication(mount, {brand: {name: 'Pith', mark: {symbol: 'custom', alt: ''}}});
+  // @ts-expect-error A named resource cannot mix in a different source asset.
+  createApplication(mount, {brand: {name: 'Pith', mark: {symbol: 'pith', src: '/brand.svg', alt: ''}}});
+  // @ts-expect-error Named resources do not expose visual controls.
+  createApplication(mount, {brand: {name: 'Pith', mark: {symbol: 'pith', alt: '', rotation: 0}}});
   app.workspace.resetDraft('中文 draft');
   app.workspace.updateConversation({id: 'conversation', working: false, messages: [{id: 'message', role: 'assistant', text: 'Safe Markdown'}]});
   app.settings.openSettings({baseUrl: 'https://example.test/v1', hasApiKey: true, ready: true}, {
