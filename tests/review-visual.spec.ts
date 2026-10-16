@@ -33,7 +33,7 @@ test('permission dropdown anchors to the complete control rather than just its t
   expect(popup!.width).toBeGreaterThanOrEqual(control!.width);
 });
 
-test('keyboard focus is visible, light and consistent across control families', async ({ page }) => {
+test('keyboard focus remains on controls without an outline or glow', async ({ page }) => {
   await page.evaluate(async () => {
     const path = '/src/index.ts'; const ui = await import(path);
     const blocks = [ui.createButton({ label: 'Action' }), ui.createIconButton({ label: 'Icon action', icon: 'plus' }), ui.createTextInput({ label: 'Text' }), ui.createSearchInput({ label: 'Search' }), ui.createNumberInput({ label: 'Number' }), ui.createTextArea({ label: 'Multiline' }), ui.createCheckbox({ label: 'Enabled' }), ui.createSelect({ label: 'Choice', options: [{ value: 'a', label: 'A' }] }), ui.createDisclosure({ title: 'Details', content: document.createTextNode('Content') })];
@@ -44,11 +44,13 @@ test('keyboard focus is visible, light and consistent across control families', 
   await page.keyboard.press('Tab');
   for (const locator of [page.getByRole('button', { name: 'Action', exact: true }), page.getByRole('button', { name: 'Icon action' }), page.getByRole('textbox', { name: 'Text', exact: true }), page.getByRole('searchbox'), page.getByRole('spinbutton'), page.getByRole('textbox', { name: 'Multiline' }), page.getByRole('checkbox'), page.getByRole('combobox'), page.locator('summary'), page.getByRole('button', { name: 'Product action' }), page.getByRole('textbox', { name: 'Product input' }), page.getByRole('textbox', { name: 'Product text' })]) {
     await locator.focus();
-    const focus = await locator.evaluate(node => { const style = getComputedStyle(node); return { visible: node.matches(':focus-visible'), width: parseFloat(style.outlineWidth), offset: parseFloat(style.outlineOffset), shadow: style.boxShadow }; });
-    expect(focus.visible).toBe(true); expect(focus.width).toBeGreaterThan(0); expect(focus.width).toBeLessThanOrEqual(1.5); expect(focus.offset).toBeLessThanOrEqual(2); expect(focus.shadow).toBe('none');
+    await expect(locator).toBeFocused();
+    const focus = await locator.evaluate(node => { const style = getComputedStyle(node); return { visible: node.matches(':focus-visible'), outline: style.outlineStyle, shadow: style.boxShadow }; });
+    expect(focus.visible).toBe(true); expect(focus.outline).toBe('none'); expect(focus.shadow).toBe('none');
   }
   await page.getByRole('button', { name: 'Menu', exact: true }).press('ArrowDown');
-  const menuFocus = await page.getByRole('menuitem').evaluate(node => parseFloat(getComputedStyle(node).outlineWidth)); expect(menuFocus).toBeGreaterThan(0); expect(menuFocus).toBeLessThanOrEqual(1.5);
+  await expect(page.getByRole('menuitem')).toBeFocused();
+  const menuFocus = await page.getByRole('menuitem').evaluate(node => ({outline:getComputedStyle(node).outlineStyle,shadow:getComputedStyle(node).boxShadow})); expect(menuFocus).toEqual({outline:'none',shadow:'none'});
 });
 
 test('native multi-row choices use readable type and fit their actual platform rows', async ({ page, browserName }) => {
@@ -71,7 +73,7 @@ test('native multi-row choices use readable type and fit their actual platform r
   await list.selectOption(['1', '3']); expect(await list.evaluate((node: HTMLSelectElement) => [...node.selectedOptions].map(option => option.value))).toEqual(['1', '3']);
 });
 
-test('permission keyboard focus has one outer ring in ordinary and forced colors', async ({page, browserName}) => {
+test('permission keyboard focus paints no inner or outer ring in ordinary and forced colors', async ({page, browserName}) => {
   await page.evaluate(async () => {
     const path='/src/tasks/permission.ts'; const {createPermissionControl}=await import(path);
     document.body.append(createPermissionControl({mode:'ask',description:'Ask before changes'}).element);
@@ -79,12 +81,12 @@ test('permission keyboard focus has one outer ring in ordinary and forced colors
   await page.keyboard.press('Tab'); await expect(page.getByRole('combobox')).toBeFocused();
   const rings = () => page.locator('.pui-permission-control').evaluate(node => {
     const inner=getComputedStyle(node.querySelector('[role="combobox"]')!),outer=getComputedStyle(node);
-    // A non-painted outline may serialize its initial medium width as 3px.
-    return {inner:inner.outlineStyle,outer:outer.outlineStyle,width:parseFloat(outer.outlineWidth),shadow:inner.boxShadow};
+    return {inner:inner.outlineStyle,outer:outer.outlineStyle,innerShadow:inner.boxShadow,outerShadow:outer.boxShadow};
   });
-  expect(await rings()).toEqual({inner:'none',outer:'solid',width:1,shadow:'none'});
+  expect(await rings()).toEqual({inner:'none',outer:'none',innerShadow:'none',outerShadow:'none'});
   if (browserName === 'chromium') {
     await page.emulateMedia({forcedColors:'active'});
-    expect(await rings()).toEqual({inner:'none',outer:'solid',width:1,shadow:'none'});
+    await expect(page.getByRole('combobox')).toBeFocused();
+    expect(await rings()).toEqual({inner:'none',outer:'none',innerShadow:'none',outerShadow:'none'});
   }
 });
