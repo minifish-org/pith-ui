@@ -3,6 +3,8 @@ import type {ActionResult,UIBlock} from '../core.js';
 import { escape, uniqueId } from '../dom.js';
 import {adoptProductParts} from '../foundations.js';
 export interface CustomModelValue {id: string; name?: string; contextWindow?: number; maxTokens?: number; reasoning?: boolean; input?: readonly string[]; cost?: {input: number; output: number; cacheRead: number; cacheWrite: number}}
+/** Initial values for one new model; existing definitions are never defaulted. */
+export function customModelDefaults(): CustomModelValue {return {id: '', contextWindow: 128000, maxTokens: 8192};}
 export interface CustomConnectionState {name: string; baseUrl: string; api: string; editing: boolean; models: readonly CustomModelValue[]; error?: string; disabled?: boolean}
 export interface CustomModelDraft {sourceIndex: number; id: string; name: string; contextWindow: number; maxTokens: number; reasoning: boolean; images: boolean; prices: {input: string; output: string; cacheRead: string; cacheWrite: string}}
 export interface CustomConnectionDraft {name: string; baseUrl: string; api: string; apiKey: string; models: CustomModelDraft[]}
@@ -33,7 +35,7 @@ export function createCustomConnectionEditor(state: CustomConnectionState, optio
  parts.control($<HTMLSelectElement>('custom-api'));
  const add = (model: CustomModelValue) => {const index = nextIndex++; const row = createCustomModelRow(model,index); rows.set(index,row); $('custom-models').append(row.element); if (current.disabled || pending) for (const button of row.element.querySelectorAll<HTMLButtonElement>('button')) button.disabled = true;};
  state.models.forEach(add);
- $('add-custom-model').addEventListener('click', () => {if (!current.disabled && !pending) add({id:'',contextWindow:128000,maxTokens:8192});}, {signal:abort.signal});
+ $('add-custom-model').addEventListener('click', () => {if (!current.disabled && !pending) add(customModelDefaults());}, {signal:abort.signal});
  $('custom-models').addEventListener('click', event => {const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-remove-model]'); if (!target || target.disabled || current.disabled || pending) return; const index = Number(target.closest<HTMLElement>('[data-model-index]')?.dataset.modelIndex); rows.get(index)?.destroy(); rows.delete(index);}, {signal:abort.signal});
  const read = (): CustomConnectionDraft => ({name:parts.control($<HTMLInputElement>('custom-name')).getValue(),baseUrl:parts.control($<HTMLInputElement>('custom-url')).getValue(),api:parts.control($<HTMLSelectElement>('custom-api')).getValue(),apiKey:parts.control($<HTMLInputElement>('custom-key')).getValue(),models:[...rows.values()].map(row => row.read())});
  const update = (next: Readonly<CustomConnectionState>) => {if (destroyed) return; current = next; if (next.error !== undefined) parts.feedback(element.querySelector<HTMLElement>('[data-custom-error]')!).update({message:next.error,tone:'error'}); parts.update(); for (const button of form.querySelectorAll<HTMLButtonElement>('button:not([role="combobox"]):not([role="option"])')) parts.action(button).update({disabled:next.disabled,pending:button.hasAttribute('data-close') ? false : pending});};

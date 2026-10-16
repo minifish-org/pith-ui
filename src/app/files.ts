@@ -1,5 +1,5 @@
 import type {ActionResult} from '../core.js';
-import {controlDisabled, setControlPending} from '../core.js';
+import {adoptAction, type ActionController} from '../foundations.js';
 import {createArtifactPanel, createFileActions, createFilePreview} from '../files/panels.js';
 import {createCopyFeedback} from '../files/systems.js';
 import {createOperation} from '../operation.js';
@@ -63,6 +63,16 @@ export function createFilesScene(env: AppEnvironment): FilesScene {
   let artifactCallbacks: ArtifactsCallbacks = {};
   const panel = createArtifactPanel({container: env.part('artifacts'), control: env.part('artifacts-control'), toggle: env.part('artifacts-toggle'), count: env.part('artifacts-count'), headingId: env.idPrefix + 'artifacts-title', dismissExclusions: [env.part('preview-dialog'), env.part('image-dialog')]});
   const operations = new Map<HTMLButtonElement, ReturnType<typeof createOperation>>();
+  const actions = new Map<HTMLButtonElement, ActionController>();
+  const actionFor = (button: HTMLButtonElement): ActionController => {
+    let action = actions.get(button);
+    if (!action) {action = adoptAction(button); actions.set(button, action);}
+    return action;
+  };
+  const clearActions = () => {
+    for (const operation of operations.values()) operation.destroy(); operations.clear();
+    for (const action of actions.values()) action.destroy(); actions.clear();
+  };
   const abort = new AbortController();
   let artifactCopy = makeArtifactCopy();
   function makeArtifactCopy() {
@@ -100,7 +110,7 @@ export function createFilesScene(env: AppEnvironment): FilesScene {
     if (!operation) {
       const owner = artifactState.ownerId;
       operation = createOperation({unavailable: () => disposed || artifactState.ownerId !== owner || !!artifactState.disabled,
-        onPending(pending) {setControlPending(button,pending); button.disabled = controlDisabled(button,!!artifactState.disabled);},
+        onPending(pending) {actionFor(button).update({pending, disabled: !!artifactState.disabled});},
         onError(message) {if (!disposed && artifactState.ownerId === owner) {artifactState = {...artifactState,error:message}; panel.update(artifactState);}}});
       operations.set(button,operation);
     }
@@ -110,14 +120,15 @@ export function createFilesScene(env: AppEnvironment): FilesScene {
     updateArtifacts(next, callbacks) {
       if (disposed) return;
       if (next.ownerId !== artifactState.ownerId) {
-        artifactCopy.destroy(); for (const operation of operations.values()) operation.destroy(); operations.clear();
+        artifactCopy.destroy(); clearActions();
         panel.setOpen(false);
         artifactState = next; artifactCopy = makeArtifactCopy();
       } else artifactState = next;
       if (callbacks) artifactCallbacks = callbacks;
       panel.update(next);
-      for (const button of panel.element.querySelectorAll<HTMLButtonElement>('[data-file-action], [data-preview-path]')) button.disabled = controlDisabled(button,!!next.disabled);
+      for (const button of panel.element.querySelectorAll<HTMLButtonElement>('[data-file-action], [data-preview-path]')) actionFor(button).update({disabled: !!next.disabled});
       for (const [button,operation] of operations) if (!panel.element.contains(button)) {operation.destroy(); operations.delete(button);}
+      for (const [button,action] of actions) if (!panel.element.contains(button)) {action.destroy(); actions.delete(button);}
     },
     closeArtifacts() {if (!disposed) panel.setOpen(false);},
     areArtifactsOpen: () => !disposed && panel.open,
@@ -167,6 +178,6 @@ export function createFilesScene(env: AppEnvironment): FilesScene {
       } else release();
       return session;
     },
-    destroy() {if (disposed) return; disposed = true; preview?.destroy(); abort.abort(); artifactCopy.destroy(); for (const operation of operations.values()) operation.destroy(); operations.clear(); panel.destroy();},
+    destroy() {if (disposed) return; disposed = true; preview?.destroy(); abort.abort(); artifactCopy.destroy(); clearActions(); panel.destroy();},
   };
 }

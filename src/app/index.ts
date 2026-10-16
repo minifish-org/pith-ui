@@ -19,6 +19,7 @@ export type {ResourcesState, ResourcesCallbacks, ResourcesSession, ResourcesScen
 export type {FilesScene, AppArtifactsState, ArtifactsCallbacks, AppFileOwner, AppFileTarget, AppFileAction, FileCapabilities, FileActionResult, AppFilePreviewState, FilePreviewInput, FilePreviewCallbacks, FilePreviewSession} from './files.js';
 export {formatCost} from '../files/systems.js';
 export {thinkingLabel} from '../forms/model-editor.js';
+export {customModelDefaults} from '../forms/custom-connection.js';
 
 export interface ApplicationBrand {
   readonly name: string;

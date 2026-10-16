@@ -5,9 +5,9 @@ This is the constrained application contract for Pith Desk and applications choo
 The allowed UI imports are `pith-ui/app` and `pith-ui/styles.css`. The general `pith-ui` entry remains available for independent component compositions; Pith Desk must not use it, private package paths, copied components or internal CSS to bypass this contract. A missing application capability needs a tested semantic port in the library before the application consumes it.
 
 <!-- PUI_APP_VERSION_START -->
-This contract accompanies `pith-ui@0.2.0`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
+This contract accompanies `pith-ui@0.2.1`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
 
-The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.0/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.0/examples/application/index.html). These sources are not bundled into the npm runtime package.
+The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.1/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.1/examples/application/index.html). These sources are not bundled into the npm runtime package.
 <!-- PUI_APP_VERSION_END -->
 
 ## One mount, four scenes
@@ -44,7 +44,9 @@ The full, compiled reference controller and HTML entry linked in the version blo
 
 `Application` exposes the four plain scene objects, `read()`, `setAppearance(appearance)`, `downloadFile({blob, name})` and `destroy()`. `read()` reports `{hasModal, appearance}` for business read gating. `onUIStateChange` observes that presentation state; it does not acknowledge a task or persist a read marker.
 
-The application entry also exports the pure `formatCost` and `thinkingLabel` helpers. They format values without creating UI or granting access to the general component API.
+The application entry also exports the pure `formatCost`, `thinkingLabel` and `customModelDefaults` helpers. They return data without creating UI or granting access to the general component API. `customModelDefaults()` returns a fresh `{id: '', contextWindow: 128000, maxTokens: 8192}` for a new independent connection's initial model. Add model uses the same defaults. Existing connection values, explicit resets and the current draft are preserved; editing another row never changes the defaults. These editable starting values do not establish provider capabilities. Consume a new helper only after upgrading to a published version that exports it; a newer source document does not extend an installed package.
+
+`customModelDefaults()` is available from `0.2.1`. Applications on `0.2.0` must upgrade their exact dependency before importing it.
 
 | Scene | Complete feature ownership | Main methods |
 |---|---|---|
@@ -124,6 +126,7 @@ Callbacks return semantic targets and values. `File[]` attachment inputs and `Bl
 - Create an application once. Update existing scene projections with stable keys. Do not recreate the shell or replace messages on each token merely to refresh presentation.
 - Initial values are applied at opening or by a declared explicit reset/edit operation. Ordinary `update` feedback must preserve input, IME composition, selection, focus, scroll and owned disclosures. Keep versioned business drafts in the controller.
 - Submit callbacks whose declaration returns `ActionResult` return `{ok: true}` or `{ok: false, error}` (or their promise). A failed save retains the draft; local pending combines with external disabled state. Void notifications, such as queue/approval intents, still require the controller to project authoritative availability and guard business operations.
+- Artifact Open, Reveal and Preview actions expose the shared button busy state while their callbacks are pending. External availability updates cannot release that local pending state; completion or failure restores availability only for the same live file owner.
 - Validate submitted identity, version and permission immediately before a write. A successful write followed by a failed refresh remains a successful write; present the refresh failure separately and do not retry the write automatically.
 - An opening's session addresses that opening only. After close, replacement or destruction, its old updates, failures, close calls and asynchronous results cannot mutate a later opening. Keep controller request generations/target checks as well: UI invalidation does not abort a request, undo a completed write, or make its data relevant to a new target.
 - Closing settings, connection and login presentations clears their owned secrets. Do not place real credentials in source examples, URLs, logs, screenshots or showroom state. The controller retains the distinction between an empty field, keeping an existing credential, and an explicit removal.

@@ -13,6 +13,8 @@ Read the bundled [application contract](../APP.md) and installed `dist/app/index
 | `resources` | Instructions/skills/templates/diagnostics, inventory actions, read-only/source editing and editor loading | `Application.resources`, `ResourcesScene` |
 | `files` | Conversation artifacts/actions, text/Markdown/diff/image previews, UTF-8 paging, copy feedback and image zoom | `Application.files`, `FilesScene` |
 
+`customModelDefaults()` is a pure helper in both public entries. It supplies a fresh blank model with the existing 128000/8192 token starting limits, shared by an initial independent-connection model and Add model. It does not construct UI, inherit another row or replace values loaded from storage. The [custom-connection](https://minifish-org.github.io/pith-ui/?item=custom-connection) case demonstrates it; use only helpers exported by the installed package version.
+
 The complete [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference) case is classified as **pages / 应用集成**. It embeds the [compiled reference application](../examples/application/main.ts), with a full-page link. All business actions are explicitly simulated. It uses only the approved public entry and CSS; its harness and gallery measurement code stay outside the application package.
 
 The following four design/component layers document the general library. Their Node slots, DOM handles, compatibility markup and density options are not application-consumption permissions.
@@ -52,6 +54,8 @@ See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showro
 `createSelect` uses the shared floating option surface for a single-choice dropdown, including selection, disabled items, keyboard navigation and focus. Permission, provider, theme and other product choices reuse this implementation. Use the block's `focus()` method to reach its visible control; `control` retains the native form value and validation adapter. Explicit `multiple: true` or `size > 1` produces a visible native listbox, preserving platform multi-selection and multiline navigation rather than squeezing a list into a dropdown. See [Select](https://minifish-org.github.io/pith-ui/?item=select) and [conversation permissions](https://minifish-org.github.io/pith-ui/?item=permission-control) together.
 
 Multi-select uses `values`, `getValues()`, `resetValues(values)` and `onValuesChange(values)` for complete selections. Scalar value methods remain compatible; `values` takes precedence at construction. Explicit resets do not emit change callbacks or replace native form-reset defaults. File actions expose `setDisabled(boolean)` and combine it with copy-pending restrictions.
+
+Ordinary buttons and visible Select triggers use the same disabled opacity (0.45) and not-allowed cursor; native input/listbox field treatment stays separate. Application artifact actions reuse shared pending and disabled state, including `aria-busy`, while preserving the same file targets and callback behavior.
 
 ## 3. Product blocks
 

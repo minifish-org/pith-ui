@@ -23,7 +23,6 @@
 .pui .pui-button.pui-primary:hover:not(:disabled) { background: var(--pui-accent-hover); }
 .pui .pui-button.pui-danger { color: var(--pui-error-text); border-color: var(--pui-error-border); }
 .pui .pui-button.pui-danger:hover:not(:disabled) { background: var(--pui-error-surface); }
-.pui .pui-button:disabled { opacity: .5; cursor: default; }
 .pui .pui-button.pui-compact { min-height: 30px; padding: var(--pui-space-xs) var(--pui-space-sm); font-size: var(--pui-text-small); }
 .pui :is(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
   outline: var(--pui-focus-width, 1px) solid var(--pui-focus, var(--pui-accent)); outline-offset: var(--pui-focus-offset, 2px);
@@ -52,7 +51,7 @@
   background: var(--pui-input-surface, var(--pui-surface)); color: var(--pui-text);
   font-size: var(--pui-text-medium); line-height: var(--pui-line-height);
 }
-.pui .pui-control:disabled { opacity: .5; }
+.pui .pui-control:not(button):disabled { opacity: .5; }
 .pui .pui-control[readonly] { background: var(--pui-muted-surface, #f4f5f7); }
 .pui .pui-control::placeholder { color: var(--pui-muted); opacity: 1; }
 .pui .pui-control.pui-compact { min-height: 30px; height: 30px; padding: var(--pui-space-xs) var(--pui-space-sm); }
@@ -138,7 +137,6 @@
 /* Its preferred width contributes nothing to the track; min-width fills the
    native-sized track after layout, while the visible control owns row height. */
 .pui .pui-select > .pui-select-trigger { grid-area: 1 / 1; width: 0; min-width: 100%; display: inline-flex; align-items: center; justify-content: space-between; }
-.pui .pui-select-trigger:disabled { opacity: .5; cursor: default; }
 .pui .pui-select-trigger.pui-compact { min-height: 30px; height: 30px; padding: var(--pui-space-xs) var(--pui-space-sm); }
 .pui .pui-select-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .pui .pui-select-trigger > .pui-select-arrow { width: 12px; height: 12px; flex-shrink: 0; opacity: .65; }

@@ -88,7 +88,7 @@ for (const theme of ['light', 'dark'] as const) {
     for (let step = 0; step < 60 && reached.size < labels.length; step++) {
       // macOS WebKit's full-control traversal uses Option-Tab when system
       // keyboard navigation is off; preserve that native browser preference.
-      await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
+      await page.keyboard.press(browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab');
       const focus = await page.evaluate(() => {
         const element = document.activeElement as HTMLElement;
         const style = getComputedStyle(element);

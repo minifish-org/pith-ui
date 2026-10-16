@@ -1,5 +1,5 @@
 import {createSettingsPanel, createMCPConnectionsPanel, createMCPConnectionList, createModelPicker} from '../src/forms/panels.js';
-import {createCustomConnectionEditor} from '../src/forms/custom-connection.js';
+import {createCustomConnectionEditor, customModelDefaults} from '../src/forms/custom-connection.js';
 import {createResourceEditor} from '../src/forms/resource-editor.js';
 import {createProviderLoginPanel} from '../src/forms/provider-login.js';
 import {createBranchHistory} from '../src/forms/history.js';
@@ -42,10 +42,10 @@ export const formsCases: ShowcaseCase[] = [
   },
   {
     id:'custom-connection', title:'独立连接与模型定义', layer:'blocks', category:'设置与模型连接',
-    description:'可增删模型、填写能力与四项价格；辅助按钮不会意外提交。', states:formStates, related:['settings-panel','number-input','secret-input'],
-    code:`const editor = createCustomConnectionEditor({ name: 'Local', baseUrl: 'http://localhost:11434/v1', api: 'openai-completions', editing: true, models: [{ id: 'local', contextWindow: 128000, maxTokens: 8192 }] }, { onSubmit: draft => saveConnection(draft) });\ncontainer.append(editor.element);`,
+    description:'可增删模型、填写能力与四项价格；首行与新增行共用默认值，修改已有行不会影响下一行。辅助按钮不会意外提交。', states:formStates, related:['settings-panel','number-input','secret-input'],
+    code:`const editor = createCustomConnectionEditor({ name: 'Local', baseUrl: 'http://localhost:11434/v1', api: 'openai-completions', editing: false, models: [customModelDefaults()] }, { onSubmit: draft => saveConnection(draft) });\ncontainer.append(editor.element);`,
     mount(context) {
-      const state={name:text(context,'Example connection'),baseUrl:'https://example.com/v1',api:'openai-completions',editing:true,models:[{id:'example-model',name:'Example model',contextWindow:128000,maxTokens:8192,reasoning:true,input:['text','image'],cost:{input:1,output:2,cacheRead:0,cacheWrite:0}}],error:context.state==='error'?'演示保存失败；输入保留。':'',disabled:disabled(context)};
+      const state={name:text(context,'Example connection'),baseUrl:'https://example.com/v1',api:'openai-completions',editing:true,models:[{...customModelDefaults(),id:'example-model',name:'Example model',reasoning:true,input:['text','image'],cost:{input:1,output:2,cacheRead:0,cacheWrite:0}}],error:context.state==='error'?'演示保存失败；输入保留。':'',disabled:disabled(context)};
       return surface(createCustomConnectionEditor(state,{onSubmit:()=>context.action()}));
     },
   },

@@ -1,5 +1,6 @@
 import {
   createApplication,
+  customModelDefaults,
   type ActionResult, type Appearance, type Application, type AppFileAction, type AppFileTarget,
   type AppResourceEntry, type AppResourceKind, type AppResourceTarget, type ConversationMessage,
   type CustomConnectionState, type MCPConnectionItem,
@@ -35,7 +36,7 @@ let resources: ResourcesState = {
 let resourceInventory: ResourcesSession | undefined;
 let independent: CustomConnectionState = {
   name: '模拟独立连接', baseUrl: 'https://custom.example.test/v1', api: 'openai-completions', editing: false,
-  models: [{id: 'demo-custom', name: 'Custom Demo', contextWindow: 128000, maxTokens: 8192, reasoning: true}],
+  models: [{...customModelDefaults(), id: 'demo-custom', name: 'Custom Demo', reasoning: true}],
 };
 const timers = new Map<ReturnType<typeof setTimeout>, () => void>();
 function pause(milliseconds = 160): Promise<void> {
