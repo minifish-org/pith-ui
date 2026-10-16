@@ -96,10 +96,11 @@ export function createSettingsScene(env:AppEnvironment):SettingsScene {
     if(destroyed) surface.destroy();
     return surface;
   };
-  const submit=<Value>(callback:Submission<Value>|undefined,owner:()=>OwnedSurface|undefined,closeOnSuccess:boolean):Submission<Value>=>async value=>{
+  const submit=<Value>(callback:Submission<Value>|undefined,owner:()=>OwnedSurface|undefined,closeOnSuccess:boolean,revision:()=>number=()=>0):Submission<Value>=>async value=>{
     if(!owner()?.isOpen()) return unavailable;
+    const submittedRevision=revision();
     const result=callback ? await callback(value) : unavailable;
-    if(result.ok&&closeOnSuccess&&owner()?.isOpen()) owner()!.close();
+    if(result.ok&&closeOnSuccess&&submittedRevision===revision()&&owner()?.isOpen()) owner()!.close();
     return result;
   };
   return {
@@ -110,7 +111,7 @@ export function createSettingsScene(env:AppEnvironment):SettingsScene {
       return loading;
     },
     openSettings(initial,callbacks={}) {
-      let surface:OwnedSurface|undefined,disposed=false,current=initial;
+      let surface:OwnedSurface|undefined,disposed=false,current=initial,revision=0;
       let closed:SettingsDraft={provider:'',baseUrl:initial.baseUrl,apiKey:''};
       let provider:ReturnType<typeof createProviderActions>|undefined;
       let providerState:Readonly<ProviderActionsState>|undefined;
@@ -122,7 +123,7 @@ export function createSettingsScene(env:AppEnvironment):SettingsScene {
         operation.run(task,result=>{if(result&&!result.ok) surface?.fail(result.error);});
       };
       const block=createSettingsPanel(initial,{idPrefix:env.idPrefix,
-        onSubmit:submit(callbacks.onSubmit,()=>surface,true),onRemoveKey:submit(callbacks.onRemoveKey,()=>surface,true),
+        onSubmit:submit(callbacks.onSubmit,()=>surface,true,()=>revision),onRemoveKey:submit(callbacks.onRemoveKey,()=>surface,true,()=>revision),
         onTest:draft=>{if(current.testing&&callbacks.onCancelTest) run('cancel-test',callbacks.onCancelTest);else if(callbacks.onTest) run('test',()=>callbacks.onTest!(draft));},
         onAppearanceChange:value=>{if(callbacks.onAppearanceChange&&(value==='light'||value==='dark'||value==='system')) run('appearance',()=>callbacks.onAppearanceChange!(value));},
         onProviderChange:id=>{if(callbacks.onProviderChange) run('provider',()=>callbacks.onProviderChange!(id));},
@@ -150,7 +151,7 @@ export function createSettingsScene(env:AppEnvironment):SettingsScene {
         update(state){if(active()){current=state;block.update(state);addAction.update({disabled:!!state.disabled});if(providerState) provider?.update({...providerState,disabled:!!state.disabled||!!providerState.disabled});}},
         read(){return active()?{...block.read()}:{...closed};},
         setProviders(items,selected){if(active()) block.setProviders(items,selected);},
-        resetProvider(value){if(active()){for(const operation of auxiliary.values()) operation.invalidate();block.resetProvider(value);}},
+        resetProvider(value){if(active()){revision++;for(const operation of auxiliary.values()) operation.invalidate();block.resetProvider(value);}},
         setCredential(view){
           if(!active()) return;
           providerState=view.providerActions;
@@ -196,12 +197,12 @@ export function createSettingsScene(env:AppEnvironment):SettingsScene {
       };
     },
     openModels(initial,callbacks={}) {
-      let surface:OwnedSurface|undefined,disposed=false,closed:ModelSelection={...(initial.editor?.selection??{provider:'',model:'',thinkingLevel:''})};
+      let surface:OwnedSurface|undefined,disposed=false,revision=0,closed:ModelSelection={...(initial.editor?.selection??{provider:'',model:'',thinkingLevel:''})};
       const active=()=>!disposed&&!destroyed&&!!surface?.isOpen();
-      const block=createModelPicker(initial,{idPrefix:env.idPrefix,onSubmit:submit(callbacks.onSubmit,()=>surface,true)});
+      const block=createModelPicker(initial,{idPrefix:env.idPrefix,onSubmit:submit(callbacks.onSubmit,()=>surface,true,()=>revision)});
       const content:OwnedContent={element:block.element,destroy(){if(disposed) return;closed={...block.read()};disposed=true;block.destroy();}};
       surface=track((content,onClose)=>env.openDialog('model',content,onClose),content,callbacks.onClose);
-      return {update(state){if(active()) block.update(state);},read(){return active()?{...block.read()}:{...closed};},reset(selection){if(active()) block.reset(selection);},focus(){if(active()) block.focus();},fail(message){if(active()) surface!.fail(message);},close(){surface?.close();},isOpen:active,destroy(){surface?.destroy();}};
+      return {update(state){if(active()) block.update(state);},read(){return active()?{...block.read()}:{...closed};},reset(selection){if(active()){revision++;block.reset(selection);}},focus(){if(active()) block.focus();},fail(message){if(active()) surface!.fail(message);},close(){surface?.close();},isOpen:active,destroy(){surface?.destroy();}};
     },
     openCustomConnection(initial,callbacks={}) {
       let surface:OwnedSurface|undefined,disposed=false;
