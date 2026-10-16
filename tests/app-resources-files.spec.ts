@@ -100,6 +100,86 @@ test('resource inventory owns actions and exposes only plain semantic scene and 
   })).toEqual(Array.from({length: 3}, () => ({plain: true, leaks: [], node: false})));
 });
 
+test('busy resource inventories retain use and view intents while creation and native file actions stay blocked', async ({page}) => {
+  await page.evaluate(() => {
+    const fixture = window.appResourcesFilesFixture;
+    fixture.session = fixture.app.resources.open({workspace: {id: 'w1', name: 'Busy project', path: '/demo/project'},
+      instructions: [{name: 'AGENTS.md', path: '/parent/AGENTS.md', content: '# Inherited'}],
+      skills: [{name: 'inspect-project', path: '/demo/project/.pi/skills/inspect-project/SKILL.md'}],
+      templates: [{name: 'summarize', path: '/demo/project/.pi/prompts/summarize.md'}], diagnostics: [], canCreateInstructions: true, busy: true,
+    }, {
+      onRefresh: () => {fixture.events.push('refresh');},
+      onCreate: () => {fixture.events.push('create');},
+      onFileAction: () => {fixture.events.push('file');},
+      onUse: (target: State) => {fixture.events.push({type: 'use', target});},
+      onEdit: (target: State) => {fixture.events.push({type: 'edit', target});},
+    });
+  });
+  const dialog = page.getByRole('dialog', {name: 'Workspace resources', exact: true});
+  for (const name of ['Add skill', 'Add prompt template', 'Create AGENTS.md in this workspace']) {
+    const button = dialog.getByRole('button', {name, exact: true}); await expect(button).toBeDisabled(); await button.dispatchEvent('click');
+  }
+  for (const name of ['Open', 'Reveal']) {
+    const buttons = dialog.getByRole('button', {name, exact: true}); await expect(buttons).toHaveCount(2);
+    for (const button of await buttons.all()) {await expect(button).toBeDisabled(); await button.dispatchEvent('click');}
+  }
+  const skill = dialog.getByRole('article').filter({has: page.getByText('inspect-project', {exact: true})});
+  await expect(skill.getByRole('button', {name: 'Use', exact: true})).toBeEnabled();
+  await expect(skill.getByRole('button', {name: 'View / edit', exact: true})).toBeEnabled();
+  await dialog.getByRole('button', {name: 'Refresh', exact: true}).click();
+  await skill.getByRole('button', {name: 'Use', exact: true}).click();
+  await skill.getByRole('button', {name: 'View / edit', exact: true}).click();
+  const target = {workspaceId: 'w1', kind: 'skill', name: 'inspect-project', path: '/demo/project/.pi/skills/inspect-project/SKILL.md'};
+  expect(await page.evaluate(() => window.appResourcesFilesFixture.events)).toEqual(['refresh', {type: 'use', target}, {type: 'edit', target}]);
+});
+
+test('the controller can open a busy resource read-only without the inventory denying the view action', async ({page}) => {
+  await page.evaluate(() => {
+    const fixture = window.appResourcesFilesFixture;
+    fixture.session = fixture.app.resources.open({workspace: {id: 'w1', name: 'Busy project', path: '/demo/project'}, instructions: [],
+      skills: [{name: 'inspect-project', path: '/demo/project/.pi/skills/inspect-project/SKILL.md'}], templates: [], diagnostics: [], busy: true,
+    }, {onEdit: (target: State) => {
+      fixture.events.push(target);
+      fixture.editor = fixture.app.resources.openEditor({workspaceId: 'w1', workspacePath: '/demo/project', path: target.path, kind: 'skill', content: '# Read while running', editable: false, workspaceBusy: true}, {
+        onSubmit: () => {fixture.submits++; return {ok: true};}, onDelete: () => {fixture.events.push('delete');},
+      });
+    }});
+  });
+  await page.getByRole('button', {name: 'View / edit', exact: true}).click();
+  const editor = page.getByRole('dialog', {name: 'Workspace resource', exact: true});
+  await expect(editor.getByRole('textbox', {name: 'Markdown', exact: true})).toHaveAttribute('readonly', '');
+  await expect(editor.getByRole('textbox', {name: 'Markdown', exact: true})).toHaveValue('# Read while running');
+  await expect(editor.getByText('Stop this workspace’s task before editing resources.', {exact: true})).toBeVisible();
+  await expect(editor.getByRole('button', {name: 'Save', exact: true})).toHaveCount(0);
+  await expect(editor.getByRole('button', {name: 'Delete resource', exact: true})).toHaveCount(0);
+  expect(await page.evaluate(() => ({submits: window.appResourcesFilesFixture.submits, events: window.appResourcesFilesFixture.events}))).toEqual({submits: 0,
+    events: [{workspaceId: 'w1', kind: 'skill', name: 'inspect-project', path: '/demo/project/.pi/skills/inspect-project/SKILL.md'}]});
+});
+
+test('busy snapshots preserve local use pending and restore use availability after completion', async ({page}) => {
+  await page.evaluate(() => {
+    const fixture = window.appResourcesFilesFixture;
+    fixture.initial = {workspace: {id: 'w1', name: 'Project', path: '/demo/project'}, instructions: [],
+      skills: [{name: 'inspect-project', path: '/demo/project/.pi/skills/inspect-project/SKILL.md'}], templates: [], diagnostics: [], busy: false};
+    fixture.session = fixture.app.resources.open(fixture.initial, {
+      onUse: () => {fixture.submits++; return new Promise<Result>(resolve => {fixture.release = resolve;});},
+      onEdit: () => {fixture.events.push('view');},
+    });
+  });
+  const use = page.getByRole('button', {name: 'Use', exact: true});
+  await use.click(); await expect(use).toBeDisabled();
+  for (const busy of [true, false, true]) {
+    await page.evaluate(busy => {const fixture = window.appResourcesFilesFixture; fixture.session!.update({...fixture.initial, busy});}, busy);
+    await expect(use).toBeDisabled(); await use.dispatchEvent('click');
+  }
+  expect(await page.evaluate(() => window.appResourcesFilesFixture.submits)).toBe(1);
+  await expect(page.getByRole('button', {name: 'View / edit', exact: true})).toBeEnabled();
+  await page.evaluate(() => window.appResourcesFilesFixture.release!({ok: true}));
+  await expect(use).toBeEnabled();
+  await page.getByRole('button', {name: 'View / edit', exact: true}).click();
+  expect(await page.evaluate(() => ({submits: window.appResourcesFilesFixture.submits, events: window.appResourcesFilesFixture.events}))).toEqual({submits: 1, events: ['view']});
+});
+
 test('resource editing retains exact draft, selection and local pending through snapshots and a failed save', async ({page}) => {
   await page.evaluate(() => {
     const fixture = window.appResourcesFilesFixture;
