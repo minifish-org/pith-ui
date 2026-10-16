@@ -92,22 +92,22 @@ test('an unrelated running target leaves inactive conversation and workspace men
   });
   await expect(page.getByRole('button', {name: 'Choose model', exact: true})).toBeDisabled();
   await page.getByRole('button', {name: 'Actions for Idle chat', exact: true}).click();
-  await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeEnabled();
-  await page.getByRole('menuitem', {name: 'Rename conversation', exact: true}).click();
+  await expect(page.getByRole('menuitem', {name: 'Rename', exact: true})).toBeEnabled();
+  await page.getByRole('menuitem', {name: 'Rename', exact: true}).click();
   await page.getByRole('button', {name: 'Actions for workspace Idle work', exact: true}).click();
   await expect(page.getByRole('menuitem', {name: 'Remove workspace', exact: true})).toBeEnabled();
   await page.getByRole('menuitem', {name: 'Remove workspace', exact: true}).click();
   expect(await page.evaluate(() => (window as unknown as {availabilityFixture: {calls: unknown[]}}).availabilityFixture.calls)).toEqual([{action: 'rename', id: 'idle'}, {action: 'remove', id: 'idle-work'}]);
   await page.getByRole('button', {name: 'Actions for Running chat', exact: true}).click();
-  await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeDisabled();
+  await expect(page.getByRole('menuitem', {name: 'Rename', exact: true})).toBeDisabled();
   await page.keyboard.press('Escape');
   await page.evaluate(() => (window as unknown as {availabilityFixture: {busy(value: boolean): void}}).availabilityFixture.busy(true));
   await page.getByRole('button', {name: 'Actions for Idle chat', exact: true}).click();
-  await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeDisabled();
+  await expect(page.getByRole('menuitem', {name: 'Rename', exact: true})).toBeDisabled();
   await page.keyboard.press('Escape');
   await page.evaluate(() => (window as unknown as {availabilityFixture: {busy(value: boolean): void}}).availabilityFixture.busy(false));
   await page.getByRole('button', {name: 'Actions for Idle chat', exact: true}).click();
-  await expect(page.getByRole('menuitem', {name: 'Rename conversation', exact: true})).toBeEnabled();
+  await expect(page.getByRole('menuitem', {name: 'Rename', exact: true})).toBeEnabled();
 });
 
 test('global and active run gates preserve permitted message and code copies', async ({page}) => {
@@ -185,4 +185,21 @@ test('welcome suggestions preserve a restoring draft until the composer becomes 
   await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toHaveValue('Explore this workspace and give me a concise overview of its files.');
   await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeFocused();
   expect(await page.evaluate(() => (window as unknown as {welcomeParity: {inputs: string[]}}).welcomeParity.inputs)).toEqual(['Explore this workspace and give me a concise overview of its files.']);
+});
+
+test('conversation menus retain baseline Rename and Export Markdown labels and action keys', async ({page}) => {
+  await page.evaluate(async () => {
+    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const calls: {action: string; id: string}[] = [];
+    const app = createApplication(document.body, {workspace: {onConversationAction(action: string, id: string) {calls.push({action, id});}}});
+    app.workspace.updateNavigation({groups: [{id: 'work', name: 'Work', path: '/work', selected: true, children: [{id: 'chat', title: 'Conversation', active: true}]}], empty: null});
+    (window as unknown as {menuLabelCalls: {action: string; id: string}[]}).menuLabelCalls = calls;
+  });
+  const trigger = page.getByRole('button', {name: 'Actions for Conversation', exact: true});
+  await trigger.click();
+  await expect(page.getByRole('menuitem')).toHaveText(['Rename', 'Conversation branches', 'Export Markdown', 'Delete conversation']);
+  await page.getByRole('menuitem', {name: 'Rename', exact: true}).click();
+  await trigger.click();
+  await page.getByRole('menuitem', {name: 'Export Markdown', exact: true}).click();
+  expect(await page.evaluate(() => (window as unknown as {menuLabelCalls: {action: string; id: string}[]}).menuLabelCalls)).toEqual([{action: 'rename', id: 'chat'}, {action: 'export', id: 'chat'}]);
 });
