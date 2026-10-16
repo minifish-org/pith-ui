@@ -9,6 +9,8 @@ interface SettingsSession extends Session {
   resetProvider(value:{provider:string;baseUrl:string;clearKey?:boolean;collapseAdvanced?:boolean}):void;
   setCredential(view:Omit<SettingsCredentialView,'actions'>&{providerActions?:ProviderActionsState}):void;
   updateUpdates(state:UpdatePanelState):void;
+  setUpdatePending(pending:boolean):void;
+  setUpdateError(message:string,options?:{allowCheckRetry?:boolean}):void;
   clearSecrets():void;
 }
 interface MCPSession extends Session {read():MCPConnectionDraft;edit(value?:MCPEditorValue):void;clearSecrets():void;setConnections(items:readonly MCPConnectionItem[]):void}
@@ -102,6 +104,74 @@ test('provider and update actions use semantic data and closing settings clears 
   await page.getByLabel('API key',{exact:false}).fill('Discard on close');
   const result=await page.evaluate(()=>{const session=(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession;session.close();return {open:session.isOpen(),key:session.read().apiKey};});
   expect(result).toEqual({open:false,key:''});await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('update refresh errors expose retry through semantic state without changing the reported phase',async ({page})=>{
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings(state);h.current=session;
+    session.updateUpdates({version:'1.0.0',enabled:true,phase:'checking',availableVersion:'1.1.0',progress:0,message:'Checking for a new version'});
+    session.setUpdatePending(true);
+  },state);
+  const check=page.getByRole('button',{name:'Check for updates',exact:true}),install=page.getByRole('button',{name:'Update and restart',exact:true});
+  await expect(check).toBeDisabled();await expect(install).toBeDisabled();
+  await page.evaluate(()=>{
+    const session=(window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession;
+    session.setUpdatePending(false);session.setUpdateError('Update status is unavailable',{allowCheckRetry:true});
+  });
+  await expect(page.getByText('Update status is unavailable',{exact:true})).toBeVisible();await expect(check).toBeEnabled();await expect(install).toBeDisabled();
+  await page.evaluate(()=>((window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession).updateUpdates({version:'1.0.0',enabled:true,phase:'checking',availableVersion:'1.1.0',progress:0,message:'Checking again'}));
+  await expect(check).toBeDisabled();await expect(page.getByText('Update status is unavailable',{exact:true})).toHaveCount(0);await expect(page.getByText('Checking again',{exact:true})).toBeVisible();
+});
+
+test('host update pending and owned action pending cannot release each other or affect a replacement session',async ({page})=>{
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings(state,{onUpdateAction:()=>new Promise<ActionResult>(resolve=>{h.release=resolve;})});h.current=session;
+    session.updateUpdates({version:'1.0.0',enabled:true,phase:'idle',availableVersion:'1.1.0',progress:0,message:'Ready'});
+  },state);
+  const check=page.getByRole('button',{name:'Check for updates',exact:true});
+  await check.click();await expect(check).toBeDisabled();
+  await page.evaluate(()=>((window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession).setUpdatePending(false));
+  await expect(check).toBeDisabled();
+  await page.evaluate(()=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    (h.current as SettingsSession).setUpdatePending(true);h.release!({ok:true});
+  });
+  await expect(check).toBeDisabled();
+  await page.evaluate(()=>((window as unknown as {appSettingsTest:Harness}).appSettingsTest.current as SettingsSession).setUpdatePending(false));
+  await expect(check).toBeEnabled();
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest,old=h.current as SettingsSession;
+    const next=h.app.settings.openSettings(state);next.updateUpdates({version:'2.0.0',enabled:true,phase:'idle',availableVersion:'',progress:0,message:'New owner ready'});h.current=next;
+    old.setUpdatePending(true);old.setUpdateError('Old update error',{allowCheckRetry:true});
+  },state);
+  await expect(check).toBeEnabled();await expect(page.getByText('New owner ready',{exact:true})).toBeVisible();await expect(page.getByText('Old update error',{exact:true})).toHaveCount(0);
+});
+
+test('update version uses the application brand rather than a generic label',async ({page})=>{
+  await page.evaluate((state)=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    h.current=h.app.settings.openSettings(state);
+    (h.current as SettingsSession).updateUpdates({version:'1.0.0',enabled:true,phase:'idle',availableVersion:'',progress:0,message:'Ready'});
+  },state);
+  await expect(page.getByText('Pith Test 1.0.0',{exact:true})).toBeVisible();
+});
+
+for(const outcome of ['result','throw'] as const) test(`update installation failure preserves busy availability (${outcome})`,async ({page})=>{
+  await page.evaluate(({state,outcome})=>{
+    const h=(window as unknown as {appSettingsTest:Harness}).appSettingsTest;
+    const session=h.app.settings.openSettings(state,{onUpdateAction:()=>{
+      session.updateUpdates({version:'1.0.0',enabled:true,phase:'installing',availableVersion:'1.1.0',progress:20,message:'Installing'});
+      if(outcome==='throw') return Promise.reject(new Error('Installation rejected'));
+      return {ok:false,error:'Installation rejected'};
+    }});h.current=session;
+    session.updateUpdates({version:'1.0.0',enabled:true,phase:'idle',availableVersion:'1.1.0',progress:0,message:'Ready'});
+  },{state,outcome});
+  await page.getByRole('button',{name:'Update and restart',exact:true}).click();
+  await expect(page.getByText('Installation rejected',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'Check for updates',exact:true})).toBeDisabled();
+  await expect(page.getByRole('button',{name:'Update and restart',exact:true})).toBeDisabled();
 });
 
 test('removing a saved key closes its successful settings session and clears credentials',async ({page})=>{
