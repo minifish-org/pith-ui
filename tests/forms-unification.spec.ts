@@ -117,7 +117,7 @@ test('model picker owns the model editor and catalog feedback preserves user cho
     await expect(model).toHaveValue('fast');
     await expect(search).toHaveValue('absent');
     await expect(search).toBeFocused();
-    await expect(page.locator('[id$=picker-thinking]')).toBeHidden();
+    await expect(page.getByRole('combobox', { name: 'Thinking effort', exact: true })).toBeHidden();
     await page.getByRole('button', { name: 'Use model' }).click();
     expect(JSON.parse(await page.locator('body').getAttribute('data-selection') || '{}')).toEqual({ provider: 'provider', model: 'fast', thinkingLevel: 'off' });
 });

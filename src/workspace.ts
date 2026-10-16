@@ -3,6 +3,7 @@ import { icon } from './dom.js';
 import { controlDisabled } from './core.js';
 import { adoptProductParts, reconcileSelectOptions } from './foundations.js';
 import { installDialogLifecycle } from './surface.js';
+import { permissionControlElement } from './tasks/permission-element.js';
 
 export interface ComposerViewState {
   placeholder?: string; disabled?: boolean; readOnly?: boolean;
@@ -36,20 +37,26 @@ export function createComposerView(options: ComposerViewOptions = {}) {
         <div class="pui-composer-toolbar">
           <div class="pui-composer-context">
             <button id="attach-images" type="button" class="pui-quiet-icon pui-attach-images" data-action="attach-images" aria-label="Attach images" title="Attach images">${icon('image')}</button>
-            <label class="pui-permission-control" id="permission-control">${icon('shield')}<span class="pui-sr-only">Conversation permissions</span><select id="permission-mode" aria-describedby="permission-description"><option value="ask">Ask before changes</option><option value="workspace-write">Allow workspace changes</option><option value="full-access">Full access</option></select>${icon('down')}</label>
+            <span data-permission-slot></span>
           </div>
           <div class="pui-composer-actions"><button id="composer-model" type="button" class="pui-composer-model" data-action="model" data-idle-action data-global-idle aria-label="Choose model">Choose model</button><label class="pui-composer-thinking"><span class="pui-sr-only">Thinking effort</span><select id="composer-thinking" aria-label="Thinking effort"></select></label><button id="send-button" class="pui-send-button" type="submit" aria-label="Send message">${icon('arrow')}</button></div>
         </div>
       </form>`;
   const element = holder.firstElementChild as HTMLFormElement;
+  const permission = permissionControlElement(); permission.id = 'permission-control';
+  const permissionMode = permission.querySelector('select')!; permissionMode.id = 'permission-mode'; permissionMode.setAttribute('aria-describedby', 'permission-description');
+  element.querySelector('[data-permission-slot]')!.replaceWith(permission);
   const input = element.querySelector<HTMLTextAreaElement>('textarea')!;
   const action = element.querySelector<HTMLButtonElement>('[type="submit"]')!;
   const model = element.querySelector<HTMLButtonElement>('[data-action="model"]')!;
   const thinking = element.querySelector<HTMLSelectElement>('[aria-label="Thinking effort"]')!;
+  const thinkingLabel = thinking.closest<HTMLLabelElement>('label')!;
   const imagePicker = element.querySelector<HTMLInputElement>('[type="file"]')!;
   identify(element, options.prefix ?? 'pui-composer-' + ++sequence + '-');
   const generation = new Generation();
   const parts = adoptProductParts(element);
+  parts.control(element.querySelector<HTMLSelectElement>('[id$="permission-mode"]')!);
+  parts.control(thinking);
   let destroyed = false;
   let pending = false, last: ComposerViewState = {}, lastAction = 'send';
   const error = document.createElement('div'); error.className = 'pui-form-error'; error.setAttribute('role','alert'); error.hidden = true; element.insertBefore(error, element.firstChild);
@@ -68,7 +75,7 @@ export function createComposerView(options: ComposerViewOptions = {}) {
     if (state.thinking) {
       const { options: choices, value, disabled } = state.thinking;
       reconcileSelectOptions(thinking, choices, value);
-      parts.control(thinking).update({ disabled: !!disabled }); thinking.parentElement!.hidden = choices.length < 2;
+      thinkingLabel.hidden = choices.length < 2; parts.control(thinking).update({ disabled: !!disabled });
     }
     parts.update();
   };

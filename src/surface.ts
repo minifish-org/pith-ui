@@ -1,5 +1,126 @@
 import { Lifetime } from './core.js';
 
+interface AnchoredSurfaceOptions {
+  trigger: HTMLElement;
+  panel: HTMLElement;
+  closeOnFocusOut?: boolean;
+  exclusions?: readonly Node[];
+  onToggle?: (open: boolean) => void;
+  position?: boolean;
+  canOpen?: () => boolean;
+  canEscape?: () => boolean;
+}
+interface AnchoredSurface {
+  open(): void;
+  close(restoreFocus?: boolean): void;
+  isOpen(): boolean;
+  destroy(): void;
+}
+const floatingStacks = new WeakMap<Document, AnchoredSurface[]>();
+
+/** Shared nonmodal surface ownership. Retained panels can keep their own layout;
+ * anchored panels use the native top layer to escape scroll/overflow containers.
+ */
+export function installAnchoredSurface(options: AnchoredSurfaceOptions): AnchoredSurface {
+  const { trigger, panel } = options;
+  const doc = trigger.ownerDocument, view = doc.defaultView!;
+  const position = options.position !== false;
+  const originalPopover = panel.getAttribute('popover');
+  const originalStyle = panel.getAttribute('style');
+  const topLayer = position && typeof panel.showPopover === 'function';
+  if (topLayer) panel.setAttribute('popover', 'manual');
+  if (position) panel.dataset.puiFloating = '';
+  let opened = false, disposed = false, events: Lifetime | undefined;
+  const stack = floatingStacks.get(doc) ?? [];
+  floatingStacks.set(doc, stack);
+  panel.hidden = true;
+  trigger.setAttribute('aria-expanded', 'false');
+  const contains = (target: EventTarget | null) => target instanceof Node &&
+    (trigger.contains(target) || panel.contains(target) || options.exclusions?.some(node => node.contains(target)));
+  const style = (name: string, value: string) => { if (panel.style.getPropertyValue(name) !== value) panel.style.setProperty(name, value); };
+  const place = () => {
+    if (!opened || !position) return;
+    if (!trigger.isConnected || !trigger.getClientRects().length) { close(); return; }
+    const anchor = trigger.getBoundingClientRect();
+    const viewport = view.visualViewport;
+    const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0;
+    const width = viewport?.width ?? doc.documentElement.clientWidth;
+    const height = viewport?.height ?? doc.documentElement.clientHeight;
+    const margin = 8, gap = 6;
+    style('max-width', `${Math.max(0, width - margin * 2)}px`);
+    style('min-width', `${Math.min(anchor.width, Math.max(0, width - margin * 2))}px`);
+    // scrollHeight measures the content without expanding the viewport first.
+    // Expanding a scrolled list would clamp scrollTop and hide its active item.
+    const scrollTop = panel.scrollTop, scrollLeft = panel.scrollLeft;
+    const desired = Math.min(panel.scrollHeight + 2, 320);
+    const below = top + height - anchor.bottom - margin - gap;
+    const above = anchor.top - top - margin - gap;
+    const upwards = below < desired && above > below;
+    const available = Math.max(0, upwards ? above : below);
+    style('max-height', `${Math.min(320, available)}px`);
+    const bounds = panel.getBoundingClientRect();
+    style('left', `${Math.max(left + margin, Math.min(anchor.left, left + width - margin - bounds.width))}px`);
+    style('top', `${upwards ? Math.max(top + margin, anchor.top - gap - bounds.height) : anchor.bottom + gap}px`);
+    panel.scrollTop = scrollTop; panel.scrollLeft = scrollLeft;
+  };
+  function close(restoreFocus = false): void {
+    if (!opened) return;
+    opened = false;
+    events?.destroy(); events = undefined;
+    const index = stack.indexOf(handle); if (index >= 0) stack.splice(index, 1);
+    if (topLayer && panel.matches(':popover-open')) panel.hidePopover();
+    panel.hidden = true; trigger.setAttribute('aria-expanded', 'false');
+    options.onToggle?.(false);
+    if (restoreFocus && trigger.isConnected && !trigger.matches(':disabled')) trigger.focus({ preventScroll: true });
+  }
+  const handle: AnchoredSurface = {
+    open() {
+      if (disposed || opened || options.canOpen?.() === false || !trigger.isConnected || !trigger.getClientRects().length) return;
+      opened = true; panel.hidden = false; trigger.setAttribute('aria-expanded', 'true');
+      stack.push(handle);
+      if (topLayer) panel.showPopover();
+      place();
+      if (!opened) return;
+      events = new Lifetime();
+      const outside = (event: Event) => { if (!contains(event.target)) close(); };
+      events.listen(doc, 'pointerdown', outside, { capture: true });
+      events.listen(doc, 'click', outside, { capture: true });
+      if (options.closeOnFocusOut !== false) {
+        events.listen(doc, 'focusin', outside, { capture: true });
+        const blur = () => queueMicrotask(() => { if (opened && !contains(doc.activeElement)) close(); });
+        events.listen(trigger, 'focusout', blur); events.listen(panel, 'focusout', blur);
+      }
+      events.listen(doc, 'keydown', (event => {
+        const key = event as KeyboardEvent;
+        if (key.key !== 'Escape' || stack.at(-1) !== handle || options.canEscape?.() === false) return;
+        const modal = [...doc.querySelectorAll<HTMLDialogElement>('dialog[open]')].at(-1);
+        if (modal && !modal.contains(trigger)) return;
+        key.preventDefault(); key.stopPropagation(); close(true);
+      }) as EventListener, { capture: true });
+      if (position) {
+        events.listen(view, 'resize', place);
+        events.listen(doc, 'scroll', event => { if (!(event.target instanceof Node) || !panel.contains(event.target)) place(); }, { capture: true });
+        if (view.visualViewport) { events.listen(view.visualViewport, 'resize', place); events.listen(view.visualViewport, 'scroll', place); }
+        const observer = new ResizeObserver(place); observer.observe(trigger); observer.observe(panel);
+        events.add(() => observer.disconnect());
+      }
+      options.onToggle?.(true);
+    },
+    close,
+    isOpen: () => opened,
+    destroy() {
+      if (disposed) return;
+      close(); disposed = true;
+      if (position) {
+        delete panel.dataset.puiFloating;
+        if (originalStyle === null) panel.removeAttribute('style'); else panel.setAttribute('style', originalStyle);
+      }
+      if (topLayer) { if (originalPopover === null) panel.removeAttribute('popover'); else panel.setAttribute('popover', originalPopover); }
+    },
+  };
+  return handle;
+}
+
 export interface DialogLifecycleOptions {
   closeOnBackdrop?: boolean;
   canClose?: () => boolean;

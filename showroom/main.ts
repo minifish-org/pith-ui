@@ -143,7 +143,9 @@ function mountPreview(): void {
     preview.append(frame);
   }
   rulerButton.update({label:state.rulers ? '隐藏标尺' : '显示标尺'});
-  target = preview.querySelector<HTMLElement>('button,input,textarea,select,[data-measure]') ?? preview.querySelector<HTMLElement>('.gallery-demo-host > *') ?? undefined;
+  target = Array.from(preview.querySelectorAll<HTMLElement>('button,input,textarea,select,[data-measure]')).find(node =>
+    !node.closest('[hidden],[aria-hidden="true"]') && node.getClientRects().length > 0 && getComputedStyle(node).visibility === 'visible')
+    ?? preview.querySelector<HTMLElement>('.gallery-demo-host > *') ?? undefined;
   observing = new ResizeObserver(queueMeasure); if (target) observing.observe(target); observing.observe(preview);
   applyMotion(); queueMeasure(); updateURL();
 }

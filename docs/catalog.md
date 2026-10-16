@@ -32,6 +32,8 @@ The public entry is `pith-ui`; exact options and return types are in its declara
 
 See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showroom/files-cases.ts`](../showroom/files-cases.ts). Not every base component accepts size, intent or density: its concrete state type is authoritative.
 
+`createSelect` uses the shared floating option surface for a single-choice dropdown, including selection, disabled items, keyboard navigation and focus. Permission, provider, theme and other product choices reuse this implementation. Use the block's `focus()` method to reach its visible control; `control` retains the native form value and validation adapter. Explicit `multiple: true` or `size > 1` produces a visible native listbox, preserving platform multi-selection and multiline navigation rather than squeezing a list into a dropdown. See [Select](https://minifish-org.github.io/pith-ui/?item=select) and [conversation permissions](https://minifish-org.github.io/pith-ui/?item=permission-control) together.
+
 ## 3. Product blocks
 
 | Product category | Public factories | Showroom item IDs |

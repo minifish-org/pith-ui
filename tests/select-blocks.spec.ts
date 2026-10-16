@@ -144,6 +144,11 @@ test('composer effort retains callbacks and reflects option refresh and collapse
   await expect(page.locator('body')).toHaveAttribute('data-changes', '1');
   await page.getByRole('button', {name:'Refresh effort'}).click();
   await expect(choice).toContainText('Medium');
-  await page.getByRole('button', {name:'One effort'}).click();
+  await choice.click();
+  await expect(page.getByRole('listbox')).toBeVisible();
+  // Simulate a state update while the popup is open, without an outside pointer
+  // event independently dismissing it before the update can be exercised.
+  await page.getByRole('button', {name:'One effort'}).evaluate(node => (node as HTMLButtonElement).click());
   await expect(choice).toBeHidden();
+  await expect(page.getByRole('listbox')).toBeHidden();
 });

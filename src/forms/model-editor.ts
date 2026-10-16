@@ -58,7 +58,7 @@ export function createModelEditor(initial: ModelEditorState, options: {
         const entry = (state.models || []).find(entry => entry.provider === provider.value && entry.id === selected);
         const levels = entry?.thinkingLevels?.length ? entry.thinkingLevels : ['off'];
         optionsInto(effort, levels.map(level => ({ value: level, label: thinkingLabel(level) })));
-        effort.value = levels.includes(preferred) ? preferred : levels.includes('high') ? 'high' : levels.includes('medium') ? 'medium' : levels[0];
+        parts.control(effort).reset(levels.includes(preferred) ? preferred : levels.includes('high') ? 'high' : levels.includes('medium') ? 'medium' : levels[0]);
         effort.hidden = levels.length < 2;
         field('thinking-label').hidden = effort.hidden;
         field('capabilities').textContent = entry ? `${entry.supportsImages ? 'Text + images' : 'Text only'} · ${new Intl.NumberFormat('en').format(entry.contextWindow)} context tokens · ${new Intl.NumberFormat('en').format(entry.maxTokens)} max output tokens` : 'No matching models.';
@@ -68,7 +68,7 @@ export function createModelEditor(initial: ModelEditorState, options: {
         const query = search.value.trim().toLowerCase();
         const entries = (state.models || []).filter(entry => entry.provider === provider.value && (entry.id === selected || `${entry.name} ${entry.id}`.toLowerCase().includes(query)));
         optionsInto(model, entries.map(entry => ({ value: entry.id, label: `${entry.name} — ${entry.id}` })));
-        model.value = entries.some(entry => entry.id === selected) ? selected : entries[0]?.id || '';
+        parts.control(model).reset(entries.some(entry => entry.id === selected) ? selected : entries[0]?.id || '');
         capabilities(preferred);
     };
     const chooseProvider = (selection?: ModelSelection) => {
@@ -91,7 +91,7 @@ export function createModelEditor(initial: ModelEditorState, options: {
             if (!initialized || !draft.provider)
                 reset(next.selection);
             else {
-                provider.value = state.providers?.some(entry => entry.id === draft.provider) ? draft.provider : state.providers?.[0]?.id || '';
+                parts.control(provider).reset(state.providers?.some(entry => entry.id === draft.provider) ? draft.provider : state.providers?.[0]?.id || '');
                 selected = draft.model;
                 renderModels(draft.thinkingLevel);
             }

@@ -1,9 +1,10 @@
 import { controlDisabled, Generation, Lifetime, setControlPending } from './core.js';
 import type { ActionResult, Density, Intent, UIAction } from './core.js';
 import { iconElement, setText, uniqueId } from './dom.js';
+import { adoptSelect, refreshSelect } from './select.js';
 
 /** Private controllers shared by factories and the retained product templates.
- * Adoption does not replace nodes, move controls or infer business availability.
+ * Retained nodes keep their identity; single selects get one owned wrapper.
  */
 export interface ActionState {
   label?: string;
@@ -115,6 +116,7 @@ export function reconcileSelectOptions(control: HTMLSelectElement, entries: read
     const value = preferred ?? [...selected][0] ?? '';
     if (control.value !== value || !selected.size) control.value = value;
   }
+  refreshSelect(control);
 }
 export interface NativeControlState {
   label?: string;
@@ -153,6 +155,7 @@ export function adoptNativeControl(control: NativeControl, options: {
     ownedDescriptions.add(node.id);
   }
   if (options.error) options.error.setAttribute('role', 'alert');
+  const select = control instanceof HTMLSelectElement ? adoptSelect(control) : undefined;
   const update = (state: Readonly<NativeControlState>): void => {
     if (disposed) return;
     if (state.label != null && options.label) setText(options.label, state.label);
@@ -175,13 +178,14 @@ export function adoptNativeControl(control: NativeControl, options: {
       if (options.error && !options.error.hidden && options.error.textContent) ids.add(options.error.id);
       if (ids.size) control.setAttribute('aria-describedby', [...ids].join(' ')); else control.removeAttribute('aria-describedby');
     }
+    select?.refresh();
   };
   if (options.onInput) life!.listen(control, 'input', (event => options.onInput!(control.value, event)) as EventListener);
   if (options.onChange) life!.listen(control, 'change', (event => options.onChange!(control.value, event)) as EventListener);
   return { element: control, update, getValue: () => control.value,
     getChecked: () => control instanceof HTMLInputElement && control.checked,
-    reset(value) { if (disposed) return; if (typeof value === 'boolean' && control instanceof HTMLInputElement) control.checked = value; else if (typeof value === 'string' && control.value !== value) control.value = value; },
-    focus() { if (!disposed) control.focus(); }, destroy() { disposed = true; life?.destroy(); } };
+    reset(value) { if (disposed) return; if (typeof value === 'boolean' && control instanceof HTMLInputElement) control.checked = value; else if (typeof value === 'string' && control.value !== value) control.value = value; select?.refresh(); },
+    focus() { if (!disposed) { if (select) select.focus(); else control.focus(); } }, destroy() { if (disposed) return; disposed = true; life?.destroy(); select?.destroy(); } };
 }
 
 export interface FeedbackState { message: string; tone?: 'info' | 'neutral' | 'success' | 'warning' | 'error'; }

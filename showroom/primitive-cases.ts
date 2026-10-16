@@ -89,13 +89,20 @@ export const primitiveCases: ShowcaseCase[] = [
     mount(context) { return group([createTextArea({ ...field(context, 'Instructions'), value: sample(context, '第一段中文。\n\nSecond paragraph with `code` and emoji 🐟.') })]); },
   },
   {
-    id: 'select', title: '选择列表 Select', layer: 'components', category: '输入',
-    description: '原生单选与多行列表并排展示；多行列表保持足够高度。', states: inputStates, related: ['model-picker'],
-    code: `import { createSelect } from 'pith-ui';\nconst model = createSelect({ label: 'Model', size: 5, options: [{ value: 'model-a', label: 'Model A' }, { value: 'model-b', label: 'Model B' }], value: 'model-a' });\ndocument.body.append(model.element);`,
+    id: 'select', title: '选择器 Select', layer: 'components', category: '输入',
+    description: '单选下拉复用统一浮层、选中状态与键盘导航；多行列表保留原生列表操作。可体验禁用选项、错误与长内容。', states: inputStates, related: ['permission-control', 'model-picker', 'popover'],
+    code: `import { createSelect } from 'pith-ui';\nconst provider = createSelect({\n  label: '提供商', value: 'pith',\n  options: [\n    { value: 'pith', label: 'Pith' },\n    { value: 'unavailable', label: '暂不可用', disabled: true },\n    { value: 'example', label: '示例提供商' },\n  ],\n  onChange: value => console.log(value),\n});\ndocument.body.append(provider.element);\n// 多行或多选列表显式使用 size / multiple，保持原生列表交互。\n// 调用 provider.focus() 聚焦实际可操作的选择器。`,
     mount(context) {
       const options = Array.from({ length: context.state === 'long' ? 20 : 6 }, (_, index) => ({ value: String(index), label: sample(context, `Model ${index + 1}`) }));
-      return group([createSelect({ label: 'Provider', options: options.slice(0, 3), density: context.density, disabled: disabled(context), onChange: value => context.log(`Provider: ${value}`) }),
-        createSelect({ label: 'Models (multi-row)', options, size: 5, multiple: true, disabled: disabled(context), onChange: value => context.log(`Model: ${value}`) })]);
+      const providerOptions = [
+        { value: 'pith', label: sample(context, 'Pith') },
+        { value: 'unavailable', label: 'Unavailable provider · 暂不可用', disabled: true },
+        { value: 'example', label: sample(context, 'Example provider · 示例提供商') },
+        ...(context.state === 'long' ? options.map(option => ({ ...option, value: `provider-${option.value}` })) : []),
+      ];
+      const error = context.state === 'error' ? '演示读取失败；当前选择保留，可以重新选择。' : '';
+      return group([createSelect({ label: 'Provider', description: '单选下拉：点击或按 Enter 打开；方向键移动，Enter 确认，Esc 取消。禁用项不可选择。', value: 'pith', options: providerOptions, density: context.density, disabled: disabled(context), error, onChange: value => context.log(`Provider: ${value}`) }),
+        createSelect({ label: 'Models (multi-row)', description: '原生多选列表：使用系统键盘与修饰键选择多项。', options, size: 5, multiple: true, disabled: disabled(context), error, onChange: value => context.log(`Model: ${value}`) })]);
     },
   },
   {

@@ -98,6 +98,10 @@ export function createSettingsPanel(state: SettingsPanelState, options: Settings
       <div class="pui-modal-footer"><button class="pui-secondary-button" type="button" data-close="settings-dialog">Cancel</button><button class="pui-primary-button" id="save-settings" data-control-pending="true" disabled data-global-idle type="submit">Save settings</button></div>
     </form>`, 'pui-settings-panel', state, options.idPrefix ?? uniqueId('pui-form') + '-');
   const $ = block.field, abort = new AbortController(), generation = new Generation(); let current = state, pending = false, removing = false, destroyed = false;
+  // These controls also exist before providers or appearance state have loaded.
+  // Adopt them eagerly so the first rendered frame uses the shared selector.
+  block.parts.control($<HTMLSelectElement>('appearance-mode'));
+  block.parts.control($<HTMLSelectElement>('settings-provider'));
   const form = $<HTMLFormElement>('settings-form'), submit = $<HTMLButtonElement>('save-settings'), test = $<HTMLButtonElement>('test-connection'), remove = $<HTMLButtonElement>('remove-key');
   const read = (): SettingsDraft => {const key = $<HTMLInputElement>('api-key'); return {provider:block.parts.control($<HTMLSelectElement>('settings-provider')).getValue(),baseUrl:block.parts.control($<HTMLInputElement>('base-url')).getValue().trim(),apiKey:key.disabled ? '' : block.parts.control(key).getValue().trim()};};
   const update = (next: Readonly<SettingsPanelState>) => {

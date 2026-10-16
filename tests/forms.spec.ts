@@ -11,7 +11,7 @@ test('model search and thinking capabilities retain selection across unchanged s
   });
   await expect(page.locator('#test-model')).toHaveValue('balanced');await expect(page.locator('#test-thinking')).toHaveValue('high');
   await page.locator('#test-search').fill('does-not-match');await expect(page.locator('#test-model option')).toHaveCount(1);await expect(page.locator('#test-model')).toHaveValue('balanced');
-  await page.locator('#test-search').fill('');await page.locator('#test-model').selectOption('fast');await expect(page.locator('#test-thinking')).toBeHidden();
+  await page.locator('#test-search').fill('');await page.locator('#test-model').selectOption('fast');await expect(page.getByRole('combobox',{name:'Thinking effort',exact:true})).toBeHidden();
   await page.getByRole('button',{name:'Unchanged snapshot'}).click();await expect(page.locator('#test-model')).toHaveValue('fast');await expect(page.locator('#test-capabilities')).toContainText('Text only');
 });
 

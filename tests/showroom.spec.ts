@@ -19,7 +19,8 @@ test('catalog search, state links, rulers, themes and lifecycle are usable', asy
   await page.getByLabel('搜索积木', {exact:true}).fill('文本编辑');
   await expect(page.locator('.gallery-nav [data-item]')).toHaveCount(1);
   await page.getByLabel('搜索积木', {exact:true}).fill('');
-  await page.getByLabel('并排比较', {exact:true}).selectOption('theme');
+  await page.getByRole('combobox', {name:'并排比较',exact:true}).click();
+  await page.getByRole('option', {name:'明亮 / 深色',exact:true}).click();
   await expect(page.locator('.gallery-canvas[data-appearance=light]')).toHaveCount(1);
   await expect(page.locator('.gallery-canvas[data-appearance=dark]')).toHaveCount(1);
   const duplicateIds = await page.evaluate(() => {
@@ -45,6 +46,6 @@ test('all comparisons have independent IDs and narrow screens retain controls', 
   }
   await page.setViewportSize({width:390,height:844});
   await page.goto('/?item=text-input&width=320');
-  await expect(page.getByLabel('合法状态', {exact:true})).toBeVisible();
+  await expect(page.getByRole('combobox', {name:'合法状态',exact:true})).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

@@ -3,6 +3,7 @@ import type { UIBlock } from '../core.js';
 import { createPagedPreview, type PreviewKind } from '../content/paged-preview.js';
 import { adoptProductParts } from '../foundations.js';
 import { createButton } from '../primitives.js';
+import { installAnchoredSurface } from '../surface.js';
 
 export interface FileActionOptions {
   kind: string; ownerId: string; path: string; preview?: boolean;
@@ -39,25 +40,27 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
   const error = element.querySelector<HTMLElement>('[role="alert"]')!;
   const parts = adoptProductParts(element);
   const entries = new Map<string, { element: HTMLElement; name: HTMLElement; copy: HTMLButtonElement }>();
-  let open = false;
   let destroyed = false;
+  const surface = installAnchoredSurface({
+    trigger: toggle,
+    panel: element,
+    position: false,
+    closeOnFocusOut: true,
+    exclusions: [control, ...(options.dismissExclusions ?? [])],
+    canOpen: () => !control.hidden,
+    canEscape: () => !document.querySelector('dialog[open]'),
+    onToggle(open) { if (open) element.focus(); },
+  });
   function setOpen(value: boolean, restoreFocus = false): void {
     if (destroyed) return;
-    open = value && !control.hidden;
-    element.hidden = !open;
-    toggle.setAttribute('aria-expanded', String(open));
-    if (open) element.focus();
-    else if (restoreFocus && !control.hidden) toggle.focus();
+    if (value) surface.open();
+    else surface.close(restoreFocus && !control.hidden);
   }
   const abort = new AbortController();
-  toggle.addEventListener('click', () => setOpen(!open), { signal: abort.signal });
+  toggle.addEventListener('click', () => setOpen(!surface.isOpen()), { signal: abort.signal });
   element.addEventListener('click', event => { if ((event.target as Element).closest('[data-artifacts-close]')) setOpen(false, true); }, { signal: abort.signal });
-  const outside = (event: Event) => { const target = event.target as Node; if (open && !element.contains(target) && !control.contains(target) && !options.dismissExclusions?.some(node => node.contains(target))) setOpen(false); };
-  document.addEventListener('click', outside, { signal: abort.signal });
-  document.addEventListener('focusin', outside, { signal: abort.signal });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape' && open && !document.querySelector('dialog[open]')) { event.preventDefault(); setOpen(false, true); } }, { signal: abort.signal });
   return {
-    element, setOpen, get open() { return open; },
+    element, setOpen, get open() { return surface.isOpen(); },
     update(state: Readonly<ArtifactPanelState>): void {
       if (destroyed) return;
       const focused = document.activeElement;
@@ -92,7 +95,7 @@ export function createArtifactPanel(options: ArtifactPanelOptions) {
       }
       if (focused instanceof HTMLElement && element.contains(focused) && document.activeElement !== focused) focused.focus({ preventScroll: true });
     },
-    destroy(): void { destroyed = true; abort.abort(); parts.destroy(); entries.clear(); element.replaceChildren(); },
+    destroy(): void { destroyed = true; surface.destroy(); abort.abort(); parts.destroy(); entries.clear(); element.replaceChildren(); },
   };
 }
 

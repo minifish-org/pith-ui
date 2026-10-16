@@ -2,7 +2,7 @@ import { Generation, Lifetime } from './core.js';
 import type { ActionResult, Density, Intent, UIAction, UIBlock } from './core.js';
 import { element, iconElement, setText, uniqueId } from './dom.js';
 import { adoptAction, adoptActionLayout, adoptFeedback, adoptNativeControl, reconcileSelectOptions } from './foundations.js';
-import { installDialogLifecycle, installMenuNavigation } from './surface.js';
+import { installAnchoredSurface, installDialogLifecycle, installMenuNavigation } from './surface.js';
 
 export interface ButtonState {
   label: string;
@@ -228,11 +228,15 @@ export function createSelect(options: SelectOptions): SelectBlock {
     if (next !== signature) {
       signature = next;
       reconcileSelectOptions(control, state.options);
-      if (!control.multiple && control.selectedIndex < 0 && control.options.length) control.selectedIndex = 0;
+      if (!control.multiple && control.selectedIndex < 0) control.selectedIndex = [...control.options].findIndex(option => !option.disabled);
     }
+    input.update({});
   };
   update(options);
-  if (options.value != null) control.value = options.value;
+  if (options.value != null) {
+    for (const option of control.options) option.defaultSelected = option.value === options.value;
+    input.reset(options.value);
+  }
   return { element: field.element, control, update, getValue: input.getValue,
     reset: input.reset, focus: input.focus, destroy() { input.destroy(); field.destroy(); } };
 }
@@ -491,26 +495,17 @@ export interface PopoverBlock extends UIBlock<PopoverState> {
   isOpen(): boolean;
 }
 export function createPopover(options: PopoverState & { content: Node; onToggle?: (open: boolean) => void }): PopoverBlock {
-  let open = false; let state: PopoverState = options;
-  const trigger = createButton({ label: options.label, onAction() { if (open) close(); else show(); } });
+  let state: PopoverState = options;
+  const trigger = createButton({ label: options.label, onAction() { if (surface.isOpen()) surface.close(); else surface.open(); } });
   const panel = element('div', 'pui-popover-panel', options.content); panel.hidden = true; panel.id = uniqueId('pui-popover');
   panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', options.label);
   trigger.element.setAttribute('aria-controls', panel.id); trigger.element.setAttribute('aria-expanded', 'false');
-  const root = element('div', 'pui-popover', trigger.element, panel); const life = new Lifetime();
-  function close(restoreFocus = false): void {
-    if (!open) return; open = false; panel.hidden = true; trigger.element.setAttribute('aria-expanded', 'false'); options.onToggle?.(false);
-    if (restoreFocus && trigger.element.isConnected) trigger.element.focus();
-  }
-  function show(): void {
-    if (state.disabled || open) return; open = true; panel.hidden = false; trigger.element.setAttribute('aria-expanded', 'true'); options.onToggle?.(true);
-  }
-  life.listen(document, 'pointerdown', (event => { if (open && event.target instanceof Node && !root.contains(event.target)) close(); }) as EventListener);
-  life.listen(root, 'keydown', (event => { if (open && (event as KeyboardEvent).key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(true); } }) as EventListener);
-  life.listen(root, 'focusout', (() => { queueMicrotask(() => { if (open && !root.contains(document.activeElement)) close(); }); }) as EventListener);
-  const update = (next: Readonly<PopoverState>): void => { state = next; trigger.update(next); panel.setAttribute('aria-label', next.label); if (next.disabled) close(); };
+  const root = element('div', 'pui-popover', trigger.element, panel);
+  const surface = installAnchoredSurface({ trigger: trigger.element, panel, canOpen: () => !state.disabled, onToggle: options.onToggle });
+  const update = (next: Readonly<PopoverState>): void => { state = next; trigger.update(next); panel.setAttribute('aria-label', next.label); if (next.disabled) surface.close(); };
   update(options);
-  return { element: root, trigger: trigger.element, panel, update, open: show, close, isOpen: () => open,
-    destroy() { close(); life.destroy(); trigger.destroy(); } };
+  return { element: root, trigger: trigger.element, panel, update, open: surface.open, close: surface.close, isOpen: surface.isOpen,
+    destroy() { surface.destroy(); trigger.destroy(); } };
 }
 
 export interface MenuItem { id: string; label: string; disabled?: boolean; intent?: Intent; checked?: boolean; onAction: UIAction; }

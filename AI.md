@@ -53,7 +53,7 @@ Most views expose `{ element, update(state), destroy() }`; dialogs add open/clos
 
 Call `setAppearance(root, 'light' | 'dark' | 'system')` on an ancestor containing the view. Include `document.body` when a dialog is mounted there. This establishes the `.pui` boundary and `--pui-*` tokens.
 
-Use supported density/intent/size options only. Different blocks support different options; the showroom enables controls only when implemented. Native multiple selects and compact chat actions intentionally have different sizing rules from ordinary fields. CSS px is a layout unit, not a physical screen-pixel measurement.
+Use supported density/intent/size options only. Different blocks support different options; the showroom enables controls only when implemented. Single-choice dropdowns share the same Select surface across base components and product blocks. Use `createSelect` for another ordinary choice rather than building a second options popup; call its `focus()` method to focus the visible control. Its native `control` remains a form-value and validation adapter. Explicit `multiple: true` or `size > 1` retains a native visible listbox. Native lists and compact chat actions intentionally have different sizing rules from ordinary fields. CSS px is a layout unit, not a physical screen-pixel measurement.
 
 Do not add app-wide resets, new fonts, arbitrary animation timings, internal-class overrides or a UI framework to style these blocks. If a product brand needs a theme, centralize overrides in one reviewed token scope and inspect both themes and relevant states.
 

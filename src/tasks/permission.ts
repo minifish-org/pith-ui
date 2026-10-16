@@ -2,6 +2,7 @@ import {scopeIds} from '../forms/identity.js';
 import type { ActionResult, UIBlock } from '../core.js';
 import { escape, icon, uniqueId } from '../dom.js';
 import {adoptAction,adoptFeedback,adoptProductParts} from '../foundations.js';
+import {permissionControlElement} from './permission-element.js';
 export interface FullAccessState {title?: string; error?: string; disabled?: boolean}
 export interface FullAccessOptions {idPrefix?: string; onConfirm?: () => ActionResult | Promise<ActionResult>}
 export function createFullAccessConfirmation(initial: FullAccessState, options: FullAccessOptions = {}): UIBlock<FullAccessState> & {readonly confirmButton: HTMLButtonElement} {
@@ -22,7 +23,7 @@ export function createTaskFailure(initial: TaskFailureState, options: {element?:
 }
 export interface PermissionControlState {mode: string; description: string; disabled?: boolean}
 export function createPermissionControl(initial: PermissionControlState, options: {element?: HTMLElement; descriptionElement?: HTMLElement; onChange?: (value: string) => void} = {}): UIBlock<PermissionControlState> {
- const element = options.element || document.createElement('label'); if (!options.element) {element.className = 'pui-permission-control'; element.innerHTML = `${icon('shield')}<span class="pui-sr-only">Conversation permissions</span><select aria-describedby="pui-permission-description"><option value="ask">Ask before changes</option><option value="workspace-write">Allow workspace changes</option><option value="full-access">Full access</option></select>${icon('down')}`;}
+ const element = options.element || permissionControlElement();
  const selector = element.querySelector<HTMLSelectElement>('select')!; const abort = new AbortController(); let destroyed = false;
  if (options.descriptionElement) {if (!options.descriptionElement.id) options.descriptionElement.id = uniqueId('pui-permission-description'); selector.setAttribute('aria-describedby', options.descriptionElement.id);} else selector.removeAttribute('aria-describedby');
  const parts = adoptProductParts(element); const control = parts.control(selector);

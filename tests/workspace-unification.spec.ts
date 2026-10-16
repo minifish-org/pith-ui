@@ -41,7 +41,9 @@ test('shell composes typed composer callbacks without rebuilding selected option
   expect(retained).toEqual({ sameOption: true, start: 1, end: 4, calls: 0, focused: true });
   await input.dispatchEvent('compositionend');
   await page.getByRole('button', { name: 'Choose model', exact: true }).click();
-  await select.selectOption('off');
+  await select.click();
+  await page.getByRole('option', { name: 'Off', exact: true }).click();
+  await input.focus();
   await input.press('Enter');
   await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeDisabled();
   await input.press('Enter');

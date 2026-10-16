@@ -1,13 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('enhancing compact choices preserves native intrinsic sizing and composer wrapping', async ({ page }) => {
+for (const viewportWidth of [390, 1280]) test(`compact choices preserve native sizing and wrapping at ${viewportWidth}px`, async ({ page }) => {
+  await page.setViewportSize({ width: viewportWidth, height: 844 });
   await page.goto('/tests/fixture.html');
   const sizes = await page.evaluate(async () => {
     const path = '/src/workspace.ts'; const { createComposerView } = await import(path);
     const observations: unknown[] = [];
-    for (const width of [340, 400, 480, 600]) {
+    for (const width of [340, 400, 480, 600]) for (const permissionValue of ['ask', 'workspace-write', 'full-access']) for (const effort of ['low', 'medium', 'high']) {
       const composer = createComposerView();
-      composer.update({ model: { label: 'Example model' }, thinking: { options: ['low', 'medium', 'high'].map(value => ({ value, label: value })), value: 'high' } });
+      composer.update({ model: { label: 'Example model' }, thinking: { options: ['low', 'medium', 'high'].map(value => ({ value, label: value })), value: effort } });
+      const permission = (composer.element as HTMLElement).querySelector<HTMLSelectElement>('.pui-permission-control select')!;
+      permission.value = permissionValue; permission.dispatchEvent(new Event('change', { bubbles: true }));
       const enhanced = document.createElement('div'), native = document.createElement('div');
       enhanced.style.width = native.style.width = `${width}px`;
       enhanced.append(composer.element);

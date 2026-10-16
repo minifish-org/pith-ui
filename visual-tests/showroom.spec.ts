@@ -33,6 +33,8 @@ for (const item of pages) for (const theme of ['light', 'dark'] as const) for (c
       }).toBeLessThanOrEqual(2);
     }
     expect(errors).toEqual([]);
-    await expect(page).toHaveScreenshot(`${item}-${theme}-${viewport.width}x${viewport.height}.png`, { fullPage: true });
+    // Reduced motion is already selected. Chromium's animation fast-forward
+    // during a full-page capture can transiently reflow and clamp nested scrolls.
+    await expect(page).toHaveScreenshot(`${item}-${theme}-${viewport.width}x${viewport.height}.png`, { fullPage: true, animations: 'allow' });
   });
 }

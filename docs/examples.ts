@@ -1,6 +1,23 @@
 import type {ActionResult,ConversationViewState,CustomConnectionDraft,CustomConnectionState,ModelEditorState,ModelSelection,SettingsPanelState,SettingsProviderOption,SettingsDraft,MCPConnectionDraft,MCPEditorValue,ResourceEditorState,ResourceDraft} from '../src/index.js';
 type PithUI = typeof import('../src/index.js');
 
+/** A single choice uses the shared option surface; form adapters stay private to the composition. */
+export function mountProviderChoice(ui: PithUI, host: HTMLElement, onChange: (value: string) => void): () => void {
+  ui.setAppearance(host, 'system');
+  const provider = ui.createSelect({
+    label: '提供商', value: 'pith',
+    options: [
+      { value: 'pith', label: 'Pith' },
+      { value: 'unavailable', label: '暂不可用', disabled: true },
+      { value: 'example', label: '示例提供商' },
+    ],
+    onChange,
+  });
+  host.append(provider.element);
+  provider.focus();
+  return () => provider.destroy();
+}
+
 /** Complete API usage; the application supplies only its save operation. */
 export function mountTextEditor(ui: PithUI, host: HTMLElement, save: (text: string) => Promise<ActionResult>): () => void {
   ui.setAppearance(host, 'system');

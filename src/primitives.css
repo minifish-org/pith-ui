@@ -120,6 +120,32 @@
 .pui .pui-menu { display: grid; gap: 3px; }
 .pui .pui-menu > .pui-button { width: 100%; justify-content: flex-start; text-align: start; border-color: transparent; }
 .pui .pui-menu > [aria-checked="true"]::after { content: '✓'; margin-inline-start: auto; }
+.pui [data-pui-floating] { position: fixed; inset: auto; margin: 0; box-sizing: border-box; overflow: auto; overscroll-behavior: contain; }
+.pui .pui-select { position: relative; display: inline-grid; min-width: 0; width: 100%; }
+/* Keep the native control in the shared cell so its widest-option sizing and
+   form-validation anchor survive the presentation change. */
+.pui select.pui-select-backing {
+  grid-area: 1 / 1; opacity: 0; pointer-events: none; clip-path: inset(50%);
+}
+.pui .pui-select-trigger {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0;
+  min-height: var(--pui-control-height, 40px); padding: 9px 11px; border: 1px solid var(--pui-border);
+  border-radius: var(--pui-radius, 8px); background: var(--pui-input-surface, var(--pui-surface)); color: var(--pui-text);
+  font: inherit; font-size: var(--pui-font-size, 13px); line-height: 20px; text-align: start; cursor: pointer;
+}
+/* Its preferred width contributes nothing to the track; min-width fills the
+   native-sized track after layout, while the visible control owns row height. */
+.pui .pui-select > .pui-select-trigger { grid-area: 1 / 1; width: 0; min-width: 100%; display: inline-flex; align-items: center; justify-content: space-between; }
+.pui .pui-select-trigger:disabled { opacity: .5; cursor: default; }
+.pui .pui-select-trigger.pui-compact { min-height: 30px; padding: 4px 8px; }
+.pui .pui-select-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pui .pui-select-arrow { width: 12px; height: 12px; flex-shrink: 0; opacity: .65; }
+.pui .pui-select-popup { width: max-content; min-width: 160px; padding: 5px; font: 13px/20px var(--pui-font-family); color: var(--pui-text); }
+.pui .pui-select-option { position: relative; padding: 8px 28px 8px 10px; border-radius: 6px; overflow-wrap: anywhere; cursor: pointer; }
+.pui .pui-select-option:hover:not([aria-disabled="true"]), .pui .pui-select-option.pui-active { background: var(--pui-surface-hover); }
+.pui .pui-select-option[aria-selected="true"]::after { content: '✓'; position: absolute; right: 9px; top: 8px; }
+.pui .pui-select-option[aria-disabled="true"] { opacity: .5; cursor: default; }
+.pui .pui-select[hidden], .pui .pui-select-popup[hidden], .pui .pui-select-option[hidden] { display: none; }
 .pui .pui-eyebrow { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--pui-muted); }
 .pui .pui-icon-display { display: inline-flex; vertical-align: middle; color: var(--pui-text); }
 .pui .pui-icon-small .pui-icon { width: 14px; height: 14px; }

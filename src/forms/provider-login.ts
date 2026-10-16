@@ -26,11 +26,12 @@ export function createProviderLoginPanel(initial: ProviderLoginState, options: {
     inputHost.append(input);
    }
   }
-  status.textContent = login.message; status.classList.toggle('pui-form-error', login.phase === 'error'); status.setAttribute('role', login.phase === 'error' ? 'alert' : 'status');
+  parts.feedback(status).update({message:login.message,tone:login.phase === 'error' ? 'error' : 'info'}); status.classList.toggle('pui-form-error', login.phase === 'error');
   let href = ''; try {const url = new URL(login.url || ''); if (url.protocol === 'https:' || url.protocol === 'http:') href = url.href;} catch {}
   link.parentElement!.hidden = !href; if (href) link.href = href; else link.removeAttribute('href');
   code.hidden = !login.code; code.querySelector('strong')!.textContent = login.code || '';
   form.hidden = login.phase !== 'prompt'; form.querySelector('label')!.textContent = login.prompt || '';
+  const promptInput = inputHost.querySelector<HTMLInputElement | HTMLSelectElement>('input, select'); if (promptInput) parts.control(promptInput);
   parts.update(); parts.feedback(error).update({message:login.error || localError,tone:'error'});
   const complete = ['complete','error'].includes(login.phase);
   element.querySelector<HTMLButtonElement>('[data-close]')!.hidden = !complete;

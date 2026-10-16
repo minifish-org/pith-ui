@@ -36,7 +36,7 @@ test('escape cancels navigation, typeahead handles Chinese, disabled updates clo
   const trigger = page.getByRole('combobox', { name: 'Model', exact: true });
   await trigger.click(); await trigger.press('ArrowDown'); await trigger.press('Escape');
   await expect(trigger).toHaveText('Alpha'); await expect(trigger).toBeFocused();
-  await trigger.click(); await trigger.press('中'); await trigger.press('Enter');
+  await trigger.click(); await trigger.dispatchEvent('keydown', { key: '中' }); await trigger.press('Enter');
   await expect(trigger).toHaveText('中文模型');
   await trigger.click();
   await page.evaluate(() => {
@@ -125,7 +125,8 @@ test('outside click and Tab dismiss; destruction restores retained native contro
   await page.evaluate(async () => {
     const path = '/src/primitives.ts'; const { createSelect, createButton } = await import(path);
     const select = createSelect({ label: 'Choice', options: [{ value: 'a', label: 'Alpha' }] });
-    const after = createButton({ label: 'After' }); document.body.append(select.element, after.element);
+    const after = createButton({ label: 'After' }); after.element.tabIndex = 0; after.element.style.marginTop = '360px';
+    document.body.append(select.element, after.element);
     Object.assign(window, { selectFixture: { select } });
   });
   const trigger = page.getByRole('combobox', { name: 'Choice', exact: true });
