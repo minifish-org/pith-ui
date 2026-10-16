@@ -193,7 +193,7 @@ export function createWorkspaceScene(env: AppEnvironment, shell: ReturnType<type
       return [{id: 'remove', label: 'Remove workspace', action: 'remove', danger: true, disabled: !!navigationState.disabled || !!availability.busy || availability.workspaces?.includes(target.id) || group?.canRemove === false}];
     }
     const entry = navigationState.groups.flatMap(group => group.children).find(item => item.id === target.id);
-    return ([['rename', 'Rename conversation'], ['history', 'Conversation branches'], ['export', 'Export conversation'], ['delete', 'Delete conversation']] as const)
+    return ([['rename', 'Rename'], ['history', 'Conversation branches'], ['export', 'Export Markdown'], ['delete', 'Delete conversation']] as const)
       .filter(([action]) => action !== 'history' || entry?.active)
       .map(([action, label]) => ({id: action, action, label, danger: action === 'delete', disabled: !!navigationState.disabled || !!availability.busy || availability.conversations?.includes(target.id) || entry?.actions?.[action] === false}));
   }
