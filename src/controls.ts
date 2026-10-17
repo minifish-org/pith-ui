@@ -146,8 +146,11 @@ export function mount(host: HTMLElement, control: Control, options: MountOptions
     const previous = { scope: host.classList.contains('pui'), appearance: host.getAttribute('data-appearance') };
     entry(control).owner = owner;
     mounts.set(host, owner);
-    host.append(node);
     setAppearance(host, appearance);
+    // WebKit native controls can cache the previous inherited palette when a
+    // pre-scoped host receives its tree before its theme has been resolved.
+    void host.ownerDocument.defaultView?.getComputedStyle(host).color;
+    host.append(node);
     observer.observe(host, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
     return Object.freeze({ read, attach(dialog: Dialog | TextEditDialog | ConfirmDialog) {
             if (destroyed)
@@ -1108,7 +1111,7 @@ export function createPopover(options: PopoverState & {
 }): Popover {
     check(options, ['label', 'disabled', 'triggerLabel', 'icon', 'context', 'purpose', 'content', 'onToggle']);
     finite(options.purpose, ['inspector'], 'popover purpose');
-    const [node] = nodes([options.content]), block = primitive.createPopover({ ...options, content: node, position: options.purpose === 'inspector' ? false : undefined,retainDuringModal:options.purpose==='inspector' });
+    const [node] = nodes([options.content]), block = primitive.createPopover({ ...options, content: node, position: options.purpose === 'inspector' ? false : undefined,retainDuringModal:options.purpose==='inspector',titleFromLabel:options.purpose==='inspector' });
     let control: Popover;
     if (options.purpose === 'inspector')
         block.element.classList.add('pui-popover-inspector');
