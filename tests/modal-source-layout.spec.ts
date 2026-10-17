@@ -72,6 +72,7 @@ test('a short form keeps the native source label, input and left submission rhyt
   expect(i.y - l.y - l.height).toBe(8);
   expect(button.y - i.y - i.height).toBe(12);
   expect(button.x).toBe(i.x);
+  await expect(page.getByRole('button', {name: 'Continue', exact: true})).toHaveCSS('font-weight', '600');
 });
 
 test('dialog fields preserve body-size labels, natural spacing and a hidden catalog label', async ({page}) => {
@@ -169,6 +170,7 @@ test('collection panels, branch notices and a read-only footer preserve their se
   await expect(preview).toHaveCSS('font-size', '14px');
   await expect(preview).toHaveCSS('margin', '8px 0px');
   await expect(preview).toHaveCSS('color', 'rgb(102, 112, 133)');
+  await expect(page.getByRole('button', {name: 'Close', exact: true})).toHaveCSS('font-weight', '600');
   const footer = page.locator('dialog > .pui-actions');
   await expect(footer).toHaveCSS('margin-top', '16px');
   await expect(footer).toHaveCSS('padding-top', '16px');
