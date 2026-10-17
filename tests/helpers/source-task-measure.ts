@@ -13,7 +13,7 @@ export async function measureSourceTaskPieces(page:Page) {
    const doc=frame.contentDocument!;
    doc.open();doc.write(`<!doctype html><html><head><style>
     :root{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:400;line-height:1.5;font-synthesis:none;letter-spacing:normal}
-    *{box-sizing:border-box}body{margin:0}strong{font-weight:600}button{font:inherit;border:0;cursor:pointer}svg{display:inline-block;flex-shrink:0;vertical-align:middle;width:19px;height:19px}
+    *{box-sizing:border-box}body{margin:0}strong{font-weight:600}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}button{font:inherit;border:0;cursor:pointer}svg{display:inline-block;flex-shrink:0;vertical-align:middle;width:19px;height:19px}
     [data-card]{width:810px;padding:16px;border:1px solid;border-radius:12px;margin-bottom:12px}
     [data-heading]{display:flex;align-items:center;gap:8px}[data-heading]>svg{width:21px;height:21px}
     [data-heading] strong{display:block;font-size:14px;font-weight:600;margin-bottom:4px}[data-heading] span:not([data-badge]){font-size:12px}

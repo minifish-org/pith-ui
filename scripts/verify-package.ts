@@ -80,7 +80,8 @@ const models=createListSelect({label:'Models',multiple:true,values:['a'],options
 const form=createForm({children:[name,models,secret],onSubmit:async():Promise<ActionResult>=>({ok:true})});
 const editor=createTextEditDialog({title:'Edit',purpose:'pending-message',onSubmit:async text=>text.trim()?{ok:true}:{ok:false,error:'Enter text'}});
 const open=createButton({label:'Edit',onAction:()=>editor.open({value:name.read()})});
-mount(host,createStack({children:[time,form,open,editor]}),{appearance:'light'});
+const grant=createButton({label:'Allow workspace changes',intent:'warning',onAction:async()=>({ok:true})});
+mount(host,createStack({children:[time,form,open,grant,editor]}),{appearance:'light'});
 `;
   const reference = generic;
   await writeFile(join(consumer, 'main.ts'), reference);
@@ -98,6 +99,9 @@ mount(host,createStack({children:[time,form,open,editor]}),{appearance:'light'})
     ["createTable({label:'Data',columns:[{key:'item',label:'Item',kind:'number'}],rows:[]});",'kind'],
     ["createTable({label:'Data',columns:[{key:'item',label:'Item'}],rows:[{key:'row',cells:[document.body]}]});",'Control'],
     ["createButton({label:'Save',context:'link'});",'link'],
+    ["createButton({label:'Grant',intent:'caution'});",'caution'],
+    ["createButton({label:'Grant',intent:'warning',tone:'danger'});",'tone'],
+    ["createMenu({label:'Actions',items:[{id:'grant',label:'Grant',intent:'warning',onAction(){}}]});",'warning'],
     ["createSelect({label:'Models',options:[],purpose:'catalog'});",'purpose'],
     ["createTextArea({label:'Notes',rows:3});",'rows'],
     ["createSecretTextArea({label:'Environment',purpose:'document'});",'document'],
@@ -131,7 +135,7 @@ mount(host,createStack({children:[time,form,open,editor]}),{appearance:'light'})
     ["createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",'compactSource'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createSecretInput,createTimestamp,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable,createListRow,createDocument} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createMenu,createTextInput,createSecretInput,createTimestamp,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable,createListRow,createDocument} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}

@@ -13,7 +13,7 @@ import { controlDisabled } from './core.js';
 export type { ActionResult } from './core.js';
 export type { Appearance } from './theme.js';
 export type Action = UIAction;
-export type Intent = 'neutral' | 'primary' | 'danger';
+export type Intent = 'neutral' | 'primary' | 'warning' | 'danger';
 export type IconName = 'steer' | 'edit' | 'trash' | 'branch' | 'compress' | 'image' | 'plus' | 'chat' | 'folder' | 'settings' | 'arrow' | 'stop' | 'chevron' | 'down' | 'close' | 'check' | 'shield' | 'file' | 'terminal' | 'copy' | 'menu' | 'globe' | 'search' | 'more' | 'compose' | 'plug';
 const iconNames = new Set<IconName>(['steer', 'edit', 'trash', 'branch', 'compress', 'image', 'plus', 'chat', 'folder', 'settings', 'arrow', 'stop', 'chevron', 'down', 'close', 'check', 'shield', 'file', 'terminal', 'copy', 'menu', 'globe', 'search', 'more', 'compose', 'plug']);
 declare const controlBrand: unique symbol;
@@ -220,11 +220,13 @@ export type TextActionOptions = Omit<ButtonOptions, 'context'> & TextActionState
 const buttonKeys = ['label', 'intent', 'icon', 'title', 'accessibleLabel', 'disabled', 'pending', 'context'];
 function actionControl<State extends TextActionState>(options: State & Pick<ButtonOptions, 'onAction' | 'onError'>, kind: 'button' | 'icon' | 'text'): Control<State> {
     check(options, [...buttonKeys, 'onAction', 'onError']);
+    finite(options.intent, ['neutral', 'primary', 'warning', 'danger'], 'action intent');
     icon(options.icon);
     if (kind === 'icon' && !options.icon)
         throw new Error('An icon button requires an icon.');
     const validate = (state: TextActionState) => {
         check(state, buttonKeys);
+        finite(state.intent, ['neutral', 'primary', 'warning', 'danger'], 'action intent');
         icon(state.icon);
         if (kind === 'icon' && !state.icon)
             throw new Error('An icon button requires an icon.');

@@ -43,7 +43,7 @@ export function adoptAction(node: HTMLButtonElement, options: {
       else setText(node, next.label);
     }
     if (next.intent != null) {
-      for (const intent of ['neutral', 'primary', 'danger']) node.classList.toggle(`pui-${intent}`, next.intent === intent);
+      for (const intent of ['neutral', 'primary', 'warning', 'danger']) node.classList.toggle(`pui-${intent}`, next.intent === intent);
     }
     if (next.density != null) {
       node.classList.toggle('pui-normal', next.density === 'normal');

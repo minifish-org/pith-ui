@@ -68,6 +68,13 @@ export const primitiveCases: ShowcaseCase[] = [
     },
   },
   {
+    id:'warning-action',title:'谨慎授权 Warning action',layer:'components',category:'操作',
+    description:'需要谨慎确认的授权使用固定 warning 意图；不开放独立颜色、字体或样式参数。与普通操作共享异步保护，菜单仍只有 neutral/danger。',
+    states:['normal','pending','disabled','long'],controls:['outcome'],related:['button','actions','confirmation'],
+    code:`import {mount,createButton} from 'pith-ui';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nmount(host,createButton({label:'Allow workspace changes',intent:'warning',onAction:async()=>({ok:true})}));`,
+    mount(context){return group([createButton({label:sample(context,'Allow workspace changes'),intent:'warning',disabled:disabled(context),pending:context.state==='pending',onAction:()=>context.action(),onError:message=>context.log(message)})]);},
+  },
+  {
     id: 'icon-button', title: '图标按钮 Icon button', layer: 'components', category: '操作',
     description: '紧凑操作具有可访问名称和悬停说明，支持键盘聚焦与激活，不绘制焦点框。', states, related: ['button', 'icons'],
     code: `import {mount, createIconButton} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createIconButton({label:'Copy message',icon:'copy',onAction:()=>{}});\nconst mounted = mount(host,block);\n// mounted.destroy() releases the complete owned tree.`,

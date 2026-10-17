@@ -61,6 +61,13 @@ test('secret reveal policy and timestamps expose only their bounded data contrac
     assert.ok(diagnostics(imports+source).length,source);
 });
 
+test('warning is a fixed action intent and does not broaden menu styling',()=>{
+ const imports="import {createButton,createTextAction,createIconButton,createMenu} from './index.js';\n";
+ assert.deepEqual(diagnostics(imports+`const grant=createButton({label:'Grant',intent:'warning'});grant.update({label:'Confirm',intent:'primary'});createTextAction({label:'Grant',intent:'warning'});createIconButton({label:'Grant',intent:'warning',icon:'shield'});`),[]);
+ for(const source of ["createButton({label:'Grant',intent:'caution'});","createButton({label:'Grant',intent:'warning',tone:'danger'});","createMenu({label:'Actions',items:[{id:'grant',label:'Grant',intent:'warning',onAction(){}}]});"])
+   assert.ok(diagnostics(imports+source).length,source);
+});
+
 test('constrained declarations reject visual options, raw nodes, invalid modes and internal handles', () => {
   const cases = [
     "createTable({label:'Data',columns:[{key:'item',label:'Item',width:220}],rows:[]});",

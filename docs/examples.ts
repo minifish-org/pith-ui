@@ -1,6 +1,11 @@
 import type {ActionResult} from '../src/index.js';
 type PithUI = typeof import('../src/index.js');
 
+/** A cautionary grant uses one semantic intent, with the same async owner. */
+export function warningGrant(ui:PithUI,host:HTMLElement,grant:()=>Promise<ActionResult>){
+ return ui.mount(host,ui.createButton({label:'Allow workspace changes',intent:'warning',onAction:grant}));
+}
+
 /** A small composition independent of a complete application or business API. */
 export function connectionForm(ui: PithUI, host: HTMLElement, save: (draft: {name: string; provider: string; limit: string}) => Promise<ActionResult>) {
   const name = ui.createTextInput({label:'Name',value:'My connection'});

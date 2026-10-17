@@ -8,7 +8,7 @@ export interface UIBlock<State> {
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type UIAction = () => void | ActionResult | Promise<void | ActionResult>;
 export type Density = 'normal' | 'compact';
-export type Intent = 'neutral' | 'primary' | 'danger';
+export type Intent = 'neutral' | 'primary' | 'warning' | 'danger';
 
 /** Invalidates UI responses without cancelling an already-started business write. */
 export class Generation {
