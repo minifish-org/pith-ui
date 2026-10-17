@@ -152,7 +152,7 @@ test('model submit keeps failed drafts, prevents repeats and ignores successful 
   const submit = page.getByRole('button', {name: 'Use model', exact: true});
   await submit.click();
   await expect(submit).toBeDisabled();
-  await page.evaluate(() => {window.modelPartsHarness.model.update({...window.modelPartsHarness.state, disabled: true}); window.modelPartsHarness.model.update({...window.modelPartsHarness.state, disabled: false});});
+  await page.evaluate(() => {window.modelPartsHarness.model.update({...window.modelPartsHarness.state, disabled: true}); window.modelPartsHarness.model.update({...window.modelPartsHarness.state});});
   await expect(submit).toBeDisabled();
   expect(await page.evaluate(() => window.modelPartsHarness.calls)).toEqual([selection]);
   await page.evaluate(() => window.modelPartsHarness.release!({ok: false, error: 'Save failed'}));

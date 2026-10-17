@@ -272,3 +272,26 @@ test('semantic hiding and description references keep the same select and native
   expect(await page.evaluate(() => window.partsFieldsFixture.select.read())).toBe('high');
   await page.evaluate(() => window.partsFieldsFixture.mounted.destroy());
 });
+
+test('a cold catalog keeps its native control identity through enhancement and complete destruction', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createSelectPart, mountParts} = await import(path);
+    const changes: string[] = [];
+    const select = createSelectPart({label: 'Provider', catalog: 'loading', disabled: true, options: [{value: '', label: 'Loading providers…'}], onChange(value: string) {changes.push(value);}});
+    const mount = document.body.appendChild(document.createElement('div'));
+    const mounted = mountParts(mount, select);
+    const native = mount.querySelector('select')!;
+    const cold = {native: native === mount.firstElementChild, disabled: native.disabled, text: native.textContent, triggers: mount.querySelectorAll('[role=combobox]').length};
+    select.update({catalog: 'ready', disabled: false, options: [{value: 'one', label: 'One'}, {value: 'two', label: 'Two'}]});
+    select.reset('two');
+    const ready = {sameNative: native === mount.querySelector('select'), triggers: mount.querySelectorAll('[role=combobox]').length, value: select.read()};
+    native.dispatchEvent(new Event('change', {bubbles: true}));
+    select.update({catalog: 'loading', disabled: true});
+    const coldAgain = {sameNative: native === mount.firstElementChild, triggers: mount.querySelectorAll('[role=combobox]').length};
+    select.update({catalog: 'ready', disabled: false});
+    mounted.destroy();
+    return {cold, ready, coldAgain, changes, remaining: mount.children.length};
+  });
+  expect(result).toEqual({cold: {native: true, disabled: true, text: 'Loading providers…', triggers: 0}, ready: {sameNative: true, triggers: 1, value: 'two'}, coldAgain: {sameNative: true, triggers: 0}, changes: ['two'], remaining: 0});
+});
