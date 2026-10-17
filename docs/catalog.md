@@ -50,6 +50,7 @@ CSS px is not a physical screen pixel. The showroom separately reports DPR and m
 |---|---|---|
 | Fixed measures and surfaces | `createContentColumn`, `createSurface` | `content-column`, `surface` |
 | Paired fields | `createGrid` | `grid` |
+| Tabular display | `createTable` | `table` |
 | Navigation and identity | `createBreadcrumb`, `createBrand` | `breadcrumb`, `brand` |
 | Small progress actions | `createStep` | `step` |
 | Notification placement | `createNotificationRegion` | `notification-region` |

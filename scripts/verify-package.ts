@@ -69,7 +69,7 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
     if (['element','icon','createField','createApplication','createWorkspaceShell','createConversationView','Generation','setAppearance','createCopyFeedback'].some(name=>name in ui)) throw new Error('Internal DOM/product factories must not be public');
     console.log(JSON.stringify(Object.keys(ui)));
   `], consumer)) as string[];
-  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff','createPromptInput','createImage','createMessage','createReadingArea','createDropArea','createDocument','createURLInput','createSecretTextArea','createContentColumn','createSurface','createGrid','createBrand','createStep','createNotificationRegion','createBreadcrumb']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
+  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff','createPromptInput','createImage','createMessage','createReadingArea','createDropArea','createDocument','createURLInput','createSecretTextArea','createContentColumn','createSurface','createGrid','createBrand','createStep','createNotificationRegion','createBreadcrumb','createTable']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
   const generic = `import {mount,createButton,createTextInput,createListSelect,createTextEditDialog,createForm,createStack,type ActionResult} from 'pith-ui';
 import 'pith-ui/styles.css';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
@@ -92,6 +92,9 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createPane({content:document.body});",'HTMLElement'],
     ["createSlot({style:{padding:1}});",'style'],
     ["createSplitPane({navigation:createText({text:'Nav'}),content:createText({text:'Body'}),width:320});",'width'],
+    ["createTable({label:'Data',columns:[{key:'item',label:'Item',width:220}],rows:[]});",'width'],
+    ["createTable({label:'Data',columns:[{key:'item',label:'Item',kind:'number'}],rows:[]});",'kind'],
+    ["createTable({label:'Data',columns:[{key:'item',label:'Item'}],rows:[{key:'row',cells:[document.body]}]});",'Control'],
     ["createButton({label:'Save',context:'link'});",'link'],
     ["createSelect({label:'Models',options:[],purpose:'catalog'});",'purpose'],
     ["createTextArea({label:'Notes',rows:3});",'rows'],
@@ -115,7 +118,7 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",'compactSource'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}

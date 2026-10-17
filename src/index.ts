@@ -23,3 +23,6 @@ export type {NotificationRegionState} from './controls.js';
 
 export {createBreadcrumb} from './controls.js';
 export type {BreadcrumbState} from './controls.js';
+
+export {createTable} from './table.js';
+export type {TableColumn,TableRow,TableState,TableOptions} from './table.js';

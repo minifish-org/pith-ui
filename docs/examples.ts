@@ -122,3 +122,10 @@ export function boundedNativeFields(ui:PithUI,host:HTMLElement){
 export function editorFooter(ui:PithUI,host:HTMLElement,save:()=>Promise<ActionResult>,remove:()=>Promise<ActionResult>){
  return ui.mount(host,ui.createForm({context:'dialog',children:[ui.createTextArea({purpose:'document',label:'Content'})],auxiliaryActions:ui.createButton({label:'Delete',intent:'danger',onAction:remove}),submitLabel:'Save',onCancel(){},onSubmit:save}));
 }
+
+/** Rows are keyed; each cell is an owned small control, not a render callback. */
+export function tabularData(ui:PithUI,host:HTMLElement){
+ const first={key:'first',cells:[ui.createText({text:'Request A'}),ui.createText({text:'1,234'})]};
+ const table=ui.createTable({label:'Usage',columns:[{key:'request',label:'Request'},{key:'count',label:'Count'}],rows:[first],empty:'No records.'});
+ const mounted=ui.mount(host,table);return{mounted,clear(){table.update({rows:[]});}};
+}

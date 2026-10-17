@@ -61,3 +61,5 @@ Use `createTextAction({context:'link'})` for a compact underlined auxiliary acti
 Native field purposes are creation-time choices: `createTextArea({purpose:'form'})` and `createSecretTextArea({purpose:'form'})` use three code rows; `createTextArea({purpose:'document'})` is a code document editor; `createListSelect({purpose:'catalog'})` uses six native rows. Ordinary text areas and lists retain their defaults. Do not substitute numeric rows or pixel options.
 
 `createForm` may own `auxiliaryActions` before Cancel and Submit in the same footer. Their own disabled state is preserved; an internal native fieldset additionally disables them while the form is disabled or pending. Cancel remains available.
+
+Use `createTable` for information whose columns must remain related. Columns are creation-time `{key,label}` data; rows have stable keys and one owned control per column. Update rows without replacing retained cell controls. Removing a row destroys its removed controls. The library owns native table layout and horizontal scrolling; no column widths, alignment variants, CSS, raw nodes or rendering callbacks are accepted.
