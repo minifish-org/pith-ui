@@ -1,4 +1,4 @@
-import type {ConversationViewOptions, FilePreviewOptions, PagedPreviewOptions} from '../src/index.js';
+import type {ConversationViewOptions, FilePreviewOptions, PagedPreviewOptions} from '../src/legacy.js';
 
 // Compile-only regressions: a void callback deliberately permits a caller to
 // return an incidental value. Adding async support must not narrow that contract.
