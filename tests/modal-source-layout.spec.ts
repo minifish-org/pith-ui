@@ -192,3 +192,19 @@ test('a retained conditional field keeps the same source flow inside its owned s
   const tokenLabel = await box(page.locator('label').filter({hasText: /^Bearer token$/}));
   expect(tokenLabel.y - url.y - url.height).toBe(16);
 });
+
+test('a short dialog body preserves native code-paragraph rhythm without changing ordinary text', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const u = await import('../src/index.js');
+    const owner = u.mount(document.body, u.createText({text: 'Ordinary paragraph'}));
+    const dialog = u.createDialog({purpose: 'form', title: 'Provider sign-in', content: u.createText({role: 'body', text: 'Verification code: ', value: 'FIXTURE-CODE'})});
+    owner.attach(dialog); dialog.open();
+  });
+  const paragraph = page.locator('dialog .pui-control-text[data-role="body"]>p');
+  await expect(paragraph).toHaveCSS('font-size', '14px');
+  await expect(paragraph).toHaveCSS('line-height', '21px');
+  await expect(paragraph).toHaveCSS('margin', '14px 0px');
+  await expect(paragraph.locator('strong')).toHaveCSS('font-weight', '600');
+  await expect(page.getByText('Ordinary paragraph', {exact: true})).toHaveCSS('margin', '0px');
+});
