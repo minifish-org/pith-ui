@@ -39,11 +39,15 @@ export function createPromptInput(options: PromptOptions): PromptInput {
     input.rows = 1;
     const abort = new AbortController(), signal = abort.signal;
     let state: PromptState = options, destroyed = false, pending = false, width = 0;
-    const resize = () => {
-        if (destroyed)
-            return;
-        input.style.height = 'auto';
-        input.style.height = Math.min(180, Math.max(40, input.scrollHeight)) + 'px';
+    let measuredValue:string|undefined;
+    const resize = (force=false) => {
+        if (destroyed) return;
+        const append=!force&&measuredValue!==undefined&&input.value.startsWith(measuredValue);
+        measuredValue=input.value;
+        if(!append)input.style.height='auto';
+        const border=input.offsetHeight-input.clientHeight;
+        const height=Math.min(180,Math.max(40,input.scrollHeight+border))+'px';
+        if(input.style.height!==height)input.style.height=height;
     };
     const update = (next: Readonly<PromptState>) => { checkOptions(next, ['label', 'placeholder', 'disabled', 'readOnly', 'error']); state = next; field.update({ ...next, disabled: !!next.disabled }); input.setAttribute('aria-busy', String(pending)); };
     const operation = createOperation({ unavailable: () => destroyed || !!(state.disabled || state.readOnly), onPending(value) { pending = value; update(state); }, onError(message) { update({ ...state, error: message }); options.onError?.(message); } });
@@ -69,11 +73,11 @@ export function createPromptInput(options: PromptOptions): PromptInput {
     const observer = new ResizeObserver(() => {
         if (width !== input.clientWidth) {
             width = input.clientWidth;
-            resize();
+            resize(true);
         }
     });
     observer.observe(input);
-    const frame = requestAnimationFrame(resize);
+    const frame = requestAnimationFrame(()=>resize(true));
     update({ label: options.label, placeholder: options.placeholder, disabled: options.disabled, readOnly: options.readOnly, error: options.error });
     return ownControl<PromptState, Pick<PromptInput, 'read' | 'reset' | 'insert' | 'focus'>>({ element: field.element, update, destroy() { destroyed = true; operation.destroy(); abort.abort(); observer.disconnect(); cancelAnimationFrame(frame); field.destroy(); } }, [], { read: () => input.value, reset(value) {
             if (destroyed)
@@ -81,7 +85,7 @@ export function createPromptInput(options: PromptOptions): PromptInput {
             operation.invalidate();
             input.value = value;
             update({ ...state, error: '' });
-            resize();
+            resize(true);
         }, insert(text, options) {
             if (destroyed || state.disabled || state.readOnly)
                 return;
@@ -247,8 +251,8 @@ export function createReadingArea(options: ReadingAreaOptions): ReadingArea {
         list.update({ items: state.items.map(({ key, content }) => ({ key, content })) });
         for (const item of state.items) {
             const element = controlEntry(item.content).node;
-            element.dataset.readingId = item.key;
-            element.dataset.renderVersion = item.revision;
+            if(element.dataset.readingId!==item.key)element.dataset.readingId = item.key;
+            if(element.dataset.renderVersion!==item.revision)element.dataset.renderVersion = item.revision;
         }
         if (empty)
             empty.hidden = state.items.length > 0;
