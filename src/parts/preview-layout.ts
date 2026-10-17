@@ -1,15 +1,16 @@
 import type {LayoutPart} from './layout.js';
-import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
+import {assertOptions, createOwnedPart, isPartAlive, onPartDestroy, replacePartChildren, type Part} from './ownership.js';
 
 export type ContentViewportContent = string | readonly Part[] | {readonly message: string; readonly children: readonly Part[]};
 export interface ContentViewportPart extends Part {replace(content: ContentViewportContent): void}
-export interface ContentViewportOptions {purpose: 'preview' | 'inspector'; content: ContentViewportContent; announce?: 'none' | 'polite'}
+export interface ContentViewportOptions {purpose: 'preview' | 'inspector' | 'plain'; onDispose?(): void; content: ContentViewportContent; announce?: 'none' | 'polite'}
 /** A bounded content region. Literal loading/error text adds no wrapper. */
 export function createContentViewportPart(options: ContentViewportOptions): ContentViewportPart {
-  assertOptions(options, ['purpose', 'content', 'announce'], 'content viewport');
-  if (!['preview','inspector'].includes(options.purpose)) throw new TypeError('Unknown content viewport purpose.');
+  assertOptions(options, ['purpose', 'content', 'announce', 'onDispose'], 'content viewport');
+  if (!['preview','inspector','plain'].includes(options.purpose)) throw new TypeError('Unknown content viewport purpose.');
   if (options.announce !== undefined && !['none', 'polite'].includes(options.announce)) throw new TypeError('Unknown content announcement mode.');
-  const node = document.createElement('div');node.className = options.purpose === 'inspector' ? 'pui-artifacts-content' : 'pui-file-preview-body';
+  if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Viewport onDispose must be a callback.');
+  const node = document.createElement('div');node.className = options.purpose === 'inspector' ? 'pui-artifacts-content' : options.purpose === 'plain' ? '' : 'pui-file-preview-body';
   if (options.announce === 'polite' || options.purpose === 'preview' && options.announce !== 'none') node.setAttribute('aria-live', 'polite');
   let literalNode: Text | undefined;
   const replace = (content: ContentViewportContent): void => {
@@ -31,6 +32,7 @@ export function createContentViewportPart(options: ContentViewportOptions): Cont
   };
   const part = createOwnedPart(node, {replace});
   try {replace(options.content);} catch (error) {part.destroy();throw error;}
+  if (options.onDispose) onPartDestroy(part,options.onDispose);
   return part;
 }
 

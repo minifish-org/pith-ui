@@ -6,7 +6,7 @@ import {assertIconName, type IconName} from './text.js';
 
 type OrdinaryButtonVariant = 'standard' | 'primary' | 'secondary' | 'danger' | 'warning' | 'caution' | 'text-action' | 'compact-choice';
 type NavigationButtonVariant = 'navigation' | 'navigation-item' | 'toolbar-action' | 'drawer-trigger' | 'previous-match' | 'latest' | 'quiet-action';
-export type ButtonVariant = OrdinaryButtonVariant | NavigationButtonVariant | 'quiet-icon' | 'counter' | 'picker' | 'suggestion' | 'overlay-close' | 'context-icon' | 'submit-icon' | 'stop-icon';
+export type ButtonVariant = OrdinaryButtonVariant | NavigationButtonVariant | 'quiet-icon' | 'counter' | 'picker' | 'suggestion' | 'overlay-close' | 'context-icon' | 'submit-icon' | 'stop-icon' | 'dismiss-icon';
 interface ButtonState {
   label: string;
   disabled?: boolean;
@@ -26,7 +26,8 @@ export type ButtonPartState = PromptButtonState | ButtonState & {variant: Naviga
   | ButtonState & {variant: 'overlay-close'; icon: 'close'; menuExpanded?: never}
   | ButtonState & {variant: 'context-icon'; icon: 'image'; menuExpanded?: never}
   | ButtonState & {variant: 'submit-icon'; icon: 'arrow'; menuExpanded?: never}
-  | ButtonState & {variant: 'stop-icon'; icon: 'stop'; menuExpanded?: never};
+  | ButtonState & {variant: 'stop-icon'; icon: 'stop'; menuExpanded?: never}
+  | ButtonState & {variant: 'dismiss-icon'; icon: 'close'; menuExpanded?: never};
 export type ButtonPartOptions = (ButtonPartState & {purpose?: 'action'} | PromptButtonState & {purpose: 'prompt'}) & {
   /** Prompt actions retain the established generic dialog presentation. */
   type?: 'button' | 'submit' | 'reset';
@@ -47,7 +48,7 @@ const variants: Record<ButtonVariant, string> = {
   suggestion: 'pui-suggestion-action',
   'overlay-close': 'pui-remove-image',
   'context-icon': 'pui-quiet-icon pui-attach-images','submit-icon': 'pui-send-button','stop-icon': 'pui-send-button pui-is-stop',
-  'text-action': 'pui-text-button','compact-choice': 'pui-composer-model',
+  'text-action': 'pui-text-button','compact-choice': 'pui-composer-model','dismiss-icon': 'pui-quiet-icon pui-completion-dismiss',
 };
 const stateKeys = ['label', 'variant', 'icon', 'disabled', 'pending', 'title', 'hidden', 'accessibleLabel', 'menuExpanded', 'count','type'] as const;
 const navigationVariants = ['navigation', 'navigation-item', 'toolbar-action', 'drawer-trigger', 'previous-match', 'latest', 'quiet-action'];
@@ -60,7 +61,7 @@ function validateState(state: Readonly<ButtonPartState>, purpose: 'action' | 'pr
   for (const key of ['disabled', 'pending', 'hidden', 'menuExpanded'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError(`Button ${key} must be boolean.`);
   if (state.icon !== undefined) assertIconName(state.icon);
   if (state.type !== undefined && !['button','submit','reset'].includes(state.type)) throw new TypeError('Unknown button type.');
-  const fixedIcons: Partial<Record<ButtonVariant,IconName>> = {'context-icon': 'image','submit-icon': 'arrow','stop-icon': 'stop'};
+  const fixedIcons: Partial<Record<ButtonVariant,IconName>> = {'context-icon': 'image','submit-icon': 'arrow','stop-icon': 'stop','dismiss-icon': 'close'};
   if (fixedIcons[variant] && state.icon !== fixedIcons[variant]) throw new TypeError('This action requires its semantic icon.');
   const count = 'count' in state ? state.count : undefined;
   if (variant === 'counter' ? typeof count !== 'string' : count !== undefined) throw new TypeError('Only counter actions require count text.');
@@ -117,7 +118,7 @@ export function createButtonPart(options: ButtonPartOptions): ButtonPart {
       glyph = icon ? iconElement(icon) : undefined;
       if (glyph) node.prepend(glyph);
     }
-    const iconOnly = variant === 'quiet-icon' || variant === 'drawer-trigger' || variant === 'previous-match' || variant === 'overlay-close' || variant === 'context-icon' || variant === 'submit-icon' || variant === 'stop-icon';
+    const iconOnly = variant === 'quiet-icon' || variant === 'drawer-trigger' || variant === 'previous-match' || variant === 'overlay-close' || variant === 'context-icon' || variant === 'submit-icon' || variant === 'stop-icon' || variant === 'dismiss-icon';
     const nextCaption = iconOnly && purpose !== 'prompt' ? undefined : purpose === 'prompt' || variant === 'counter' || navigationVariants.includes(variant) ? spanCaption : textCaption;
     if (caption !== nextCaption) {caption?.remove(); caption = nextCaption;}
     if (caption) {

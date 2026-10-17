@@ -9,13 +9,13 @@ export function assertIconName(name: unknown): asserts name is IconName {
 }
 
 export interface TextPartState {text: string; hidden?: boolean; announce?: 'none' | 'polite'}
-export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'location' | 'footnote' | 'warning-paragraph' | 'scope-note' | 'surface-status' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'eyebrow-paragraph' | 'heading' | 'display-heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted' | 'section-title';
+export type TextRole = 'text' | 'small' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'location' | 'footnote' | 'warning-paragraph' | 'scope-note' | 'surface-status' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'eyebrow-paragraph' | 'heading' | 'display-heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted' | 'section-title';
 export interface TextPart extends Part {update(state: Readonly<TextPartState>): void}
 const textParts = new WeakSet<Part>();
 /** Internal capability check for text-only semantic references. */
 export function isTextPart(part: Part): part is TextPart {return textParts.has(part) && isPartAlive(part);}
 const textRoles = {
-  text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], path: ['span', 'pui-file-path'], 'path-paragraph': ['p', 'pui-file-path'], location: ['p', 'pui-file-preview-path'], footnote: ['p', 'pui-preview-note'], 'warning-paragraph': ['p', 'pui-approval-warning'], 'scope-note': ['p', 'pui-approval-scope'], note: ['p', 'pui-note'], hint: ['p', 'pui-field-hint'],
+  text: ['span', ''], small: ['small',''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], path: ['span', 'pui-file-path'], 'path-paragraph': ['p', 'pui-file-path'], location: ['p', 'pui-file-preview-path'], footnote: ['p', 'pui-preview-note'], 'warning-paragraph': ['p', 'pui-approval-warning'], 'scope-note': ['p', 'pui-approval-scope'], note: ['p', 'pui-note'], hint: ['p', 'pui-field-hint'],
   caption: ['p', 'pui-feature-hint'], description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], 'eyebrow-paragraph': ['p', 'pui-eyebrow'], heading: ['h3', ''], 'display-heading': ['h1', 'pui-display-heading'], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'], bubble: ['div', 'pui-user-text'], interrupted: ['span', 'pui-message-error-label'], 'surface-status': ['p', 'pui-artifacts-status'], 'section-title': ['div', 'pui-section-heading'],
 } as const;
 function validateText(state: Readonly<TextPartState>): void {
@@ -94,4 +94,9 @@ export function createIconPart(options: IconPartState): IconPart {
   const part = createOwnedPart(node, {update});
   update(options);
   return part;
+}
+
+/** A native line break with no presentation options or wrapper. */
+export function createLineBreakPart(options: Record<string,never> = {}): Part {
+  assertOptions(options,[],'line break');return createOwnedPart(document.createElement('br'),{});
 }

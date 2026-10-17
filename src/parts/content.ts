@@ -89,14 +89,14 @@ export function createMarkdownPart(options: MarkdownPartOptions): MarkdownPart {
 
 export interface PreformattedPartState {text: string; label?: string; hidden?: boolean}
 export interface PreformattedPart extends Part {update(state: Readonly<PreformattedPartState>): void}
-export interface PreformattedPartOptions extends PreformattedPartState {kind?: 'text' | 'diff' | 'command'}
+export interface PreformattedPartOptions extends PreformattedPartState {kind?: 'text' | 'diff' | 'command' | 'plain'}
 /** Literal text or a line-oriented diff with the library's semantic colors. */
 export function createPreformattedPart(options: PreformattedPartOptions): PreformattedPart {
   assertOptions(options, ['text', 'label', 'hidden', 'kind'], 'preformatted content'); validateContent(options);
   const kind = options.kind ?? 'text';
-  if (!['text', 'diff', 'command'].includes(kind)) throw new TypeError('Unsupported preformatted content kind.');
+  if (!['text', 'diff', 'command', 'plain'].includes(kind)) throw new TypeError('Unsupported preformatted content kind.');
   if (options.label !== undefined && typeof options.label !== 'string') throw new TypeError('Content label must be text.');
-  const node = document.createElement('pre'); node.className = kind === 'diff' ? 'pui-approval-diff' : kind === 'command' ? 'pui-command-text' : 'pui-file-preview-text';
+  const node = document.createElement('pre'); node.className = kind === 'diff' ? 'pui-approval-diff' : kind === 'command' ? 'pui-command-text' : kind === 'plain' ? '' : 'pui-file-preview-text';
   let text: string | undefined;
   const update = (state: Readonly<PreformattedPartState>) => {
     assertOptions(state, ['text', 'label', 'hidden'], 'preformatted state'); validateContent(state);

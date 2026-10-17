@@ -73,3 +73,7 @@ export {createTopbarActionsPart} from './frame.js';
 export {createDescriptionListPart,type DescriptionListPart,type DescriptionEntry} from './description-list.js';
 export {createScrollAreaPart} from './scroll-area.js';
 export type {FileDropData,NativeFileDropData} from './form.js';
+export {createDownloadPart,type DownloadPart,type DownloadResult} from './download.js';
+export {createTablePart,createTableRowPart,type TablePart,type TableRowPart} from './table.js';
+export {createLineBreakPart} from './text.js';
+export {createToastStackPart,createToastPart,createToastBodyPart,createEmblemPart} from './toast.js';
