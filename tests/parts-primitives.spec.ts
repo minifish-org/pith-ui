@@ -78,6 +78,7 @@ test('all legal text roles compile to one safe semantic node', async ({page}) =>
     {tag: 'span', className: 'pui-muted', text: 'muted'}, {tag: 'p', className: 'pui-field-hint', text: 'hint'},
     {tag: 'p', className: 'pui-modal-description', text: 'description'}, {tag: 'span', className: 'pui-eyebrow', text: 'eyebrow'},
     {tag: 'h3', className: '', text: 'heading'}, {tag: 'strong', className: '', text: 'strong'},
+    {tag: 'span', className: 'pui-sr-only', text: 'screenreader'},
   ]);
 });
 
@@ -122,4 +123,18 @@ test('a child may destroy itself during its action without orphaning siblings or
   await page.evaluate(() => window.partsFixture.destroyReentrant());
   await expect(page.getByText('Surviving sibling', {exact: true})).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test('generic modal footer and polite hint retain existing layout and announcement semantics', async ({page}) => {
+  await page.evaluate(() => window.partsFixture.makeAnnouncementExample());
+  const hint = page.getByText('Accessible catalog hint', {exact: true});
+  await expect(hint).toHaveAttribute('class', 'pui-field-hint');
+  await expect(hint).toHaveAttribute('aria-live', 'polite');
+  await expect(page.getByText('Screen reader caption', {exact: true})).toHaveAttribute('class', 'pui-sr-only');
+  const footer = page.getByRole('button', {name: 'Footer cancel', exact: true}).locator('..');
+  await expect(footer).toHaveAttribute('class', 'pui-modal-footer');
+  expect(await footer.evaluate(node => getComputedStyle(node).justifyContent)).toBe('flex-end');
+  expect(await footer.evaluate(node => getComputedStyle(node).borderTopStyle)).toBe('solid');
+  await page.evaluate(() => window.partsFixture.clearAnnouncement());
+  await expect(page.getByText('Updated catalog hint', {exact: true})).not.toHaveAttribute('aria-live');
 });

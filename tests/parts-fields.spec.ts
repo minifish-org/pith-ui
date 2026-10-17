@@ -223,3 +223,52 @@ test('destroy clears secret values and runtime reset rejects non-text values', a
   });
   expect(result).toEqual({secret: '', password: '', invalidReset: true});
 });
+
+test('standalone inputs own the shared control presentation and modal inputs preserve the old cascade', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts', old = '/src/primitives.ts';
+    const {createInputPart, mountParts} = await import(path), {createTextInput} = await import(old);
+    const styles = (node: Element) => {
+      const value = getComputedStyle(node);
+      return Object.fromEntries(['height', 'padding', 'borderWidth', 'borderRadius', 'backgroundColor', 'color', 'fontFamily', 'fontSize', 'lineHeight', 'opacity'].map(key => [key, value[key as keyof CSSStyleDeclaration]]));
+    };
+    const reference = createTextInput({label: 'Old field'}); document.body.append(reference.element);
+    const mount = document.body.appendChild(document.createElement('div'));
+    const mounted = mountParts(mount, createInputPart({label: 'New field'}));
+    const standalone = {expected: styles(reference.control), actual: styles(mount.querySelector('input')!)};
+    const modal = document.createElement('dialog'); modal.className = 'pui-modal'; document.body.append(modal);
+    const native = document.createElement('input'); native.type = 'text'; native.disabled = true; modal.append(native, mount); modal.showModal();
+    const input = mount.querySelector('input')!; input.disabled = true;
+    const inModal = {expected: styles(native), actual: styles(input)};
+    mounted.destroy(); reference.destroy(); modal.remove();
+    return {standalone, inModal};
+  });
+  expect(result.standalone.actual).toEqual(result.standalone.expected);
+  expect(result.inModal.actual).toEqual(result.inModal.expected);
+});
+
+test('semantic hiding and description references keep the same select and native field', async ({page}) => {
+  await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createSelectPart, createFieldLabelPart, createTextPart, createStackPart, mountParts} = await import(path);
+    const hint = createTextPart({text: 'Model capabilities', role: 'hint'});
+    const select = createSelectPart({label: 'Thinking effort', value: 'high', options: [{value: 'off', label: 'Off'}, {value: 'high', label: 'High'}], describedBy: [hint]});
+    const label = createFieldLabelPart({label: 'Thinking effort', control: select});
+    const root = createStackPart({children: [label, select, hint]});
+    window.partsFieldsFixture = {select, mounted: mountParts(document.body.appendChild(document.createElement('div')), root), changes: []} as unknown as FieldsFixture;
+    Object.assign(window.partsFieldsFixture, {label});
+  });
+  const choice = page.getByRole('combobox', {name: 'Thinking effort', exact: true});
+  await expect(choice).toHaveAccessibleDescription('Model capabilities');
+  await choice.focus();
+  await page.evaluate(() => {
+    window.partsFieldsFixture.select.update({hidden: true});
+    (window.partsFieldsFixture as unknown as {label: {update(state: {label: string; hidden: boolean}): void}}).label.update({label: 'Thinking effort', hidden: true});
+  });
+  await expect(choice).toBeHidden();
+  await page.evaluate(() => window.partsFieldsFixture.select.update({hidden: false}));
+  await expect(choice).toBeVisible();
+  await expect(choice).toHaveText('High');
+  expect(await page.evaluate(() => window.partsFieldsFixture.select.read())).toBe('high');
+  await page.evaluate(() => window.partsFieldsFixture.mounted.destroy());
+});

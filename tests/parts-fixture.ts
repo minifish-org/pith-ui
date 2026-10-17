@@ -4,6 +4,7 @@ import {
 } from '../src/parts/index.js';
 import type {ActionResult} from '../src/core.js';
 import {createInputPart} from '../src/parts/fields.js';
+import {createFooterPart} from '../src/parts/layout.js';
 
 const mount = document.getElementById('parts-mount')!;
 const calls: string[] = [];
@@ -64,6 +65,7 @@ function reentrantExample() {
   return {read: () => errors, destroy() {tree.destroy(); host.remove();}};
 }
 let reentrant: ReturnType<typeof reentrantExample> | undefined;
+let announcedHint: ReturnType<typeof createTextPart> | undefined;
 
 const ownershipChecks = (): Record<string, boolean> => {
   const rejected = (action: () => unknown) => {try {action(); return false;} catch {return true;}};
@@ -105,13 +107,21 @@ export const fixture = {
   readReentrantErrors: () => reentrant!.read(),
   destroyReentrant() {reentrant!.destroy();},
   textExamples() {
-    const roles = ['text', 'paragraph', 'muted', 'hint', 'description', 'eyebrow', 'heading', 'strong'] as const;
+    const roles = ['text', 'paragraph', 'muted', 'hint', 'description', 'eyebrow', 'heading', 'strong', 'screenreader'] as const;
     const host = document.createElement('div'); document.body.append(host);
     const examples = createStackPart({children: roles.map(role => createTextPart({text: role, role}))});
     const owned = mountParts(host, examples);
     const markup = [...host.firstElementChild!.children].map(node => ({tag: node.tagName.toLowerCase(), className: node.className, text: node.textContent}));
     owned.destroy(); host.remove(); return markup;
   },
+  makeAnnouncementExample() {
+    const hint = createTextPart({text: 'Accessible catalog hint', role: 'hint', announce: 'polite'});
+    announcedHint = hint;
+    const hiddenLabel = createTextPart({text: 'Screen reader caption', role: 'screenreader'});
+    const footer = createFooterPart({children: [createButtonPart({label: 'Footer cancel', variant: 'secondary'})]});
+    root.replace([toolbar, caption, actions, hint, hiddenLabel, footer]);
+  },
+  clearAnnouncement() {announcedHint!.update({text: 'Updated catalog hint', announce: 'none'});},
   inspect() {return {
     handles: [save, caption, icon, actions, toolbar, root, mounted].map(handle => Object.keys(handle)),
     outer: mount.firstElementChild?.outerHTML,
