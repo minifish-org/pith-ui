@@ -138,6 +138,32 @@ test('form and button invalidation retire pending outcomes without resetting a l
   expect(value).toEqual({immediate: {pending: false,buttonDisabled: false,value: 'Live draft',same: true,focus: true,selection: [2,6]},errors: 0});
 });
 
+test('an auxiliary form validation action focuses invalid fields without invoking save',async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const value = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts'; const p = await import(path); let saves = 0,invalid = 0;
+    const input = p.createInputPart({label: 'Endpoint',kind: 'url',value: 'invalid',required: true,onInvalid() {invalid++;}});
+    const form = p.createFormPart({children: [input],onSubmit() {saves++;}});
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,form);
+    const rejected = form.reportValidity(); input.reset('https://valid.example/v1'); const accepted = form.reportValidity();
+    const result = {rejected,accepted,saves,invalid,focus: document.activeElement === mount.querySelector('input')}; tree.destroy(); return result;
+  });
+  expect(value).toEqual({rejected: false,accepted: true,saves: 0,invalid: 1,focus: true});
+});
+
+test('paragraph feedback can announce an update status without changing its native content node',async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const value = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts'; const p = await import(path);
+    const status = p.createFeedbackPart({presentation: 'paragraph',tone: 'info',message: 'Checking…',announce: 'polite'});
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,status),node = mount.querySelector('p')!;
+    const first = {role: node.getAttribute('role'),live: node.getAttribute('aria-live')};
+    status.update({tone: 'info',message: 'Ready',announce: 'none'});
+    const result = {first,same: node === mount.querySelector('p'),live: node.getAttribute('aria-live'),text: node.textContent}; tree.destroy(); return result;
+  });
+  expect(value).toEqual({first: {role: 'status',live: 'polite'},same: true,live: null,text: 'Ready'});
+});
+
 const scenarios: Record<string,OpenOptions> = {
   ready: {},loading: {cold: true,state: {baseUrl: '',hasApiKey: false,ready: false}},
   disabled: {state: {...ready,disabled: true,appearance: {mode: 'dark',disabled: true}}},
