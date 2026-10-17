@@ -18,15 +18,18 @@ test('table preserves native columns, keyed cell focus and nested detail state',
   await page.locator('summary').filter({hasText:'Price source'}).click();
   const note=page.getByRole('textbox',{name:'Request note',exact:true});
   await note.fill('Retained note');
+  await note.evaluate(input=>(input as HTMLInputElement).setSelectionRange(2,6));
   await page.evaluate(()=>{const f=(window as any).tableFixture;f.table.update({rows:[f.second,f.first]});});
   await expect(note).toBeFocused();
   await expect(note).toHaveValue('Retained note');
+  expect(await note.evaluate(input=>[(input as HTMLInputElement).selectionStart,(input as HTMLInputElement).selectionEnd])).toEqual([2,6]);
   await expect(page.getByText('Saved price',{exact:true})).toBeVisible();
   await expect(table.getByRole('row').nth(1)).toContainText('Price source');
   await page.evaluate(()=>{const f=(window as any).tableFixture;f.table.update({rows:[]});});
   await expect(table.getByRole('cell')).toHaveCount(1);
   await expect(table.getByRole('cell')).toHaveAttribute('colspan','2');
   await expect(table.getByRole('cell')).toHaveText('No recorded requests yet.');
+  expect(await page.evaluate(async()=>{const ui=await import('../src/index.js');try{ui.createStack({children:[(window as any).tableFixture.input]});return false;}catch{return true;}})).toBe(true);
   await page.evaluate(()=>{const f=(window as any).tableFixture;f.mounted.destroy();});
   await expect(page.getByRole('table')).toHaveCount(0);
 });
