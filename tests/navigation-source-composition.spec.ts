@@ -13,8 +13,12 @@ async function openNavigation(page: Page) {
       const trigger=ui.createIconButton({context:'navigation',label,icon:'more',onAction:()=>popup.open(trigger)});
       return ui.createActions({children:[trigger,popup]});
     };
-    const conversation=(label:string,selected=false)=>ui.createSlot({content:ui.createListRow({title:label,selected,context:'navigation',
-      status:ui.createSlot({content:ui.createStatus({label:'',presentation:'indicator'}),hidden:true}),actions:menu('Actions for '+label),onAction(){}})});
+    const conversation=(label:string,selected=false)=>{
+      const status=ui.createStatus({label:'',presentation:'indicator'}),slot=ui.createSlot({content:status,hidden:true});
+      if(label==='Conversation b')Reflect.set(window,'sourceNavigationStatus',{status,slot});
+      return ui.createSlot({content:ui.createListRow({title:label,selected,context:'navigation',status:slot,actions:menu('Actions for '+label),
+        onAction(){Reflect.set(window,'sourceNavigationSelected',label);}})});
+    };
     const children=ui.createList({items:[{key:'a',content:conversation('Simulated layout review',true)},{key:'b',content:conversation('Conversation b')}]});
     const first=ui.createDisclosure({context:'navigation',title:'Review workspace',icon:'folder',open:true,selected:true,content:children,
       actions:ui.createActions({children:[menu('Workspace actions'),ui.createIconButton({context:'navigation',icon:'compose',label:'New conversation'})]})});
@@ -107,4 +111,34 @@ test('narrow navigation remains laid out off screen while inert and returns to i
   await expect(nav).not.toHaveAttribute('inert','');
   await page.evaluate(()=>Reflect.get(window,'sourceNavigationLayout').setNavigationOpen(false));
   await expect.poll(async()=>await nav.boundingBox()).toEqual(closed);
+});
+
+test('navigation status stays inside the selection action with source unread, running and approval geometry',async({page})=>{
+  await openNavigation(page);
+  const update=async(label:string,tone:'neutral'|'warning',activity:'idle'|'busy')=>page.evaluate(({label,tone,activity})=>{
+    const state=Reflect.get(window,'sourceNavigationStatus');state.status.update({label,tone,activity,presentation:'indicator'});state.slot.update({hidden:false});
+  },{label,tone,activity});
+  await update('Completed, unread','neutral','idle');
+  const action=page.getByRole('button',{name:'Conversation b Completed, unread',exact:true});
+  const indicator=page.getByRole('img',{name:'Completed, unread',exact:true});
+  await expect(action.getByRole('img',{name:'Completed, unread',exact:true})).toBeVisible();
+  await expect(indicator).toHaveCSS('width','18px');
+  await expect(indicator).toHaveCSS('height','18px');
+  await expect(indicator.locator('i')).toHaveCSS('width','7px');
+  await expect(indicator.locator('i')).toHaveCSS('height','7px');
+  const a=(await action.boundingBox())!,s=(await indicator.boundingBox())!;
+  expect(s.x+s.width).toBe(a.x+a.width-8);
+  expect(s.y+s.height/2).toBe(a.y+a.height/2);
+  await indicator.click();
+  expect(await page.evaluate(()=>Reflect.get(window,'sourceNavigationSelected'))).toBe('Conversation b');
+  await update('Running','neutral','busy');
+  const running=page.getByRole('img',{name:'Running',exact:true});
+  await expect(running).toHaveCSS('width','18px');
+  await expect(running.locator('i')).toHaveCSS('width','13px');
+  await expect(running.locator('i')).toHaveCSS('border-top-width','2px');
+  await update('Waiting for approval','warning','idle');
+  const approval=page.getByRole('img',{name:'Waiting for approval',exact:true});
+  await expect(approval).toHaveCSS('width','18px');
+  await expect(approval.locator('svg')).toHaveCSS('width','16px');
+  await expect(approval).toHaveCSS('color','rgb(138, 87, 10)');
 });
