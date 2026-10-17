@@ -2,9 +2,9 @@ import type {ActionResult} from '../core.js';
 import {createOperation} from '../operation.js';
 import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
 
-export interface FormPartState {disabled?: boolean}
+export interface FormPartState {disabled?: boolean; hidden?: boolean}
 export interface FormPartOptions extends FormPartState {
-  purpose?: 'form' | 'text-entry' | 'confirmation';
+  purpose?: 'form' | 'text-entry' | 'confirmation' | 'answer';
   children: readonly Part[];
   onSubmit?(): void | ActionResult | Promise<void | ActionResult>;
   onPending?(pending: boolean): void;
@@ -22,13 +22,15 @@ export interface FormPart extends Part {
 
 /** A native form without a fieldset or layout wrapper. Validation stays native. */
 export function createFormPart(options: FormPartOptions): FormPart {
-  assertOptions(options, ['purpose', 'children', 'disabled', 'onSubmit', 'onPending', 'onError'], 'form');
-  if (options.purpose !== undefined && !['form', 'text-entry', 'confirmation'].includes(options.purpose)) throw new TypeError('Unsupported form purpose.');
-  if (options.disabled !== undefined && typeof options.disabled !== 'boolean') throw new TypeError('Form disabled must be boolean.');
+  assertOptions(options, ['purpose', 'children', 'disabled', 'hidden', 'onSubmit', 'onPending', 'onError'], 'form');
+  if (options.purpose !== undefined && !['form', 'text-entry', 'confirmation', 'answer'].includes(options.purpose)) throw new TypeError('Unsupported form purpose.');
+  for (const key of ['disabled', 'hidden'] as const) if (options[key] !== undefined && typeof options[key] !== 'boolean') throw new TypeError(`Form ${key} must be boolean.`);
   for (const key of ['onSubmit', 'onPending', 'onError'] as const) if (options[key] !== undefined && typeof options[key] !== 'function') throw new TypeError(`Form ${key} must be a callback.`);
   const node = document.createElement('form');
   if (options.purpose === 'text-entry') node.className = 'pui-text-edit';
   if (options.purpose === 'confirmation') node.className = 'pui-confirm';
+  if (options.purpose === 'answer') node.className = 'pui-answer-form';
+  node.hidden = !!options.hidden;
   let disabled = !!options.disabled;
   let part: FormPart;
   const operation = createOperation({
@@ -47,10 +49,11 @@ export function createFormPart(options: FormPartOptions): FormPart {
   node.addEventListener('submit', submit);
   part = createOwnedPart<Omit<FormPart, keyof Part>>(node, {
     update(state: Readonly<FormPartState>) {
-      assertOptions(state, ['disabled'], 'form state');
-      if (state.disabled !== undefined && typeof state.disabled !== 'boolean') throw new TypeError('Form disabled must be boolean.');
+      assertOptions(state, ['disabled', 'hidden'], 'form state');
+      for (const key of ['disabled', 'hidden'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError(`Form ${key} must be boolean.`);
       if (!isPartAlive(part)) return;
       if (state.disabled !== undefined) disabled = state.disabled;
+      if (state.hidden !== undefined) node.hidden = state.hidden;
     },
     replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part, children);},
     submit() {if (isPartAlive(part)) node.requestSubmit();},

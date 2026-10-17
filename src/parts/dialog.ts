@@ -4,7 +4,7 @@ import {assertOptions, createOwnedPart, isPartAlive, onPartDestroy, replacePartC
 
 export interface DialogPartState {title: string; description?: string; eyebrow?: string; closeLabel?: string; closeDisabled?: boolean}
 export interface DialogPartOptions extends DialogPartState {
-  purpose?: 'form' | 'prompt' | 'feature' | 'warning' | 'image';
+  purpose?: 'form' | 'prompt' | 'feature' | 'warning' | 'image' | 'preview';
   children: readonly Part[];
   closeOnBackdrop?: boolean;
   onClose?(): void;
@@ -22,7 +22,7 @@ export interface DialogPart extends Part {
 /** A standard native modal. Content and actions are independently composed parts. */
 export function createDialogPart(options: DialogPartOptions): DialogPart {
   assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeLabel', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose', 'onDispose'], 'dialog');
-  if (options.purpose !== undefined && !['form', 'prompt', 'feature', 'warning', 'image'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
+  if (options.purpose !== undefined && !['form', 'prompt', 'feature', 'warning', 'image', 'preview'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
   const validate = (state: Readonly<DialogPartState>) => {
     if (typeof state.title !== 'string' || state.eyebrow !== undefined && typeof state.eyebrow !== 'string' || state.description !== undefined && typeof state.description !== 'string') throw new TypeError('Dialog heading must be text.');
     if (state.closeLabel !== undefined && typeof state.closeLabel !== 'string') throw new TypeError('Dialog close label must be text.');
@@ -33,9 +33,9 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   if (options.onClose !== undefined && typeof options.onClose !== 'function') throw new TypeError('Dialog onClose must be a callback.');
   if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Dialog onDispose must be a callback.');
   const prompt = options.purpose === 'prompt';
-  const feature = options.purpose === 'feature';
+  const feature = options.purpose === 'feature' || options.purpose === 'preview';
   const image = options.purpose === 'image';
-  const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : feature ? 'pui-modal pui-feature-modal' : image ? 'pui-modal pui-image-viewer' : 'pui-modal'; node.id = uniqueId('pui-dialog');
+  const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : options.purpose === 'preview' ? 'pui-modal pui-file-preview-modal' : feature ? 'pui-modal pui-feature-modal' : image ? 'pui-modal pui-image-viewer' : 'pui-modal'; node.id = uniqueId('pui-dialog');
   const heading = document.createElement(prompt ? 'header' : 'div'); heading.className = prompt ? 'pui-dialog-heading' : image ? 'pui-modal-heading' : 'pui-dialog-heading pui-modal-heading';
   const content = document.createElement('div');
   const eyebrow = document.createElement('span'); eyebrow.className = 'pui-eyebrow';

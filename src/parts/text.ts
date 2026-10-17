@@ -9,13 +9,13 @@ export function assertIconName(name: unknown): asserts name is IconName {
 }
 
 export interface TextPartState {text: string; hidden?: boolean; announce?: 'none' | 'polite'}
-export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted';
+export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'location' | 'footnote' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted';
 export interface TextPart extends Part {update(state: Readonly<TextPartState>): void}
 const textParts = new WeakSet<Part>();
 /** Internal capability check for text-only semantic references. */
 export function isTextPart(part: Part): part is TextPart {return textParts.has(part) && isPartAlive(part);}
 const textRoles = {
-  text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], path: ['span', 'pui-file-path'], 'path-paragraph': ['p', 'pui-file-path'], note: ['p', 'pui-note'], hint: ['p', 'pui-field-hint'],
+  text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], path: ['span', 'pui-file-path'], 'path-paragraph': ['p', 'pui-file-path'], location: ['p', 'pui-file-preview-path'], footnote: ['p', 'pui-preview-note'], note: ['p', 'pui-note'], hint: ['p', 'pui-field-hint'],
   caption: ['p', 'pui-feature-hint'], description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], heading: ['h3', ''], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'], bubble: ['div', 'pui-user-text'], interrupted: ['span', 'pui-message-error-label'],
 } as const;
 function validateText(state: Readonly<TextPartState>): void {

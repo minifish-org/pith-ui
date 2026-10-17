@@ -66,3 +66,20 @@ export function createStackPart(options: StackPartState & {children: readonly Pa
   update({hidden: options.hidden});
   return part;
 }
+
+export interface InlineGroupPartState {hidden?: boolean}
+export interface InlineGroupPart extends LayoutPart {update(state: Readonly<InlineGroupPartState>): void}
+/** Native inline flow for adjacent controls or text; no additional layout rule. */
+export function createInlineGroupPart(options: InlineGroupPartState & {children: readonly Part[]}): InlineGroupPart {
+  assertOptions(options, ['children', 'hidden'], 'inline group');
+  const validate = (state: Readonly<InlineGroupPartState>) => {
+    assertOptions(state, ['hidden'], 'inline group state');
+    if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Inline group hidden must be boolean.');
+  };
+  const initial = {hidden: options.hidden}; validate(initial);
+  const node = document.createElement('span'); node.className = 'pui-inline-group';
+  let part: InlineGroupPart;
+  const update = (state: Readonly<InlineGroupPartState>) => {validate(state);if (isPartAlive(part)) node.hidden = !!state.hidden;};
+  part = createOwnedPart<Omit<InlineGroupPart,keyof Part>>(node, {update,replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part,children);}}, {children: options.children});
+  update(initial); return part;
+}

@@ -500,7 +500,8 @@
 .pui .pui-custom-model label { display: block; margin-bottom: var(--pui-space-md); font-size: var(--pui-text-medium); color: var(--pui-muted); }
 .pui .pui-custom-model input:not([type=checkbox]) { width: 100%; margin-top: var(--pui-space-sm); }
 .pui .pui-custom-model .pui-field-label { margin-top: 0; font-weight: inherit; }
-.pui .pui-custom-model input.pui-control { display: inline-block; }
+.pui .pui-custom-model input.pui-control, .pui .pui-inline-group > input.pui-control { display: inline-block; }
+.pui .pui-inline-group > .pui-select > select.pui-control { min-width: auto; }
 .pui .pui-modal textarea.pui-resource-editor { width: 100%; min-height: 300px; padding: var(--pui-space-md); resize: vertical; font-family: var(--pui-font-code); font-size: var(--pui-text-medium); line-height: var(--pui-line-height); color: var(--pui-text); background: var(--pui-surface-input); border: 1px solid var(--pui-border); border-radius: 10px; }
 .pui .pui-custom-model label.pui-checkbox-field { display: flex; }
 .pui .pui-branch-node { padding: var(--pui-space-lg); margin: var(--pui-space-sm) 0; border: 1px solid var(--pui-border); border-radius: 12px; }
@@ -542,7 +543,7 @@
 .pui .pui-modal .pui-field-hint, .pui .pui-modal .pui-form-error{ font-size: var(--pui-text-small); line-height: var(--pui-line-height); }
 .pui .pui-modal .pui-modal-footer { margin-top: var(--pui-space-lg); padding-top: var(--pui-space-lg); gap: var(--pui-space-sm); }
 .pui .pui-modal .pui-provider-login-status { font-size: var(--pui-form-font-size); line-height: var(--pui-line-height); margin: var(--pui-space-lg) 0 0; }
-.pui [id$="oauth-answer"] > .pui-primary-button { margin-top: var(--pui-space-md); }
+.pui [id$="oauth-answer"] > .pui-primary-button, .pui .pui-answer-form > .pui-primary-button { margin-top: var(--pui-space-md); }
 
 /* Settings uses one spacing rhythm for fields, explanations and actions. */
 .pui .pui-settings-panel .pui-settings-section { display: grid; gap: var(--pui-space-md); align-items: start; margin: var(--pui-space-lg) 0 0; padding: var(--pui-space-lg) 0 0; border: 0; border-top: 1px solid var(--pui-border); color: var(--pui-text); }

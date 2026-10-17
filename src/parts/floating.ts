@@ -27,7 +27,7 @@ function relatedNodes(options: FloatingOptions): HTMLDialogElement[] {
     return node;
   });
 }
-function anchored(panel: HTMLElement, alive: () => boolean, canOpen: () => boolean, related: readonly HTMLDialogElement[], onToggle?: (open: boolean) => void) {
+function anchored(panel: HTMLElement, alive: () => boolean, canOpen: () => boolean, related: readonly HTMLDialogElement[], onToggle?: (open: boolean) => void, dismissOnMove = false) {
   let surface: ReturnType<typeof installAnchoredSurface> | undefined;
   let current: ButtonPart | undefined;
   let unsubscribe: (() => void) | undefined;
@@ -45,7 +45,7 @@ function anchored(panel: HTMLElement, alive: () => boolean, canOpen: () => boole
       if (!source.isConnected) return;
       detach(); current = trigger;
       source.setAttribute('aria-controls', panel.id);
-      const next = installAnchoredSurface({trigger: source, panel, exclusions: related,
+      const next = installAnchoredSurface({trigger: source, panel, exclusions: related, dismissOnMove,
         canOpen: () => alive() && canOpen() && isButtonAvailable(trigger),
         onToggle(open) {
           if (!open && surface === next) {
@@ -106,7 +106,7 @@ export function createMenuPart(options: MenuPartState & {relatedDialogs?: readon
   let state: Readonly<MenuPartState> = options;
   let part: MenuPart;
   const entries = new Map<string, MenuItemPart>(), generation = new Generation();
-  const surface = anchored(node, () => isPartAlive(part), () => !state.disabled, related, open => {generation.invalidate(); options.onToggle?.(open);});
+  const surface = anchored(node, () => isPartAlive(part), () => !state.disabled, related, open => {generation.invalidate(); options.onToggle?.(open);}, true);
   const navigation = installMenuNavigation(node, {isOpen: surface.isOpen, onDismiss(restore) {surface.close(restore);}});
   const makeItem = (item: MenuPartItem): MenuItemPart => {
     const button = document.createElement('button'); button.type = 'button';
