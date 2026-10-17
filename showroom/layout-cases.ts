@@ -7,9 +7,22 @@ export const layoutCases: ShowcaseCase[] = [
     { id: 'content-column', title: '内容列 Content column', layer: 'components', category: '布局', description: '阅读、输入与介绍三个固定用途；宽度774/810/650 CSS px，由库随容器收窄，不开放像素选项。', related: ['reading-area', 'surface', 'grid'], code: `import {mount,createContentColumn,createText} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 mount(host,createContentColumn({purpose:'reading',content:createText({text:'A centered reading measure.'})}));`, mount() { return show(['reading', 'input', 'intro'].map(purpose => createContentColumn({ purpose: purpose as 'reading' | 'input' | 'intro', content: createText({ text: purpose + ' · 一个固定内容列' }) }))); } },
-    { id: 'surface', title: '内容表面 Surface', layer: 'components', category: '布局', description: '输入外壳、窄面板和通知卡片三种固定用途；正文与页尾分别组合，不包含业务行为。', related: ['prompt-input', 'toolbar', 'step'], code: `import {mount,createSurface,createPromptInput,createToolbar,createIconButton} from 'pith-ui';
+    { id: 'surface', title: '内容表面 Surface', layer: 'components', category: '布局', description: '输入外壳、窄面板和通知卡片三种固定用途；只有通知卡片支持选中状态。可体验选中、显式取消和省略选中值的更新；不会自动点击或禁用动作。', related: ['prompt-input', 'toolbar', 'step'], code: `import {mount,createSurface,createText} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
-mount(host,createSurface({content:createPromptInput({label:'Draft'}),footer:createToolbar({label:'Actions',trailing:createIconButton({label:'Send',icon:'arrow',context:'inline'})})}));`, mount() { return show([createSurface({ content: createPromptInput({ label: 'Draft', placeholder: '输入与操作栏共用一个外壳' }), footer: createToolbar({ label: 'Editor actions', leading: createText({ role: 'caption', text: 'Draft is retained' }), trailing: createIconButton({ label: 'Send', icon: 'arrow', context: 'inline' }) }) }), createSurface({ purpose: 'panel', content: createText({ text: '固定445px面板；在窄容器内收缩。' }) }), createSurface({ purpose: 'notice', tone: 'warning', content: createText({ role: 'caption', tone: 'warning', text: '业务警告状态；无焦点光晕。' }) })]); } },
+const notice=createSurface({purpose:'notice',selected:true,content:createText({text:'Selected content'})});
+notice.update({label:'Updated label'}); // Selected state is retained.
+notice.update({selected:false}); // Explicitly clear selection.
+mount(host,notice);`, mount(context) {
+      const selectable = createSurface({purpose: 'notice', label: 'Selectable notice', selected: false,
+        content: createStack({context: 'flow', children: [createToolbar({label: 'Example notice heading',
+          leading: createText({role: 'label', text: 'Selectable notice example'}),
+          trailing: createButton({label: 'Example action', onAction: () => context.log('演示操作；选中状态不控制动作。')})}),
+          createText({text: '左侧选中边框属于业务状态。正文、页尾和交互仍由各自的小积木负责。'})]})});
+      return show([createSurface({ content: createPromptInput({ label: 'Draft', placeholder: '输入与操作栏共用一个外壳' }), footer: createToolbar({ label: 'Editor actions', leading: createText({ role: 'caption', text: 'Draft is retained' }), trailing: createIconButton({ label: 'Send', icon: 'arrow', context: 'inline' }) }) }), createSurface({ purpose: 'panel', content: createText({ text: '固定445px面板；在窄容器内收缩。' }) }), createSurface({ purpose: 'notice', tone: 'warning', content: createText({ role: 'caption', tone: 'warning', text: '业务警告状态；无焦点光晕。' }) }), selectable,
+        createActions({children: [createButton({label: 'Select notice', onAction: () => selectable.update({label: 'Selectable notice', selected: true})}),
+          createButton({label: 'Clear notice selection', onAction: () => selectable.update({label: 'Selectable notice', selected: false})}),
+          createButton({label: 'Update notice label', onAction: () => selectable.update({label: 'Updated notice label'})})]})]);
+    } },
     { id: 'grid', title: '成对字段 Grid', layer: 'components', category: '布局', description: '两个等宽字段；窄屏自动成为一列。列数和间距没有自由数值参数。', related: ['text-input', 'form-section'], code: `import {mount,createGrid,createTextInput} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 mount(host,createGrid({columns:'pair',children:[createTextInput({label:'Input price'}),createTextInput({label:'Output price'})]}));`, mount() { return show([createGrid({ columns: 'pair', children: [createTextInput({ label: 'Input price' }), createTextInput({ label: 'Output price' })] })]); } },

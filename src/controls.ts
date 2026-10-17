@@ -560,24 +560,60 @@ export function createContentColumn(options: ContentColumnState & {
     update({ purpose: options.purpose });
     return own({ element: node, update, destroy() { } }, [options.content]);
 }
-export interface SurfaceState {
+export interface OrdinarySurfaceState {
     readonly label?: string;
-    readonly purpose?: 'input' | 'panel' | 'notice';
+    readonly purpose?: 'input' | 'panel';
     readonly tone?: 'neutral' | 'warning' | 'error';
+    readonly selected?: never;
 }
+export interface NoticeSurfaceState {
+    readonly label?: string;
+    readonly purpose?: 'notice';
+    readonly tone?: 'neutral' | 'warning' | 'error';
+    readonly selected?: boolean;
+}
+export type SurfaceState = OrdinarySurfaceState | NoticeSurfaceState;
+export function createSurface(options: NoticeSurfaceState & {
+    readonly purpose: 'notice';
+    readonly content: Control;
+    readonly footer?: Control;
+}): Control<NoticeSurfaceState>;
+export function createSurface(options: OrdinarySurfaceState & {
+    readonly content: Control;
+    readonly footer?: Control;
+}): Control<OrdinarySurfaceState>;
 export function createSurface(options: SurfaceState & {
     readonly content: Control;
     readonly footer?: Control;
 }): Control<SurfaceState> {
-    check(options, ['label', 'purpose', 'tone', 'content', 'footer']);
+    check(options, ['label', 'purpose', 'tone', 'selected', 'content', 'footer']);
+    const notice = options.purpose === 'notice';
+    const validate = (state: Readonly<SurfaceState>) => {
+        check(state, ['label', 'purpose', 'tone', ...(notice ? ['selected'] : [])]);
+        finite(state.purpose, notice ? ['notice'] : ['input', 'panel'], 'surface purpose');
+        finite(state.tone, ['neutral', 'warning', 'error'], 'surface tone');
+        if (state.selected !== undefined && typeof state.selected !== 'boolean')
+            throw new Error('Surface selection must be boolean.');
+    };
+    const initial = stateOnly(options, ['label', 'purpose', 'tone', 'selected']);
+    validate(initial);
     const children = [options.content, ...(options.footer ? [options.footer] : [])];
     nodes(children);
     const node = element('section', 'pui-input-surface', entry(options.content).node, ...(options.footer ? [element('div', 'pui-input-surface-footer', entry(options.footer).node)] : []));
-    const update = (state: Readonly<SurfaceState>) => { check(state, ['label', 'purpose', 'tone']); const purpose = state.purpose ?? options.purpose; finite(purpose, ['input', 'panel', 'notice'], 'surface purpose'); finite(state.tone, ['neutral', 'warning', 'error'], 'surface tone'); node.classList.toggle('pui-notice-surface', purpose === 'notice'); node.classList.toggle('pui-surface-warning', state.tone === 'warning'); node.classList.toggle('pui-surface-error', state.tone === 'error'); node.classList.toggle('pui-panel-surface', purpose === 'panel'); if (state.label)
-        node.setAttribute('aria-label', state.label);
-    else
-        node.removeAttribute('aria-label'); };
-    update({ label: options.label, purpose: options.purpose, tone: options.tone });
+    let selected = false;
+    const update = (state: Readonly<SurfaceState>) => {
+        validate(state);
+        const purpose = state.purpose ?? options.purpose;
+        selected = state.selected ?? selected;
+        node.classList.toggle('pui-notice-surface', purpose === 'notice');
+        node.classList.toggle('pui-surface-selected', notice && selected);
+        node.classList.toggle('pui-surface-warning', state.tone === 'warning');
+        node.classList.toggle('pui-surface-error', state.tone === 'error');
+        node.classList.toggle('pui-panel-surface', purpose === 'panel');
+        if (state.label) node.setAttribute('aria-label', state.label);
+        else node.removeAttribute('aria-label');
+    };
+    update(initial);
     return own({ element: node, update, destroy() { } }, children);
 }
 export interface BrandState {

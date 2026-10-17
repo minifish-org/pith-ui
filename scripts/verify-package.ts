@@ -112,6 +112,8 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createTextEditDialog({rows:5});",'rows'],
     ["createContentColumn({purpose:'reading',content:createText({text:'Read'}),width:700});",'width'],
     ["createSurface({content:createText({text:'Body'}),padding:8});",'padding'],
+    ["createSurface({content:createText({text:'Ordinary'}),selected:true});",'No overload matches this call.'],
+    ["createSurface({content:createText({text:'Ordinary'})}).update({selected:true});","Type 'true' is not assignable to type 'undefined'."],
     // Literal-value errors name the accepted type, rather than the property.
     ["createGrid({columns:3,children:[]});",'Type \'number\' is not assignable to type \'"pair"\'.'],
     ["createBreadcrumb({label:'Location',items:[],fontSize:12});",'fontSize'],

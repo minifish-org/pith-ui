@@ -80,6 +80,13 @@ export function boundedEditor(ui:PithUI,host:HTMLElement,submit:(text:string)=>P
  return ui.mount(host,ui.createContentColumn({purpose:'input',content:ui.createSurface({content:input,footer})}));
 }
 
+/** Selection belongs only to a notice; child action availability stays explicit. */
+export function selectedNotice(ui:PithUI,host:HTMLElement){
+ const notice=ui.createSurface({purpose:'notice',selected:true,content:ui.createStack({context:'flow',children:[ui.createToolbar({label:'Item heading',leading:ui.createText({role:'label',text:'Saved item'}),trailing:ui.createButton({label:'Open item'})}),ui.createText({text:'Retained content.'})]})});
+ const mounted=ui.mount(host,notice);
+ return{mounted,select(){notice.update({selected:true});},clear(){notice.update({selected:false});},rename(label:string){notice.update({label});}};
+}
+
 /** Navigation owns only content, callbacks and finite presentation contexts. */
 export function smallNavigation(ui:PithUI,host:HTMLElement){
  const saved=ui.createListRow({context:'navigation',title:'Saved conversation',selected:true,onAction(){},status:ui.createStatus({label:'Running',presentation:'indicator',activity:'busy'}),actions:ui.createIconButton({context:'inline',label:'More actions',icon:'more'})});

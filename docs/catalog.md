@@ -55,4 +55,6 @@ CSS px is not a physical screen pixel. The showroom separately reports DPR and m
 | Small progress actions | `createStep` | `step` |
 | Notification placement | `createNotificationRegion` | `notification-region` |
 
+[Surface](https://minifish-org.github.io/pith-ui/?item=surface) includes a selectable notice: select, clear explicitly, and update its label while retaining selection. Selection is a notice-only business state with fixed frame geometry; it adds no click action or style parameters.
+
 [Bounded control composition](https://minifish-org.github.io/pith-ui/?item=controls-layout-contexts) shows edge groups, inline choices, navigation rows, independent status indicators, queued rows and icon copying. These use the same public controls as consumers. Existing generic defaults remain available; the new finite contexts supply missing layout guarantees without exposing spacing, fonts, pixels, arbitrary CSS or whole scenes.

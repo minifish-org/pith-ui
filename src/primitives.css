@@ -665,6 +665,12 @@
 .pui .pui-dialog-collection .pui-control-list:has(>:is(.pui-panel-surface,.pui-notice-surface)) { display:block; }
 .pui .pui-dialog-collection .pui-notice-surface { margin:var(--pui-space-sm) 0; }
 .pui .pui-dialog-collection .pui-notice-surface .pui-control-text[data-role="body"]>p { margin:var(--pui-space-sm) 0;font-size:var(--pui-text-medium);line-height:var(--pui-line-height);color:var(--pui-muted);white-space:pre-wrap; }
+.pui .pui-notice-surface.pui-surface-selected { border-left:3px solid var(--pui-accent); }
+.pui .pui-notice-surface>.pui-stack-flow>.pui-toolbar,
+.pui .pui-notice-surface>.pui-stack-flow>.pui-toolbar>.pui-toolbar-leading,
+.pui .pui-notice-surface>.pui-stack-flow>.pui-toolbar>.pui-toolbar-trailing { align-items:flex-start; }
+.pui .pui-input-surface:not(.pui-panel-surface,.pui-notice-surface)>.pui-input-surface-footer .pui-icon-button.pui-action-inline:not(.pui-primary) .pui-icon { width:18px;height:18px; }
+.pui .pui-input-surface:not(.pui-panel-surface,.pui-notice-surface)>.pui-input-surface-footer .pui-icon-button.pui-action-inline.pui-primary .pui-icon { stroke-width:2; }
 
 /* Native URL validation remains on the input; only the settings presentation
    adds the source globe. Other URL fields keep their plain input. */
