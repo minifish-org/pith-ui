@@ -3,7 +3,7 @@ import {test, expect, type Page, type Locator} from '@playwright/test';
 // Accepted 0.3.1 source contracts: forms/provider-login.ts, forms/panels.ts,
 // forms/custom-connection.ts, files/panels.ts, navigation/navigation.ts.
 async function box(node: Locator) {const value = await node.boundingBox(); expect(value).not.toBeNull(); return value!;}
-async function fixture(page: Page, specimen: 'prompt' | 'fields' | 'model' | 'settings' | 'collections' | 'panels') {
+async function fixture(page: Page, specimen: 'prompt' | 'fields' | 'model' | 'settings' | 'collections' | 'panels' | 'advanced') {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async specimen => {
     const u = await import('../src/index.js');
@@ -31,13 +31,19 @@ async function fixture(page: Page, specimen: 'prompt' | 'fields' | 'model' | 'se
       u.createSelect({label: 'Provider', options: [{value: 'test', label: 'Fixture provider'}]}),
       u.createDisclosure({context: 'inline', title: 'Advanced connection settings', content: u.createURLInput({label: 'API base URL', description: 'Change the endpoint only for a custom service.'})}),
       u.createSecretInput({label: 'API key', status: 'Configured', description: 'The saved key is never returned to this page.'}),
+      u.createNotice({presentation: 'caption', tone: 'info', message: 'Local review update status'}),
+      u.createButton({label: 'Remove saved API key', intent: 'danger'}),
     ]})], onSubmit: ok});
+    else if (specimen === 'advanced') {
+      purpose = 'collection';
+      content = u.createForm({context: 'dialog', children: [u.createSlot({content: u.createStack({context: 'flow', children: [u.createCheckbox({label: 'Sign in with OAuth'}), u.createDisclosure({context: 'inline', title: 'OAuth settings (optional)', content: u.createTextInput({label: 'Registered client ID'})})]})})], onSubmit: ok});
+    }
     else if (specimen === 'panels') {
       purpose = 'collection';
       content = u.createStack({context: 'flow', children: [
         u.createList({items: [{key: 'connection', content: u.createSurface({purpose: 'panel', content: u.createStack({context: 'flow', children: [
           u.createText({role: 'label', text: 'Installed connection'}), u.createText({role: 'code', text: 'https://example.test/mcp'}), u.createText({role: 'caption', text: 'Enabled'}),
-          u.createNotice({presentation: 'caption', message: 'Connected'}), u.createActions({align: 'start', children: [u.createButton({label: 'Edit connection'}), u.createButton({label: 'Delete connection'})]}),
+          u.createNotice({presentation: 'caption', message: 'Connected'}), u.createActions({align: 'start', children: [u.createButton({label: 'Edit connection'}), u.createButton({label: 'Delete connection', intent: 'danger'})]}),
         ]})})}]}),
         u.createList({items: [{key: 'branch', content: u.createSurface({purpose: 'notice', content: u.createStack({context: 'flow', children: [
           u.createToolbar({label: 'Branch action', leading: u.createText({role: 'label', text: 'user · current branch'}), trailing: u.createButton({label: 'Continue here'})}),
@@ -207,4 +213,54 @@ test('a short dialog body preserves native code-paragraph rhythm without changin
   await expect(paragraph).toHaveCSS('margin', '14px 0px');
   await expect(paragraph.locator('strong')).toHaveCSS('font-weight', '600');
   await expect(page.getByText('Ordinary paragraph', {exact: true})).toHaveCSS('margin', '0px');
+});
+
+test('a settings update caption keeps the source muted status color', async ({page}) => {
+  await fixture(page, 'settings');
+  const status = page.getByRole('status').filter({hasText: 'Local review update status'});
+  await expect(status).toHaveCSS('font-size', '12px');
+  await expect(status).toHaveCSS('line-height', '18px');
+  await expect(status).toHaveCSS('color', 'rgb(102, 112, 133)');
+});
+
+test('ordinary modal destructive actions keep the source secondary surface and border', async ({page}) => {
+  for (const [specimen, label] of [['settings', 'Remove saved API key'], ['panels', 'Delete connection']] as const) {
+    await fixture(page, specimen);
+    const button = page.getByRole('button', {name: label, exact: true});
+    await expect(button).toHaveCSS('color', 'rgb(180, 35, 24)');
+    await expect(button).toHaveCSS('background-color', 'rgb(240, 242, 246)');
+    await expect(button).toHaveCSS('border-top-color', 'rgb(217, 223, 232)');
+  }
+});
+
+test('an advanced inline fold inside a normal modal form retains the original source group', async ({page}) => {
+  await fixture(page, 'advanced');
+  const fold = page.locator('.pui-disclosure-inline'), summary = fold.locator(':scope > summary');
+  await expect(fold).toHaveCSS('position', 'static');
+  await expect(fold).toHaveCSS('top', 'auto');
+  await expect(fold).toHaveCSS('margin', '16px 0px 0px');
+  await expect(fold).toHaveCSS('padding', '12px 0px');
+  await expect(fold).toHaveCSS('border-top-width', '1px');
+  await expect(fold).toHaveCSS('border-bottom-width', '1px');
+  await expect(fold).toHaveCSS('border-radius', '0px');
+  await expect(summary).toHaveCSS('font-size', '12px');
+  await expect(summary).toHaveCSS('line-height', '18px');
+  await expect(summary).toHaveCSS('padding', '0px');
+  await expect(summary).toHaveCSS('min-height', '0px');
+});
+
+test('standalone destructive actions and generic form confirmations retain their ordinary danger surface', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const u = await import('../src/index.js');
+    const owner = u.mount(document.body, u.createButton({label: 'Standalone destructive action', intent: 'danger'}));
+    const dialog = u.createConfirmDialog({purpose: 'form', title: 'Generic destructive confirmation', message: 'Remove this fixture?', confirmLabel: 'Delete fixture', onConfirm: () => ({ok: true})});
+    owner.attach(dialog); dialog.open();
+  });
+  for (const name of ['Standalone destructive action', 'Delete fixture']) {
+    const action = page.getByRole('button', {name, exact: true, includeHidden: true});
+    await expect(action).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(action).toHaveCSS('border-top-color', 'rgb(230, 171, 165)');
+    await expect(action).toHaveCSS('color', 'rgb(180, 35, 24)');
+  }
 });
