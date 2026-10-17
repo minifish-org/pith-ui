@@ -24,7 +24,7 @@ for (const purpose of ['form', 'collection', 'document'] as const) for (const ey
     expect(glyph.x - b.x).toBe((b.width - glyph.width) / 2);
     expect(glyph.y - b.y).toBe((b.height - glyph.height) / 2);
     await close.hover();
-    await expect(close).toHaveCSS('background-color', 'rgb(224, 229, 238)');
+    await expect(close).toHaveCSS('background-color', 'rgb(228, 232, 238)');
     await expect(close).toHaveCSS('color', 'rgb(31, 37, 48)');
   });
 }
@@ -53,6 +53,43 @@ test('a source warning confirmation keeps its primary frame borderless without c
   });
   await expect(page.getByRole('button', {name: 'Enable access', exact: true})).toHaveCSS('border-top-width', '0px');
   await expect(page.getByRole('button', {name: 'Ordinary danger', exact: true, includeHidden: true})).toHaveCSS('border-top-width', '1px');
+});
+
+test('an owned warning body retains its source row, content flow and quiet close with full explanatory text', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const u = await import('../src/index.js');
+    const content = u.createStack({context: 'flow', children: [
+      u.createMarkdown({text: 'Give Pith permission to run **all enabled tools, including external MCP connections,** without asking in **Simulated layout review**.'}),
+      u.createSurface({purpose: 'notice', tone: 'warning', content: u.createActions({align: 'start', children: [u.createIcon({name: 'shield', context: 'notice'}), u.createStack({children: [
+        u.createText({role: 'label', text: 'This is access to your computer account and connected services.'}),
+        u.createText({role: 'caption', text: 'Commands can read, change, or delete files outside the workspace and access the network. External tools can act on their connected services. There is no OS sandbox.'}),
+      ]})]})}),
+    ]});
+    const dialog = u.createConfirmDialog({purpose: 'form', tone: 'warning', title: 'Enable full access?', eyebrow: 'CONVERSATION PERMISSIONS', content,
+      hint: 'This applies only to the current conversation and stays enabled across app restarts until you revoke it. To revoke it, choose “Ask before changes” or “Allow workspace changes” in the composer. Workspace permission alone never grants external MCP tools access.',
+      confirmLabel: 'Enable full access', onConfirm: () => ({ok: true})});
+    const owner = u.mount(document.body, u.createText({text: 'Host'})); owner.attach(dialog); dialog.open();
+  });
+  const dialog = page.getByRole('dialog', {name: 'Enable full access?', exact: true}), close = dialog.getByRole('button', {name: 'Close Enable full access?', exact: true});
+  const modal = (await dialog.boundingBox())!, heading = (await dialog.locator('.pui-dialog-heading').boundingBox())!, closeBox = (await close.boundingBox())!;
+  expect({width: modal.width, height: modal.height}).toEqual({width: 500, height: 484});
+  expect({width: closeBox.width, height: closeBox.height, top: closeBox.y - heading.y}).toEqual({width: 27, height: 27, top: 0});
+  const surface = dialog.locator('.pui-notice-surface'), row = surface.locator('>.pui-actions'), icon = row.locator('>[data-icon="shield"]'), body = row.locator('>.pui-control-stack');
+  await expect(row).toHaveCSS('flex-wrap', 'nowrap');
+  await expect(row).toHaveCSS('margin-top', '0px');
+  await expect(row).toHaveCSS('padding-top', '0px');
+  await expect(row).toHaveCSS('border-top-width', '0px');
+  const card = (await surface.boundingBox())!, glyph = (await icon.boundingBox())!, text = (await body.boundingBox())!;
+  expect(card.height).toBe(138);
+  expect(text.width).toBe(383);
+  expect(text.x - glyph.x - glyph.width).toBe(12);
+  expect(glyph.y - text.y).toBe(4);
+  const intro = (await dialog.locator('.pui-markdown>p').boundingBox())!, hint = (await dialog.locator('.pui-field-hint').boundingBox())!, footer = (await dialog.locator('.pui-confirm>.pui-actions').boundingBox())!;
+  expect(intro.y - heading.y - heading.height).toBe(16);
+  expect(card.y - intro.y - intro.height).toBe(24);
+  expect(hint.y - card.y - card.height).toBe(16);
+  expect(footer.y - hint.y - hint.height).toBe(16);
 });
 
 test('a retained collection flow preserves inventory toolbar spacing and native checkbox rhythm', async ({page}) => {
