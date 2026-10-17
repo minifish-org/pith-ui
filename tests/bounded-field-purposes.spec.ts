@@ -81,7 +81,9 @@ test('a catalog select owns six native rows while an ordinary list keeps five', 
   await expect(catalog).toHaveCSS('padding', '8px');
   await expect(catalog).toHaveCSS('font-size', '16px');
   await expect(catalog).toHaveCSS('line-height', '24px');
-  expect((await catalog.boundingBox())!.height).toBe(browserName === 'webkit' ? 131 : 132);
+  // Measure populated rows: Chromium applies the shared 32px option minimum;
+  // WebKit retains its native row sizing. An empty/loading list differs.
+  expect((await catalog.boundingBox())!.height).toBe(browserName === 'webkit' ? 131 : 210);
   await catalog.press('ArrowDown');
   await expect(catalog).toHaveValue('3');
   await page.evaluate(() => {const state = Reflect.get(window, 'catalogField'); state.catalog.update({label: 'Choose model', options: state.options});});
