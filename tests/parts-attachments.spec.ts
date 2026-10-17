@@ -10,9 +10,16 @@ const populated: State = {items: [{id: 'one',url: tiny,name: 'Original diagram ä
 
 async function setup(page: Page,old: boolean,state: State = populated,appearance: 'light'|'dark' = 'light'): Promise<void> {
   await page.goto('/tests/fixture.html');await page.emulateMedia({colorScheme: appearance === 'light' ? 'dark' : 'light'});
-  await page.evaluate(async ({old,state,appearance}) => {
-    const appPath = '/src/app/index.ts',{createApplication} = await import(appPath),mount = document.body.appendChild(document.createElement('div'));
-    document.body.dataset.appearance = appearance;
+  const theme = await page.evaluate(async ({old,state,appearance}) => {
+    const appPath = '/src/app/index.ts',{createApplication} = await import(appPath);
+    // The actual old application establishes its theme on HTML. Do not also
+    // establish a second BODY scope from the generic interaction fixture.
+    document.body.classList.remove('pui');document.body.removeAttribute('data-appearance');
+    document.documentElement.classList.add('pui');document.documentElement.dataset.appearance = appearance;
+    // Establish the inherited theme before constructing the old host. WebKit
+    // can cache initial unthemed values on textless/hidden descendants.
+    await new Promise<void>(done => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+    const mount = document.body.appendChild(document.createElement('div'));
     const h = {state,opens: [],removed: []} as unknown as Harness;
     const callbacks = {onRemove(id: string) {h.removed.push(id);},onOpen(image: {src: string;alt: string}) {h.opens.push({src: image.src,alt: image.alt});}};
     const app = createApplication(mount,{appearance});app.workspace.updateAttachments(state);
@@ -33,12 +40,18 @@ async function setup(page: Page,old: boolean,state: State = populated,appearance
       before.replaceWith(boundary.firstElementChild!);h.composition = attachments;
     }
     window.attachmentsPartsHarness = h;
-  },{old,state,appearance});await page.mouse.move(0,0);
+    await new Promise<void>(done => requestAnimationFrame(() => requestAnimationFrame(() => done())));
+    return {owners: document.querySelectorAll('.pui').length,color: getComputedStyle(mount.querySelector('.pui-composer')!).color};
+  },{old,state,appearance});
+  // A matching pair of unthemed black trees is not evidence of theme parity.
+  expect(theme).toEqual({owners: 1,color: appearance === 'light' ? 'rgb(31, 37, 48)' : 'rgb(240, 241, 243)'});
+  await page.mouse.move(0,0);
 }
 
 async function presentation(page: Page): Promise<unknown> {
   return page.locator('.pui-draft-images').evaluate(async root => {
     await document.fonts.ready;await Promise.all([...root.querySelectorAll('img')].map(image => image.decode().catch(() => {})));
+    await new Promise<void>(done => requestAnimationFrame(() => requestAnimationFrame(() => done())));
     const origin = root.getBoundingClientRect(),inspect = (node: Element) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);return {tag: node.localName,text: [...node.childNodes].filter(child => child.nodeType === Node.TEXT_NODE).map(child => child.textContent).join(''),
       box: [box.x-origin.x,box.y-origin.y,box.width,box.height].map(value => Math.round(value*100)/100),hidden: node.hasAttribute('hidden'),role: node.getAttribute('role'),label: node.getAttribute('aria-label'),title: node.getAttribute('title'),
       styles: ['display','position','font-family','font-size','font-weight','line-height','color','background-color','gap','flex-basis','flex-shrink','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','border-top-width','border-top-style','border-top-color','border-radius','object-fit','overflow-x','overflow-y','text-overflow','white-space','top','right','width','height'].map(key => style.getPropertyValue(key)),
