@@ -164,6 +164,17 @@ test('paragraph feedback can announce an update status without changing its nati
   expect(value).toEqual({first: {role: 'status',live: 'polite'},same: true,live: null,text: 'Ready'});
 });
 
+test('a rejected field-stack state leaves the supplied control available for its original owner',async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const value = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts'; const p = await import(path); const input = p.createInputPart({value: 'Keep this draft'});
+    let rejected = false; try {p.createFieldStackPart({hidden: 'invalid',children: [input]});} catch {rejected = true;}
+    const form = p.createFormPart({children: [input]}),mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,form);
+    const result = {rejected,value: input.read(),count: mount.querySelectorAll('input').length}; tree.destroy(); return result;
+  });
+  expect(value).toEqual({rejected: true,value: 'Keep this draft',count: 1});
+});
+
 const scenarios: Record<string,OpenOptions> = {
   ready: {},loading: {cold: true,state: {baseUrl: '',hasApiKey: false,ready: false}},
   disabled: {state: {...ready,disabled: true,appearance: {mode: 'dark',disabled: true}}},
