@@ -257,10 +257,14 @@ test('standalone destructive actions and generic form confirmations retain their
     const dialog = u.createConfirmDialog({purpose: 'form', title: 'Generic destructive confirmation', message: 'Remove this fixture?', confirmLabel: 'Delete fixture', onConfirm: () => ({ok: true})});
     owner.attach(dialog); dialog.open();
   });
-  for (const name of ['Standalone destructive action', 'Delete fixture']) {
-    const action = page.getByRole('button', {name, exact: true, includeHidden: true});
-    await expect(action).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    await expect(action).toHaveCSS('border-top-color', 'rgb(230, 171, 165)');
-    await expect(action).toHaveCSS('color', 'rgb(180, 35, 24)');
-  }
+  const ordinary = page.getByRole('button', {name: 'Standalone destructive action', exact: true, includeHidden: true});
+  await expect(ordinary).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(ordinary).toHaveCSS('border-top-color', 'rgb(230, 171, 165)');
+  await expect(ordinary).toHaveCSS('color', 'rgb(180, 35, 24)');
+  // Both accepted 0.3.1 styles.css218 and the retained generic confirm apply
+  // a filled error action; its form purpose must not turn it into a secondary.
+  const confirm = page.getByRole('button', {name: 'Delete fixture', exact: true});
+  await expect(confirm).toHaveCSS('background-color', 'rgb(180, 35, 24)');
+  await expect(confirm).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  await expect(confirm).toHaveCSS('color', 'rgb(247, 248, 251)');
 });
