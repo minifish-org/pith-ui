@@ -25,8 +25,12 @@ async function setup(page: Page,old: boolean,state: State = populated,appearance
       h.composition = attachments;h.tree = attachments;
     } else {
       const recipePath = '/examples/assemblies/attachments.ts',partsPath = '/src/parts/index.ts',{composeAttachments} = await import(recipePath),p = await import(partsPath),attachments = composeAttachments(state,callbacks);
-      const before = mount.querySelector('.pui-draft-images')!,parent = before.parentElement!,siblings = [...parent.childNodes],position = siblings.indexOf(before);
-      h.tree = p.mountParts(parent,attachments.part,{appearance});parent.prepend(...siblings.slice(0,position));parent.append(...siblings.slice(position+1));h.composition = attachments;
+      const before = mount.querySelector('.pui-draft-images')!,boundary = document.createElement('div');
+      h.tree = p.mountParts(boundary,attachments.part,{appearance});
+      // The old immediate parent is FORM, which intentionally is not a public
+      // mount. Place the already-owned test subtree into that exact old parent;
+      // production composes it as a child of the genuine composer FormPart.
+      before.replaceWith(boundary.firstElementChild!);h.composition = attachments;
     }
     window.attachmentsPartsHarness = h;
   },{old,state,appearance});await page.mouse.move(0,0);

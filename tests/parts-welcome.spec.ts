@@ -35,7 +35,7 @@ async function presentation(page: Page): Promise<unknown> {
       box: [box.x-origin.x,box.y-origin.y,box.width,box.height].map(value => Math.round(value*100)/100),
       styles: ['display','font-family','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-bottom','border-top-width','border-top-color','border-bottom-width','border-radius','gap','width','height','max-width','text-align','white-space','overflow-x','overflow-y','text-overflow','transform','opacity'].map(key => style.getPropertyValue(key)),
       ...(element instanceof HTMLButtonElement ? {disabled: element.disabled,label: element.getAttribute('aria-label'),title: element.getAttribute('title')} : {})};};
-    return {origin: [origin.x,origin.y,origin.width,origin.height].map(value => Math.round(value*100)/100),nodes: [node,...node.querySelectorAll('div,p,h1,span,strong,small,button,i,br')].filter(element => !element.closest('[hidden]')).map(inspect),svg: [...node.querySelectorAll('svg')].map(svg => svg.innerHTML),text: node.textContent?.replace(/\s+/g,' ').trim()};
+    return {origin: [origin.x,origin.y,origin.width,origin.height].map(value => Math.round(value*100)/100),nodes: [node,...node.querySelectorAll('div,p,h1,span,strong,small,button,i,br')].filter(element => !element.closest('[hidden]')).map(inspect),svg: [...node.querySelectorAll('svg')].map(svg => svg.innerHTML),text: (node as HTMLElement).innerText.replace(/\s+/g,' ').trim()};
   });
 }
 
