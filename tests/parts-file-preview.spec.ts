@@ -37,7 +37,11 @@ async function setup(page: Page, old: boolean, kind: Kind | 'loading' | 'error' 
       const session = composeFilePreview(input,callbacks,announcement);h.session = session;
       // Match the actual application's direct flex-child modal context. The
       // shared announcement and image viewer are siblings owned by the frame.
-      h.tree = p.mountParts(mount.querySelector('.pui-app'),session.part,{appearance});session.open();
+      const appRoot = mount.querySelector('.pui-app')!;
+      // Keep only the measured shell context, retiring every old delegate so
+      // formal interactions cannot accidentally fall through to old handlers.
+      app.destroy();mount.replaceChildren(appRoot);
+      h.tree = p.mountParts(appRoot,session.part,{appearance});session.open();
     }
     window.filePreviewHarness = h;
   },{old,kind,appearance,large});
@@ -149,7 +153,10 @@ test('preview errors recover, code copy and image activation follow actual disab
   await page.getByRole('button',{name: 'Reveal',exact: true}).click();await page.keyboard.press('Escape');await expect(page.locator('dialog.pui-file-preview-modal[open]')).toHaveCount(0);
   await page.evaluate(() => {const h = window.filePreviewHarness;h.resolve!({ok: false,error: 'Late native cancellation'});h.session.fail('Late external failure');h.session.update({kind: 'text',text: 'Late content'});});
   await expect.poll(() => page.evaluate(() => window.filePreviewHarness.closed)).toBe(1);
-  expect(await page.evaluate(() => ({open: window.filePreviewHarness.session.isOpen(),closed: window.filePreviewHarness.closed}))).toEqual({open: false,closed: 1});await expect(page.locator('dialog.pui-file-preview-modal')).not.toContainText('Late');
+  expect(await page.evaluate(() => ({open: window.filePreviewHarness.session.isOpen(),closed: window.filePreviewHarness.closed}))).toEqual({open: false,closed: 1});
+  // The old shell retains an empty native dialog; the owned composition removes
+  // its terminal dialog. Neither lifetime may display a late result.
+  await expect(page.locator('dialog.pui-file-preview-modal').filter({hasText: 'Late'})).toHaveCount(0);
   await page.evaluate(() => {const h = window.filePreviewHarness;h.tree.destroy();h.session.destroy();h.tree.destroy();});await expect(page.locator('dialog.pui-file-preview-modal')).toHaveCount(0);expect(await page.evaluate(() => window.filePreviewHarness.closed)).toBe(1);
   }
 });
