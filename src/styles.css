@@ -4,7 +4,7 @@
 .pui .pui-feature-actions { display: contents; }
 .pui .pui-field > .pui-field-label { margin: 0; }
 .pui .pui-modal .pui-text-edit textarea { font-family: inherit; min-height: 120px; }
-.pui .pui-confirm .pui-actions { margin-top: var(--pui-space-xl); padding-top: var(--pui-space-lg); border-top: 1px solid var(--pui-border); }
+.pui .pui-confirm > .pui-actions { margin-top: var(--pui-space-xl); padding-top: var(--pui-space-lg); border-top: 1px solid var(--pui-border); }
 .pui .pui-confirm .pui-danger { background: var(--pui-error-text); color: var(--pui-bg-main); border-color: transparent; }
 .pui .pui-confirm .pui-danger:hover:not(:disabled) { background: var(--pui-error-text); filter: brightness(.9); }
 .pui .pui-confirm .pui-neutral { background: var(--pui-surface-subtle); }

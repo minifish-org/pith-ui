@@ -780,3 +780,20 @@
  .pui .pui-pane-conversation>.pui-pane-header .pui-navigation-toggle .pui-icon { width:19px;height:19px; }
 }
 .pui .pui-timestamp { color:var(--pui-muted);font-size:var(--pui-text-small);line-height:var(--pui-line-height);white-space:nowrap; }
+
+/* Bounded modal controls keep the source quiet action, form rhythm and row
+   alignment while standalone controls retain their ordinary defaults. */
+.pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document)>.pui-dialog-heading>.pui-icon-button { align-self:flex-start;padding:var(--pui-space-xs);border:0;border-radius:6px;color:var(--pui-muted); }
+.pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document)>.pui-dialog-heading>.pui-icon-button:hover:not(:disabled) { background:var(--pui-surface-hover);color:var(--pui-text); }
+.pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document).pui-dialog .pui-button:is(.pui-primary,.pui-warning-confirm) { border:0; }
+.pui .pui-dialog-collection>.pui-dialog-body>.pui-stack-flow>.pui-stack-flow>.pui-toolbar { margin-bottom:var(--pui-space-lg); }
+.pui .pui-form-dialog .pui-checkbox:not(.pui-section-model *),.pui .pui-dialog-form .pui-form-inline .pui-checkbox:not(.pui-section-model *) { display:flex;margin:var(--pui-space-lg) 0 0;font-size:var(--pui-text-small);line-height:var(--pui-line-height); }
+.pui :is(.pui-list-row-resource,.pui-list-row-choice) .pui-list-row-icon { display:flex; }
+.pui .pui-list-row-resource .pui-list-row-icon .pui-icon { color:var(--pui-muted); }
+.pui .pui-list-row-choice .pui-list-row-actions { margin-inline-end:0; }
+.pui .pui-list-row-choice .pui-list-row-actions .pui-icon-display { color:var(--pui-muted-tonal); }
+.pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-control::placeholder { font-size:var(--pui-text-small); }
+.pui .pui-dialog-form:has(>.pui-dialog-body>.pui-confirm .pui-warning-confirm)>.pui-dialog-heading>.pui-icon-button { width:27px;min-width:27px;height:27px;min-height:27px; }
+.pui .pui-dialog-form .pui-confirm .pui-notice-surface>.pui-actions { flex-wrap:nowrap; }
+.pui .pui-dialog-form .pui-confirm .pui-notice-surface>.pui-actions>.pui-control-stack { flex:1; }
+.pui .pui-form-dialog .pui-control-text:is([data-role="description"],[data-role="caption"])>p { margin:var(--pui-space-sm) 0 0; }
