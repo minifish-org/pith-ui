@@ -48,3 +48,17 @@ test('an interactive row uses a native primary action distinct from its owned au
 test('a small user-message frame retains the accepted light and dark user surfaces',async({page})=>{
   for(const appearance of ['light','dark'] as const){await page.goto('/tests/fixture.html');await page.evaluate(async appearance=>{const u=await import('../src/index.js');u.mount(document.body,u.createMessage({role:'user',content:u.createText({text:'A saved message'})}),{appearance});},appearance);await expect(page.locator('.pui-message-frame')).toHaveCSS('background-color',appearance==='dark'?'rgb(48, 48, 48)':'rgb(240, 242, 246)');}
 });
+
+test('a split pane keeps long reading and navigation bounded while its draft grows and the window narrows',async({page})=>{
+  await page.setViewportSize({width:900,height:600});await page.goto('/tests/fixture.html');
+  await page.evaluate(async()=>{const u=await import('../src/index.js');const items=Array.from({length:120},(_,index)=>({key:String(index),revision:'1',content:u.createMessage({role:index%2?'assistant':'user',content:u.createText({text:'Historical message '+index+' 中文'})})}));const reader=u.createReadingArea({label:'Long reading',identity:'saved',items,viewport:'fill'});const input=u.createPromptInput({label:'Window draft'});const pane=u.createPane({content:reader,footer:u.createStack({children:[input,u.createButton({label:'Send draft'})]})});u.mount(document.body,u.createSplitPane({navigation:u.createPane({content:u.createText({text:'A workspace row\n'.repeat(200)})}),content:pane}),{viewport:'window'});});
+  const draft=page.getByRole('textbox',{name:'Window draft',exact:true});
+  for(const viewport of [{width:900,height:600},{width:1280,height:800},{width:390,height:844}]){
+    await page.setViewportSize(viewport);await draft.fill('A growing draft 中文\n'.repeat(8));
+    await expect(draft).toBeFocused();await expect(draft).toHaveValue('A growing draft 中文\n'.repeat(8));
+    const send=(await page.getByRole('button',{name:'Send draft',exact:true}).boundingBox())!;
+    expect(send.y+send.height).toBeLessThanOrEqual(viewport.height);
+    expect(await page.evaluate(()=>document.documentElement.scrollHeight)).toBe(viewport.height);
+    expect(await page.getByRole('region',{name:'Long reading',exact:true}).evaluate(node=>node.scrollHeight>node.clientHeight&&node.clientHeight>0)).toBe(true);
+  }
+});
