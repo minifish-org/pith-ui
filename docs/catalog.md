@@ -43,3 +43,15 @@ CSS px is not a physical screen pixel. The showroom separately reports DPR and m
 ## Composition examples
 
 [Connection form](https://minifish-org.github.io/pith-ui/?item=controls-form-page) and [actions/surfaces](https://minifish-org.github.io/pith-ui/?item=controls-actions-page) use only the default public controls. They demonstrate reuse without a whole-application API.
+
+## Bounded small layout pieces
+
+| Category | Public factories | Showroom IDs |
+|---|---|---|
+| Fixed measures and surfaces | `createContentColumn`, `createSurface` | `content-column`, `surface` |
+| Paired fields | `createGrid` | `grid` |
+| Navigation and identity | `createBreadcrumb`, `createBrand` | `breadcrumb`, `brand` |
+| Small progress actions | `createStep` | `step` |
+| Notification placement | `createNotificationRegion` | `notification-region` |
+
+[Bounded control composition](https://minifish-org.github.io/pith-ui/?item=controls-layout-contexts) shows edge groups, inline choices, navigation rows, independent status indicators, queued rows and icon copying. These use the same public controls as consumers. Existing generic defaults remain available; the new finite contexts supply missing layout guarantees without exposing spacing, fonts, pixels, arbitrary CSS or whole scenes.

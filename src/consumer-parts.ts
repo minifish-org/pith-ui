@@ -6,7 +6,7 @@ import { controlDisabled } from './core.js';
 import { createOperation } from './operation.js';
 import { createImageViewer } from './content/image-viewer.js';
 import { installConversationReader } from './content/conversation-reader.js';
-import { ownControl, controlEntry, controlNodes, checkOptions, createList } from './controls.js';
+import { ownControl, controlEntry, controlNodes, checkOptions, createList,applyFieldPresentation } from './controls.js';
 import type { Control, ActionResult, InputState, Input } from './controls.js';
 export interface PromptState {
     readonly label: string;
@@ -107,7 +107,7 @@ export interface ImageState {
     readonly removeDisabled?: boolean;
 }
 export interface ImageOptions extends ImageState {
-    readonly purpose?: 'content' | 'attachment' | 'brand';
+    readonly purpose?: 'content' | 'attachment' | 'brand' | 'intro';
     readonly onRemove?: () => void | ActionResult | Promise<void | ActionResult>;
     readonly onError?: (message: string) => void;
 }
@@ -117,11 +117,11 @@ export interface ImageControl extends Control<ImageState> {
 }
 export function createImage(options: ImageOptions): ImageControl {
     checkOptions(options, ['label', 'source', 'removeDisabled', 'purpose', 'onRemove', 'onError']);
-    if (options.purpose && !['content', 'attachment', 'brand'].includes(options.purpose))
+    if (options.purpose && !['content', 'attachment', 'brand', 'intro'].includes(options.purpose))
         throw new Error('Unknown image purpose.');
     if (options.onRemove && options.purpose !== 'attachment')
         throw new Error('Only attachment images have a remove action.');
-    const node = element('div', 'pui-image pui-image-' + (options.purpose ?? 'content')), image = element('img'), brand = options.purpose === 'brand';
+    const node = element('div', 'pui-image pui-image-' + (options.purpose ?? 'content')), image = element('img'), brand = options.purpose === 'brand'||options.purpose==='intro';
     const openButton = brand ? undefined : element('button', 'pui-image-open');
     if (openButton) {
         openButton.type = 'button';
@@ -181,21 +181,21 @@ export interface MessageState {
 }
 export function createMessage(options: MessageState & {
     readonly content: Control;
+    readonly media?: Control;
     readonly actions?: Control;
 }): Control<MessageState> {
-    checkOptions(options, ['role', 'time', 'status', 'content', 'actions']);
-    const children = [options.content, ...(options.actions ? [options.actions] : [])];
+    checkOptions(options, ['role', 'time', 'status', 'content', 'media', 'actions']);
+    const children = [options.content,...(options.media?[options.media]:[]), ...(options.actions ? [options.actions] : [])];
     controlNodes(children);
-    const meta = element('div', 'pui-message-frame-meta'), body = element('div', 'pui-message-frame-body', controlEntry(options.content).node), node = element('article', 'pui-message-frame', body, meta);
-    if (options.actions)
-        node.append(element('div', 'pui-message-frame-actions', controlEntry(options.actions).node));
+    const meta = element('div', 'pui-message-frame-meta'), body = element('div', 'pui-message-frame-body', controlEntry(options.content).node), footer=element('div','pui-message-frame-footer',meta),node = element('article', 'pui-message-frame',...(options.media?[element('div','pui-message-frame-media',controlEntry(options.media).node)]:[]), body, footer);
+    if (options.actions)footer.append(element('div', 'pui-message-frame-actions', controlEntry(options.actions).node));
     const update = (state: Readonly<MessageState>) => {
         checkOptions(state, ['role', 'time', 'status']);
         if (!['user', 'assistant', 'system', 'tool'].includes(state.role))
             throw new Error('Unknown message role.');
         node.dataset.role = state.role;
         meta.textContent = [state.time, state.status].filter(Boolean).join(' · ');
-        meta.hidden = !meta.textContent;
+        meta.hidden = !meta.textContent;footer.hidden=!meta.textContent&&!options.actions;
     };
     update({ role: options.role, time: options.time, status: options.status });
     return ownControl({ element: node, update, destroy() { } }, children);
@@ -210,6 +210,7 @@ export interface ReadingAreaState {
     readonly identity: string;
     readonly items: readonly ReadingItem[];
     readonly viewport?: 'bounded' | 'fill';
+    readonly column?: 'reading';
 }
 export interface ReadingArea extends Control<ReadingAreaState> {
     find(): void;
@@ -221,7 +222,7 @@ export interface ReadingAreaOptions extends ReadingAreaState {
     readonly empty?: Control;
 }
 export function createReadingArea(options: ReadingAreaOptions): ReadingArea {
-    checkOptions(options, ['label', 'identity', 'items', 'viewport', 'empty']);
+    checkOptions(options, ['label', 'identity', 'items', 'viewport', 'column', 'empty']);
     controlNodes([...options.items.map(item => item.content), ...(options.empty ? [options.empty] : [])]);
     const list = createList({ items: options.items.map(({ key, content }) => ({ key, content })) }), messages = controlEntry(list).node;
     const field = primitive.createSearchInput({ label: 'Find in this conversation', placeholder: 'Find in this conversation' }), count = element('span');
@@ -242,7 +243,8 @@ export function createReadingArea(options: ReadingAreaOptions): ReadingArea {
     const node = element('section', 'pui-reading-area', bar, scroll, latest.element);
     const reader = installConversationReader(scroll, messages, bar, latest.element, { keyboardTarget: node });
     const update = (state: Readonly<ReadingAreaState>) => {
-        checkOptions(state, ['label', 'identity', 'items', 'viewport']);
+        checkOptions(state, ['label', 'identity', 'items', 'viewport', 'column']);
+        const column=state.column??options.column;if(column&&column!=='reading')throw new Error('Unknown reading column.');messages.classList.toggle('pui-reading-column',column==='reading');
         if (state.viewport && !['bounded', 'fill'].includes(state.viewport))
             throw new Error('Unknown reading viewport.');
         for (const item of state.items)
@@ -387,15 +389,15 @@ export function createDocument(options: DocumentOptions): Control<DocumentState>
     return ownControl({ element: node, update, destroy() { destroyed = true; feedback.destroy(); page.destroy(); node.removeEventListener('click', clicked); } });
 }
 export function createSecretTextArea(options: import('./controls.js').InputOptions): import('./controls.js').Input {
-    checkOptions(options, ['label', 'description', 'error', 'required', 'disabled', 'placeholder', 'readOnly', 'value', 'autocomplete', 'onInput', 'onChange']);
+    checkOptions(options, ['label','labelVisibility','status', 'description', 'error', 'required', 'disabled', 'placeholder', 'readOnly', 'value', 'autocomplete', 'onInput', 'onChange']);
     const field = primitive.createTextArea(options), input = field.control as HTMLTextAreaElement;
-    field.element.classList.add('pui-secret-area');
+    field.element.classList.add('pui-secret-area');applyFieldPresentation(field.element,options);
     let shown = false, destroyed = false;
     const toggle = primitive.createTextAction({ label: 'Show', onAction: () => { shown = !shown; render(); } });
     field.element.append(toggle.element);
     toggle.element.setAttribute('aria-controls', input.id);
     const render = () => { field.element.classList.toggle('pui-revealed', shown); toggle.update({ label: shown ? 'Hide' : 'Show', disabled: input.disabled }); toggle.element.setAttribute('aria-pressed', String(shown)); };
     render();
-    return ownControl<InputState, Pick<Input, 'read' | 'reset' | 'focus'>>({ element: field.element, update(state: Readonly<import('./controls.js').InputState>) { checkOptions(state, ['label', 'description', 'error', 'required', 'disabled', 'placeholder', 'readOnly']); field.update(state); render(); }, destroy() { field.reset(''); destroyed = true; field.destroy(); toggle.destroy(); } }, [], { read: field.getValue, reset(value: string) { if (destroyed)
+    return ownControl<InputState, Pick<Input, 'read' | 'reset' | 'focus'>>({ element: field.element, update(state: Readonly<import('./controls.js').InputState>) { checkOptions(state, ['label','labelVisibility','status', 'description', 'error', 'required', 'disabled', 'placeholder', 'readOnly']); field.update(state);applyFieldPresentation(field.element,{...state,labelVisibility:state.labelVisibility??options.labelVisibility}); render(); }, destroy() { field.reset(''); destroyed = true; field.destroy(); toggle.destroy(); } }, [], { read: field.getValue, reset(value: string) { if (destroyed)
             return; field.reset(value); shown = false; render(); }, focus: field.focus });
 }

@@ -45,3 +45,11 @@ For native URL validation use `createURLInput`; multiline sensitive text uses `c
 A list row may supply `onAction` for its native main action, with separate owned auxiliary actions. Use its `disabled` state rather than wiring events to the row DOM. Grid stacks constrain long code to their own horizontal scrolling. A pane footer lets its bounded scroll region yield to input, and a keyed list of attachment images wraps automatically; consumers do not supply layout pixels or CSS for these cases.
 
 Use Markdown `disabled` to merge application availability with local copy/link pending state without replacing the reading nodes. A changed Markdown source or a closed owner retires old action feedback. Auxiliary row actions own their own availability separately from the row’s native main action.
+
+## Bounded layout contexts
+
+Use `createContentColumn` for the fixed reading/input/intro measures, `createSurface` for input/panel/notice content, and `createGrid({columns:'pair'})` for two related fields. `createToolbar` accepts either children or independent leading/trailing groups. `createBreadcrumb`, `createBrand`, `createStep` and `createNotificationRegion` remain small content pieces; they create no application, page or business request.
+
+A supported `context` or `purpose` selects a finite semantic composition. It is not a free size/density setting: navigation rows, inline choices, readouts, output disclosures, queued collections and form/collection/document dialogs have fixed reviewed geometry. Construction-time contexts remain when an update omits them. Preserve the same context when replacing a control. Input values still change only through explicit reset.
+
+Use `Text.value` for a safely emphasized value following its label, and caption/lead text for explicitly supplied line breaks. Hidden field labels remain accessible. A field `status` is noninteractive credential state, separate from error text. Icon copying is `createCopyButton({presentation:'icon',...})`; default copying retains its text action. Keep data and native file actions in the application.

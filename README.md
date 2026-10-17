@@ -6,6 +6,8 @@ The **pith-ui** entry exposes opaque component handles. The only other export is
 
 TypeScript/CSS source builds to ESM and declarations plus one portable stylesheet. No UI framework, downloaded font or animation runtime. Fixed system UI/code fonts, 12/14/16 CSS px type, 400/600 weights, 1.5 line height and 4/8/12/16/24 CSS px spacing. Components choose roles; consumers do not style individual nodes.
 
+Bounded layout examples: [content columns](https://minifish-org.github.io/pith-ui/?item=content-column), [input surfaces](https://minifish-org.github.io/pith-ui/?item=surface), [small control contexts](https://minifish-org.github.io/pith-ui/?item=controls-layout-contexts). These keep positioning and grouping inside the library without exposing CSS options.
+
 Small compositions to try first: [connection form](https://minifish-org.github.io/pith-ui/?item=controls-form-page), [actions and surfaces](https://minifish-org.github.io/pith-ui/?item=controls-actions-page). They use the default entry using only the same public components.
 
 ## Try the components

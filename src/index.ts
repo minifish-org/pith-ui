@@ -14,3 +14,12 @@ export type {DocumentState,DocumentOptions} from './consumer-parts.js';
 export {createURLInput} from './controls.js';
 export type {TextInputOptions} from './controls.js';
 export {createSecretTextArea} from './consumer-parts.js';
+
+export {createContentColumn,createSurface,createGrid,createBrand,createStep} from './controls.js';
+export type {ContentColumnState,SurfaceState,GridState,BrandState,StepState,ToolbarOptions,SearchInputOptions} from './controls.js';
+
+export {createNotificationRegion} from './controls.js';
+export type {NotificationRegionState} from './controls.js';
+
+export {createBreadcrumb} from './controls.js';
+export type {BreadcrumbState} from './controls.js';

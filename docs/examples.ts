@@ -72,3 +72,28 @@ export function retainedMarkdown(ui:PithUI,host:HTMLElement,copy:(text:string)=>
   const content=ui.createMarkdown({text:'[Documentation](https://example.com)',onCopy:copy,onLink:url=>{console.log(url);return{ok:true};}});
   const mounted=ui.mount(host,content);return{mounted,disable(){content.update({text:'[Documentation](https://example.com)',disabled:true});}};
 }
+
+/** A bounded editor, assembled from small controls rather than a chat scene. */
+export function boundedEditor(ui:PithUI,host:HTMLElement,submit:(text:string)=>Promise<ActionResult>){
+ const input=ui.createPromptInput({label:'Draft',onSubmit:submit});
+ const footer=ui.createToolbar({label:'Draft actions',leading:ui.createSelect({label:'Permission',context:'inline',icon:'shield',tone:'warning',options:[{value:'full',label:'Full access'}]}),trailing:ui.createIconButton({label:'Send',icon:'arrow',context:'inline',onAction:()=>submit(input.read())})});
+ return ui.mount(host,ui.createContentColumn({purpose:'input',content:ui.createSurface({content:input,footer})}));
+}
+
+/** Navigation owns only content, callbacks and finite presentation contexts. */
+export function smallNavigation(ui:PithUI,host:HTMLElement){
+ const saved=ui.createListRow({context:'navigation',title:'Saved conversation',selected:true,onAction(){},status:ui.createStatus({label:'Running',presentation:'indicator',activity:'busy'}),actions:ui.createIconButton({context:'inline',label:'More actions',icon:'more'})});
+ const tree=ui.createDisclosure({context:'navigation',title:'Workspace',icon:'folder',open:true,content:saved,actions:ui.createIconButton({context:'inline',label:'New conversation',icon:'plus'})});
+ const header=ui.createToolbar({label:'Location',leading:ui.createBreadcrumb({label:'Location',items:[{key:'workspace',label:'Workspace',icon:'folder'},{key:'conversation',label:'Saved conversation'}]}),trailing:ui.createCopyButton({presentation:'icon',value:'Example',label:'Copy message',onCopy:()=>({ok:true})})});
+ return ui.mount(host,ui.createPane({purpose:'navigation',header,content:tree}));
+}
+
+export function boundedDetails(ui:PithUI,host:HTMLElement){
+ const form=ui.createForm({context:'settings',cancelLabel:'Close',onCancel(){},children:[ui.createFormSection({context:'settings',title:'Appearance',children:[ui.createSelect({label:'Appearance',labelVisibility:'hidden',options:[{value:'system',label:'System'}]})]}),ui.createFormSection({context:'model',title:'Model',children:[ui.createSecretInput({label:'API key',status:'Configured'}),ui.createGrid({columns:'pair',children:[ui.createNumberInput({label:'Input price',min:0}),ui.createNumberInput({label:'Output price',min:0})]})]})],onSubmit:()=>({ok:true})});
+ const dialog=ui.createDialog({purpose:'form',eyebrow:'PREFERENCES',title:'Settings',content:form});
+ const mount=ui.mount(host,ui.createText({role:'caption',text:'Working in ',value:'Workspace'}));mount.attach(dialog);dialog.open();return mount;
+}
+
+export function smallIntroduction(ui:PithUI,host:HTMLElement){
+ return ui.mount(host,ui.createContentColumn({purpose:'intro',content:ui.createStack({children:[ui.createImage({purpose:'intro',label:'Logo',source:'/logo.svg'}),ui.createText({role:'label',text:'EXAMPLE'}),ui.createText({role:'heading',text:'A consistent starting point'}),ui.createText({role:'lead',text:'A short introduction.\nAn explicitly supplied second line.'}),ui.createSurface({purpose:'panel',content:ui.createStep({number:1,title:'Connect',description:'Choose a connection',onAction:()=>({ok:true})})}),ui.createActions({align:'center',children:[ui.createButton({context:'suggestion',label:'Explain this folder'})]})]})}));
+}

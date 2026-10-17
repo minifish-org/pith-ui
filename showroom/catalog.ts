@@ -1,10 +1,11 @@
+import {layoutCases} from './layout-cases.js';
 import {consumerCases} from './consumer-cases.js';
 import {primitiveCases} from './primitive-cases.js';
 import {foundationCases} from './foundation-cases.js';
 import {controlPageCases} from './control-page-cases.js';
 import {publicCases} from './public-cases.js';
 import type {ShowcaseCase} from './types.js';
-const items=[...primitiveCases,...publicCases,...consumerCases,...controlPageCases,...foundationCases];
+const items=[...primitiveCases,...publicCases,...consumerCases,...layoutCases,...controlPageCases,...foundationCases];
 const ids=new Set(items.map(item=>item.id));
 if(ids.size!==items.length)throw new Error('Duplicate showcase ID');
 export const catalog:readonly ShowcaseCase[]=items.map(item=>({...item,entry:'pith-ui',related:item.related?.filter(id=>ids.has(id)),controls:item.controls??(['text-edit-dialog','confirmation','menu','button'].includes(item.id)?['outcome']:[])}));

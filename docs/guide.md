@@ -33,3 +33,11 @@ There is no app or whole-scene export, and the showroom does not expose internal
 See docs/examples.ts for strictly compiled public examples, API.md for signatures, and the showroom's base components for actual interaction. Test actual registry/tarball consumption; never confuse a local build with publication or human acceptance.
 
 Text editing uses one fixed layout per purpose: `message` (the default, eight native rows) or `pending-message` (five rows). These are the established message and queue editors, not arbitrary height, width, density or font settings. All dialogs retain the shared base dialog geometry.
+
+## Restore layout through small bounded pieces
+
+A centered reading measure is `createContentColumn({purpose:'reading',content})`; a reading area can own this measure internally with `column:'reading'`. Input and introduction measures use `purpose:'input'` and `'intro'`. The input surface combines a prompt and its footer. The panel surface is a fixed narrow card; notice surfaces fill their enclosing region and carry semantic warning/error tones.
+
+Toolbar leading/trailing groups preserve two edges instead of appending all controls into one list. Inline choices keep accessible labels while using a fixed compact trigger. Navigation disclosures/rows retain independent primary actions, auxiliary actions and visible status. A readout differs from an output disclosure: the former stays unframed; the latter frames command output. Queue contexts provide a bounded scrolling collection and small rows, while application callbacks continue to own queue mutations.
+
+`createGrid({columns:'pair'})` adapts two fields to one column on narrow screens. Settings sections and model fieldsets are finite form contexts; `context:'flow'` retains document flow for adjacent sections. Dialog purposes are form (500 CSS px), collection (660) and document (900), all shrinking within the viewport. Label visibility never removes the accessible name. Contexts are structural choices retained from construction when update omits them; drafts, selection, disclosure state and child ownership remain independent.

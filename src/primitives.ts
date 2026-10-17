@@ -106,6 +106,7 @@ export function createScrollArea(options: ScrollAreaState & { content: Node }): 
 }
 
 export interface FieldState {
+  selectAnchor?:boolean;
   label: string;
   description?: string;
   error?: string;
@@ -117,8 +118,8 @@ export interface FieldBlock extends UIBlock<FieldState> {
 }
 
 export function createField(options: FieldState & { control: FieldBlock['control'] }): FieldBlock {
-  const root = element('div', 'pui-field');
-  const label = element('label', 'pui-field-label');
+  const root = element('div', 'pui-field');if(options.selectAnchor)root.dataset.puiSelectAnchor='';
+  const label = element('label', 'pui-field-label'), requiredMark=element('span','pui-required-mark',' *');
   const description = element('div', 'pui-field-description');
   const error = element('div', 'pui-field-error');
   const control = options.control;
@@ -128,8 +129,9 @@ export function createField(options: FieldState & { control: FieldBlock['control
   root.append(label, control, description, error);
   const field = adoptNativeControl(control, { label, description, error });
   const update = (state: Readonly<FieldState>): void => {
-    field.update({ ...state, label: `${state.label}${state.required ? ' *' : ''}`,
+    field.update({ ...state, label: state.label,
       description: state.description ?? '', error: state.error ?? '', disabled: !!state.disabled, required: !!state.required });
+    if(state.required)label.append(requiredMark);else requiredMark.remove();
     label.hidden = !state.label;
     root.classList.toggle('pui-invalid', !!state.error);
   };
@@ -514,14 +516,14 @@ export interface PopoverBlock extends UIBlock<PopoverState> {
   close(): void;
   isOpen(): boolean;
 }
-export function createPopover(options: PopoverState & { content: Node; onToggle?: (open: boolean) => void }): PopoverBlock {
+export function createPopover(options: PopoverState & { content: Node; position?:boolean; onToggle?: (open: boolean) => void }): PopoverBlock {
   let state: PopoverState = options;
   const trigger = createButton({ label: options.label, onAction() { if (surface.isOpen()) surface.close(); else surface.open(); } });
   const panel = element('div', 'pui-popover-panel', options.content); panel.hidden = true; panel.id = uniqueId('pui-popover');
   panel.setAttribute('role', 'region'); panel.setAttribute('aria-label', options.label);
   trigger.element.setAttribute('aria-controls', panel.id); trigger.element.setAttribute('aria-expanded', 'false');
   const root = element('div', 'pui-popover', trigger.element, panel);
-  const surface = installAnchoredSurface({ trigger: trigger.element, panel, canOpen: () => !state.disabled, onToggle: options.onToggle });
+  const surface = installAnchoredSurface({ trigger: trigger.element, panel,position:options.position, canOpen: () => !state.disabled, onToggle: options.onToggle });
   const update = (next: Readonly<PopoverState>): void => { state = next; trigger.update(next); panel.setAttribute('aria-label', next.label); if (next.disabled) surface.close(); };
   update(options);
   return { element: root, trigger: trigger.element, panel, update, open: surface.open, close: surface.close, isOpen: surface.isOpen,
