@@ -95,16 +95,22 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
       place();
       if (!opened) return;
       events = new Lifetime();
+      const scope = events;
+      let internalPointer = false;
       const outside = (event: Event) => { if (!contains(event.target)) close(); };
-      events.listen(doc, 'pointerdown', outside, { capture: true });
-      events.listen(doc, 'click', outside, { capture: true });
+      events.listen(doc, 'pointerdown', event => { internalPointer = contains(event.target); outside(event); }, { capture: true });
+      const endPointer = () => { internalPointer = false; };
+      events.listen(doc, 'pointerup', endPointer, { capture: true });
+      events.listen(doc, 'pointercancel', endPointer, { capture: true });
+      events.listen(doc, 'click', event => { endPointer(); outside(event); }, { capture: true });
       if (options.closeOnFocusOut !== false) {
         events.listen(doc, 'focusin', outside, { capture: true });
         const blur = (event: Event) => {
           // Native pointer focus can briefly expose body between focusout and
-          // focusin. Its related target already identifies an internal move.
-          if (contains((event as FocusEvent).relatedTarget)) return;
-          queueMicrotask(() => { if (opened && !contains(doc.activeElement)) close(); });
+          // click, even without a new focusin on Safari buttons. Keep that
+          // internal activation alive; actual outside focus/click still closes.
+          if (internalPointer || contains((event as FocusEvent).relatedTarget)) return;
+          queueMicrotask(() => { if (opened && events === scope && !internalPointer && !contains(doc.activeElement)) close(); });
         };
         events.listen(trigger, 'focusout', blur); events.listen(panel, 'focusout', blur);
       }
