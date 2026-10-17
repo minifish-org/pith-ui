@@ -51,3 +51,14 @@ test('safe content routes link failures locally and ignores completion after des
   await page.evaluate(()=>{const p=Reflect.get(window,'parts');p.owner.destroy();p.finish();});
   expect(await page.evaluate(()=>Reflect.get(window,'parts').errors)).toEqual(['Local failure']);
 });
+
+test('narrow split navigation excludes hidden controls and Escape restores its trigger',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto('/tests/fixture.html');
+  await page.evaluate(async()=>{const u=await import('../src/index.js');const navigation=u.createButton({label:'Destination'});const trigger=u.createButton({label:'Open navigation',onAction:()=>split.setNavigationOpen(true)});const split=u.createSplitPane({navigation,content:trigger});u.mount(document.body,split);});
+  expect(await page.getByRole('button',{name:'Destination',includeHidden:true}).evaluate(node=>!!node.closest('[inert]'))).toBe(true);
+  await page.getByRole('button',{name:'Open navigation',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Destination',exact:true})).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button',{name:'Open navigation',exact:true})).toBeFocused();
+  expect(await page.getByRole('button',{name:'Destination',includeHidden:true}).evaluate(node=>!!node.closest('[inert]'))).toBe(true);
+});

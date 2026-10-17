@@ -1,3 +1,4 @@
+import {catalog} from '../showroom/catalog.js';
 import {test,expect} from '@playwright/test';
 
 test('the public showroom starts with a usable small component and hides implementation scenes',async({page})=>{
@@ -27,4 +28,15 @@ test('side by side themes reach each public mount even when system theme differs
   const colors=await page.locator('.gallery-demo-host').evaluateAll(nodes=>nodes.map(node=>getComputedStyle(node.querySelector('button')!).backgroundColor));
   expect(colors).toHaveLength(2);
   expect(colors[0]).not.toBe(colors[1]);
+});
+
+test('every formal component and example mounts through both themes without script errors',async({page})=>{
+  test.setTimeout(120000);const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+  for(const item of catalog)for(const theme of ['light','dark']){
+    await page.goto('/?item='+item.id+'&theme='+theme);
+    await expect(page.locator('.gallery-heading h2')).toHaveText(item.title);
+    await expect(page.locator('.gallery-demo-host > *')).not.toHaveCount(0);
+    await expect(page.locator('.gallery-docs')).not.toContainText('库内实现片段');
+  }
+  expect(errors).toEqual([]);
 });
