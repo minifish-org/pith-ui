@@ -27,14 +27,19 @@ export function createMetadataPart(options: MetadataPartState & {purpose: Metada
   }});part.update({text: options.text,tone: options.tone,hidden: options.hidden});return part;
 }
 
-export interface CodePropertyPart extends Part {update(state: {label: string;value: string}): void}
+export interface CodePropertyPartState {label: string;value: string;hidden?: boolean}
+export interface CodePropertyPartOptions extends CodePropertyPartState {purpose?: 'property'|'location'}
+export interface CodePropertyPart extends Part {update(state: Readonly<CodePropertyPartState>): void}
 /** A literal label/code property. The two native children are its intrinsic
  * structure; no command, workspace or other business data is interpreted. */
-export function createCodePropertyPart(options: {label: string;value: string}): CodePropertyPart {
-  const validate = (state: {label: string;value: string}) => {assertOptions(state,['label','value'],'code property');if (typeof state.label !== 'string' || typeof state.value !== 'string') throw new TypeError('Code property content must be text.');};validate(options);
-  const node = document.createElement('div');node.className = 'pui-command-directory';
-  const label = document.createElement('span');label.className = 'pui-tool-field-label';const code = document.createElement('code');node.append(label,code);
-  const part = createOwnedPart(node,{update(state: {label: string;value: string}) {validate(state);if (!isPartAlive(part)) return;if (label.textContent !== state.label) label.textContent = state.label;
+export function createCodePropertyPart(options: CodePropertyPartOptions): CodePropertyPart {
+  assertOptions(options,['label','value','hidden','purpose'],'code property');
+  const {purpose = 'property',...initial} = options;
+  const validate = (state: Readonly<CodePropertyPartState>) => {assertOptions(state,['label','value','hidden'],'code property state');if (typeof state.label !== 'string' || typeof state.value !== 'string') throw new TypeError('Code property content must be text.');if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Code property hidden must be boolean.');};validate(initial);
+  if (!['property','location'].includes(purpose)) throw new TypeError('Unsupported code property purpose.');
+  const node = document.createElement('div');node.className = purpose === 'location' ? 'pui-approval-file' : 'pui-command-directory';
+  const label = document.createElement(purpose === 'location' ? 'strong' : 'span');if (purpose === 'property') label.className = 'pui-tool-field-label';const code = document.createElement('code');node.append(label,code);
+  const part = createOwnedPart(node,{update(state: Readonly<CodePropertyPartState>) {validate(state);if (!isPartAlive(part)) return;if (label.textContent !== state.label) label.textContent = state.label;node.hidden = !!state.hidden;
     if (code.textContent !== state.value) {const source = document.createDocumentFragment();source.append(document.createTextNode(state.value));patchChildren(code,source);}
-  }});part.update(options);return part;
+  }});part.update(initial);return part;
 }

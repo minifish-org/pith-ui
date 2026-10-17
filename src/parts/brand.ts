@@ -5,6 +5,8 @@ export type BrandMarkOptions =
   | {src: string; darkSrc?: string; alt: string; symbol?: never};
 export interface BrandMarkPart extends Part {}
 const marks = new WeakSet<Part>();
+/** Internal capability check for fixed brand presentation containers. */
+export function isBrandMarkPart(part: Part): part is BrandMarkPart {return marks.has(part) && isPartAlive(part);}
 /** A fixed named symbol or image resource. Its geometry belongs to the library. */
 export function createBrandMarkPart(options: BrandMarkOptions): BrandMarkPart {
   assertOptions(options, ['symbol', 'src', 'darkSrc', 'alt'], 'brand mark');
@@ -38,7 +40,7 @@ function validateBrand(state: Readonly<BrandPartState>): void {
 /** Wordmark and optional mark, using the established native display-contents structure. */
 export function createBrandPart(options: BrandPartState & {mark?: BrandMarkPart}): BrandPart {
   assertOptions(options, ['name', 'qualifier', 'mark'], 'brand'); validateBrand(options);
-  if (options.mark !== undefined && (!marks.has(options.mark) || !isPartAlive(options.mark))) throw new TypeError('A brand requires a live Pith UI mark.');
+  if (options.mark !== undefined && !isBrandMarkPart(options.mark)) throw new TypeError('A brand requires a live Pith UI mark.');
   const node = document.createElement('div'); node.className = 'pui-brand';
   const contents = document.createElement('span'); contents.className = 'pui-app-brand';
   const wordmark = document.createElement('span'), caption = document.createTextNode(options.name); wordmark.append(caption);

@@ -37,8 +37,10 @@ export function createImagePart(options: ImagePartOptions): ImagePart {
   const data = (): ImageData => Object.freeze({src: node.src,alt: node.alt});
   const activate = (event: Event) => {
     if (!isPartAlive(part) || status !== 'ready' || !src) return;
-    if (event instanceof KeyboardEvent && (event.isComposing || !['Enter',' '].includes(event.key) || options.purpose === 'attachment' && event.repeat)) return;
-    event.preventDefault();event.stopPropagation();options.onActivate?.(data());
+    if (event instanceof KeyboardEvent && (event.isComposing || !['Enter',' '].includes(event.key))) return;
+    event.preventDefault();event.stopPropagation();
+    if (event instanceof KeyboardEvent && options.purpose === 'attachment' && event.repeat) return;
+    options.onActivate?.(data());
   };
   node.addEventListener('click',activate);node.addEventListener('keydown',activate);
   const update = (state: Readonly<ImagePartState>) => {

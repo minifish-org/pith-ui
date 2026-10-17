@@ -2,7 +2,7 @@ import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownershi
 
 export interface BadgePartState {text: string; hidden?: boolean}
 export interface BadgePart extends Part {update(state: Readonly<BadgePartState>): void}
-export interface BadgePartOptions extends BadgePartState {purpose?: 'outline'|'filled'}
+export interface BadgePartOptions extends BadgePartState {purpose?: 'outline'|'filled'|'code'}
 const badges = new WeakSet<Part>();
 /** Internal genuine-handle check for bounded field-label suffixes. */
 export function isBadgePart(part: Part): part is BadgePart {return badges.has(part) && isPartAlive(part);}
@@ -14,8 +14,8 @@ function validate(state: Readonly<BadgePartState>): void {
 /** A small text badge. Its border, spacing and type are fixed by the library. */
 export function createBadgePart(options: BadgePartOptions): BadgePart {
   assertOptions(options,['text','hidden','purpose'],'badge');const {purpose = 'outline',...initial} = options;validate(initial);
-  if (!['outline','filled'].includes(purpose)) throw new TypeError('Unknown badge purpose.');
-  const node = document.createElement('span'); node.className = purpose === 'filled' ? 'pui-queue-badge' : 'pui-configured-badge';
+  if (!['outline','filled','code'].includes(purpose)) throw new TypeError('Unknown badge purpose.');
+  const node = document.createElement('span'); node.className = purpose === 'code' ? 'pui-approval-badge' : purpose === 'filled' ? 'pui-queue-badge' : 'pui-configured-badge';
   let part: BadgePart;
   const update = (state: Readonly<BadgePartState>) => {
     validate(state); if (!isPartAlive(part)) return;

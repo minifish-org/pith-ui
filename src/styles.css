@@ -99,7 +99,7 @@
 .pui .pui-welcome-mark { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; border: 1px solid var(--pui-border); background: var(--pui-surface); border-radius: 18px; margin-bottom: var(--pui-space-xl); box-shadow: var(--pui-shadow); }
 .pui .pui-welcome-mark .pui-logo-mark { width: 32px; height: 32px; gap: 4px; }
 .pui .pui-eyebrow { font-size: var(--pui-text-small); letter-spacing: normal; font-weight: var(--pui-weight-strong); color: var(--pui-muted); margin: 0 0 var(--pui-space-md); }
-.pui .pui-welcome h1 { font-weight: var(--pui-weight-strong); font-size: var(--pui-text-large); letter-spacing: normal; line-height: var(--pui-line-height); color: var(--pui-text); margin: 0 0 var(--pui-space-lg); }
+.pui .pui-welcome h1, .pui .pui-display-heading { font-weight: var(--pui-weight-strong); font-size: var(--pui-text-large); letter-spacing: normal; line-height: var(--pui-line-height); color: var(--pui-text); margin: 0 0 var(--pui-space-lg); }
 .pui .pui-welcome-description { line-height: var(--pui-line-height); font-size: var(--pui-text-medium); color: var(--pui-muted); margin: 0; }
 .pui .pui-setup-card { max-width: 445px; margin: var(--pui-space-xl) auto 0; border: 1px solid var(--pui-border); background: var(--pui-surface); border-radius: 12px; padding: var(--pui-space-lg) var(--pui-space-lg) var(--pui-space-sm); text-align: left; }
 .pui .pui-setup-card-heading { font-size: var(--pui-text-small); color: var(--pui-text); padding-bottom: var(--pui-space-md); border-bottom: 1px solid var(--pui-border); }
@@ -119,9 +119,9 @@
 .pui .pui-welcome-workspace .pui-icon { width: 16px; height: 16px; }
 .pui .pui-welcome-workspace strong { font-weight: var(--pui-weight-strong); color: var(--pui-text); }
 .pui .pui-suggestions { display: flex; justify-content: center; gap: var(--pui-space-sm); flex-wrap: wrap; margin-top: var(--pui-space-xl); }
-.pui .pui-suggestions button { padding: var(--pui-space-md) var(--pui-space-md); border: 1px solid var(--pui-border); border-radius: 8px; background: var(--pui-surface); font-size: var(--pui-text-small); display: flex; align-items: center; gap: var(--pui-space-sm); color: var(--pui-muted); }
-.pui .pui-suggestions button:hover { background: var(--pui-surface-hover); border-color: var(--pui-border); color: var(--pui-text); }
-.pui .pui-suggestions .pui-icon { width: 14px; height: 14px; color: var(--pui-muted); }
+.pui .pui-suggestions button, .pui .pui-suggestion-action { padding: var(--pui-space-md) var(--pui-space-md); border: 1px solid var(--pui-border); border-radius: 8px; background: var(--pui-surface); font-size: var(--pui-text-small); display: flex; align-items: center; gap: var(--pui-space-sm); color: var(--pui-muted); }
+.pui .pui-suggestions button:hover, .pui .pui-suggestion-action:hover { background: var(--pui-surface-hover); border-color: var(--pui-border); color: var(--pui-text); }
+.pui .pui-suggestions .pui-icon, .pui .pui-suggestion-action .pui-icon { width: 14px; height: 14px; color: var(--pui-muted); }
 .pui .pui-composer-region { width: min(810px, calc(100% - 80px)); margin: 0 auto; padding: var(--pui-space-lg) 0 var(--pui-space-lg); display: flex; flex-direction: column; min-height: 0; flex-shrink: 1; }
 .pui .pui-composer-panels { min-height: 0; overflow-y: auto; flex: 0 1 auto; scrollbar-width: thin; scrollbar-color: var(--pui-scrollbar) transparent; }
 .pui .pui-composer-region > .pui-composer, .pui .pui-composer-region > .pui-composer-note { flex-shrink: 0; }
@@ -184,6 +184,7 @@
 .pui .pui-back-to-latest .pui-icon { width: 14px; height: 14px; }
 .pui .pui-conversation-find { display: flex; align-items: center; gap: var(--pui-space-sm); padding: var(--pui-space-sm) var(--pui-space-xl); border-bottom: 1px solid var(--pui-border); background: var(--pui-surface); }
 .pui .pui-conversation-find input { flex: 1; min-width: 0; max-width: 420px; border: 1px solid var(--pui-border); border-radius: 6px; padding: var(--pui-space-sm) var(--pui-space-sm); background: var(--pui-surface-input); color: var(--pui-text); font-size: var(--pui-text-medium); }
+.pui .pui-conversation-find > .pui-control { min-height: auto; }
 .pui .pui-conversation-find [data-find-count] { min-width: 65px; color: var(--pui-muted); font-size: var(--pui-text-small); text-align: center; }
 .pui .pui-conversation-find .pui-quiet-icon { padding: var(--pui-space-sm); }
 .pui .pui-find-previous .pui-icon { transform: rotate(180deg); }
@@ -420,7 +421,7 @@
   .pui .pui-step-number { width: 25px; height: 25px; }
   .pui .pui-welcome-footnote { margin-top: var(--pui-space-lg); }
   .pui .pui-suggestions { gap: var(--pui-space-sm); margin-top: var(--pui-space-xl); }
-  .pui .pui-suggestions button { font-size: var(--pui-text-small); padding: var(--pui-space-sm); }
+  .pui .pui-suggestions button, .pui .pui-suggestion-action { font-size: var(--pui-text-small); padding: var(--pui-space-sm); }
   .pui .pui-composer-region { width: calc(100% - 28px); padding-top: var(--pui-space-sm); padding-bottom: var(--pui-space-md); }
   .pui .pui-composer { padding: var(--pui-space-md) var(--pui-space-md) var(--pui-space-sm); border-radius: 12px; }
   .pui .pui-composer textarea { font-size: var(--pui-text-medium); }
@@ -449,8 +450,8 @@
 .pui .pui-run-status { margin: 0 var(--pui-space-xs) var(--pui-space-sm); color: var(--pui-muted); font-size: var(--pui-text-medium); }
 .pui .pui-run-status summary { cursor: pointer; padding: var(--pui-space-sm) 0; }
 .pui [id$="run-status-details"] { max-height: min(50vh, 440px); overflow-y: auto; overflow-x: hidden; padding-right: var(--pui-space-sm); scrollbar-width: thin; }
-.pui .pui-run-status dl { display: grid; grid-template-columns: 1fr auto; gap: var(--pui-space-sm) var(--pui-space-lg); margin: var(--pui-space-sm) 0; }
-.pui .pui-run-status dd { margin: 0; text-align: right; }
+.pui .pui-run-status dl, .pui .pui-description-list { display: grid; grid-template-columns: 1fr auto; gap: var(--pui-space-sm) var(--pui-space-lg); margin: var(--pui-space-sm) 0; }
+.pui .pui-run-status dd, .pui .pui-description-list dd { margin: 0; text-align: right; }
 .pui .pui-run-status p { line-height: var(--pui-line-height); max-width: 720px; }
 .pui .pui-task-failure { border: 1px solid var(--pui-border); border-radius: 12px; padding: var(--pui-space-md) var(--pui-space-lg); margin-bottom: var(--pui-space-md); background: var(--pui-surface); font-size: var(--pui-text-medium); }
 .pui .pui-task-failure p { margin: var(--pui-space-sm) 0 var(--pui-space-md); line-height: var(--pui-line-height); }

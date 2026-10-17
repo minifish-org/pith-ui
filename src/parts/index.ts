@@ -58,3 +58,18 @@ export {createScrollListPart, type ScrollListPart, createCompactRowPart, createC
 export type {BadgePartOptions} from './status.js';
 export {createReadingViewportPart, type ReadingSearchState, type ReadingViewportOptions, type ReadingViewportPart} from './reading-viewport.js';
 export {createSearchToolbarPart, createReadingRegionPart, type SearchToolbarPartState, type SearchToolbarPart} from './reader-layout.js';
+export {createCalloutHeadingPart, createCalloutActionsPart} from './cards.js';
+export type {StackPartOptions} from './layout.js';
+export {createFoldingPart, type FoldingPart, type FoldingPartState, type FoldingPartOptions} from './folding.js';
+export type {CodePropertyPartState, CodePropertyPartOptions} from './metadata.js';
+export {createCenteredContentPart, createBrandTilePart, createResponsiveLeadPart, createStepActionPart, createStepGroupPart, createContextLinePart, createSuggestionGroupPart, createIconNotePart,
+  type CenteredContentState, type CenteredContentPart, type ResponsiveLeadState, type ResponsiveLeadPart, type StepActionState, type StepActionPart, type StepActionOptions,
+  type StepGroupState, type StepGroupPart, type SuggestionGroupPart, type IconNoteState, type IconNotePart} from './welcome-parts.js';
+export {createMessageInputPart,createFilePickerPart,type MessageInputPart,type MessageInputState,type MessageInputOptions,type MessageSelection,type FilePickerPart} from './message-input.js';
+export {createComposerRegionPart,createComposerPanelsPart,createInputToolbarPart,createInputContextPart,createInputActionsPart,type ComposerLayoutOptions} from './composer-layout.js';
+export {createThumbnailStripPart,createThumbnailPart,createCaptionPart,type ThumbnailStripState,type ThumbnailStripOptions,type ThumbnailStripPart,type ThumbnailPart,type CaptionPart} from './thumbnail.js';
+export {createStatusActionsPart,type StatusActionsPart} from './status-actions.js';
+export {createTopbarActionsPart} from './frame.js';
+export {createDescriptionListPart,type DescriptionListPart,type DescriptionEntry} from './description-list.js';
+export {createScrollAreaPart} from './scroll-area.js';
+export type {FileDropData,NativeFileDropData} from './form.js';

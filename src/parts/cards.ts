@@ -55,6 +55,10 @@ export function createCardPart(options: {children: readonly Part[];purpose?: 'ro
 }
 /** A wrapping summary row. Callers compose their own text, status and actions. */
 export function createCardHeadingPart(options: {children: readonly Part[]}): LayoutPart {return container(options,'div','pui-connection-card-heading');}
+/** A compact review heading. Icons, literal text and badges are caller-owned parts. */
+export function createCalloutHeadingPart(options: {children: readonly Part[]}): LayoutPart {return container(options,'div','pui-approval-heading');}
+/** Trailing wrapping actions for a callout, without a field/footer border. */
+export function createCalloutActionsPart(options: {children: readonly Part[]}): LayoutPart {return container(options,'div','pui-approval-actions');}
 /** Flexible card information. It supplies no implicit text, icon or action. */
 export function createCardBodyPart(options: {children: readonly Part[]}): CardBodyPart {return container(options, 'div', 'pui-file-info');}
 /** A compact action row with fixed button sizes and natural wrapping. */

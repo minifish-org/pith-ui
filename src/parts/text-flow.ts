@@ -3,9 +3,9 @@ import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownershi
 
 export interface TextFlowSegment {text: string; emphasis?: 'strong'}
 export interface TextFlowPartState {segments: readonly TextFlowSegment[]; hidden?: boolean}
-export type TextFlowRole = 'paragraph' | 'description' | 'hint';
+export type TextFlowRole = 'paragraph' | 'description' | 'hint' | 'inline';
 export interface TextFlowPart extends Part {update(state: Readonly<TextFlowPartState>): void}
-const roles: Record<TextFlowRole, string> = {paragraph: '', description: 'pui-modal-description', hint: 'pui-field-hint'};
+const roles: Record<TextFlowRole, string> = {paragraph: '', description: 'pui-modal-description', hint: 'pui-field-hint', inline: ''};
 function validate(state: Readonly<TextFlowPartState>): void {
   assertOptions(state, ['segments', 'hidden'], 'text flow state');
   if (!Array.isArray(state.segments)) throw new TypeError('Text flow segments must be an array.');
@@ -22,7 +22,7 @@ export function createTextFlowPart(options: TextFlowPartState & {role?: TextFlow
   const initial = {segments: options.segments, hidden: options.hidden}; validate(initial);
   const role = options.role ?? 'paragraph';
   if (!Object.hasOwn(roles, role)) throw new TypeError('Unknown text flow role.');
-  const node = document.createElement('p');
+  const node = document.createElement(role === 'inline' ? 'span' : 'p');
   if (roles[role]) node.className = roles[role];
   let part: TextFlowPart;
   const update = (state: Readonly<TextFlowPartState>) => {

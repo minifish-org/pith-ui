@@ -4,7 +4,7 @@ import type {LayoutPart} from './layout.js';
 import {assertOptions, createOwnedPart, isPartAlive, nodeOf, onPartDestroy, replacePartChildren, type Part} from './ownership.js';
 
 declare const frameRole: unique symbol;
-export interface FramePart extends LayoutPart {readonly [frameRole]: 'frame'}
+export interface FramePart extends LayoutPart {readonly [frameRole]: 'frame';hasModal(): boolean}
 export interface SideRailPart extends LayoutPart {readonly [frameRole]: 'rail'}
 export interface MainPart extends LayoutPart {readonly [frameRole]: 'main'}
 const frames = new WeakSet<Part>(), rails = new WeakSet<Part>(), mains = new WeakSet<Part>();
@@ -15,15 +15,25 @@ function layout(options: {children: readonly Part[]}, tag: 'div'|'aside'|'main'|
   const part = createOwnedPart(node, {replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part, children);}}, {children: options.children}); return part;
 }
 /** Viewport layout only: callers supply every region and dialog as child parts. */
-export function createFramePart(options: {children: readonly Part[];onDispose?(): void}): FramePart {
-  assertOptions(options, ['children','onDispose'], 'frame');
+export function createFramePart(options: {children: readonly Part[];onDispose?(): void;onModalChange?(open: boolean): void}): FramePart {
+  assertOptions(options, ['children','onDispose','onModalChange'], 'frame');
   if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Frame disposal must be a callback.');
-  const part = layout({children: options.children}, 'div', 'pui-app pui-viewport-frame') as FramePart;
-  frames.add(part);if (options.onDispose) onPartDestroy(part,options.onDispose);return part;
+  if (options.onModalChange !== undefined && typeof options.onModalChange !== 'function') throw new TypeError('Frame modal change must be a callback.');
+  if (!Array.isArray(options.children)) throw new TypeError('Frame children must be arrays of Pith UI parts.');
+  const node = document.createElement('div');node.className = 'pui-app pui-viewport-frame';let lastModal = false;
+  const hasModal = () => isPartAlive(part) && !!node.querySelector('dialog[open]');
+  const changed = () => {const next = hasModal();if (next !== lastModal) {lastModal = next;options.onModalChange?.(next);}};
+  const observer = new MutationObserver(changed);
+  const part: FramePart = createOwnedPart<Omit<FramePart,keyof Part|typeof frameRole>>(node,{replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part,children);},hasModal},{children: options.children}) as FramePart;
+  observer.observe(node,{subtree: true,childList: true,attributes: true,attributeFilter: ['open']});
+  frames.add(part);if (options.onDispose) onPartDestroy(part,options.onDispose);
+  onPartDestroy(part,() => {observer.disconnect();if (lastModal) {lastModal = false;options.onModalChange?.(false);}});return part;
 }
 export function createSideRailPart(options: {children: readonly Part[]}): SideRailPart {const part = layout(options, 'aside', 'pui-sidebar') as SideRailPart; nodeOf(part).id = uniqueId('pui-side-rail'); rails.add(part); return part;}
 export function createMainPart(options: {children: readonly Part[]}): MainPart {const part = layout(options, 'main', 'pui-main') as MainPart; mains.add(part); return part;}
 export function createTopbarPart(options: {children: readonly Part[]}): LayoutPart {return layout(options, 'header', 'pui-topbar');}
+/** A trailing header action group. Children remain caller-owned content. */
+export function createTopbarActionsPart(options: {children: readonly Part[]}): LayoutPart {return layout(options, 'div', 'pui-conversation-actions');}
 export function createRailFooterPart(options: {children: readonly Part[]}): LayoutPart {return layout(options, 'div', 'pui-sidebar-bottom');}
 
 export interface RailHeadingPart extends Part {update(state: {label: string}): void}

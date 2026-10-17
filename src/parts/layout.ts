@@ -1,5 +1,5 @@
 import {adoptActionLayout} from '../foundations.js';
-import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
+import {assertOptions, createOwnedPart, isPartAlive, onPartDestroy, replacePartChildren, type Part} from './ownership.js';
 
 export interface LayoutPart extends Part {replace(children: readonly Part[]): void}
 export interface ActionsPartState {align?: 'start' | 'end' | 'between'; hidden?: boolean}
@@ -52,17 +52,20 @@ export function createToolbarPart(options: ToolbarPartState & {children: readonl
 }
 
 export interface StackPartState {hidden?: boolean}
+export interface StackPartOptions extends StackPartState {children: readonly Part[];onDispose?(): void}
 export interface StackPart extends LayoutPart {update(state: Readonly<StackPartState>): void}
 function validateStack(state: Readonly<StackPartState>): void {
   if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Stack hidden must be boolean.');
 }
 /** Natural block flow. No spacing, dimensions, CSS classes or layout DSL. */
-export function createStackPart(options: StackPartState & {children: readonly Part[]}): StackPart {
-  assertOptions(options, ['children','hidden'], 'stack');validateStack(options);
+export function createStackPart(options: StackPartOptions): StackPart {
+  assertOptions(options, ['children','hidden','onDispose'], 'stack');validateStack(options);
+  if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Stack onDispose must be a callback.');
   const node = document.createElement('div');
   let part: StackPart;
   const update = (state: Readonly<StackPartState>) => {assertOptions(state,['hidden'],'stack state');validateStack(state);if (isPartAlive(part)) node.hidden = !!state.hidden;};
   part = createOwnedPart<Omit<StackPart,keyof Part>>(node, {update,replace(children: readonly Part[]) {replacePartChildren(part, children);}}, {children: options.children});
+  if (options.onDispose) onPartDestroy(part,options.onDispose);
   update({hidden: options.hidden});
   return part;
 }

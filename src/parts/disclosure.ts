@@ -1,7 +1,7 @@
 import {Lifetime} from '../core.js';
 import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
 
-export type DisclosurePurpose = 'plain' | 'advanced' | 'preview';
+export type DisclosurePurpose = 'plain' | 'advanced' | 'preview' | 'status' | 'breakdown';
 export interface DisclosurePartState {title: string; disabled?: boolean; hidden?: boolean}
 export interface DisclosurePartOptions extends DisclosurePartState {
   purpose?: DisclosurePurpose;
@@ -15,7 +15,7 @@ export interface DisclosurePart extends Part {
   setOpen(open: boolean): void;
   isOpen(): boolean;
 }
-const purposes: Record<DisclosurePurpose, string> = {plain: '', advanced: 'pui-provider-advanced', preview: 'pui-resource-preview'};
+const purposes: Record<DisclosurePurpose, string> = {plain: '', advanced: 'pui-provider-advanced', preview: 'pui-resource-preview',status: 'pui-run-status',breakdown: 'pui-cost-requests'};
 function validate(state: Readonly<DisclosurePartState>): void {
   if (typeof state.title !== 'string') throw new TypeError('Disclosure title must be text.');
   for (const key of ['disabled', 'hidden'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError(`Disclosure ${key} must be boolean.`);

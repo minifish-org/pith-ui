@@ -1,6 +1,6 @@
 import {createReadingEngine,type ReadingSearchState} from '../content/reading-engine.js';
 import {isReadingColumnPart,type ReadingColumnPart} from './reading.js';
-import {assertOptions,assertUnownedParts,createOwnedPart,isPartAlive,nodeOf,type Part} from './ownership.js';
+import {assertOptions,assertUnownedParts,createOwnedPart,isPartAlive,nodeOf,onPartDestroy,type Part} from './ownership.js';
 
 export type {ReadingSearchState};
 export interface ReadingViewportOptions {
@@ -32,5 +32,7 @@ export function createReadingViewportPart(options: ReadingViewportOptions): Read
   },{children: options.children,dispose() {engine?.destroy();}});
   engine = createReadingEngine(node,nodeOf(options.reading) as HTMLElement,{onSearchState: options.onSearchState,onLatestChange: options.onLatestChange,onSearchIntent: options.onSearchIntent,
     isKeyboardBlocked: () => !isPartAlive(part) || !node.isConnected || !!(node.closest('.pui-app') ?? node.closest('.pui'))?.querySelector('dialog[open]')});
+  const releaseReading = onPartDestroy(options.reading,() => part.destroy());
+  onPartDestroy(part,releaseReading);
   return part;
 }
