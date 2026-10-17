@@ -156,3 +156,20 @@ for(const theme of ['light','dark'] as const)test(`small controls use fixed typo
   expect(await button.evaluate(node=>{const s=getComputedStyle(node);return {font:s.fontSize,line:s.lineHeight,outline:s.outlineStyle,padding:s.padding};})).toEqual({font:'14px',line:'21px',outline:'none',padding:'8px 12px'});
   expect(await page.locator('.pui-control-stack').evaluate(node=>getComputedStyle(node).gap)).toBe('12px');
 });
+
+test('idle actions activate once after availability changes and release their first pending operation on destroy',async({page})=>{
+  await page.evaluate(async()=>{
+    const u=await import('../src/index.js');let calls=0,finish!:(value:import('../src/index.js').ActionResult)=>void;
+    const controls=[u.createButton({label:'First button',disabled:true,onAction:()=>{calls++;return new Promise(resolve=>finish=resolve);}}),u.createIconButton({label:'Unused icon',icon:'plus',onAction:()=>{calls++;}}),u.createTextAction({label:'Unused text',onAction:()=>{calls++;}})];
+    const mounted=u.mount(document.body,u.createStack({children:controls}));
+    Object.assign(window,{activation:{enable(){controls[0].update({label:'First button',disabled:false});},destroy(){mounted.destroy();},finish(){finish({ok:false,error:'Stale first failure'});},calls:()=>calls}});
+  });
+  await expect(page.getByRole('button',{name:'First button',exact:true})).toBeDisabled();
+  await page.evaluate(()=>Reflect.get(window,'activation').enable());
+  const first=page.getByRole('button',{name:'First button',exact:true});await first.press('Enter');
+  await expect(first).toBeDisabled();
+  await page.evaluate(()=>{const state=Reflect.get(window,'activation');state.destroy();state.finish();});
+  await expect(page.getByRole('button')).toHaveCount(0);
+  await expect(page.getByText('Stale first failure',{exact:true})).toHaveCount(0);
+  expect(await page.evaluate(()=>Reflect.get(window,'activation').calls())).toBe(1);
+});
