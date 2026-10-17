@@ -43,31 +43,31 @@ independent native parts; they do not acquire an extra wrapper per control.
 ## Connect the application controller
 
 Copy the maintained recipe into the application's presentation layer, then
-provide its checked mount, catalog state and existing business callbacks:
+provide catalog state and existing business callbacks. `composeModelPicker`
+builds without mounting or opening. Attach its opaque `part` as a direct child
+of the shared frame, mount that frame once, then call `open()`:
 
 ```ts
 import {
-  mountModelPicker, type ModelSelection, type ModelPickerState,
+  composeModelPicker, type ModelSelection, type ModelPickerState,
 } from '../../examples/assemblies/model-picker.js';
 
 type ModelWriteResult = {ok: true} | {ok: false; error: string};
 interface ConversationTarget {id: string; revision: number}
 
 export function attachModelPicker(
-  mount: HTMLElement,
   originalTarget: ConversationTarget,
   initial: ModelPickerState,
   saveSelection: (target: ConversationTarget, selection: ModelSelection) => Promise<ModelWriteResult>,
   isCurrent: (target: ConversationTarget) => boolean,
   clearOwnedPicker: () => void,
-  currentAppearance: 'light' | 'dark' | 'system',
 ) {
-  return mountModelPicker(mount, initial, {
+  return composeModelPicker(initial, {
     onSubmit: selection => isCurrent(originalTarget)
       ? saveSelection(originalTarget, selection)
       : {ok: false, error: 'This conversation is no longer current.'},
     onClose: clearOwnedPicker,
-  }, {appearance: currentAppearance});
+  });
 }
 ```
 
@@ -77,9 +77,12 @@ again before a write. Return `{ok: true}` or `{ok: false, error}`; rejected
 promises also enter the owned error feedback. The recipe never starts a model
 request, persists credentials or retries a business write.
 
-The final argument forwards the formal mount's finite appearance option.
-Explicit light/dark therefore works independently of the operating system.
-The caller supplies no palette, CSS token or internal style override.
+The [frame recipe](frame-navigation.md) demonstrates one outer `mountParts` and
+appearance owner for the application and all dialogs. Appearance updates reach
+this dialog through that shared mount. `mountModelPicker` remains the standalone
+internal example adapter; it composes, mounts and opens in that order. It is not
+used to create a second mount inside an integrated application. The caller
+supplies no palette, CSS token or internal style override.
 
 ## Catalog, draft and reset rules
 
@@ -119,21 +122,25 @@ started by the controller.
 ## Close and destroy
 
 This recipe owns one opening. `close()` and `destroy()` both close and release
-the full mounted tree once, retaining a readable last selection and notifying
+the owned dialog tree once, retaining a readable last selection and notifying
 `onClose` once. Native close, Escape and permitted backdrop dismissal use the
 same lifecycle. Focus returns through the library's native dialog handling.
 To open a new target after disposal, create a new local recipe instance.
 
 Disposal releases form pending state, input/select controllers, label listeners,
-buttons, feedback, dialog listeners and the mount's theme ownership. Late
-results cannot alter a different tree. The dialog cannot open before its checked
-mount is connected.
+buttons, feedback and dialog listeners. Parent destruction or replacement calls
+the same retirement before descendants are disposed, so pending results and
+later snapshots remain quiet. In an integrated application the enclosing frame
+and its appearance owner remain until their own destruction. A standalone mount
+releases its appearance ownership with its root. The dialog cannot open before
+its checked mount is connected.
 
 ## Executable evidence
 
 ```sh
 npm run check
 npx playwright test tests/parts-model-picker.spec.ts
+npx playwright test tests/parts-composition-ownership.spec.ts
 ```
 
 The maintained suite passed 54 checks across Chromium and WebKit. It compares

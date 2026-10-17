@@ -12,10 +12,15 @@ function layout(options: {children: readonly Part[]}, tag: 'div'|'aside'|'main'|
   assertOptions(options, ['children'], 'frame layout');
   if (!Array.isArray(options.children)) throw new TypeError('Frame children must be arrays of Pith UI parts.');
   const node = document.createElement(tag); node.className = className;
-  const part = createOwnedPart(node, {replace(children: readonly Part[]) {replacePartChildren(part, children);}}, {children: options.children}); return part;
+  const part = createOwnedPart(node, {replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part, children);}}, {children: options.children}); return part;
 }
 /** Viewport layout only: callers supply every region and dialog as child parts. */
-export function createFramePart(options: {children: readonly Part[]}): FramePart {const part = layout(options, 'div', 'pui-app pui-viewport-frame') as FramePart; frames.add(part); return part;}
+export function createFramePart(options: {children: readonly Part[];onDispose?(): void}): FramePart {
+  assertOptions(options, ['children','onDispose'], 'frame');
+  if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Frame disposal must be a callback.');
+  const part = layout({children: options.children}, 'div', 'pui-app pui-viewport-frame') as FramePart;
+  frames.add(part);if (options.onDispose) onPartDestroy(part,options.onDispose);return part;
+}
 export function createSideRailPart(options: {children: readonly Part[]}): SideRailPart {const part = layout(options, 'aside', 'pui-sidebar') as SideRailPart; nodeOf(part).id = uniqueId('pui-side-rail'); rails.add(part); return part;}
 export function createMainPart(options: {children: readonly Part[]}): MainPart {const part = layout(options, 'main', 'pui-main') as MainPart; mains.add(part); return part;}
 export function createTopbarPart(options: {children: readonly Part[]}): LayoutPart {return layout(options, 'header', 'pui-topbar');}

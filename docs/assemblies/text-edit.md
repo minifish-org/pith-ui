@@ -34,21 +34,20 @@ No recipe chooses classes, CSS, dimensions or animation parameters.
 ## Connect application state and callbacks
 
 Copy the compiled recipe into the application's presentation layer, then supply
-the ordinary mount container, current content and business callbacks:
+current content and business callbacks. `composeTextEditor` creates the opaque
+dialog without mounting or opening it:
 
 ```ts
-import {mountTextEditor, type TextEditorResult} from '../../examples/assemblies/text-edit.js';
+import {composeTextEditor, type TextEditorResult} from '../../examples/assemblies/text-edit.js';
 
 interface MessageTarget {conversationId: string; messageId: string; expectedLastMessageId: string; text: string}
 export function attachMessageEditor(
-  mount: HTMLElement,
   originalTarget: MessageTarget,
   saveEditedMessage: (target: MessageTarget, text: string) => Promise<TextEditorResult>,
   refreshAvailability: () => void,
   clearOwnedEditor: (target: MessageTarget) => void,
-  currentAppearance: 'light' | 'dark' | 'system',
 ) {
-  return mountTextEditor(mount, {
+  return composeTextEditor({
     title: 'Edit message',
     value: originalTarget.text,
     submitLabel: 'Send again',
@@ -58,7 +57,7 @@ export function attachMessageEditor(
     onInput: refreshAvailability,
     onSubmit: text => saveEditedMessage(originalTarget, text),
     onClose: () => clearOwnedEditor(originalTarget),
-  }, {appearance: currentAppearance});
+  });
 }
 ```
 
@@ -66,9 +65,12 @@ For a pending message, choose `purpose: 'queue-message'`, the label
 `Edit pending message`, and the action `Save message`. The purpose is semantic;
 the textarea's dimensions remain library decisions.
 
-Forward the application's finite appearance choice through the last mount
-argument. This preserves an explicit dark/light preference even when the
-operating system has a different preference; no theme CSS is added by the caller.
+Attach the returned `part` as a direct child of the application's shared frame,
+then call `open({value: originalTarget.text})` after that frame is mounted. The
+[frame recipe](frame-navigation.md) demonstrates the single outer appearance
+owner shared by body and dialogs. `mountTextEditor` is the standalone internal
+adapter that composes, mounts and opens; integrated applications do not create
+a separate mount per dialog. No theme CSS is added by the caller.
 
 The caller retains the original conversation/message identity and verifies it
 again before writing. `onSubmit` returns `{ok: true}` or
@@ -102,9 +104,12 @@ prompt ignores backdrop clicks, matching the original editor. Native Escape and
 the close icon use the same lifecycle. `onClose` is delivered once for an owned
 opening.
 
-Call `destroy()` when the application discards the editor. It releases the
-mounted tree, form operation, native field controller, buttons and dialog
-listeners. Repeated destruction is harmless, and later results cannot update or
+Call `destroy()` when the application discards the editor. Parent destruction
+or replacement also retires the composition before disposing its children,
+saving its last draft and invalidating pending UI outcomes. This releases the
+dialog tree, form operation, native field controller, buttons and dialog
+listeners while an enclosing frame keeps its own appearance owner. Repeated
+destruction and late snapshots are harmless, and later results cannot update or
 reopen it. Destroying presentation does not undo an application write.
 
 ## Executable evidence
@@ -112,6 +117,7 @@ reopen it. Destroying presentation does not undo an application write.
 ```sh
 npx tsc --noEmit
 npx playwright test tests/parts-edit-confirm.spec.ts
+npx playwright test tests/parts-composition-ownership.spec.ts
 ```
 
 The tests compare both the old factory and the actual `createApplication`

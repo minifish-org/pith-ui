@@ -2,7 +2,7 @@
 import {
   createActionsPart, createButtonPart, createDialogPart, createFeedbackPart,
   createFormPart, createTextFlowPart, createTextPart, mountParts,
-  type DialogPart, type FormPart, type MountedParts, type MountPartsOptions,
+  type DialogPart, type FormPart, type MountPartsOptions,
 } from '../../src/parts/index.js';
 
 export interface ConfirmationState {
@@ -25,11 +25,19 @@ export interface ConfirmationAssembly {
   isOpen(): boolean;
   destroy(): void;
 }
+export interface ConfirmationComposition extends ConfirmationAssembly {readonly part: DialogPart}
 
 /** Dialog -> Form -> description, hint, feedback, Actions(cancel + destructive submit). */
 export function mountConfirmation(mount: HTMLElement, initial: Readonly<ConfirmationState>, callbacks: ConfirmationCallbacks, appearance: MountPartsOptions = {}): ConfirmationAssembly {
+  const confirmation = composeConfirmation(initial,callbacks);
+  try {mountParts(mount,confirmation.part,appearance);confirmation.open();return confirmation;}
+  catch (error) {confirmation.destroy();throw error;}
+}
+
+/** Build only. The application attaches part to its shared frame before open. */
+export function composeConfirmation(initial: Readonly<ConfirmationState>, callbacks: ConfirmationCallbacks): ConfirmationComposition {
   let state = initial, alive = true, opened = false, revision = 0;
-  let dialog: DialogPart, form: FormPart, mounted: MountedParts;
+  let dialog: DialogPart, form: FormPart;
   const content = (value: ConfirmationState['message']) => value ? [
     {text: value.before}, ...(value.subject ? [{text: value.subject, emphasis: 'strong' as const}] : []), {text: value.after ?? ''},
   ] : [];
@@ -56,6 +64,11 @@ export function mountConfirmation(mount: HTMLElement, initial: Readonly<Confirma
     opened = false; revision++; form.reset(); render(state); notifyClose();
   }
   function close(): void {if (alive) {dialog.close(); closed();}}
+  function dispose(): void {
+    if (!alive) return;
+    const notify = opened;alive = false;opened = false;revision++;form.invalidate();
+    if (notify) notifyClose();
+  }
   form = createFormPart({purpose: 'confirmation', children: [message, hint, feedback, actions], disabled: true,
     onPending() {if (alive) render(state);},
     onError(error) {if (alive && opened && dialog.isOpen()) render({...state, error});},
@@ -67,19 +80,18 @@ export function mountConfirmation(mount: HTMLElement, initial: Readonly<Confirma
     },
   });
   dialog = createDialogPart({purpose: 'prompt', title: initial.title, description: initial.description, closeDisabled: initial.closeDisabled,
-    children: [form], onClose: closed});
-  mounted = mountParts(mount, dialog, appearance);
+    children: [form], onClose: closed, onDispose: dispose});
   function open(next = state): void {
     if (!alive) return;
-    revision++; form.reset(); opened = true; render({...next, error: ''}); dialog.open(); cancel.focus();
+    revision++; form.reset(); opened = true; render({...next, error: ''}); dialog.open();
+    if (!dialog.isOpen()) {opened = false;render(state);return;}
+    cancel.focus();
   }
-  open();
   return {
-    update: render, open, close, isOpen: () => alive && opened && dialog.isOpen(),
+    part: dialog, update: render, open, close, isOpen: () => alive && opened && dialog.isOpen(),
     destroy() {
       if (!alive) return;
-      const notify = opened; alive = false; opened = false; revision++;
-      try {mounted.destroy();} finally {if (notify) notifyClose();}
+      dialog.destroy();
     },
   };
 }

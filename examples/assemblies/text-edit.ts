@@ -3,7 +3,7 @@ import {
   createActionsPart, createButtonPart, createDialogPart, createFeedbackPart,
   createFieldGroupPart, createFieldLabelPart, createFormPart, createTextareaPart,
   createTextPart, mountParts,
-  type DialogPart, type FormPart, type MountedParts, type MountPartsOptions,
+  type DialogPart, type FormPart, type MountPartsOptions,
 } from '../../src/parts/index.js';
 
 export interface TextEditorState {
@@ -35,13 +35,21 @@ export interface TextEditorAssembly {
   isOpen(): boolean;
   destroy(): void;
 }
+export interface TextEditorComposition extends TextEditorAssembly {readonly part: DialogPart}
 
 /** Dialog -> Form -> FieldGroup(label + textarea), note, feedback, Actions(cancel + submit). */
 export function mountTextEditor(mount: HTMLElement, initial: Readonly<TextEditorState> & {value: string}, callbacks: TextEditorCallbacks = {}, appearance: MountPartsOptions = {}): TextEditorAssembly {
+  const editor = composeTextEditor(initial,callbacks);
+  try {mountParts(mount,editor.part,appearance);editor.open({value: initial.value});return editor;}
+  catch (error) {editor.destroy();throw error;}
+}
+
+/** Build only. The application attaches part to its shared frame before open. */
+export function composeTextEditor(initial: Readonly<TextEditorState> & {value: string}, callbacks: TextEditorCallbacks = {}): TextEditorComposition {
   const {value, ...initialState} = initial;
   let state: Readonly<TextEditorState> = initialState;
   let alive = true, opened = false, revision = 0, saved = value;
-  let dialog: DialogPart, form: FormPart, mounted: MountedParts;
+  let dialog: DialogPart, form: FormPart;
   const purpose = callbacks.purpose ?? 'message';
   const input = createTextareaPart({purpose, value, label: purpose === 'queue-message' ? 'Pending message' : 'Message',
     onInput: callbacks.onInput});
@@ -73,6 +81,11 @@ export function mountTextEditor(mount: HTMLElement, initial: Readonly<TextEditor
     opened = false; saved = input.read(); invalidate(); render(state); notifyClose();
   }
   function close(): void {if (alive) {dialog.close(); closed();}}
+  function dispose(): void {
+    if (!alive) return;
+    const notify = opened;saved = input.read();alive = false;opened = false;revision++;form.invalidate();
+    if (notify) notifyClose();
+  }
   form = createFormPart({purpose: 'text-entry', children: [field, note, feedback, actions], disabled: true,
     onPending() {if (alive) render(state);},
     onError(error) {if (alive && opened && dialog.isOpen()) render({...state, error});},
@@ -84,25 +97,24 @@ export function mountTextEditor(mount: HTMLElement, initial: Readonly<TextEditor
     } : undefined,
   });
   dialog = createDialogPart({purpose: 'prompt', title: initial.title, description: initial.description, closeDisabled: initial.closeDisabled,
-    children: [form], onClose: closed});
-  mounted = mountParts(mount, dialog, appearance);
+    children: [form], onClose: closed, onDispose: dispose});
   function open(target: Readonly<TextEditorInput>): void {
     if (!alive) return;
     invalidate();
     state = {...state, title: target.title ?? initial.title, description: target.description ?? initial.description,
       note: target.note ?? initial.note, error: ''};
-    input.reset(target.value); opened = true; render(state); dialog.open(); input.focus();
+    input.reset(target.value); opened = true; render(state); dialog.open();
+    if (!dialog.isOpen()) {opened = false;render(state);return;}
+    input.focus();
   }
-  open({value});
   return {
-    read, update: render, open, close,
+    part: dialog, read, update: render, open, close,
     reset(next) {if (alive) {invalidate(); input.reset(next); render({...state, error: ''});}},
     focus() {if (alive) input.focus();},
     isOpen: () => alive && opened && dialog.isOpen(),
     destroy() {
       if (!alive) return;
-      const notify = opened; saved = input.read(); alive = false; opened = false; revision++;
-      try {mounted.destroy();} finally {if (notify) notifyClose();}
+      dialog.destroy();
     },
   };
 }

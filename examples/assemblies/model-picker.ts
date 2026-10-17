@@ -7,7 +7,7 @@ import {
   createButtonPart, createChoiceListPart, createDialogPart, createFeedbackPart,
   createFieldLabelPart, createFooterPart, createFormPart, createInputPart,
   createSelectPart, createTextPart, mountParts,
-  type ChoicePart, type FormPart, type DialogPart, type MountedParts, type MountPartsOptions,
+  type ChoicePart, type FormPart, type DialogPart, type MountPartsOptions,
 } from '../../src/parts/index.js';
 
 export interface ModelSelection {provider: string; model: string; thinkingLevel: string}
@@ -37,6 +37,7 @@ export interface ModelPickerAssembly {
   isOpen(): boolean;
   destroy(): void;
 }
+export interface ModelPickerComposition extends ModelPickerAssembly {readonly part: DialogPart;open(): void}
 const effortLabel = (value: string) => value === 'off' ? 'Thinking off' : `Thinking: ${value === 'xhigh' ? 'extra high' : value}`;
 
 /**
@@ -55,11 +56,18 @@ const effortLabel = (value: string) => value === 'off' ? 'Thinking off' : `Think
  * selection and notify onClose once. Retired callbacks cannot mutate new UI.
  */
 export function mountModelPicker(mount: HTMLElement, initial: Readonly<ModelPickerState>, callbacks: ModelPickerCallbacks = {}, appearance: MountPartsOptions = {}): ModelPickerAssembly {
+  const picker = composeModelPicker(initial,callbacks);
+  try {mountParts(mount,picker.part,appearance);picker.open();return picker;}
+  catch (error) {picker.destroy();throw error;}
+}
+
+/** Build only. The application attaches part to its shared frame before open. */
+export function composeModelPicker(initial: Readonly<ModelPickerState>, callbacks: ModelPickerCallbacks = {}): ModelPickerComposition {
   let alive = true, initialized = false, signature = '', selected = '', revision = 0;
   let state = initial;
   let catalog: Readonly<ModelCatalog> = initial.editor ?? {providers: null, models: null, selection: {provider: '', model: '', thinkingLevel: ''}};
   let saved = {...catalog.selection};
-  let provider: ChoicePart, model: ChoicePart, effort: ChoicePart, form: FormPart, dialog: DialogPart, mounted: MountedParts;
+  let provider: ChoicePart, model: ChoicePart, effort: ChoicePart, form: FormPart, dialog: DialogPart;
   const capabilities = createTextPart({text: '', role: 'hint', announce: 'polite'});
   const feedback = createFeedbackPart({message: initial.error ?? '', tone: 'error'});
   const search = createInputPart({kind: 'search', label: 'Model', placeholder: 'Search by model name or ID', autocomplete: 'off', onInput() {if (initialized) renderModels();}});
@@ -75,7 +83,7 @@ export function mountModelPicker(mount: HTMLElement, initial: Readonly<ModelPick
   const release = () => {
     if (!alive) return;
     saved = read(); alive = false; revision++;
-    mounted.destroy();
+    form.invalidate();dialog.destroy();
     // The tree is already fully released even if host cleanup throws.
     try {callbacks.onClose?.();} catch {}
   };
@@ -95,8 +103,7 @@ export function mountModelPicker(mount: HTMLElement, initial: Readonly<ModelPick
       return result;
     },
   });
-  dialog = createDialogPart({title: 'Choose a model', eyebrow: 'PITH MODEL CATALOG', children: [form], onClose: release});
-  mounted = mountParts(mount, dialog, appearance);
+  dialog = createDialogPart({title: 'Choose a model', eyebrow: 'PITH MODEL CATALOG', children: [form], onClose: release, onDispose: release});
 
   function syncFields(): void {
     const disabled = !!catalog.disabled;
@@ -157,9 +164,10 @@ export function mountModelPicker(mount: HTMLElement, initial: Readonly<ModelPick
     }
     form.update({disabled: !!next.disabled}); syncSubmit();
   }
-  update(initial); dialog.open(); search.focus();
+  update(initial);
   return {
-    read, update,
+    part: dialog, read, update,
+    open() {if (alive) {dialog.open();if (dialog.isOpen()) search.focus();}},
     reset(selection) {if (alive) {revision++; form.reset(); resetSelection(selection);}},
     focus() {if (alive) search.focus();},
     close, isOpen: () => alive && dialog.isOpen(), destroy: close,

@@ -32,21 +32,20 @@ the application supplies no CSS, size or animation values.
 ## Connect business ownership
 
 Copy the compiled composition into the application presentation layer and keep
-the target identity in the application controller:
+the target identity in the application controller. Build an unmounted dialog
+with `composeConfirmation`:
 
 ```ts
-import {mountConfirmation, type ConfirmationResult} from '../../examples/assemblies/confirmation.js';
+import {composeConfirmation, type ConfirmationResult} from '../../examples/assemblies/confirmation.js';
 
 interface ConversationTarget {id: string; title: string}
 export function attachRemovalConfirmation(
-  mount: HTMLElement,
   originalTarget: ConversationTarget,
   deleteOriginalConversation: (target: ConversationTarget) => Promise<ConfirmationResult>,
   isUnavailable: (target: ConversationTarget) => boolean,
   clearOwnedConfirmation: (target: ConversationTarget) => void,
-  currentAppearance: 'light' | 'dark' | 'system',
 ) {
-  return mountConfirmation(mount, {
+  return composeConfirmation({
     title: 'Delete conversation?',
     message: {
       before: 'Permanently delete ',
@@ -61,7 +60,7 @@ export function attachRemovalConfirmation(
       ? {ok: false, error: 'This action is no longer available.'}
       : deleteOriginalConversation(originalTarget),
     onClose: () => clearOwnedConfirmation(originalTarget),
-  }, {appearance: currentAppearance});
+  });
 }
 ```
 
@@ -71,9 +70,12 @@ result closes only the same still-current opening. Failure remains in that
 opening's feedback surface and permits an explicit retry. The recipe does not
 retry or replay mutations itself.
 
-Pass the application's current finite appearance choice to the mount argument
-so an explicit dark/light setting is retained independently of the operating
-system. The formal mount part applies the library's theme tokens.
+Attach the returned `part` as a direct child of the application's shared frame,
+then call `open()` after mounting that frame. The [frame recipe](frame-navigation.md)
+demonstrates one shared appearance owner. `mountConfirmation` remains the
+standalone internal adapter that composes, mounts and opens; an integrated
+application does not independently mount this dialog. The library's theme
+tokens follow the outer owner's finite appearance choice.
 
 `update(state)` projects content, hints, label, errors and current availability.
 `disabled` blocks submission, `pending` adds external pending state, and
@@ -89,9 +91,11 @@ tree for explicit reuse. A standalone prompt ignores backdrop clicks, matching
 the old confirmation. Focus returns through the native dialog lifecycle.
 `onClose` runs once for each owned opening.
 
-Use `destroy()` when discarding the controller. It releases the complete tree
-and its form/dialog/action listeners; repeated calls are harmless. Earlier
-asynchronous results cannot display an error in, or close, a later opening.
+Use `destroy()` when discarding the controller. Parent destruction or replacement
+also retires the composition before its children. This releases its owned dialog
+tree and form/dialog/action listeners while the enclosing frame retains its
+own appearance ownership. Repeated calls and late snapshots are harmless.
+Earlier asynchronous results cannot display an error in, or close, a later opening.
 Closing presentation does not cancel an already-started business write.
 
 ## Executable evidence
@@ -99,6 +103,7 @@ Closing presentation does not cancel an already-started business write.
 ```sh
 npx tsc --noEmit
 npx playwright test tests/parts-edit-confirm.spec.ts
+npx playwright test tests/parts-composition-ownership.spec.ts
 ```
 
 The regression compares the old factory and actual application scene against

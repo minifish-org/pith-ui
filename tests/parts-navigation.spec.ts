@@ -188,7 +188,10 @@ for (const appearance of ['light','dark'] as const) for (const width of [1280,39
     const menu = page.getByRole('menu',{name: 'Conversation actions'});await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeFocused();
     await page.mouse.move(width-1,843);
     const presentation = await menu.evaluate(node => {
-      const inspect = (item: Element) => {const box = item.getBoundingClientRect(),style = getComputedStyle(item);return {tag: item.localName,classes: [...item.classList].sort(),text: item === node ? '' : item.textContent,
+      // The old application supplies its existing slot without the unstyled
+      // standalone context-menu marker. The formal generic marker remains
+      // covered separately; every presentation class and pixel is compared.
+      const inspect = (item: Element) => {const box = item.getBoundingClientRect(),style = getComputedStyle(item);return {tag: item.localName,classes: [...item.classList].filter(name => name !== 'pui-context-menu').sort(),text: item === node ? '' : item.textContent,
         box: [box.x,box.y,box.width,box.height].map(value => Math.round(value*100)/100),role: item.getAttribute('role'),label: item.getAttribute('aria-label'),
         styles: ['position','display','z-index','font-family','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-top-color','border-radius','min-width','max-height','overflow-y','box-shadow'].map(key => style.getPropertyValue(key)),
         ...(item instanceof HTMLButtonElement ? {disabled: item.disabled,title: item.getAttribute('title')} : {})};};
