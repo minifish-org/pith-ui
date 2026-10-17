@@ -796,8 +796,41 @@ export interface StatusState {
     readonly presentation?: 'indicator' | 'inline' | 'code';
     readonly activity?: 'idle' | 'busy';
 }
-export function createStatus(state: StatusState): Control<StatusState> { const keys = ['label', 'tone', 'presentation', 'activity']; check(state, keys); const block = primitive.createStatus(state); const update = (next: Readonly<StatusState>) => { check(next, keys); finite(next.presentation, ['indicator', 'inline', 'code'], 'status presentation'); finite(next.activity, ['idle', 'busy'], 'status activity'); block.update(next); block.element.classList.toggle('pui-status-indicator', next.presentation === 'indicator');if(next.presentation==='indicator')block.element.setAttribute('role','img'); block.element.classList.toggle('pui-status-inline', next.presentation === 'inline'); block.element.classList.toggle('pui-status-code', next.presentation === 'code'); block.element.classList.toggle('pui-status-busy', next.activity === 'busy'); block.element.setAttribute('aria-label', next.label); block.element.title = next.label; if (next.presentation === 'indicator')
-    block.element.replaceChildren(element('i', 'pui-status-marker')); }; update(state); return own({ ...block, update }); }
+export function createStatus(state: StatusState): Control<StatusState> {
+    const keys = ['label', 'tone', 'presentation', 'activity'];
+    check(state, keys);
+    const block = primitive.createStatus(state);
+    const update = (next: Readonly<StatusState>) => {
+        check(next, keys);
+        finite(next.presentation, ['indicator', 'inline', 'code'], 'status presentation');
+        finite(next.activity, ['idle', 'busy'], 'status activity');
+        block.update(next);
+        const indicator = next.presentation === 'indicator';
+        block.element.classList.toggle('pui-status-indicator', indicator);
+        if (indicator) block.element.setAttribute('role', 'img');
+        else block.element.removeAttribute('role');
+        block.element.classList.toggle('pui-status-inline', next.presentation === 'inline');
+        block.element.classList.toggle('pui-status-code', next.presentation === 'code');
+        block.element.classList.toggle('pui-status-busy', next.activity === 'busy');
+        block.element.setAttribute('aria-label', next.label);
+        block.element.title = next.label;
+        if (indicator && next.tone === 'warning') {
+            const namespace = 'http://www.w3.org/2000/svg';
+            const svg = document.createElementNS(namespace, 'svg');
+            for (const [key, value] of Object.entries({viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '1.8', 'stroke-linecap': 'round', 'aria-hidden': 'true'}))
+                svg.setAttribute(key, value);
+            const circle = document.createElementNS(namespace, 'circle');
+            circle.setAttribute('cx', '12'); circle.setAttribute('cy', '12'); circle.setAttribute('r', '9');
+            const path = document.createElementNS(namespace, 'path');
+            path.setAttribute('d', 'M12 7v6m0 4h.01');
+            svg.append(circle, path);
+            block.element.replaceChildren(svg);
+        }
+        else if (indicator) block.element.replaceChildren(element('i', 'pui-status-marker'));
+    };
+    update(state);
+    return own({...block, update});
+}
 export interface ProgressState {
     readonly label: string;
     readonly value?: number;
