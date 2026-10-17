@@ -22,7 +22,7 @@ export interface ButtonOptions extends ButtonState {
   onAction?: UIAction;
   onError?: (message: string) => void;
 }
-export interface ButtonBlock extends UIBlock<ButtonState> { readonly element: HTMLButtonElement; }
+export interface ButtonBlock extends UIBlock<ButtonState> { readonly element: HTMLButtonElement; invalidate():void; }
 
 export function createButton(options: ButtonOptions): ButtonBlock {
   const node = element('button', 'pui-button');
@@ -36,7 +36,7 @@ export function createButton(options: ButtonOptions): ButtonBlock {
       appearance: next.appearance ?? 'standard' });
   };
   update(options);
-  return { element: node, update, destroy() { action.destroy(); } };
+  return { element: node, update, invalidate:action.invalidate, destroy() { action.destroy(); } };
 }
 
 export function createIconButton(options: ButtonOptions & { icon: string }): ButtonBlock {

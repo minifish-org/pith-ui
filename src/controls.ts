@@ -220,7 +220,7 @@ function actionControl(options: ButtonOptions, kind: 'button' | 'icon' | 'text')
     const stateOf = (state: ButtonState): primitive.ButtonState => ({ label: state.label, intent: state.intent, icon: state.icon, title: state.title, disabled: state.disabled, pending: state.pending });
     const initial = stateOf(options);
     const block = kind === 'icon' ? primitive.createIconButton({ ...initial, icon: options.icon!, onAction: options.onAction, onError: options.onError }) : kind === 'text' ? primitive.createTextAction({ ...initial, onAction: options.onAction, onError: options.onError }) : primitive.createButton({ ...initial, onAction: options.onAction, onError: options.onError });
-    return own({ ...block, update(state: Readonly<ButtonState>) { validate(state); block.update(stateOf(state)); } });
+    return own({ ...block, update(state: Readonly<ButtonState>) { validate(state); block.update(stateOf(state)); } }, [], undefined, block.invalidate);
 }
 export function createButton(options: ButtonOptions): Control<ButtonState> { return actionControl(options, 'button'); }
 export interface IconButtonState extends Omit<ButtonState, 'icon'> {
@@ -831,14 +831,16 @@ export function createCopyButton(options: CopyButtonState & {
     let state: CopyButtonState = { value: options.value, label: options.label, disabled: options.disabled };
     const status = element('span', 'pui-sr-only');
     status.setAttribute('role', 'status');
-    const button = primitive.createButton({ label: options.label ?? 'Copy', disabled: options.disabled, onAction: () => feedback.copy(button.element, async () => {
+    let feedback:ReturnType<typeof createCopyFeedback>|undefined;
+    const makeFeedback=()=>createCopyFeedback({ status, isDisabled: () => !!state.disabled, onError: error => options.onError?.(error instanceof Error ? error.message : String(error)) });
+    const button = primitive.createButton({ label: options.label ?? 'Copy', disabled: options.disabled, onAction: () => (feedback??=makeFeedback()).copy(button.element, async () => {
             const result = await options.onCopy(state.value);
             if (!result.ok)
                 throw new Error(result.error);
         }, 'Copied.'), onError: options.onError });
-    const feedback = createCopyFeedback({ status, isDisabled: () => !!state.disabled, onError: error => options.onError?.(error instanceof Error ? error.message : String(error)) });
+    const retire=()=>{feedback?.destroy();feedback=undefined;button.invalidate();};
     const root = element('span', 'pui-control-copy', button.element, status);
-    return own({ element: root, update(next: Readonly<CopyButtonState>) { check(next, ['value', 'label', 'disabled']); state = next; button.update({ label: next.label ?? 'Copy', disabled: next.disabled }); }, destroy() { feedback.destroy(); button.destroy(); } });
+    return own({ element: root, update(next: Readonly<CopyButtonState>) { check(next, ['value', 'label', 'disabled']); state = next; button.update({ label: next.label ?? 'Copy', disabled: next.disabled }); }, destroy() { feedback?.destroy(); button.destroy(); } },[],undefined,retire);
 }
 /** Fixed layout pieces contain only other library controls; no application state. */
 export interface SlotState {
@@ -1031,16 +1033,17 @@ export function createMarkdown(options: MarkdownOptions): Control<MarkdownState>
     let text: string | undefined, disabled = !!options.disabled, destroyed = false;
     const makeFeedback = () => createCopyFeedback({ status, isDisabled: () => destroyed || disabled, onError: error => { if (!destroyed)
             options.onError?.(error instanceof Error ? error.message : String(error)); } });
-    let feedback = makeFeedback();
+    let feedback:ReturnType<typeof createCopyFeedback>|undefined;
     const sync = () => { for (const button of node.querySelectorAll<HTMLButtonElement>('[data-copy-code]')) {
         button.hidden = !options.onCopy;
         button.disabled = controlDisabled(button, disabled);
     } for (const link of node.querySelectorAll('a[href]')) {
-        link.setAttribute('aria-disabled', String(disabled || linkOperation.pending));
-        link.setAttribute('aria-busy', String(linkOperation.pending));
+        link.setAttribute('aria-disabled', String(disabled || !!linkOperation?.pending));
+        link.setAttribute('aria-busy', String(!!linkOperation?.pending));
     } };
-    const linkOperation = createOperation({ unavailable: () => destroyed || disabled, onPending: sync, onError: message => options.onError?.(message) });
-    const retire = () => { linkOperation.invalidate(); feedback.destroy(); feedback = makeFeedback(); sync(); };
+    let linkOperation:ReturnType<typeof createOperation>|undefined;
+    const operation=()=>linkOperation??=createOperation({ unavailable: () => destroyed || disabled, onPending: sync, onError: message => options.onError?.(message) });
+    const retire = () => { linkOperation?.invalidate(); feedback?.destroy(); feedback = undefined; sync(); };
     const update = (state: Readonly<MarkdownState>) => {
         check(state, ['text', 'disabled']);
         disabled = !!state.disabled;
@@ -1063,20 +1066,20 @@ export function createMarkdown(options: MarkdownOptions): Control<MarkdownState>
         if (copy && options.onCopy) {
             event.preventDefault();
             const code = copy.closest('.pui-code-block')?.querySelector('code')?.textContent ?? '';
-            void feedback.copy(copy, async () => { const result = await options.onCopy!(code); if (!result.ok)
+            void (feedback??=makeFeedback()).copy(copy, async () => { const result = await options.onCopy!(code); if (!result.ok)
                 throw new Error(result.error); }, 'Copied.');
             return;
         }
         if (link && (options.onLink || options.onLocalLink && link.dataset.downloadPath !== undefined)) {
             event.preventDefault();
             const key = link.dataset.downloadPath;
-            linkOperation.run(() => key !== undefined && options.onLocalLink ? options.onLocalLink(key) : options.onLink!(link.getAttribute('href') ?? ''), result => { if (result && !result.ok)
+            operation().run(() => key !== undefined && options.onLocalLink ? options.onLocalLink(key) : options.onLink!(link.getAttribute('href') ?? ''), result => { if (result && !result.ok)
                 options.onError?.(result.error); });
         }
     };
     node.addEventListener('click', click);
     update({ text: options.text, disabled: options.disabled });
-    return own({ element: node, update, destroy() { destroyed = true; linkOperation.destroy(); feedback.destroy(); node.removeEventListener('click', click); } }, [], undefined, retire);
+    return own({ element: node, update, destroy() { destroyed = true; linkOperation?.destroy(); feedback?.destroy(); node.removeEventListener('click', click); } }, [], undefined, retire);
 }
 export interface DiffState {
     readonly text: string;

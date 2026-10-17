@@ -19,6 +19,7 @@ export interface ActionState {
 }
 export interface ActionController {
   readonly element: HTMLButtonElement;
+  invalidate(): void;
   update(state: Readonly<ActionState>): void;
   destroy(): void;
 }
@@ -27,7 +28,6 @@ export function adoptAction(node: HTMLButtonElement, options: {
   onAction?: UIAction;
   onError?: (message: string) => void;
 } = {}): ActionController {
-  const life = options.onAction ? new Lifetime() : undefined;
   let state: ActionState = { disabled: node.disabled };
   let localPending = false; let disposed = false;
   let glyph = node.querySelector<SVGSVGElement>(':scope > svg') ?? undefined;
@@ -65,17 +65,19 @@ export function adoptAction(node: HTMLButtonElement, options: {
       if (glyph) node.prepend(glyph);
     }
   };
-  const operation = options.onAction ? createOperation({
-    unavailable: () => node.disabled || disposed,
-    onPending(value) { localPending = value; update({ ...state, disabled: !!state.disabled, pending: !!state.pending }); },
-    onError: options.onError,
-  }) : undefined;
-  // A delegated product action has no local handler and needs no second listener.
-  if (options.onAction) life!.listen(node, 'click', (() => {
+  let operation: ReturnType<typeof createOperation> | undefined;
+  // Most reading actions remain idle. Allocate their async gate on first use.
+  const click = options.onAction ? (() => {
     if (node.disabled || localPending || disposed) return;
-    operation!.run(options.onAction!, (result: void | ActionResult) => { if (result && !result.ok) options.onError?.(result.error); });
-  }) as EventListener);
-  return { element: node, update, destroy() { disposed = true; operation?.destroy(); life?.destroy(); } };
+    operation ??= createOperation({
+      unavailable: () => node.disabled || disposed,
+      onPending(value) { localPending = value; update({ ...state, disabled: !!state.disabled, pending: !!state.pending }); },
+      onError: options.onError,
+    });
+    operation.run(options.onAction!, (result: void | ActionResult) => { if (result && !result.ok) options.onError?.(result.error); });
+  }) : undefined;
+  if (click) node.addEventListener('click', click);
+  return { element: node, update, invalidate() { if (disposed) return; operation?.invalidate(); localPending=false; update(state); }, destroy() { disposed = true; operation?.destroy(); if (click) node.removeEventListener('click',click); } };
 }
 
 export type NativeControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
