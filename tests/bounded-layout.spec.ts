@@ -76,3 +76,8 @@ test('a selected navigation disclosure keeps its selected state independently of
  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const control=u.createDisclosure({context:'navigation',selected:true,title:'Current workspace',icon:'folder',content:u.createText({text:'Items'})}as never);u.mount(document.body,control);Reflect.set(window,'selectedDisclosure',control);});
  await expect(page.locator('summary')).toHaveCSS('color','rgb(41, 44, 51)');await page.evaluate(()=>Reflect.get(window,'selectedDisclosure').update({title:'Current workspace',selected:false}));await expect(page.locator('.pui-disclosure-navigation')).not.toHaveClass(/pui-selected/);
 });
+
+test('form dialog required fields keep native validation without adding an unaccepted label marker',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const dialog=u.createDialog({purpose:'form',title:'Required form',content:u.createTextInput({label:'Name',required:true})});const owner=u.mount(document.body,u.createText({text:'Host'}));owner.attach(dialog);dialog.open();});
+ await expect(page.getByRole('textbox',{name:'Name',exact:true})).toHaveAttribute('required','');await expect(page.locator('.pui-dialog-form .pui-field-label')).toHaveText('Name *');await expect(page.locator('.pui-dialog-form .pui-required-mark')).toBeHidden();
+});
