@@ -191,3 +191,32 @@ test('a form pending submission preserves editable input while the submit guard 
   await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const field=u.createTextInput({label:'Name',value:'First'});let finish!:(value:{ok:true})=>void;let calls=0;const form=u.createForm({children:[field],onSubmit:()=>{calls++;return new Promise(resolve=>finish=resolve);}});u.mount(document.body,form);Object.assign(window,{form,pendingCalls:()=>calls,finish:()=>finish({ok:true})});});
   await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('textbox',{name:'Name',exact:true})).toBeEditable();await page.getByRole('textbox',{name:'Name',exact:true}).fill('Next draft');await page.evaluate(()=>Reflect.get(window,'form').submit());expect(await page.evaluate(()=>Reflect.get(window,'pendingCalls')())).toBe(1);await page.evaluate(()=>Reflect.get(window,'finish')());await expect(page.getByRole('textbox',{name:'Name',exact:true})).toHaveValue('Next draft');
 });
+
+test('single-row prompt appends do not rewrite an unchanged height while growing and shrinking still work',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.setViewportSize({width:900,height:600});
+  await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createPromptInput({label:'Stable prompt'}));});
+  const input=page.getByRole('textbox',{name:'Stable prompt',exact:true});
+  await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
+  await input.evaluate(node=>{const records:MutationRecord[]=[];const observer=new MutationObserver(items=>records.push(...items));observer.observe(node,{attributes:true,attributeFilter:['style']});Object.assign(window,{promptSize:{records,observer}});});
+  await input.pressSequentially('A short draft');
+  const changes=await page.evaluate(()=>{const state=Reflect.get(window,'promptSize');state.observer.disconnect();return state.records.length;});
+  expect(changes).toBe(0);
+  await input.fill('A wrapped draft 中文 '.repeat(100));
+  expect((await input.boundingBox())!.height).toBeGreaterThan(40);
+  expect((await input.boundingBox())!.height).toBeLessThanOrEqual(180);
+  await input.fill('Short');await expect(input).toBeFocused();
+  expect((await input.boundingBox())!.height).toBe(40);
+});
+
+test('updating a reading item does not rewrite the unchanged historical identity or revision',async({page})=>{
+  await page.goto('/tests/fixture.html');
+  const changes=await page.evaluate(async()=>{
+    const u=await import('../src/index.js');const history=u.createText({text:'Saved history'}),answer=u.createText({text:'A stream'});
+    const state={label:'Stable reader',identity:'conversation',items:[{key:'history',revision:'1',content:history},{key:'answer',revision:'1',content:answer}]};
+    const reader=u.createReadingArea(state);u.mount(document.body,reader);
+    const records:MutationRecord[]=[];const observer=new MutationObserver(items=>records.push(...items));observer.observe(document.querySelector('[data-reading-id="history"]')!,{attributes:true,attributeFilter:['data-reading-id','data-render-version']});
+    answer.update({text:'A stream next'});reader.update({...state,items:[state.items[0],{...state.items[1],revision:'2'}]});
+    await Promise.resolve();observer.disconnect();return records.length;
+  });
+  expect(changes).toBe(0);
+});
