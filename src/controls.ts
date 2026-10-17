@@ -757,6 +757,7 @@ export function createDisclosure(options: DisclosureState & {
 }
 export interface ListRowState {
     readonly title: string;
+    readonly tooltip?: string;
     readonly description?: string;
     readonly meta?: string;
     readonly selected?: boolean;
@@ -772,7 +773,8 @@ export function createListRow(options: ListRowState & {
     readonly onAction?: Action;
     readonly onError?: (message: string) => void;
 }): Control<ListRowState> {
-    check(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context', 'actions', 'status', 'marker', 'details', 'onAction', 'onError']);
+    check(options, ['title', 'tooltip', 'description', 'meta', 'selected', 'icon', 'disabled', 'context', 'actions', 'status', 'marker', 'details', 'onAction', 'onError']);
+    if(options.tooltip!==undefined&&typeof options.tooltip!=='string')throw new Error('A row tooltip must be text.');
     finite(options.context, ['navigation', 'resource', 'queue', 'choice'], 'row context');
     if (options.details && options.context !== 'resource') throw new Error('Owned row details require the resource context.');
     icon(options.icon);
@@ -789,8 +791,8 @@ export function createListRow(options: ListRowState & {
         block.element.prepend(element('span', 'pui-list-row-marker', entry(options.marker).node));
     if (options.status)
         block.element.append(element('span', 'pui-list-row-status', entry(options.status).node));
-    const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); if(options.details&&context!=='resource')throw new Error('Owned row details require the resource context.'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); root.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); primary?.update({ label: state.title, disabled: state.disabled });if(primary){const action=entry(primary).node;if(context==='navigation'&&state.selected)action.setAttribute('aria-current','page');else action.removeAttribute('aria-current');} };
-    update(stateOnly(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']));
+    const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'tooltip', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); if(state.tooltip!==undefined&&typeof state.tooltip!=='string')throw new Error('A row tooltip must be text.'); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); if(options.details&&context!=='resource')throw new Error('Owned row details require the resource context.'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); root.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); const title=body.querySelector<HTMLElement>('.pui-list-row-title')!;if(state.tooltip)title.title=state.tooltip;else title.removeAttribute('title');primary?.update({ label: state.title, disabled: state.disabled });if(primary){const action=entry(primary).node;if(context==='navigation'&&state.selected)action.setAttribute('aria-current','page');else action.removeAttribute('aria-current');} };
+    update(stateOnly(options, ['title', 'tooltip', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']));
     return own({ ...block, element: root, update }, children);
 }
 export interface CollectionState {

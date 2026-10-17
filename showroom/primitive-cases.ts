@@ -148,11 +148,11 @@ export const primitiveCases: ShowcaseCase[] = [
   },
   {
     id: 'list-row', title: '列表行 List row', layer: 'components', category: '展示',
-    description: '标题、说明、元信息与独立操作积木；主操作使用原生按钮，长路径可换行。', states, related: ['collection-state', 'text-action'],
+    description: '标题、说明、元信息与独立操作积木；主操作使用原生按钮，长路径可换行。tooltip 只接受文本，悬停标题可体验原生提示；空字符串清除提示。', states, related: ['collection-state', 'text-action'],
     code: `import {mount, createListRow, createButton} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createListRow({title:'SKILL.md',description:'/demo/SKILL.md',icon:'file',onAction:async()=>({ok:true}),actions:createButton({label:'Preview'})});\nconst mounted = mount(host,block);\n// mounted.destroy() releases the complete owned tree.`,
     mount(context) {
       const action = createButton({ label: 'Preview', disabled: disabled(context), onAction: () => context.action() });
-      const row = createListRow({onAction:()=>context.action(),onError:message=>context.log(message),disabled:context.state==='disabled', title: 'SKILL.md', description: sample(context, '/workspace/.pi/skills/example/SKILL.md'), icon: 'file', meta: 'Read only', actions: action, selected: true });
+      const row = createListRow({onAction:()=>context.action(),onError:message=>context.log(message),disabled:context.state==='disabled', title: 'SKILL.md', tooltip:'Read the complete SKILL.md instructions', description: sample(context, '/workspace/.pi/skills/example/SKILL.md'), icon: 'file', meta: 'Read only', actions: action, selected: true });
       return group([row,createListRow({context:'resource',title:'AGENTS.md',icon:'file',meta:'/workspace/AGENTS.md',details:createDisclosure({title:'View instructions',content:createText({role:'code',text:'# Demonstration instructions'})}),actions:createButton({context:'inline',label:'Open',onAction:()=>context.action()})})]);
     },
   },

@@ -65,12 +65,19 @@ export function validatedSecrets(ui:PithUI,host:HTMLElement,save:(draft:{url:str
 }
 
 export function selectableItems(ui:PithUI,host:HTMLElement,select:()=>Promise<ActionResult>){
-  return ui.mount(host,ui.createListRow({title:'Saved item',description:'A retained item',onAction:select,actions:ui.createButton({label:'Details',onAction:()=>console.log('Details')})}));
+  return ui.mount(host,ui.createListRow({title:'Saved item',tooltip:'The complete saved item title',description:'A retained item',onAction:select,actions:ui.createButton({label:'Details',onAction:()=>console.log('Details')})}));
 }
 
 export function retainedMarkdown(ui:PithUI,host:HTMLElement,copy:(text:string)=>Promise<ActionResult>){
   const content=ui.createMarkdown({text:'[Documentation](https://example.com)',onCopy:copy,onLink:url=>{console.log(url);return{ok:true};}});
   const mounted=ui.mount(host,content);return{mounted,disable(){content.update({text:'[Documentation](https://example.com)',disabled:true});}};
+}
+
+/** Error text stays inside the same document surface; each update is complete. */
+export function documentFeedback(ui:PithUI,host:HTMLElement){
+ const state={text:'Saved file contents',format:'text' as const};
+ const document=ui.createDocument(state),mounted=ui.mount(host,document);
+ return{mounted,fail(error:string){document.update({...state,error});},restore(){document.update(state);}};
 }
 
 /** A bounded editor, assembled from small controls rather than a chat scene. */
