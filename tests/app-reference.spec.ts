@@ -1,7 +1,7 @@
 import {expect, test} from '@playwright/test';
 
 test.beforeEach(async ({page}) => {
-  await page.goto('/examples/application/index.html');
+  await page.goto('/tests/internal/example/index.html');
   await expect(page.getByText('这是模拟参考应用：所有聊天、审批、连接和文件操作都只使用内存数据，不访问真实服务。', {exact: true})).toBeVisible();
 });
 
@@ -105,10 +105,10 @@ test('conversation files and branch history are complete semantic compositions',
 });
 
 test('the showroom exposes an embedded reference and a reproducible full-page link', async ({page}) => {
-  await page.goto('/?item=application-reference&theme=dark&width=1280');
+  await page.goto('/tests/internal/showroom.html?item=application-reference&theme=dark&width=1280');
   await expect(page.getByRole('heading', {name: '受限入口参考应用 Application reference', exact: true})).toBeVisible();
   const link = page.getByRole('link', {name: '打开完整参考应用', exact: true});
-  await expect(link).toHaveAttribute('href', /examples\/application\/index\.html\?theme=dark$/);
+  await expect(link).toHaveAttribute('href', /tests\/internal\/example\/index\.html\?theme=dark$/);
   const frame = page.frameLocator('iframe[title="受限入口参考应用 · 模拟数据"]');
   await expect(frame.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
   await expect(frame.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -121,10 +121,10 @@ for (const scene of [
   {id: 'files', title: '应用场景：文件与预览 App files', dialog: '报告.md'},
 ]) {
   test(`Pages links directly to the constrained ${scene.id} scene`, async ({page}) => {
-    await page.goto(`/?item=application-${scene.id}&theme=dark&width=1280`);
+    await page.goto(`/tests/internal/showroom.html?item=application-${scene.id}&theme=dark&width=1280`);
     await expect(page.getByRole('heading', {name: scene.title, exact: true})).toBeVisible();
     await expect(page.getByRole('link', {name: '打开完整参考应用', exact: true})).toHaveAttribute('href',
-      new RegExp(`examples/application/index\\.html\\?theme=dark&scene=${scene.id}$`));
+      new RegExp(`tests/internal/example/index\\.html\\?theme=dark&scene=${scene.id}$`));
     // Chromium does not scroll the outer gallery for a partly visible iframe
     // when clicking a control inside a native modal in that frame.
     await page.locator('iframe').scrollIntoViewIfNeeded();
@@ -148,7 +148,7 @@ for (const scene of [
     }
     await expect(frame.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
     // The full-page link preserves the same starting scene outside the gallery.
-    await page.goto(`/examples/application/index.html?theme=light&scene=${scene.id}`);
+    await page.goto(`/tests/internal/example/index.html?theme=light&scene=${scene.id}`);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     if (scene.dialog) await expect(page.getByRole('dialog', {name: scene.dialog, exact: true})).toBeVisible();
     else await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
@@ -156,7 +156,7 @@ for (const scene of [
 }
 
 test('an unknown reference scene falls back to the operable workspace', async ({page}) => {
-  await page.goto('/examples/application/index.html?scene=unknown');
+  await page.goto('/tests/internal/example/index.html?scene=unknown');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
 });

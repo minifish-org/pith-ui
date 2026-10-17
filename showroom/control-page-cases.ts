@@ -1,7 +1,7 @@
 import { mount, createText, createTextInput, createSecretInput, createNumberInput, createSelect, createCheckbox, createFormSection, createForm, createStack, createNotice, createButton, createToolbar, createCopyButton, createPopover, createTextEditDialog, createConfirmDialog, createContextMenu } from '../src/index.js';
 import type { ShowcaseCase } from './types.js';
 export const controlPageCases: ShowcaseCase[] = [{
-        id: 'controls-form-page', title: '小积木组合：连接表单', layer: 'pages', category: '小积木组合', entry: 'pith-ui',
+        id: 'controls-form-page', title: '小积木组合：连接表单', layer: 'examples', category: '小积木组合', entry: 'pith-ui',
         description: '只使用 pith-ui 的小积木组成表单，不创建完整 app。字体、间距、字段、按钮、校验、失败保留和异步提交来自库；保存只操作模拟数据。',
         states: ['normal', 'error', 'disabled', 'long'], controls: ['outcome'], related: ['form', 'form-section', 'text-input', 'select', 'number-input'],
         code: `import {mount,createTextInput,createSelect,createFormSection,createForm} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nconst name=createTextInput({label:'Name',value:'Demo'});\nconst provider=createSelect({label:'Provider',options:[{value:'demo',label:'Demo'}]});\nconst section=createFormSection({title:'Connection',children:[name,provider]});\nconst form=createForm({children:[section],submitLabel:'Save',onSubmit:async()=>{console.log(name.read(),provider.read());return {ok:true};}});\nmount(host,form);`,
@@ -27,7 +27,7 @@ export const controlPageCases: ShowcaseCase[] = [{
             return { element: host, destroy: mounted.destroy };
         },
     }, {
-        id: 'controls-actions-page', title: '小积木组合：操作与弹层', layer: 'pages', category: '小积木组合', entry: 'pith-ui',
+        id: 'controls-actions-page', title: '小积木组合：操作与弹层', layer: 'examples', category: '小积木组合', entry: 'pith-ui',
         description: '按钮、复制、上下文菜单、Popover、文本编辑和确认框通过小积木组合。只传内容与回调，不访问内部节点；所有动作均为模拟。',
         states: ['normal', 'disabled', 'long'], controls: ['outcome'], related: ['button', 'context-menu', 'popover', 'text-edit-dialog', 'confirmation', 'copy-feedback'],
         code: `import {mount,createButton,createText,createDialog,createStack} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nconst dialog=createDialog({title:'Details',content:createText({text:'Reviewed content'})});\nconst button=createButton({label:'Details',onAction:()=>dialog.open()});\nmount(host,createStack({children:[button,dialog]}));`,

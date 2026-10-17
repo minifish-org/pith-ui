@@ -31,3 +31,19 @@ export function actionsAndFeedback(ui: PithUI, host: HTMLElement, remove: () => 
   const copyButton = ui.createCopyButton({value:'Example connection',onCopy:copy});
   return ui.mount(host,ui.createStack({children:[ui.createToolbar({label:'Connection actions',children:[menu,copyButton]}),confirmation]}));
 }
+
+/** Pages remain local compositions of small components. */
+export function localComposition(ui: PithUI,host:HTMLElement) {
+  const first=ui.createTextInput({label:'First',value:'Draft'});
+  const second=ui.createTextInput({label:'Second'});
+  const list=ui.createList({items:[{key:'first',content:first},{key:'second',content:second}]});
+  const footer=ui.createSlot({content:ui.createText({text:'Ready'})});
+  const pane=ui.createPane({header:ui.createText({role:'heading',text:'Editor'}),content:list,footer});
+  const layout=ui.createSplitPane({navigation:ui.createText({text:'Navigation'}),content:pane});
+  const mounted=ui.mount(host,layout,{appearance:'system'});
+  list.update({items:[{key:'second',content:second},{key:'first',content:first}]});
+  footer.set(ui.createText({text:'Updated'}));
+  const dialog=ui.createDialog({title:'Content',content:ui.createStack({children:[ui.createMarkdown({text:'# Safe content'}),ui.createDiff({text:'-old\n+new'})]})});
+  mounted.attach(dialog);dialog.open();
+  return mounted;
+}

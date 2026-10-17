@@ -8,6 +8,5 @@ export default defineConfig({
   } }],
   build: { outDir: 'showroom-dist', emptyOutDir: true, rollupOptions: {input: {
     showroom: fileURLToPath(new URL('./index.html', import.meta.url)),
-    application: fileURLToPath(new URL('./examples/application/index.html', import.meta.url)),
   }} },
 });

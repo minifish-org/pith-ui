@@ -1,5 +1,5 @@
 import {test, expect} from '@playwright/test';
-import type {AppArtifactsState, AppFileTarget, Application, ActionResult} from '../src/app/index.js';
+import type {AppArtifactsState, AppFileTarget, Application, ActionResult} from './internal/application/index.js';
 
 interface ArtifactActionFixture {
   app: Application;
@@ -15,7 +15,7 @@ declare global {
 test.beforeEach(async ({page}) => {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts';
+    const entry = '/tests/internal/application/index.ts';
     const {createApplication} = await import(entry);
     const mount = document.createElement('div'); document.body.append(mount);
     const fixture: ArtifactActionFixture = {

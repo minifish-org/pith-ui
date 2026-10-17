@@ -5,7 +5,7 @@ test.beforeEach(async ({page}) => {await page.goto('/tests/fixture.html');});
 
 test('an owned code copy invokes the supplied host callback exactly once without a fallback copy', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const calls: string[] = [];
     const app = createApplication(document.body, {host: {copyText() {calls.push('fallback');}}, workspace: {onCopyCode(text: string) {calls.push(text);}}});
     app.workspace.updateConversation({id: 'copy', working: false, messages: [{id: 'code', role: 'assistant', text: '```ts\nconst value = 1;\n```'}]});
@@ -19,7 +19,7 @@ test('an owned code copy invokes the supplied host callback exactly once without
 test('browser download retains its URL until the download starts and destroy clears the retained URL', async ({page}) => {
   const download = page.waitForEvent('download');
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body);
     const original = URL.revokeObjectURL.bind(URL), revoked: string[] = [];
     URL.revokeObjectURL = url => {revoked.push(url); original(url);};
@@ -41,7 +41,7 @@ test('browser download retains its URL until the download starts and destroy cle
 
 test('unsupported external sign-in URLs never reach the host and failures stay on their owned dialog', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     let calls = 0;
     const app = createApplication(document.body, {host: {openExternal() {calls++; return {ok: false, error: 'Host refused this link'};}}});
     const invalid = app.settings.openProviderLogin({phase: 'waiting', message: 'Waiting', url: 'javascript:alert(1)'});

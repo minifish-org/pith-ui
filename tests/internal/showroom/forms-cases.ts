@@ -1,12 +1,12 @@
-import {createSettingsPanel, createMCPConnectionsPanel, createMCPConnectionList, createModelPicker} from '../src/forms/panels.js';
-import {createCustomConnectionEditor, customModelDefaults} from '../src/forms/custom-connection.js';
-import {createResourceEditor} from '../src/forms/resource-editor.js';
-import {createProviderLoginPanel} from '../src/forms/provider-login.js';
-import {createBranchHistory} from '../src/forms/history.js';
-import {createFeatureDialogFrame, createFeatureStatus} from '../src/forms/dialog-frame.js';
-import {createProviderActions, createResourceActions} from '../src/forms/actions.js';
-import {createButton} from '../src/primitives.js';
-import {createUpdatePanel} from '../src/files/systems.js';
+import {createSettingsPanel, createMCPConnectionsPanel, createMCPConnectionList, createModelPicker} from '../../../src/forms/panels.js';
+import {createCustomConnectionEditor, customModelDefaults} from '../../../src/forms/custom-connection.js';
+import {createResourceEditor} from '../../../src/forms/resource-editor.js';
+import {createProviderLoginPanel} from '../../../src/forms/provider-login.js';
+import {createBranchHistory} from '../../../src/forms/history.js';
+import {createFeatureDialogFrame, createFeatureStatus} from '../../../src/forms/dialog-frame.js';
+import {createProviderActions, createResourceActions} from '../../../src/forms/actions.js';
+import {createButton} from '../../../src/primitives.js';
+import {createUpdatePanel} from '../../../src/files/systems.js';
 import type {DemoContext, MountedDemo, ShowcaseCase} from './types.js';
 
 type Owned = {element: HTMLElement; destroy(): void};

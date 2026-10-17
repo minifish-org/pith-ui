@@ -10,7 +10,7 @@ test('npm check works from a fresh source checkout and generates the public pack
   try {
     // Copy maintained inputs, never pre-existing build output. Tools come from
     // the current locked install; package self-reference resolves this fixture.
-    for (const path of ['src', 'scripts', 'showroom', 'examples', 'tests', 'visual-tests', 'docs']) cpSync(join(root, path), join(directory, path), {recursive: true});
+    for (const path of ['src', 'scripts', 'showroom', 'tests', 'visual-tests', 'docs']) cpSync(join(root, path), join(directory, path), {recursive: true});
     for (const entry of readdirSync(root, {withFileTypes: true})) {
       if (entry.isFile() && /\.(?:ts|json|html|md)$/.test(entry.name)) cpSync(join(root, entry.name), join(directory, entry.name));
     }
@@ -22,8 +22,8 @@ test('npm check works from a fresh source checkout and generates the public pack
     const checked = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'check'], {cwd: directory, encoding: 'utf8', timeout: 60000, maxBuffer: 8 * 1024 * 1024});
     assert.equal(checked.error, undefined, checked.error?.message);
     assert.equal(checked.status, 0, checked.stderr || checked.stdout);
-    const declaration = join(directory, 'dist/app/index.d.ts');
+    const declaration = join(directory, 'dist/index.d.ts');
     assert.ok(existsSync(declaration), 'The documented check command prepares its public declaration dependency');
-    assert.match(readFileSync(declaration, 'utf8'), /export declare function createApplication\(/);
+    assert.match(readFileSync(declaration, 'utf8'), /createButton/);
   } finally {rmSync(directory, {recursive: true, force: true});}
 });

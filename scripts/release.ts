@@ -42,7 +42,8 @@ async function verify(): Promise<void> {
   const archive = join(artifacts, value.filename);
   const paths = run('tar', ['-tzf', archive]).trim().split('\n');
   assert(paths.length > 0 && paths.every(path => path.startsWith('package/') && !path.split('/').includes('..')), 'Archive contains an unsafe file path');
-  assert(paths.every(path => path.startsWith('package/dist/') || ['package/package.json', 'package/README.md', 'package/AI.md', 'package/API.md', 'package/APP.md', 'package/APP-API.md', 'package/LICENSE'].includes(path)), 'Archive contains unpublished source, tests or gallery code');
+  assert(paths.every(path => path.startsWith('package/dist/') || ['package/package.json', 'package/README.md', 'package/AI.md', 'package/API.md', 'package/LICENSE'].includes(path)), 'Archive contains unpublished source, tests or gallery code');
+  assert(!paths.some(path=>path.startsWith('package/dist/app/')), 'Removed application artifacts must not ship');
   const temporary = await mkdtemp(join(tmpdir(), 'pith-ui-package-'));
   try {
     await writeFile(join(temporary, 'package.json'), JSON.stringify({ private: true, type: 'module', dependencies: { [metadata.name]: `file:${archive}` } }));
@@ -51,10 +52,10 @@ async function verify(): Promise<void> {
     const installedMetadata = JSON.parse(await readFile(join(installed, 'package.json'), 'utf8')) as { name: string; version: string; dependencies: Record<string, string> };
     assert(installedMetadata.name === metadata.name && installedMetadata.version === metadata.version, 'Installed package metadata differs');
     assert(Object.values(installedMetadata.dependencies).every(version => /^\d+\.\d+\.\d+$/.test(version)), 'Runtime dependencies must use exact versions');
-    for (const required of ['dist/index.js', 'dist/index.d.ts', 'dist/app/index.js', 'dist/app/index.d.ts', 'dist/styles.css', 'README.md', 'AI.md', 'API.md', 'APP.md', 'APP-API.md', 'LICENSE']) assert((await readFile(join(installed, required))).byteLength > 0, `Missing or empty package file: ${required}`);
+    for (const required of ['dist/index.js', 'dist/index.d.ts', 'dist/styles.css', 'README.md', 'AI.md', 'API.md', 'LICENSE']) assert((await readFile(join(installed, required))).byteLength > 0, `Missing or empty package file: ${required}`);
     const verification = await verifyInstalledPackageConsumer(root, temporary);
     await writeFile(join(artifacts, 'package-consumer-verification.json'), JSON.stringify({filename: value.filename, sha256: value.sha256, commit: value.commit, version: value.version, ...verification}, null, 2) + '\n');
-    console.log(`Verified exact tarball ${value.filename}: root and app ESM/types/CSS, complete reference, strict declarations, ${verification.rejectedTypeCases} rejected UI escape cases, small-control constraints and both isolated production builds.`);
+    console.log(`Verified exact tarball ${value.filename}: component ESM/types/CSS, removed-entry rejection, strict declarations, ${verification.rejectedTypeCases} rejected UI escape cases, small-control constraints and isolated production build.`);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 }
 function verifyTag(): void {

@@ -4,7 +4,7 @@ test.beforeEach(async ({page}) => { await page.goto('/tests/fixture.html'); });
 
 test('the application exposes semantic scene handles without DOM or visual escape hatches', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts';
+    const entry = '/tests/internal/application/index.ts';
     const {createApplication} = await import(entry);
     const mount = document.createElement('div'); document.body.append(mount);
     const app = createApplication(mount, {appearance: 'light', brand: {name: 'Pith', qualifier: 'Desk'}});
@@ -33,7 +33,7 @@ test('the application exposes semantic scene handles without DOM or visual escap
 
 test('snapshot feedback and streaming preserve the composer draft, composition, focus and selection', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     let inputs = 0, submissions = 0;
     const app = createApplication(document.body, {workspace: {onInput() {inputs++;}, onSubmit() {submissions++; return {ok: true};}}});
     const workspace = app.workspace;
@@ -55,7 +55,7 @@ test('snapshot feedback and streaming preserve the composer draft, composition, 
 
 test('navigation menus own their anchor and return immutable semantic action targets', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body, {workspace: {onConversationAction(action: string, id: string) {document.body.dataset.action = JSON.stringify({action, id});}}});
     app.workspace.updateNavigation({groups: [{id: 'w', name: 'Work', path: '/work', selected: true, expanded: true, children: [{id: 'c', title: 'Conversation', active: true, status: {kind: 'unread', label: 'Unread response'}}]}], empty: null});
   });
@@ -74,7 +74,7 @@ test('navigation menus own their anchor and return immutable semantic action tar
 
 test('the reader owns folds across conversation switches and preserves selected historical text', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body);
     const messages = [{id: 'text', role: 'assistant', text: 'Historical selection stays here'}, {id: 'tool', role: 'tool', toolName: 'read', text: 'output', status: 'done'}];
     app.workspace.updateConversation({id: 'a', messages, working: false});
@@ -94,7 +94,7 @@ test('the reader owns folds across conversation switches and preserves selected 
 
 test('a closed edit session cannot submit or close a new target after a delayed failure', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body);
     let finish!: (result: {ok: false; error: string}) => void;
     const old = app.workspace.openMessageEditor({title: 'Edit message', value: 'old target', submitLabel: 'Save message'}, {onSubmit: () => new Promise(resolve => {finish = resolve;})});
@@ -114,7 +114,7 @@ test('a closed edit session cannot submit or close a new target after a delayed 
 
 test('modal state notifications preserve read gating and destroyed sessions cannot reopen', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const states: boolean[] = [];
     const app = createApplication(document.body, {onUIStateChange: (state: {hasModal: boolean}) => states.push(state.hasModal)});
     const session = app.workspace.openHistory({nodes: [], loading: false}, {});
@@ -131,7 +131,7 @@ test('modal state notifications preserve read gating and destroyed sessions cann
 
 test('scene failures belong to the form rather than an unrelated appearance field', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body);
     const settings = app.settings.openSettings({baseUrl: 'https://example.test/v1', hasApiKey: true, ready: true});
     settings.fail('General settings action failed');
@@ -146,7 +146,7 @@ test('scene failures belong to the form rather than an unrelated appearance fiel
 
 test('a throwing host close callback cannot leave an empty fixed or feature dialog open', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body), outcomes: unknown[] = [];
     for (const open of [
       () => app.settings.openSettings({baseUrl: 'https://example.test', hasApiKey: true}, {onClose() {throw new Error('host cleanup failed');}}),
@@ -163,7 +163,7 @@ test('a throwing host close callback cannot leave an empty fixed or feature dial
 
 test('destroy releases the whole application even when host close cleanup throws', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const mount = document.createElement('div'); document.body.append(mount);
     const app = createApplication(mount);
     const onClose = () => {throw new Error('Host cleanup failure');};
@@ -178,7 +178,7 @@ test('destroy releases the whole application even when host close cleanup throws
 
 test('connection and resource loading use the shared feature surface with target ownership', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body);
     const connection = app.settings.openConnectionLoading({editing: true});
     const first = document.querySelector('dialog[open] h2')?.textContent;
@@ -196,7 +196,7 @@ test('connection and resource loading use the shared feature surface with target
 
 test('changing the conversation closes its image zoom before retiring image data', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='), char => char.charCodeAt(0));
     const app = createApplication(document.body, {workspace: {onLoadImage: async () => new Blob([bytes], {type: 'image/png'})}});
     app.workspace.updateConversation({id: 'first', messages: [{id: 'image', role: 'user', text: '', images: [{index: 0}]}], working: false});
@@ -212,7 +212,7 @@ test('changing the conversation closes its image zoom before retiring image data
 test('controlled brand assets follow application appearance in the wordmark and welcome view', async ({page}) => {
   await page.emulateMedia({colorScheme: 'dark'});
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body, {appearance: 'light', brand: {name: 'Pith', qualifier: 'Desk', mark: {src: '/light-logo.svg', darkSrc: '/dark-logo.svg', alt: ''}}});
     app.workspace.updateWelcome({hasApiKey: true, hasConnections: true, modelName: 'First'});
     (window as unknown as {brandFixture: {dark(): void; system(): void}}).brandFixture = {
@@ -231,7 +231,7 @@ test('controlled brand assets follow application appearance in the wordmark and 
 
 for (const failure of ['missing', 'rejected'] as const) test(`a ${failure} message image can recover on a later projection without refetching successful images`, async ({page}) => {
   await page.evaluate(async (failure) => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='), char => char.charCodeAt(0));
     let calls = 0;
     const app = createApplication(document.body, {workspace: {onLoadImage: async () => {
@@ -256,7 +256,7 @@ for (const failure of ['missing', 'rejected'] as const) test(`a ${failure} messa
 
 test('mixed drops preserve empty-MIME image recognition and workspace URI intent', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const images: string[][] = [], references: unknown[] = [];
     const app = createApplication(document.body, {workspace: {onImages: (files: File[]) => images.push(files.map(file => file.name)), onDropReferences: (value: unknown) => references.push(value)}});
     app.workspace.updateComposer({action: 'send'});
@@ -273,7 +273,7 @@ test('mixed drops preserve empty-MIME image recognition and workspace URI intent
 test('controlled brand marks preserve the existing narrow-screen welcome dimensions', async ({page}) => {
   await page.setViewportSize({width: 600, height: 800});
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body, {brand: {name: 'Pith', mark: {src: '/brand.svg', alt: ''}}});
     app.workspace.updateWelcome({hasApiKey: true, hasConnections: true});
   });
@@ -283,7 +283,7 @@ test('controlled brand marks preserve the existing narrow-screen welcome dimensi
 
 test('attachment availability gates both the owned chooser button and application intent', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const original = HTMLInputElement.prototype.click; let choices = 0;
     HTMLInputElement.prototype.click = function () {if (this.type === 'file') choices++; else original.call(this);};
     const app = createApplication(document.body), counts: number[] = [];

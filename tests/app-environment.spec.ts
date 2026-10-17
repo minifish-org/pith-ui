@@ -1,5 +1,5 @@
 import {expect,test} from '@playwright/test';
-import type {Application} from '../src/app/index.js';
+import type {Application} from './internal/application/index.js';
 
 interface Session {isOpen():boolean;close():void;destroy():void;fail(message:string):void}
 interface Fixture {app:Application;events:string[];old?:Session;nested?:Session}
@@ -9,7 +9,7 @@ test.beforeEach(async ({page})=>{await page.goto('/tests/fixture.html');});
 
 for(const kind of ['fixed','feature'] as const) test(`a nested ${kind} opening wins over the superseded outer replacement`,async ({page})=>{
   const result=await page.evaluate(async kind=>{
-    const entry='/src/app/index.ts';const {createApplication}=await import(entry);
+    const entry='/tests/internal/application/index.ts';const {createApplication}=await import(entry);
     const app:Application=createApplication(document.body),events:string[]=[];
     const open=(label:string,onClose:()=>void):Session=>kind==='fixed'
       ?app.settings.openSettings({baseUrl:`https://${label}.example/v1`,hasApiKey:true},{onClose})
@@ -30,7 +30,7 @@ for(const kind of ['fixed','feature'] as const) test(`a nested ${kind} opening w
 
 test('a feature dialog close callback can open a complete new owned dialog',async ({page})=>{
   await page.evaluate(async()=>{
-    const entry='/src/app/index.ts';const {createApplication}=await import(entry);
+    const entry='/tests/internal/application/index.ts';const {createApplication}=await import(entry);
     const fixture:Fixture={app:createApplication(document.body),events:[]};window.appEnvironmentFixture=fixture;
     fixture.old=fixture.app.workspace.openHistory({nodes:[]},{onClose(){fixture.events.push('old');fixture.nested=fixture.app.workspace.openHistory({nodes:[{id:'nested',role:'assistant',text:'Nested branch after dismissal',active:true}]},{onClose(){fixture.events.push('nested');}});}});
   });

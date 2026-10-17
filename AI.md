@@ -1,6 +1,6 @@
 # Pith UI: small constrained building blocks
 
-The default `pith-ui` entry is the composable API. Import CSS once from `pith-ui/styles.css`. Start with a button, input, select, form or layout and compose the returned opaque `Control` handles. A complete application is optional, not the unit of reuse.
+The default `pith-ui` entry is the composable API. Import CSS once from `pith-ui/styles.css`. Start with a button, input, select, form or layout and compose the returned opaque `Control` handles. Applications own their pages; no app or whole-scene interface is provided.
 
 Read [API.md](./API.md), the [catalog](./docs/catalog.md), [guide](./docs/guide.md), and the exact installed declarations. Use a published exact version and lockfile; do not redirect a consumer to sibling sources or private package files.
 
@@ -24,13 +24,13 @@ Typography uses two roles: system UI and monospace code. Small/medium/large text
 
 The [compiled examples](./docs/examples.ts) use only the default public entry. Showroom base components mount those same controls; they do not use a separate demonstration implementation.
 
-## Optional complete application
+## Public surface and examples
 
-`pith-ui/app` is an optional precomposed Pith-shaped interface with workspace/settings/resources/files scenes. Read [APP.md](./APP.md) and [APP-API.md](./APP-API.md) only when choosing that whole composition. It shares the internal components with the small controls. Applications may use small controls without creating this application. Never inspect the application's generated nodes; mount an independent composition in a host you own, not in an internal app node.
+Only `pith-ui` and `pith-ui/styles.css` are exported. The showroom displays public components, composition examples and design specifications. Private implementation is not a consumer API.
 
-When embedding a small modal in that optional application, use `app.attachDialog(dialog)` rather than finding a host inside the app. It accepts modal control handles only, participates in modal/theme/disposal ownership, and returns an early destroy handle.
+Compose regions with `createPane` and `createSplitPane`; choose children with `createSlot`; update stable-key collections with `createList`. A list preserves retained controls and destroys removed controls. Replaced slot content is destroyed. Attach an independently opened small modal with `mount.attach(dialog)`. The mount owns that modal and reports `hasModal` through `read()` / `onStateChange`.
 
-Product block and older composed-page exhibits marked “库内实现片段” document private implementation, not additional package exports. If a reusable control lacks a real capability, add a narrow semantic port plus regression and showroom example in the library. Do not add an escape hatch or a UI-description DSL.
+Safe Markdown and diff content use `createMarkdown` and `createDiff`. Link opening and copying are callbacks; native decisions stay in the consumer. If a reusable component lacks a real capability, add a narrow semantic port plus regression and showroom example in the library. Do not add an escape hatch or a UI-description DSL.
 
 ## Validation
 

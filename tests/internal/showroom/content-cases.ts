@@ -1,10 +1,10 @@
 import type { ShowcaseCase } from './types.js';
-import { createConversationView, type ConversationMessage } from '../src/content/conversation-view.js';
-import { createPagedPreview } from '../src/content/paged-preview.js';
-import { createImageViewer } from '../src/content/image-viewer.js';
-import { createWelcomeView } from '../src/content/welcome.js';
-import { installConversationReader } from '../src/content/conversation-reader.js';
-import { createButton } from '../src/primitives.js';
+import { createConversationView, type ConversationMessage } from '../../../src/content/conversation-view.js';
+import { createPagedPreview } from '../../../src/content/paged-preview.js';
+import { createImageViewer } from '../../../src/content/image-viewer.js';
+import { createWelcomeView } from '../../../src/content/welcome.js';
+import { installConversationReader } from '../../../src/content/conversation-reader.js';
+import { createButton } from '../../../src/primitives.js';
 
 const prose = '# 原生积木 · Native blocks\n\n中文、English、123，路径 `/workspace/报告 v1.md` 与 emoji 🙂。\n\n**保持阅读位置**，同时更新另一条消息。\n\n```ts\nconst view = createConversationView();\nview.update({ id: "demo", messages: [], working: false });\n```\n\n[安全外链](https://example.com) · <script>alert("blocked")</script>';
 const illustration = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800"><rect width="1200" height="800" fill="#eaf2ff"/><rect x="100" y="100" width="1000" height="600" rx="40" fill="#87b4ec"/><text x="600" y="420" text-anchor="middle" font-size="70" font-family="sans-serif" fill="#172b46">Pith UI · 1200 × 800</text></svg>')}`;

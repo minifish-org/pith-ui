@@ -1,4 +1,4 @@
-export type ShowcaseLayer = 'foundations' | 'components' | 'blocks' | 'pages';
+export type ShowcaseLayer = 'foundations' | 'components' | 'examples';
 export type DemoState = 'normal' | 'loading' | 'error' | 'disabled' | 'empty' | 'long' | 'pending';
 export type Outcome = 'success' | 'failure' | 'late' | 'invalid';
 export interface DemoContext {
@@ -25,6 +25,6 @@ export interface ShowcaseCase {
   controls?: readonly ('outcome')[];
   related?: readonly string[];
   code: string;
-  entry?: 'pith-ui' | 'pith-ui/app' | 'internal';
+  entry?: 'pith-ui';
   mount(context: DemoContext): MountedDemo;
 }

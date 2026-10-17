@@ -10,7 +10,7 @@ import packageMetadata from '../package.json' with { type: 'json' };
 const params = new URLSearchParams(location.search);
 const choices = <T extends string>(name: string, values: readonly T[], fallback: T): T => values.includes(params.get(name) as T) ? params.get(name) as T : fallback;
 const state = {
-  item: catalog.find(item => item.id === params.get('item'))?.id ?? 'workspace-chat',
+  item: catalog.find(item => item.id === params.get('item'))?.id ?? 'button',
   theme: choices('theme', ['light', 'dark', 'system'], 'system'),
   scene: params.get('state') ?? 'normal',
   width: Math.max(280, Math.min(1440, Number(params.get('width')) || 800)),
@@ -21,7 +21,7 @@ const state = {
   rulers: params.get('rulers') === '1',
 };
 if (!catalog.some(item => item.id === state.item)) state.item = catalog[0].id;
-const layerNames: Record<ShowcaseLayer, string> = { foundations: '设计基础', components: '基础组件', blocks: '组合积木', pages: '完整界面' };
+const layerNames: Record<ShowcaseLayer, string> = { components: '基础积木', examples: '组合示例', foundations: '设计规范' };
 const sceneNames: Record<string, string> = { normal: '正常', loading: '加载', error: '错误', disabled: '禁用', empty: '空状态', long: '长内容', pending: '提交中' };
 setAppearance(document.documentElement, state.theme);
 const app = document.getElementById('showroom')!;
@@ -34,7 +34,7 @@ header.append(theme.element);
 const nav = element('nav', 'gallery-nav'); nav.setAttribute('aria-label', '积木分类');
 const search = createSearchInput({ label: '搜索积木', placeholder: '名称、用途、分类…', onInput: () => renderNavigation() });
 const navigation = element('div', 'gallery-navigation');
-nav.append(search.element, element('p', 'gallery-count', `${catalog.length} 项 · 从完整界面逐层查看`), navigation);
+nav.append(search.element, element('p', 'gallery-count', `${catalog.length} 项 · 正式积木与组合示例`), navigation);
 const heading = element('div', 'gallery-heading');
 const controls = element('div', 'gallery-controls');
 const preview = element('div', 'gallery-preview'); preview.setAttribute('aria-label', '真实交互体验');
@@ -139,7 +139,7 @@ function mountPreview(): void {
         return outcome === 'success' || outcome === 'late' ? {ok:true} : {ok:false,error:outcome === 'invalid' ? '演示目标已失效；请重新打开，输入保留。' : '演示保存失败，输入保留。'};
       },
     };
-    const demo = selected.mount(context); mounted.push(demo); host.append(demo.element);
+    const demo = selected.mount(context); mounted.push(demo); host.append(demo.element); setAppearance(demo.element, variant.theme as typeof state.theme);
     const frame = element('div', 'gallery-frame', element('div', 'gallery-frame-label', `目标宽度 ${variant.label} · 受可用空间约束 · 模拟数据`), canvas);
     if (state.rulers) frame.classList.add('gallery-rulers');
     preview.append(frame);
@@ -194,10 +194,8 @@ function render(): void {
   const selected = catalog.find(item => item.id === state.item)!;
   heading.replaceChildren(element('p', 'gallery-breadcrumb', `${layerNames[selected.layer]} / ${selected.category} / ${selected.id}`), element('h2', '', selected.title), element('p', '', selected.description));
   code.textContent = selected.code;
-  codeHeading.textContent = selected.entry === 'internal' ? '库内实现片段' : '使用示例';
-  codeContract.textContent = selected.entry === 'internal'
-    ? '此项展示库内组合实现，不是默认入口的公开 API。复用小积木请查看基础组件；完整应用示例使用可选的 pith-ui/app。'
-    : `${selected.entry} · 公开受限接口。内容、状态和业务回调由使用者提供，字体、间距和交互由库管理。`;
+  codeHeading.textContent = '使用示例';
+  codeContract.textContent = 'pith-ui · 正式受限积木。应用提供内容、状态与回调；字体、间距、样式及交互由库管理。';
   related.replaceChildren();
   const parents = catalog.filter(item => item.related?.includes(selected.id));
   for (const item of [...new Set([...(selected.related ?? []), ...parents.map(item => item.id)])].map(id => catalog.find(item => item.id === id)).filter(item => !!item)) {

@@ -1,8 +1,8 @@
-import type {ActionResult} from '../core.js';
-import {adoptAction, type ActionController} from '../foundations.js';
-import {createArtifactPanel, createFileActions, createFilePreview} from '../files/panels.js';
-import {createCopyFeedback} from '../files/systems.js';
-import {createOperation} from '../operation.js';
+import type {ActionResult} from '../../../src/core.js';
+import {adoptAction, type ActionController} from '../../../src/foundations.js';
+import {createArtifactPanel, createFileActions, createFilePreview} from '../../../src/files/panels.js';
+import {createCopyFeedback} from '../../../src/files/systems.js';
+import {createOperation} from '../../../src/operation.js';
 import type {AppEnvironment, OwnedSurface} from './internal.js';
 
 export type AppFileAction = 'open' | 'reveal' | 'copy' | 'copy-path';

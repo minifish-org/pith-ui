@@ -4,7 +4,7 @@ test.beforeEach(async ({page}) => {await page.goto('/tests/fixture.html');});
 
 test('workspace references preserve exact CommonMark paths including all-space names', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts', markdown = '/src/content/markdown.ts';
+    const entry = '/tests/internal/application/index.ts', markdown = '/src/content/markdown.ts';
     const {createApplication} = await import(entry), {renderMarkdown} = await import(markdown);
     const app = createApplication(document.body);
     const paths = ['   ', ' leading.md', 'trailing.md ', '`edge`', 'a``b`file.txt', 'docs/中文 draft.md'];
@@ -21,7 +21,7 @@ test('workspace references preserve exact CommonMark paths including all-space n
 
 test('the attachment chooser exposes merged attachment and composer disabled states', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body);
     const button = document.querySelector<HTMLButtonElement>('[aria-label="Attach images"]')!;
     const states: boolean[] = [];
@@ -39,7 +39,7 @@ test('the attachment chooser exposes merged attachment and composer disabled sta
 
 test('drop intents distinguish unidentified files from URI-only drags while retaining images', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const references: unknown[] = [], images: string[][] = [];
     const app = createApplication(document.body, {workspace: {
       onDropReferences: (value: unknown) => references.push(value),
@@ -75,7 +75,7 @@ test('drop intents distinguish unidentified files from URI-only drags while reta
 
 test('an unrelated running target leaves inactive conversation and workspace menu actions usable', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const calls: unknown[] = [];
     const app = createApplication(document.body, {workspace: {
       onConversationAction: (action: string, id: string) => {calls.push({action, id});},
@@ -112,7 +112,7 @@ test('an unrelated running target leaves inactive conversation and workspace men
 
 test('global and active run gates preserve permitted message and code copies', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const calls: string[] = [];
     const app = createApplication(document.body, {workspace: {
       onMessageAction: () => {calls.push('message');}, onCopyCode: () => {calls.push('code');},
@@ -131,7 +131,7 @@ test('global and active run gates preserve permitted message and code copies', a
 
 test('pending native references still accept the matching image drop without resolving paths twice', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const images: string[][] = [], references: unknown[] = [];
     const app = createApplication(document.body, {workspace: {
       onImages: (files: File[]) => images.push(files.map(file => file.name)),
@@ -169,7 +169,7 @@ test('pending native references still accept the matching image drop without res
 
 test('welcome suggestions preserve a restoring draft until the composer becomes available', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const inputs: string[] = [];
     const app = createApplication(document.body, {workspace: {onInput: (text: string) => inputs.push(text)}});
     app.workspace.updateWelcome({workspace: {name: 'Work', path: '/work'}, hasApiKey: true, hasConnections: true});
@@ -189,7 +189,7 @@ test('welcome suggestions preserve a restoring draft until the composer becomes 
 
 test('conversation menus retain baseline Rename and Export Markdown labels and action keys', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const calls: {action: string; id: string}[] = [];
     const app = createApplication(document.body, {workspace: {onConversationAction(action: string, id: string) {calls.push({action, id});}}});
     app.workspace.updateNavigation({groups: [{id: 'work', name: 'Work', path: '/work', selected: true, children: [{id: 'chat', title: 'Conversation', active: true}]}], empty: null});

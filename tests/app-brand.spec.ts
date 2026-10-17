@@ -11,7 +11,7 @@ for (const viewport of [{width: 1280, welcome: 32}, {width: 600, welcome: 27}]) 
   test(`the named Pith mark preserves the original geometry at ${viewport.width}px`, async ({page}) => {
     await page.setViewportSize({width: viewport.width, height: 800});
     const result = await page.evaluate(async () => {
-      const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+      const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
       const app = createApplication(document.body, {appearance: 'light', brand: {name: 'Pith', qualifier: 'Desk', mark: {symbol: 'pith', alt: ''}}});
       app.workspace.updateWelcome({hasApiKey: true, hasConnections: true, modelName: 'Example'});
       const original = document.createElement('div');
@@ -61,7 +61,7 @@ for (const viewport of [{width: 1280, welcome: 32}, {width: 600, welcome: 27}]) 
 test('the named Pith mark follows every theme without replacing its nodes or exposing visual options', async ({page}) => {
   await page.emulateMedia({colorScheme: 'dark'});
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const app = createApplication(document.body, {appearance: 'light', brand: {name: 'Pith', mark: {symbol: 'pith', alt: 'Pith symbol'}}});
     const welcome = {hasApiKey: true, hasConnections: true, modelName: 'First'};
     app.workspace.updateWelcome(welcome);

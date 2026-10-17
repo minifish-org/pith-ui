@@ -1,5 +1,5 @@
-import type {ActionResult} from '../core.js';
-import type {WorkspaceDialogName} from '../workspace.js';
+import type {ActionResult} from '../../../src/core.js';
+import type {WorkspaceDialogName} from '../../../src/workspace.js';
 
 /** Private composition ports. None of these types is exported by pith-ui/app. */
 export interface OwnedContent {readonly element: HTMLElement; destroy(): void}

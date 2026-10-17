@@ -1,11 +1,11 @@
-import {createContextMenu as createControlMenu,createButton as createControlButton,createStack,mount} from '../src/index.js';
-import {createWorkspaceNavigation, createWorkspacePicker, createRenameConversation} from '../src/navigation/navigation.js';
-import {createContextMenu} from '../src/navigation/context-menu.js';
-import {createApprovalPanel} from '../src/tasks/approval.js';
-import {createPermissionControl, createFullAccessConfirmation, createTaskFailure} from '../src/tasks/permission.js';
-import {createRuntimePanel} from '../src/tasks/runtime.js';
-import {createFeatureDialogFrame} from '../src/forms/dialog-frame.js';
-import {createButton} from '../src/primitives.js';
+import {createContextMenu as createControlMenu,createButton as createControlButton,createStack,mount} from '../../../src/index.js';
+import {createWorkspaceNavigation, createWorkspacePicker, createRenameConversation} from '../../../src/navigation/navigation.js';
+import {createContextMenu} from '../../../src/navigation/context-menu.js';
+import {createApprovalPanel} from '../../../src/tasks/approval.js';
+import {createPermissionControl, createFullAccessConfirmation, createTaskFailure} from '../../../src/tasks/permission.js';
+import {createRuntimePanel} from '../../../src/tasks/runtime.js';
+import {createFeatureDialogFrame} from '../../../src/forms/dialog-frame.js';
+import {createButton} from '../../../src/primitives.js';
 import type {DemoContext, MountedDemo, ShowcaseCase} from './types.js';
 
 function formSurface(block:{element:HTMLElement;destroy():void}):MountedDemo{const element=document.createElement('div');element.className='pui-modal';element.append(block.element);return{element,destroy(){block.destroy();element.remove();}};}

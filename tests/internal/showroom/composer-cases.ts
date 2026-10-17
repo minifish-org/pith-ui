@@ -1,7 +1,7 @@
-import { createComposerView } from '../src/workspace.js';
-import { createAttachments, createPendingMessages, createDropFeedback } from '../src/composer.js';
-import { createButton, createTextEditDialog } from '../src/primitives.js';
-import { element } from '../src/dom.js';
+import { createComposerView } from '../../../src/workspace.js';
+import { createAttachments, createPendingMessages, createDropFeedback } from '../../../src/composer.js';
+import { createButton, createTextEditDialog } from '../../../src/primitives.js';
+import { element } from '../../../src/dom.js';
 import type { ShowcaseCase } from './types.js';
 
 const image = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="220" height="140"><rect width="220" height="140" fill="#4A62C8"/><text x="25" y="80" fill="white" font-size="26">Demo image</text></svg>');

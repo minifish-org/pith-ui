@@ -1,26 +1,26 @@
-import {createWorkspaceShell, type WorkspaceDialogName} from '../workspace.js';
-import {createSDKDialogElements, createFeatureDialogFrame} from '../forms/dialog-frame.js';
-import {installImageViewer} from '../content/image-viewer.js';
-import {setAppearance, type Appearance} from '../theme.js';
-import type {ActionResult} from '../core.js';
+import {createWorkspaceShell, type WorkspaceDialogName} from '../../../src/workspace.js';
+import {createSDKDialogElements, createFeatureDialogFrame} from '../../../src/forms/dialog-frame.js';
+import {installImageViewer} from '../../../src/content/image-viewer.js';
+import {setAppearance, type Appearance} from '../../../src/theme.js';
+import type {ActionResult} from '../../../src/core.js';
 import {createWorkspaceScene, type WorkspaceCallbacks, type WorkspaceScene} from './workspace.js';
 import {createSettingsScene, type SettingsScene} from './settings.js';
 import {createResourcesScene, type ResourcesScene} from './resources.js';
 import {createFilesScene, type FilesScene} from './files.js';
 import type {AppEnvironment, HostResult, OwnedContent, OwnedSurface} from './internal.js';
 import {createApplicationBrandMark} from './brand.js';
-import {mount as mountControl, assertModalControl, type Dialog, type TextEditDialog, type ConfirmDialog, type Mount} from '../controls.js';
+import {mount as mountControl, assertModalControl, type Dialog, type TextEditDialog, type ConfirmDialog, type Mount} from '../../../src/controls.js';
 export type {LoadingState, LoadingSession} from './session.js';
 
-export type {ActionResult} from '../core.js';
-export type {Appearance} from '../theme.js';
+export type {ActionResult} from '../../../src/core.js';
+export type {Appearance} from '../../../src/theme.js';
 export type {WorkspaceCallbacks, WorkspaceScene, WorkspaceAction, WorkspaceAvailability, NavigationStatus, NavigationState, ApplicationWorkspace, ApplicationConversation, ConversationState, ImageTarget, ConversationNavigationAction, SceneSession, MessageEditorState, MessageEditorSession, ConfirmationState, ComposerViewState, WorkspaceShellState, WelcomeState, PendingMessagesState, AttachmentsState, PermissionControlState, FullAccessState, TaskFailureState, ApprovalPanelState, RuntimePanelState, CostLedgerState, CompletionNoticeDisplay, ConversationMessage, ConversationAction, ConversationActionAvailability, WorkspacePickerState, RenameConversationState, RenameConversationDraft, BranchHistoryState} from './workspace.js';
 export type {SettingsScene, SettingsSession, MCPSession, ModelSession, CustomConnectionSession, ProviderLoginSession, SettingsCredential, SettingsCallbacks, MCPCallbacks, ModelCallbacks, CustomConnectionCallbacks, ProviderLoginCallbacks, SettingsPanelState, SettingsDraft, SettingsProviderOption, MCPConnectionsState, MCPConnectionDraft, MCPEditorValue, MCPConnectionItem, ModelPickerState, ModelSelection, CustomConnectionState, CustomConnectionDraft, ProviderLoginState, UpdatePanelState, ProviderAction, ProviderActionsState, ProviderActionTarget, MCPConnectionAction, MCPConnectionTarget, UpdateAction} from './settings.js';
 export type {ResourcesState, ResourcesCallbacks, ResourcesSession, ResourcesScene, AppResourceEntry, AppResourceTarget, AppResourceKind, AppResourceEditorState, ResourceEditorCallbacks, ResourceEditorSession, ResourceActionResult, ResourceDraft} from './resources.js';
 export type {FilesScene, AppArtifactsState, ArtifactsCallbacks, AppFileOwner, AppFileTarget, AppFileAction, FileCapabilities, FileActionResult, AppFilePreviewState, FilePreviewInput, FilePreviewCallbacks, FilePreviewSession} from './files.js';
-export {formatCost} from '../files/systems.js';
-export {thinkingLabel} from '../forms/model-editor.js';
-export {customModelDefaults} from '../forms/custom-connection.js';
+export {formatCost} from '../../../src/files/systems.js';
+export {thinkingLabel} from '../../../src/forms/model-editor.js';
+export {customModelDefaults} from '../../../src/forms/custom-connection.js';
 
 export interface ApplicationBrand {
   readonly name: string;

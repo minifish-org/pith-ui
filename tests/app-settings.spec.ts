@@ -36,7 +36,7 @@ const state:SettingsPanelState={baseUrl:'https://first.example/v1',hasApiKey:tru
 test.beforeEach(async ({page})=>{
   await page.goto('/tests/fixture.html');
   await page.evaluate(async()=>{
-    const path='../src/app/index.js'; const {createApplication}=await import(path);
+    const path='./internal/application/index.js'; const {createApplication}=await import(path);
     const harness:Harness={app:createApplication(document.body,{brand:{name:'Pith Test'},host:{openExternal(url:string){harness.values.push(url);}}}),calls:0,values:[]};
     Object.assign(window,{appSettingsTest:harness});
   });

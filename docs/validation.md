@@ -26,7 +26,7 @@ Design checks verify the two automatic font roles, only 12/14/16 CSS px text, 40
 
 Focus checks verify the absence of focus outlines, glows and border-color highlights under pointer and keyboard interaction, without adding a replacement background. Assert the actual focused element and preserve typing, caret/text selection, native validation, keyboard activation and focus restoration. Compare existing hover, surface shadows, drag feedback and selected/error/permission states separately so removing focus decoration cannot erase those states. The showroom-only focus observer helps inspect traversal; it is not an application focus cue or a claim of visible-keyboard-focus accessibility.
 
-Maintained visual comparison is separate: `node scripts/visual.ts` checks 30 PNGs across five complete pages, two themes and three viewports. It requires the recorded macOS/Apple Silicon environment; Linux CI does not compare Mac system-font pixels. Only explicit `node scripts/visual.ts --update` records candidate baseline changes. See `visual-baselines/README.md`. No image update implies human acceptance.
+Maintained visual comparison is separate: `node scripts/visual.ts` checks 46 PNGs: 30 historical behavior-fixture images across five compositions, two themes and three viewports, plus 16 public composition examples including a narrow viewport. It requires the recorded macOS/Apple Silicon environment; Linux CI does not compare Mac system-font pixels. Only explicit `node scripts/visual.ts --update` records candidate baseline changes. See `visual-baselines/README.md`. No image update implies human acceptance.
 
 ## Shared behavior matrix
 
@@ -47,11 +47,11 @@ Pith Desk's existing controller and end-to-end tests remain consumer tests. In p
 
 ## Human showroom review
 
-Start with a full block or page, then inspect its base components and design foundations as needed.
+Start with the public component or a composition example, then inspect related components and design specifications.
 
 1. Inspect normal light and dark appearance at `900×600`, `1280×800` and `1440×900`; use a narrow container for reachability and wrapping.
 2. Exercise the case's legal loading, empty, error, disabled, pending and long-content states. Parameters are enabled only where the real API supports them.
-3. Compare themes and container widths side by side. Inspect the three text sizes, two weights, five spacing values, actual measurements and optional rulers. The dimensions exhibit contains fixed standard/compact compatibility samples rather than a general density chooser.
+3. Compare themes and container widths side by side. Inspect the three text sizes, two weights, five spacing values, actual measurements and optional rulers. Components choose fixed geometry; the public API exposes no density or arbitrary pixel editor.
 4. Use the keyboard, retain text selection, scroll long output, perform repeated actions and close/reopen surfaces.
 5. Replay motion at normal and slow speed; interrupt it and enable reduced motion. Do not infer temporal correctness from a still image.
 6. Share the exact URL and explain any issue in a chat or code review. There is no showroom approval button or stored acceptance state.
@@ -77,3 +77,5 @@ node scripts/release.ts verify
 The verifier checks the artifact checksum, public files, exact runtime dependency pins, export boundaries, declarations, CSS and an isolated consumer's type-check and Vite production build. It installs the tarball it was given; it does not silently consume a sibling source checkout.
 
 After npm publication, download that exact version again and repeat consumer validation. Report local validation, npm publication, Pages deployment and native application acceptance separately.
+
+Historical application and internal-showroom fixtures live only under `tests/internal`. They preserve established controller assertions during API removal; they are neither exported nor included in the production showroom build. Package checks reject removed app/private entries and prune stale unreachable modules.

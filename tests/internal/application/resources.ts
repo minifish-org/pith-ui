@@ -1,12 +1,12 @@
-import type {ActionResult} from '../core.js';
-import {createResourcesPanel, createFileActions} from '../files/panels.js';
-import {createResourceActions} from '../forms/actions.js';
-import {createResourceEditor, type ResourceDraft} from '../forms/resource-editor.js';
-import {createOperation} from '../operation.js';
+import type {ActionResult} from '../../../src/core.js';
+import {createResourcesPanel, createFileActions} from '../../../src/files/panels.js';
+import {createResourceActions} from '../../../src/forms/actions.js';
+import {createResourceEditor, type ResourceDraft} from '../../../src/forms/resource-editor.js';
+import {createOperation} from '../../../src/operation.js';
 import type {AppEnvironment, OwnedSurface} from './internal.js';
 import {createLoadingSession, type LoadingState, type LoadingSession} from './session.js';
 
-export type {ResourceDraft} from '../forms/resource-editor.js';
+export type {ResourceDraft} from '../../../src/forms/resource-editor.js';
 
 export type AppResourceKind = 'instructions' | 'skill' | 'template';
 export type ResourceActionResult = void | ActionResult | Promise<void | ActionResult>;

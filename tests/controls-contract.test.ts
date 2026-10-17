@@ -69,13 +69,14 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
 
 test('every small-control showroom example compiles through the actual public package',()=>{
   const files=new Map<string,string>();
-  for(const filename of ['primitive-cases.ts','control-page-cases.ts','navigation-cases.ts','files-cases.ts']){
+  for(const filename of ['primitive-cases.ts','control-page-cases.ts','public-cases.ts','foundation-cases.ts']){
     const source=ts.createSourceFile(filename,readFileSync(resolve('showroom',filename),'utf8'),ts.ScriptTarget.Latest,true);
     const visit=(node:ts.Node):void=>{
+      if(filename==='foundation-cases.ts'&&ts.isVariableDeclaration(node)&&ts.isIdentifier(node.name)&&node.name.text==='code'&&node.initializer&&ts.isStringLiteralLike(node.initializer))files.set(resolve('showroom','public-example-foundations.ts'),node.initializer.text);
       if(ts.isObjectLiteralExpression(node)){
         const value=(name:string)=>(node.properties.find(p=>ts.isPropertyAssignment(p)&&p.name.getText(source)===name) as ts.PropertyAssignment|undefined)?.initializer;
         const id=value('id'),code=value('code');
-        if(id&&code&&ts.isStringLiteralLike(id)&&ts.isStringLiteralLike(code)&&(filename==='primitive-cases.ts'||filename==='control-page-cases.ts'||['context-menu','copy-feedback'].includes(id.text)))files.set(resolve('showroom',`public-example-${id.text}.ts`),code.text);
+        if(id&&code&&ts.isStringLiteralLike(id)&&ts.isStringLiteralLike(code))files.set(resolve('showroom',`public-example-${id.text}.ts`),code.text);
       }
       ts.forEachChild(node,visit);
     };visit(source);

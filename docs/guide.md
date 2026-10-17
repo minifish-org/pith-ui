@@ -26,7 +26,9 @@ Call update on the existing control to preserve live input and selection. Input 
 
 A form owns native validation, primary submit action, pending, errors and optional cancel. Inputs remain in place, failure keeps content, duplicate submits are blocked, and external disabled/pending state cannot re-enable an in-flight action. A dialog owns its content; closing invalidates descendant form responses, reopening preserves the draft, and destroy releases the entire tree. Business identities and completed writes remain the controller's responsibility.
 
-For a whole Pith-shaped interface, optionally use pith-ui/app and APP.md. It is a larger composition, not a requirement for using the library. Internal product demonstrations do not grant access to unpublished factories. The default entry and app entry share private implementation rather than separate visual systems.
+Compose application pages locally from `createPane`, `createSplitPane`, `createStack`, `createList` and `createSlot`. A list uses stable keys and retains the corresponding controls; removed children are destroyed. Replacing a slot destroys its old content. Own independent dialogs through `mounted.attach(dialog)`, without accessing any generated DOM. `mounted.read().hasModal` describes local modal state.
+
+There is no app or whole-scene export, and the showroom does not expose internal implementations. Version 0.4 intentionally removes the previous app entry rather than preserving an alternate consumption route.
 
 See docs/examples.ts for strictly compiled public examples, API.md for signatures, and the showroom's base components for actual interaction. Test actual registry/tarball consumption; never confuse a local build with publication or human acceptance.
 

@@ -4,7 +4,7 @@ test.beforeEach(async ({page}) => {await page.goto('/tests/fixture.html');});
 
 test('Compact projects conversation and scoped availability onto the same retained action', async ({page}) => {
   const result = await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const actions: string[] = [], errors: string[] = [];
     const app = createApplication(document.body, {workspace: {onAction(action: string) {actions.push(action);}, onError(message: string) {errors.push(message);}}});
     const workspace = app.workspace, button = document.querySelector<HTMLButtonElement>('[data-sdk="compact"]')!;
@@ -43,7 +43,7 @@ test('Compact projects conversation and scoped availability onto the same retain
 
 test('Compact merges local pending with external restrictions, retries only on click and ignores disposal results', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     let calls = 0, complete: ((result: {ok: true} | {ok: false; error: string}) => void) | undefined;
     const errors: string[] = [];
     const app = createApplication(document.body, {workspace: {

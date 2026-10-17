@@ -22,6 +22,8 @@ if (undocumented.length) throw new Error(`Public factories missing from docs/cat
 if (symbols.some(symbol => ['reconcileViews', 'clearViews'].includes(symbol.getName()))) throw new Error('Internal HTML reconciliation must not be a public extension API');
 
 const cases = new Map<string, string>();
+const foundationSource=await readFile(join(root,'showroom/foundation-cases.ts'),'utf8');
+for(const match of foundationSource.slice(foundationSource.indexOf('const rules'),foundationSource.indexOf('export const foundationCases')).matchAll(/\['([a-z-]+)',/g))cases.set('foundation-'+match[1]!, 'foundation-cases.ts');
 let examples = 0;
 for (const filename of (await readdir(join(root, 'showroom'))).filter(name => name.endsWith('-cases.ts'))) {
   const body = await readFile(join(root, 'showroom', filename), 'utf8');

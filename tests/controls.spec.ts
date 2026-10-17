@@ -136,7 +136,7 @@ test('context menu anchors to a control and retains failed async actions without
 
 for(const item of ['controls-form-page','controls-actions-page'])test(`the ${item} showroom page composes small public controls`,async({page})=>{
   await page.goto(`/?item=${item}&theme=dark&width=800`);
-  await expect(page.locator('.gallery-docs')).toContainText('pith-ui · 公开受限接口');
+  await expect(page.locator('.gallery-docs')).toContainText('pith-ui · 正式受限积木');
   if(item==='controls-form-page'){
     await page.getByRole('combobox',{name:'模拟异步结果',exact:true}).click();await page.getByRole('option',{name:'失败 · 保留输入',exact:true}).click();
     const field=page.getByRole('textbox',{name:/^Connection name/});await field.fill('Owned draft');

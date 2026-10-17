@@ -1,5 +1,5 @@
 import {expect, test} from '@playwright/test';
-import type {Application, CustomConnectionSession, CustomConnectionState} from '../src/app/index.js';
+import type {Application, CustomConnectionSession, CustomConnectionState} from './internal/application/index.js';
 import type {CustomModelValue} from '../src/forms/custom-connection.js';
 
 interface Harness {
@@ -13,7 +13,7 @@ interface Harness {
 test.beforeEach(async ({page}) => {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async () => {
-    const entry = '../src/app/index.js';
+    const entry = './internal/application/index.js';
     const module = await import(entry);
     const defaults: unknown = Reflect.get(module, 'customModelDefaults');
     if (typeof defaults !== 'function') throw new Error('The application entry must export customModelDefaults');
@@ -104,7 +104,7 @@ test('separate application editors cannot leak edited defaults into one another'
   await page.getByLabel('Context tokens', {exact: true}).fill('64000');
   await page.evaluate(async () => {
     const h = (window as unknown as {customDefaultsTest: Harness}).customDefaultsTest;
-    const entry = '../src/app/index.js';
+    const entry = './internal/application/index.js';
     const {createApplication} = await import(entry);
     const mount = document.createElement('div');
     mount.id = 'second-app';

@@ -19,14 +19,11 @@ function assert(condition: unknown, message: string): asserts condition {if (!co
 interface Asset {path: string; bytes: number}
 export interface PackageConsumerVerification {
   exports: string[];
-  appExports: string[];
   consumerTypecheck: 'passed';
   consumerProductionBuild: 'passed';
-  genericConsumerProductionBuild: 'passed';
   referenceSha256: string;
   rejectedTypeCases: number;
   consumerAssets: Asset[];
-  genericConsumerAssets: Asset[];
 }
 
 async function assets(directory: string, prefix = ''): Promise<Asset[]> {
@@ -52,9 +49,9 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
     exports?: Record<string, string | {types?: string; import?: string}>;
   };
   assert(pkg.name === metadata.name && pkg.version === metadata.version, 'Installed package metadata differs');
-  for (const document of ['README.md', 'AI.md', 'API.md', 'APP.md', 'APP-API.md', 'LICENSE']) assert((await readFile(join(installed, document))).byteLength > 0, `Missing or empty package file: ${document}`);
+  for (const document of ['README.md', 'AI.md', 'API.md', 'LICENSE']) assert((await readFile(join(installed, document))).byteLength > 0, `Missing or empty package file: ${document}`);
   assert(pkg.dependencies && Object.values(pkg.dependencies).every(version => /^\d+\.\d+\.\d+$/.test(version)), 'Runtime dependencies must use exact versions');
-  for (const [entry, stem] of [['.', 'index'], ['./app', 'app/index']] as const) {
+  for (const [entry, stem] of [['.', 'index']] as const) {
     const target = pkg.exports?.[entry];
     assert(target && typeof target !== 'string' && target.types === `./dist/${stem}.d.ts` && target.import === `./dist/${stem}.js`, `Invalid independent public entry: ${entry}`);
     for (const extension of ['js', 'd.ts']) assert((await readFile(join(installed, `dist/${stem}.${extension}`))).byteLength > 0, `Missing or empty package file: dist/${stem}.${extension}`);
@@ -62,35 +59,17 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
   assert(pkg.exports?.['./styles.css'] === './dist/styles.css', 'Missing portable public stylesheet entry');
   const css = await readFile(join(installed, 'dist/styles.css'), 'utf8');
   assert(css.length > 0 && !/@import\s+['"]\.\//.test(css), 'Published CSS must be nonempty and contain no relative source imports');
+  assert(JSON.stringify(Object.keys(pkg.exports??{}).sort()) === JSON.stringify(['.','./styles.css']), 'Only components and CSS may be exported');
   const runtime = JSON.parse(await run(process.execPath, ['--input-type=module', '-e', `
-    const ui = await import('pith-ui'); const app = await import('pith-ui/app');
-    if (typeof app.createApplication !== 'function') throw new Error('Missing application factory');
-    if (Object.keys(app).some(name => name.startsWith('create') && name !== 'createApplication')) throw new Error('Low-level factories escaped through pith-ui/app');
-    if (['element','icon','createField','createWorkspaceShell','createConversationView','Generation','setAppearance','createCopyFeedback'].some(name=>name in ui)) throw new Error('Internal DOM/product factories must not be public');
-    console.log(JSON.stringify({generic: Object.keys(ui), app: Object.keys(app)}));
-  `], consumer)) as {generic: string[]; app: string[]};
-  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton']) assert(runtime.generic.includes(name), `Expected public export is missing: ${name}`);
-
-  const reference = await readFile(join(root, 'examples/application/main.ts'), 'utf8');
-  const ts = (await import(pathToFileURL(join(root, 'node_modules/typescript/lib/typescript.js')).href)).default as typeof import('typescript');
-  const parsed = ts.createSourceFile('application.ts', reference, ts.ScriptTarget.Latest, true);
-  let appImported = false, cssImported = false;
-  const modulePath = (node: import('typescript').Node): void => {
-    assert(ts.isStringLiteralLike(node) && ['pith-ui/app', 'pith-ui/styles.css'].includes(node.text), 'The complete application reference may import only pith-ui/app and pith-ui/styles.css');
-    if (node.text === 'pith-ui/app') appImported = true;
-    if (node.text === 'pith-ui/styles.css') cssImported = true;
-  };
-  const visit = (node: import('typescript').Node): void => {
-    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) modulePath(node.moduleSpecifier);
-    if (ts.isImportTypeNode(node)) {
-      assert(ts.isLiteralTypeNode(node.argument), 'Application reference type imports must use the approved public entry');
-      modulePath(node.argument.literal);
+    const ui = await import('pith-ui');
+    for(const path of ['pith-ui/app','pith-ui/internal','pith-ui/dist/controls.js']) {
+      try {await import(path); throw new Error('Private path accepted: '+path);}
+      catch(error) {if(error.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw error;}
     }
-    assert(!ts.isImportEqualsDeclaration(node) && !(ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || ts.isIdentifier(node.expression) && node.expression.text === 'require')), 'Dynamic and CommonJS reference imports are forbidden');
-    ts.forEachChild(node, visit);
-  };
-  visit(parsed);
-  assert(appImported && cssImported, 'The complete reference must consume both public app and stylesheet entries');
+    if (['element','icon','createField','createApplication','createWorkspaceShell','createConversationView','Generation','setAppearance','createCopyFeedback'].some(name=>name in ui)) throw new Error('Internal DOM/product factories must not be public');
+    console.log(JSON.stringify(Object.keys(ui)));
+  `], consumer)) as string[];
+  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
   const generic = `import {mount,createButton,createTextInput,createListSelect,createTextEditDialog,createForm,createStack,type ActionResult} from 'pith-ui';
 import 'pith-ui/styles.css';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
@@ -101,34 +80,18 @@ const editor=createTextEditDialog({title:'Edit',purpose:'pending-message',onSubm
 const open=createButton({label:'Edit',onAction:()=>editor.open({value:name.read()})});
 mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
 `;
+  const reference = generic;
   await writeFile(join(consumer, 'main.ts'), reference);
-  await writeFile(join(consumer, 'generic-consumer.ts'), generic);
-  for (const [source, target] of [['docs/examples.ts', 'public-examples.ts']] as const) await writeFile(join(consumer, target), (await readFile(join(root, source), 'utf8')).replaceAll("'../src/index.js'", "'pith-ui'"));
+  await writeFile(join(consumer, 'public-examples.ts'), (await readFile(join(root, 'docs/examples.ts'), 'utf8')).replaceAll("'../src/index.js'", "'pith-ui'"));
   const compilerOptions = {target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, noEmit: true, lib: ['ES2022', 'DOM', 'DOM.Iterable'], types: [], skipLibCheck: false, verbatimModuleSyntax: true};
-  await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({compilerOptions, include: ['main.ts', 'generic-consumer.ts', 'public-examples.ts']}, null, 2));
+  await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({compilerOptions, include: ['main.ts', 'public-examples.ts']}, null, 2));
   const compiler = join(root, 'node_modules/typescript/bin/tsc');
   await run(process.execPath, [compiler, '--project', join(consumer, 'tsconfig.json')], consumer);
-
-  const forbidden = [
-    ['app.element;', 'element'], ['app.workspace.element;', 'element'], ["app.workspace.part('composer');", 'part'],
-    ["createApplication(mount, {style: {padding: 8}});", 'style'], ["createApplication(mount, {className: 'custom'});", 'className'],
-    ["createApplication(mount, {render: () => document.createElement('div')});", 'render'], ['createApplication(mount, {children: document.body});', 'children'],
-    ["app.workspace.openMessageEditor({title: 'Edit', value: document.body});", 'HTMLElement'],
-  ];
-  for (const [source, diagnostic] of forbidden) {
-    await writeFile(join(consumer, 'rejected-consumer.ts'), `import {createApplication} from 'pith-ui/app';\ndeclare const mount: HTMLElement;\nconst app = createApplication(mount);\n${source}\n`);
-    await writeFile(join(consumer, 'rejected-tsconfig.json'), JSON.stringify({compilerOptions, include: ['rejected-consumer.ts']}));
-    let rejected = false;
-    try {await execute(process.execPath, [compiler, '--project', 'rejected-tsconfig.json'], {cwd: consumer, maxBuffer: 8 * 1024 * 1024});}
-    catch (error) {
-      const failure = error as {code?: unknown; stdout?: string; stderr?: string};
-      const output = `${failure.stdout ?? ''}\n${failure.stderr ?? ''}`;
-      assert(typeof failure.code === 'number' && output.includes('rejected-consumer.ts') && output.includes(diagnostic!), `Unexpected failure while checking forbidden public type: ${output}`);
-      rejected = true;
-    }
-    assert(rejected, `Packed public declarations accepted forbidden UI surface: ${source}`);
-  }
   const forbiddenControls = [
+    ["import {createApplication} from 'pith-ui/app';",'pith-ui/app'],
+    ["createPane({content:document.body});",'HTMLElement'],
+    ["createSlot({style:{padding:1}});",'style'],
+    ["createSplitPane({navigation:createText({text:'Nav'}),content:createText({text:'Body'}),width:320});",'width'],
     ["createButton({label:'Save',density:'compact'});",'density'],
     ["createButton({label:'Save',appearance:'secondary'});",'appearance'],
     ["createButton({label:'Save',style:{padding:8}});",'style'],
@@ -141,7 +104,7 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createTextEditDialog({rows:5});",'rows'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}
@@ -152,12 +115,9 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
   const vite = join(root, 'node_modules/vite/bin/vite.js');
   await writeFile(join(consumer, 'index.html'), html('main.ts'));
   await run(process.execPath, [vite, 'build', '--outDir', 'dist'], consumer);
-  await writeFile(join(consumer, 'index.html'), html('generic-consumer.ts'));
-  await run(process.execPath, [vite, 'build', '--outDir', 'generic-dist'], consumer);
-  await writeFile(join(consumer, 'index.html'), html('main.ts'));
-  const consumerAssets = await assets(join(consumer, 'dist')), genericConsumerAssets = await assets(join(consumer, 'generic-dist'));
-  for (const built of [consumerAssets, genericConsumerAssets]) assert(built.some(asset => asset.path.endsWith('.js') && asset.bytes > 0) && built.some(asset => asset.path.endsWith('.css') && asset.bytes > 0), 'Consumer production builds must contain JavaScript and CSS');
-  return {exports: runtime.generic, appExports: runtime.app, consumerTypecheck: 'passed', consumerProductionBuild: 'passed', genericConsumerProductionBuild: 'passed', referenceSha256: createHash('sha256').update(reference).digest('hex'), rejectedTypeCases: forbidden.length + forbiddenControls.length, consumerAssets, genericConsumerAssets};
+  const consumerAssets = await assets(join(consumer, 'dist'));
+  assert(consumerAssets.some(asset => asset.path.endsWith('.js') && asset.bytes > 0) && consumerAssets.some(asset => asset.path.endsWith('.css') && asset.bytes > 0), 'Consumer production build must contain JavaScript and CSS');
+  return {exports: runtime, consumerTypecheck: 'passed', consumerProductionBuild: 'passed', referenceSha256: createHash('sha256').update(reference).digest('hex'), rejectedTypeCases: forbiddenControls.length, consumerAssets};
 }
 
 interface Packed {filename: string; integrity: string; shasum: string; size: number; unpackedSize: number; files: Array<{path: string; size: number}>}
@@ -170,8 +130,9 @@ async function main(): Promise<void> {
   const [packed] = JSON.parse(await run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', evidence], root)) as Packed[];
   assert(packed, 'npm pack did not return a package');
   const paths = new Set(packed.files.map(file => file.path));
-  for (const expected of ['package.json', 'README.md', 'AI.md', 'API.md', 'APP.md', 'APP-API.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/app/index.js', 'dist/app/index.d.ts', 'dist/styles.css']) assert(paths.has(expected), `Missing published entry: ${expected}`);
+  for (const expected of ['package.json', 'README.md', 'AI.md', 'API.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/styles.css']) assert(paths.has(expected), `Missing published entry: ${expected}`);
   for (const path of paths) assert(!/^(?:src|showroom|tests|examples|node_modules|output)\//.test(path), `Development-only file entered the package: ${path}`);
+  for(const path of paths) assert(!/^dist\/app\//.test(path) && !/^APP(?:-API)?\.md$/.test(path),'Removed application artifact in package: '+path);
   const tarball = resolve(evidence, packed.filename), bytes = await readFile(tarball);
   const integrity = `sha512-${createHash('sha512').update(bytes).digest('base64')}`;
   assert(integrity === packed.integrity, 'Packed file integrity differs from npm output');
@@ -187,7 +148,7 @@ async function main(): Promise<void> {
   const result = {tarball, consumer, integrity, sha256: createHash('sha256').update(bytes).digest('hex'), compressedBytes: packed.size, unpackedBytes: packed.unpackedSize, files: packed.files, ...verification};
   const report = join(evidence, 'package-verification.json');
   await writeFile(report, JSON.stringify(result, null, 2));
-  console.log(JSON.stringify({report, tarball, consumer, compressedBytes: packed.size, unpackedBytes: packed.unpackedSize, exportCount: verification.exports.length, appExportCount: verification.appExports.length, consumerTypecheck: 'passed', consumerProductionBuild: 'passed'}, null, 2));
+  console.log(JSON.stringify({report, tarball, consumer, compressedBytes: packed.size, unpackedBytes: packed.unpackedSize, exportCount: verification.exports.length, consumerTypecheck: 'passed', consumerProductionBuild: 'passed'}, null, 2));
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) await main();

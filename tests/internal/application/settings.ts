@@ -1,14 +1,14 @@
-import {Lifetime,type ActionResult} from '../core.js';
-import {createOperation} from '../operation.js';
-import {adoptAction} from '../foundations.js';
-import {createProviderActions,type ProviderAction,type ProviderActionsState,type ProviderActionTarget} from '../forms/actions.js';
-import {createSettingsPanel,createMCPConnectionsPanel,createMCPConnectionList,createModelPicker} from '../forms/panels.js';
-import type {SettingsPanelState,SettingsDraft,SettingsProviderOption,SettingsCredentialView,MCPConnectionsState,MCPConnectionDraft,MCPEditorValue,MCPConnectionItem,MCPConnectionAction,MCPConnectionTarget,ModelPickerState} from '../forms/panels.js';
-import {createCustomConnectionEditor,type CustomConnectionState,type CustomConnectionDraft} from '../forms/custom-connection.js';
-import {createProviderLoginPanel,type ProviderLoginState} from '../forms/provider-login.js';
-import type {ModelSelection} from '../forms/model-editor.js';
-import {createUpdatePanel,type UpdatePanelState} from '../files/systems.js';
-import type {Appearance} from '../theme.js';
+import {Lifetime,type ActionResult} from '../../../src/core.js';
+import {createOperation} from '../../../src/operation.js';
+import {adoptAction} from '../../../src/foundations.js';
+import {createProviderActions,type ProviderAction,type ProviderActionsState,type ProviderActionTarget} from '../../../src/forms/actions.js';
+import {createSettingsPanel,createMCPConnectionsPanel,createMCPConnectionList,createModelPicker} from '../../../src/forms/panels.js';
+import type {SettingsPanelState,SettingsDraft,SettingsProviderOption,SettingsCredentialView,MCPConnectionsState,MCPConnectionDraft,MCPEditorValue,MCPConnectionItem,MCPConnectionAction,MCPConnectionTarget,ModelPickerState} from '../../../src/forms/panels.js';
+import {createCustomConnectionEditor,type CustomConnectionState,type CustomConnectionDraft} from '../../../src/forms/custom-connection.js';
+import {createProviderLoginPanel,type ProviderLoginState} from '../../../src/forms/provider-login.js';
+import type {ModelSelection} from '../../../src/forms/model-editor.js';
+import {createUpdatePanel,type UpdatePanelState} from '../../../src/files/systems.js';
+import type {Appearance} from '../../../src/theme.js';
 import type {AppEnvironment,HostResult,OwnedContent,OwnedSurface} from './internal.js';
 import {createLoadingSession,type LoadingState,type LoadingSession} from './session.js';
 

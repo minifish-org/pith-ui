@@ -1,5 +1,5 @@
 import {expect, test} from '@playwright/test';
-import type {Application, WorkspaceCallbacks} from '../src/app/index.js';
+import type {Application, WorkspaceCallbacks} from './internal/application/index.js';
 
 // Expanding a group is local presentation. Workspace selection belongs to the
 // picker session's onSelect callback rather than a second scene-level intent.
@@ -16,7 +16,7 @@ test.beforeEach(async ({page}) => {await page.goto('/tests/fixture.html');});
 
 for (const populated of [false, true]) test(`expanding ${populated ? 'a populated' : 'an empty'} application workspace emits no business intent`, async ({page}) => {
   await page.evaluate(async populated => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const events: string[] = [];
     const workspace: WorkspaceCallbacks & {onSelectWorkspace(id: string): void} = {
       onSelectWorkspace: id => events.push('workspace:' + id),
@@ -43,7 +43,7 @@ for (const populated of [false, true]) test(`expanding ${populated ? 'a populate
 
 test('specific conversation, new-conversation and picker actions retain their distinct semantic callbacks', async ({page}) => {
   await page.evaluate(async () => {
-    const entry = '/src/app/index.ts'; const {createApplication} = await import(entry);
+    const entry = '/tests/internal/application/index.ts'; const {createApplication} = await import(entry);
     const events: string[] = [];
     const app: Application = createApplication(document.body, {workspace: {
       onSelectConversation: (id: string) => events.push('conversation:' + id),

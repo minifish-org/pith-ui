@@ -4,3 +4,6 @@ export type { ConfirmationMessage, ActionResult, Appearance, Action, Intent, Ico
 export { customModelDefaults } from './forms/custom-connection.js';
 export { formatCost } from './files/systems.js';
 export { thinkingLabel } from './forms/model-editor.js';
+
+export {createSlot,createPane,createSplitPane,createList,createMarkdown,createDiff} from './controls.js';
+export type {SlotState,Slot,PaneState,SplitPaneState,SplitPane,ListItem,ListState,MarkdownState,MarkdownOptions,DiffState,MountState} from './controls.js';

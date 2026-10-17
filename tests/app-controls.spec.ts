@@ -3,7 +3,7 @@ import {expect,test} from '@playwright/test';
 test('optional app accepts a small owned dialog and shares theme, modal guards and cleanup',async({page})=>{
   await page.goto('/tests/fixture.html');
   await page.evaluate(async()=>{
-    const {createApplication}=await import('../src/app/index.js');const ui=await import('../src/index.js');
+    const {createApplication}=await import('./internal/application/index.js');const ui=await import('../src/index.js');
     const host=document.createElement('main');document.body.append(host);const app=createApplication(host,{appearance:'dark'});
     const dialog=ui.createConfirmDialog({title:'Small confirmation',message:'Only a small control',onConfirm:()=>({ok:true})});
     const attached=app.attachDialog(dialog);dialog.open();Object.assign(window,{controls:{app,dialog,attached}});
@@ -22,7 +22,7 @@ test('optional app accepts a small owned dialog and shares theme, modal guards a
 test('optional app rejects a non-dialog instead of allowing arbitrary UI insertion',async({page})=>{
   await page.goto('/tests/fixture.html');
   expect(await page.evaluate(async()=>{
-    const {createApplication}=await import('../src/app/index.js');const ui=await import('../src/index.js');const app=createApplication(document.body);
+    const {createApplication}=await import('./internal/application/index.js');const ui=await import('../src/index.js');const app=createApplication(document.body);
     const button=ui.createButton({label:'Not a dialog'});let rejected=false;
     try{app.attachDialog(button as unknown as Parameters<typeof app.attachDialog>[0]);}catch(error){rejected=error instanceof Error&&error.message==='Expected a modal dialog control.';}
     app.destroy();button.destroy();return rejected;
@@ -46,7 +46,7 @@ test('small confirmations render finite emphasized text safely and retain its no
 for(const kind of ['confirmation','message','pending-message'] as const) test(`small ${kind} retains the existing scene geometry`,async({page})=>{
   await page.goto('/tests/fixture.html');
   const result=await page.evaluate(async(kind)=>{
-    const {createApplication}=await import('../src/app/index.js');const ui=await import('../src/index.js');const host=document.createElement('main');document.body.append(host);
+    const {createApplication}=await import('./internal/application/index.js');const ui=await import('../src/index.js');const host=document.createElement('main');document.body.append(host);
     const app=createApplication(host);
     const old=kind==='confirmation'?app.workspace.openConfirmation({title:'Parity',action:'Remove',description:{before:'Remove example?'}},{onConfirm:()=>({ok:true})})
       :kind==='message'?app.workspace.openMessageEditor({title:'Parity',value:'Draft',submitLabel:'Save'}):app.workspace.openQueueEditor({title:'Parity',value:'Draft',submitLabel:'Save'});

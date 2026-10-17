@@ -151,7 +151,7 @@ test('attachment opening supports Enter and Space without scrolling or duplicati
 });
 
 test('attachment remove glyph is centered inside its circular button', async ({ page }) => {
-  await page.goto('/?item=attachments&theme=light');
+  await page.goto('/tests/internal/showroom.html?item=attachments&theme=light');
   const offset = await page.getByRole('button', { name: 'Remove 演示图片 1.png', exact: true }).evaluate(button => {
     const outer = button.getBoundingClientRect(), glyph = button.querySelector('svg')!.getBoundingClientRect();
     return { x: Math.abs(outer.x + outer.width / 2 - glyph.x - glyph.width / 2), y: Math.abs(outer.y + outer.height / 2 - glyph.y - glyph.height / 2) };
@@ -188,7 +188,7 @@ test('navigation exposes typed actions for creation, menus and the empty workspa
 });
 
 test('showroom measurement chooses a target without invoking its action', async ({ page }) => {
-  await page.goto('/?item=button&theme=light');
+  await page.goto('/tests/internal/showroom.html?item=button&theme=light');
   await page.getByRole('button', { name: '选择测量目标', exact: true }).click();
   await page.locator('.gallery-demo-host').getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(page.locator('.gallery-spec-values')).toContainText('CSS px');
@@ -196,14 +196,14 @@ test('showroom measurement chooses a target without invoking its action', async 
 });
 
 test('drop feedback example sends only through a simulation and retains its page', async ({ page }) => {
-  await page.goto('/?item=drop-feedback&theme=light');
+  await page.goto('/tests/internal/showroom.html?item=drop-feedback&theme=light');
   await page.locator('.gallery-demo-host').getByRole('button', { name: 'Send message', exact: true }).click();
   await expect(page).toHaveURL(/item=drop-feedback/);
   await expect(page.locator('.gallery-heading h2')).toHaveText('拖放反馈');
 });
 
 test('button showroom retains async outcome controls with the standard presentation', async ({ page }) => {
-  await page.goto('/?item=button&theme=light');
+  await page.goto('/tests/internal/showroom.html?item=button&theme=light');
   await expect(page.getByRole('combobox', { name: '密度', exact: true })).toHaveCount(0);
   const outcome = page.getByRole('combobox', { name: '模拟异步结果', exact: true });
   await expect(outcome).toBeVisible();

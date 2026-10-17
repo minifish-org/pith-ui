@@ -1,4 +1,4 @@
-import {createFeatureStatus} from '../forms/dialog-frame.js';
+import {createFeatureStatus} from '../../../src/forms/dialog-frame.js';
 import type {AppEnvironment} from './internal.js';
 
 export interface LoadingState {readonly error?: string}

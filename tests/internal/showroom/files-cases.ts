@@ -1,9 +1,9 @@
-import {createCopyButton,mount} from '../src/index.js';
+import {createCopyButton,mount} from '../../../src/index.js';
 import type { DemoContext, ShowcaseCase } from './types.js';
-import { createFileActions, createArtifactPanel, createResourcesPanel, createFilePreview } from '../src/files/panels.js';
-import { createCostLedger, createUpdatePanel, createCompletionNotices, createCopyFeedback, historyStatusMarkup, type CompletionNoticeDisplay } from '../src/files/systems.js';
-import { createButton } from '../src/primitives.js';
-import { createResourceActions } from '../src/forms/actions.js';
+import { createFileActions, createArtifactPanel, createResourcesPanel, createFilePreview } from '../../../src/files/panels.js';
+import { createCostLedger, createUpdatePanel, createCompletionNotices, createCopyFeedback, historyStatusMarkup, type CompletionNoticeDisplay } from '../../../src/files/systems.js';
+import { createButton } from '../../../src/primitives.js';
+import { createResourceActions } from '../../../src/forms/actions.js';
 
 let sequence = 0;
 const sampleFiles = [{ name: '报告 v1.md', path: 'output/报告 v1.md' }, { name: 'result.csv', path: 'output/result.csv' }];

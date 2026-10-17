@@ -1,10 +1,13 @@
 import * as primitive from './primitives.js';
-import { element, iconElement, setText } from './dom.js';
+import { element, iconElement, setText, focusableElements } from './dom.js';
 import { createCopyFeedback } from './files/systems.js';
 import { createOperation } from './operation.js';
 import { setAppearance } from './theme.js';
 import { createContextMenu as internalContextMenu } from './navigation/context-menu.js';
 import type { Appearance } from './theme.js';
+import { renderMarkdown } from './content/markdown.js';
+import { renderDiff } from './content/markdown.js';
+import { patchChildren } from './content/views.js';
 import type { ActionResult, UIAction, UIBlock } from './core.js';
 export type { ActionResult } from './core.js';
 export type { Appearance } from './theme.js';
@@ -36,13 +39,19 @@ function entry(control: Control): Entry {
 function nodes(children: readonly Control[] = []): HTMLElement[] {
     if (new Set(children).size !== children.length)
         throw new Error('A control cannot occur twice in a composition.');
-    return children.map(child => { const value = entry(child); if (value.owner)
-        throw new Error('A control already belongs to a composition or mount.'); return value.node; });
+    return children.map(child => {
+        const value = entry(child);
+        if (value.owner)
+            throw new Error('A control already belongs to a composition or mount.');
+        return value.node;
+    });
 }
 function own<State, Methods extends object = object>(block: UIBlock<State>, children: readonly Control[] = [], methods?: Methods, invalidate?: () => void): Control<State> & Methods {
     const value: Entry = { node: block.element, destroyed: false, children, invalidate };
-    const control = Object.freeze({ ...methods, update(state: Readonly<State>) { if (!value.destroyed)
-            block.update(state); }, destroy() {
+    const control = Object.freeze({ ...methods, update(state: Readonly<State>) {
+            if (!value.destroyed)
+                block.update(state);
+        }, destroy() {
             if (value.destroyed)
                 return;
             value.destroyed = true;
@@ -60,49 +69,95 @@ function own<State, Methods extends object = object>(block: UIBlock<State>, chil
         entry(child).owner = control;
     return control;
 }
-function invalidate(control: Control): void { const value = entries.get(control); if (!value || value.destroyed)
-    return; value.invalidate?.(); value.children.forEach(invalidate); }
+function invalidate(control: Control): void {
+    const value = entries.get(control);
+    if (!value || value.destroyed)
+        return;
+    value.invalidate?.();
+    value.children.forEach(invalidate);
+}
 function check(value: object, allowed: readonly string[]): void {
     for (const key of Object.keys(value))
         if (!allowed.includes(key))
             throw new Error(`Unsupported Pith UI option: ${key}`);
 }
-function icon(name: IconName | undefined): void { if (name !== undefined && !iconNames.has(name))
-    throw new Error(`Unknown Pith UI icon: ${name}`); }
-function mounted(control: Control): void { if (!entry(control).node.isConnected)
-    throw new Error('Mount the control before opening it.'); }
+function icon(name: IconName | undefined): void {
+    if (name !== undefined && !iconNames.has(name))
+        throw new Error(`Unknown Pith UI icon: ${name}`);
+}
+function mounted(control: Control): void {
+    if (!entry(control).node.isConnected)
+        throw new Error('Mount the control before opening it.');
+}
 /** Private bridge for library compositions; deliberately absent from index.ts. */
 export function assertModalControl(control: Control): void {
     if (!(entry(control).node instanceof HTMLDialogElement))
         throw new Error('Expected a modal dialog control.');
 }
+export interface MountState {
+    readonly appearance: Appearance;
+    readonly hasModal: boolean;
+}
 export interface MountOptions {
     readonly appearance?: Appearance;
+    readonly onStateChange?: (state: MountState) => void;
 }
 export interface Mount {
+    read(): MountState;
+    attach(dialog: Dialog | TextEditDialog | ConfirmDialog): {
+        destroy(): void;
+    };
     setAppearance(appearance: Appearance): void;
     destroy(): void;
 }
 const mounts = new WeakMap<HTMLElement, object>();
 /** The only DOM handoff. A mount owns its complete child tree. */
 export function mount(host: HTMLElement, control: Control, options: MountOptions = {}): Mount {
-    check(options, ['appearance']);
+    check(options, ['appearance', 'onStateChange']);
     if (!(host instanceof HTMLElement))
         throw new Error('Expected an HTMLElement mount.');
     if (mounts.has(host))
         throw new Error('This host already owns a Pith UI mount.');
     const [node] = nodes([control]), owner = {};
-    let destroyed = false;
+    let destroyed = false, appearance = options.appearance ?? 'system';
+    const peers = new Set<Control>();
+    const read = (): MountState => Object.freeze({ appearance, hasModal: !destroyed && !!host.querySelector('dialog[open]') });
+    let lastModal = false;
+    const changed = () => { if (destroyed)
+        return; const state = read(); if (lastModal !== state.hasModal) {
+        lastModal = state.hasModal;
+        options.onStateChange?.(state);
+    } };
+    const observer = new MutationObserver(changed);
     const previous = { scope: host.classList.contains('pui'), appearance: host.getAttribute('data-appearance') };
     entry(control).owner = owner;
     mounts.set(host, owner);
     host.append(node);
-    setAppearance(host, options.appearance ?? 'system');
-    return Object.freeze({ setAppearance(value: Appearance) { if (!destroyed)
-            setAppearance(host, value); }, destroy() {
+    setAppearance(host, appearance);
+    observer.observe(host, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
+    return Object.freeze({ read, attach(dialog: Dialog | TextEditDialog | ConfirmDialog) {
+            if (destroyed)
+                throw new Error('Mount has been destroyed.');
+            const [node] = nodes([dialog]);
+            assertModalControl(dialog);
+            entry(dialog).owner = owner;
+            peers.add(dialog);
+            host.append(node);
+            let released = false;
+            return { destroy() { if (released)
+                    return; released = true; peers.delete(dialog); dialog.destroy(); changed(); } };
+        }, setAppearance(value: Appearance) { if (!destroyed) {
+            appearance = value;
+            setAppearance(host, value);
+            options.onStateChange?.(read());
+        } }, destroy() {
             if (destroyed)
                 return;
             destroyed = true;
+            observer.disconnect();
+            for (const peer of peers)
+                peer.destroy();
+            peers.clear();
             try {
                 control.destroy();
             }
@@ -135,8 +190,12 @@ function actionControl(options: ButtonOptions, kind: 'button' | 'icon' | 'text')
     icon(options.icon);
     if (kind === 'icon' && !options.icon)
         throw new Error('An icon button requires an icon.');
-    const validate = (state: ButtonState) => { check(state, buttonKeys); icon(state.icon); if (kind === 'icon' && !state.icon)
-        throw new Error('An icon button requires an icon.'); };
+    const validate = (state: ButtonState) => {
+        check(state, buttonKeys);
+        icon(state.icon);
+        if (kind === 'icon' && !state.icon)
+            throw new Error('An icon button requires an icon.');
+    };
     const stateOf = (state: ButtonState): primitive.ButtonState => ({ label: state.label, intent: state.intent, icon: state.icon, title: state.title, disabled: state.disabled, pending: state.pending });
     const initial = stateOf(options);
     const block = kind === 'icon' ? primitive.createIconButton({ ...initial, icon: options.icon!, onAction: options.onAction, onError: options.onError }) : kind === 'text' ? primitive.createTextAction({ ...initial, onAction: options.onAction, onError: options.onError }) : primitive.createButton({ ...initial, onAction: options.onAction, onError: options.onError });
@@ -256,8 +315,12 @@ function choice(options: SelectOptions | MultiSelectOptions, list: boolean): Sel
     const block = primitive.createSelect({ ...options, size: list ? 5 : undefined, multiple: !!multiple,
         onChange: multiple ? undefined : (options as SelectOptions).onChange,
         onValuesChange: multiple ? (options as MultiSelectOptions).onChange : undefined });
-    const update = (state: Readonly<SelectState>) => { check(state, selectKeys); for (const item of state.options)
-        check(item, ['value', 'label', 'disabled']); block.update(state); };
+    const update = (state: Readonly<SelectState>) => {
+        check(state, selectKeys);
+        for (const item of state.options)
+            check(item, ['value', 'label', 'disabled']);
+        block.update(state);
+    };
     return multiple ? own({ ...block, update }, [], { read: block.getValues, reset: block.resetValues, focus: block.focus }) : own({ ...block, update }, [], { read: block.getValue, reset: block.reset, focus: block.focus });
 }
 export function createSelect(options: SelectOptions): Select { return choice(options, false) as Select; }
@@ -294,14 +357,17 @@ export interface StackState {
 export function createStack(options: ChildrenOptions & StackState): Control<StackState> {
     check(options, ['children', 'label']);
     const node = element('div', 'pui-control-stack', ...nodes(options.children));
-    const update = (state: Readonly<StackState>) => { check(state, ['label']); if (state.label) {
-        node.setAttribute('role', 'group');
-        node.setAttribute('aria-label', state.label);
-    }
-    else {
-        node.removeAttribute('role');
-        node.removeAttribute('aria-label');
-    } };
+    const update = (state: Readonly<StackState>) => {
+        check(state, ['label']);
+        if (state.label) {
+            node.setAttribute('role', 'group');
+            node.setAttribute('aria-label', state.label);
+        }
+        else {
+            node.removeAttribute('role');
+            node.removeAttribute('aria-label');
+        }
+    };
     update({ label: options.label });
     return own({ element: node, update, destroy() { } }, options.children);
 }
@@ -445,12 +511,19 @@ export function createForm(options: FormOptions): Form {
     let pending = false, destroyed = false;
     const update = (next: Readonly<FormState>) => { check(next, ['submitLabel', 'disabled', 'pending', 'error']); state = next; fields.disabled = !!(next.disabled || next.pending || pending); error.update({ message: next.error ?? '', tone: 'error' }); submit.update({ label: next.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled, pending: !!(next.pending || pending) }); };
     const operation = createOperation({ unavailable: () => destroyed || !!(state.disabled || state.pending), onPending(value) { pending = value; update(state); }, onError(message) { update({ ...state, error: message }); } });
-    const onSubmit = (event: SubmitEvent) => { event.preventDefault(); operation.run(options.onSubmit, result => { if (!result.ok)
-        update({ ...state, error: result.error }); }); };
+    const onSubmit = (event: SubmitEvent) => {
+        event.preventDefault();
+        operation.run(options.onSubmit, result => {
+            if (!result.ok)
+                update({ ...state, error: result.error });
+        });
+    };
     form.addEventListener('submit', onSubmit);
     update(state);
-    return own<FormState, Pick<Form, 'submit'>>({ element: form, update, destroy() { destroyed = true; operation.destroy(); form.removeEventListener('submit', onSubmit); error.destroy(); submit.destroy(); cancel?.destroy(); actions.destroy(); } }, options.children, { submit() { if (!destroyed)
-            form.requestSubmit(); } }, () => operation.invalidate());
+    return own<FormState, Pick<Form, 'submit'>>({ element: form, update, destroy() { destroyed = true; operation.destroy(); form.removeEventListener('submit', onSubmit); error.destroy(); submit.destroy(); cancel?.destroy(); actions.destroy(); } }, options.children, { submit() {
+            if (!destroyed)
+                form.requestSubmit();
+        } }, () => operation.invalidate());
 }
 export interface DialogState {
     readonly title: string;
@@ -506,8 +579,9 @@ export interface TextEditDialog extends Control<TextEditState> {
 const textEditKeys = ['title', 'description', 'closeDisabled', 'error', 'disabled', 'pending', 'inputDisabled', 'note', 'submitLabel'];
 export function createTextEditDialog(options: TextEditOptions = {}): TextEditDialog {
     check(options, [...textEditKeys, 'purpose', 'label', 'onInput', 'onSubmit', 'onClose']);
-    if (options.purpose && options.purpose !== 'message' && options.purpose !== 'pending-message') throw new Error('Unknown editor purpose.');
-    const block = primitive.createTextEditDialog({...options, label: options.label ?? (options.purpose === 'pending-message' ? 'Pending message' : 'Message')});
+    if (options.purpose && options.purpose !== 'message' && options.purpose !== 'pending-message')
+        throw new Error('Unknown editor purpose.');
+    const block = primitive.createTextEditDialog({ ...options, label: options.label ?? (options.purpose === 'pending-message' ? 'Pending message' : 'Message') });
     block.control.rows = options.purpose === 'pending-message' ? 5 : 8;
     let control: TextEditDialog;
     control = own<TextEditState, Pick<TextEditDialog, 'open' | 'close' | 'read' | 'focus' | 'isOpen'>>({ ...block, update(state: Readonly<TextEditState>) { check(state, textEditKeys); block.update(state); } }, [], { open(input: {
@@ -570,8 +644,12 @@ export function createConfirmDialog(options: ConfirmState & {
     };
     const block = primitive.createConfirmDialog({ ...presentation(options), onConfirm: options.onConfirm, onClose: options.onClose, unavailable: options.unavailable });
     let control: ConfirmDialog;
-    control = own<ConfirmState, Pick<ConfirmDialog, 'open' | 'close' | 'isOpen' | 'refreshAvailability'>>({ ...block, update(state: Readonly<ConfirmState>) { check(state, confirmKeys); block.update(presentation(state)); } }, [], { open(state?: ConfirmState) { if (state)
-            check(state, confirmKeys); mounted(control); block.open(state ? presentation(state) : undefined); }, close: block.close, isOpen: () => block.element.open, refreshAvailability: block.refreshAvailability });
+    control = own<ConfirmState, Pick<ConfirmDialog, 'open' | 'close' | 'isOpen' | 'refreshAvailability'>>({ ...block, update(state: Readonly<ConfirmState>) { check(state, confirmKeys); block.update(presentation(state)); } }, [], { open(state?: ConfirmState) {
+            if (state)
+                check(state, confirmKeys);
+            mounted(control);
+            block.open(state ? presentation(state) : undefined);
+        }, close: block.close, isOpen: () => block.element.open, refreshAvailability: block.refreshAvailability });
     return control;
 }
 export interface PopoverState {
@@ -610,12 +688,15 @@ export interface Menu extends Control<MenuState> {
     close(): void;
     isOpen(): boolean;
 }
-function menuItems(items: readonly MenuItem[]): void { if (new Set(items.map(item => item.id)).size !== items.length)
-    throw new Error('Menu IDs must be unique.'); for (const item of items) {
-    check(item, ['id', 'label', 'disabled', 'intent', 'checked', 'onAction']);
-    if (item.intent && item.intent !== 'neutral' && item.intent !== 'danger')
-        throw new Error('Menu intent must be neutral or danger.');
-} }
+function menuItems(items: readonly MenuItem[]): void {
+    if (new Set(items.map(item => item.id)).size !== items.length)
+        throw new Error('Menu IDs must be unique.');
+    for (const item of items) {
+        check(item, ['id', 'label', 'disabled', 'intent', 'checked', 'onAction']);
+        if (item.intent && item.intent !== 'neutral' && item.intent !== 'danger')
+            throw new Error('Menu intent must be neutral or danger.');
+    }
+}
 export function createMenu(options: MenuState & {
     readonly onError?: (message: string) => void;
 }): Menu {
@@ -649,10 +730,12 @@ export function createContextMenu(options: ContextMenuState & {
             if (!action || action.disabled || state.disabled || pending || !open)
                 return;
             block.element.focus({ preventScroll: true });
-            operation.run(action.onAction, result => { if (!result || result.ok)
-                close();
-            else
-                fail(result.error); });
+            operation.run(action.onAction, result => {
+                if (!result || result.ok)
+                    close();
+                else
+                    fail(result.error);
+            });
         } });
     const render = () => { block.update({ label: state.label, items: state.items.map(item => ({ id: item.id, label: item.label, danger: item.intent === 'danger', disabled: !!(state.disabled || item.disabled || pending) })) }); block.element.append(feedback.element); };
     const fail = (message: string) => { feedback.update({ message, tone: 'error' }); options.onError?.(message); };
@@ -660,10 +743,27 @@ export function createContextMenu(options: ContextMenuState & {
     const close = () => { open = false; operation.invalidate(); block.close(true); };
     render();
     let control: ContextMenu;
-    control = own<ContextMenuState, Pick<ContextMenu, 'open' | 'close' | 'isOpen'>>({ element: block.element, update(next) { check(next, ['label', 'items', 'disabled']); menuItems(next.items); state = next; if (next.disabled)
-            close(); render(); }, destroy() { open = false; operation.destroy(); feedback.destroy(); block.destroy(); } }, [], { open(trigger) { mounted(control); if (state.disabled)
-            return; operation.invalidate(); feedback.update({ message: '', tone: 'error' }); const source = entry(trigger).node; const button = source instanceof HTMLButtonElement ? source : source.querySelector('button'); if (!button)
-            throw new Error('Context menu trigger must contain an action control.'); open = true; block.open(button, { label: state.label, items: state.items.map(item => ({ id: item.id, label: item.label, danger: item.intent === 'danger', disabled: item.disabled })) }); render(); }, close, isOpen: () => open });
+    control = own<ContextMenuState, Pick<ContextMenu, 'open' | 'close' | 'isOpen'>>({ element: block.element, update(next) {
+            check(next, ['label', 'items', 'disabled']);
+            menuItems(next.items);
+            state = next;
+            if (next.disabled)
+                close();
+            render();
+        }, destroy() { open = false; operation.destroy(); feedback.destroy(); block.destroy(); } }, [], { open(trigger) {
+            mounted(control);
+            if (state.disabled)
+                return;
+            operation.invalidate();
+            feedback.update({ message: '', tone: 'error' });
+            const source = entry(trigger).node;
+            const button = source instanceof HTMLButtonElement ? source : source.querySelector('button');
+            if (!button)
+                throw new Error('Context menu trigger must contain an action control.');
+            open = true;
+            block.open(button, { label: state.label, items: state.items.map(item => ({ id: item.id, label: item.label, danger: item.intent === 'danger', disabled: item.disabled })) });
+            render();
+        }, close, isOpen: () => open });
     return control;
 }
 export interface CopyButtonState {
@@ -679,9 +779,218 @@ export function createCopyButton(options: CopyButtonState & {
     let state: CopyButtonState = { value: options.value, label: options.label, disabled: options.disabled };
     const status = element('span', 'pui-sr-only');
     status.setAttribute('role', 'status');
-    const button = primitive.createButton({ label: options.label ?? 'Copy', disabled: options.disabled, onAction: () => feedback.copy(button.element, async () => { const result = await options.onCopy(state.value); if (!result.ok)
-            throw new Error(result.error); }, 'Copied.'), onError: options.onError });
+    const button = primitive.createButton({ label: options.label ?? 'Copy', disabled: options.disabled, onAction: () => feedback.copy(button.element, async () => {
+            const result = await options.onCopy(state.value);
+            if (!result.ok)
+                throw new Error(result.error);
+        }, 'Copied.'), onError: options.onError });
     const feedback = createCopyFeedback({ status, isDisabled: () => !!state.disabled, onError: error => options.onError?.(error instanceof Error ? error.message : String(error)) });
     const root = element('span', 'pui-control-copy', button.element, status);
     return own({ element: root, update(next: Readonly<CopyButtonState>) { check(next, ['value', 'label', 'disabled']); state = next; button.update({ label: next.label ?? 'Copy', disabled: next.disabled }); }, destroy() { feedback.destroy(); button.destroy(); } });
 }
+/** Fixed layout pieces contain only other library controls; no application state. */
+export interface SlotState {
+    readonly hidden?: boolean;
+}
+export interface Slot extends Control<SlotState> {
+    set(content?: Control): void;
+}
+export function createSlot(options: SlotState & {
+    readonly content?: Control;
+} = {}): Slot {
+    check(options, ['hidden', 'content']);
+    const children: Control[] = options.content ? [options.content] : [];
+    const node = element('div', 'pui-slot', ...nodes(children));
+    let control: Slot;
+    const update = (state: Readonly<SlotState>) => { check(state, ['hidden']); node.hidden = !!state.hidden; };
+    update({ hidden: options.hidden });
+    control = own<SlotState, Pick<Slot, 'set'>>({ element: node, update, destroy() { } }, children, { set(content) {
+            entry(control);
+            if (content === children[0])
+                return;
+            if (content)
+                nodes([content]);
+            children.splice(0).forEach(child => child.destroy());
+            node.replaceChildren();
+            if (content) {
+                children.push(content);
+                entry(content).owner = control;
+                node.append(entry(content).node);
+            }
+        } });
+    return control;
+}
+export interface PaneState {
+    readonly label?: string;
+}
+export function createPane(options: PaneState & {
+    readonly header?: Control;
+    readonly content: Control;
+    readonly footer?: Control;
+}): Control<PaneState> {
+    check(options, ['label', 'header', 'content', 'footer']);
+    const children = [...(options.header ? [options.header] : []), options.content, ...(options.footer ? [options.footer] : [])];
+    nodes(children);
+    const region = (name: string, child: Control) => element('div', name, entry(child).node);
+    const node = element('section', 'pui-pane', ...(options.header ? [region('pui-pane-header', options.header)] : []), region('pui-pane-content', options.content), ...(options.footer ? [region('pui-pane-footer', options.footer)] : []));
+    const update = (state: Readonly<PaneState>) => { check(state, ['label']); if (state.label)
+        node.setAttribute('aria-label', state.label);
+    else
+        node.removeAttribute('aria-label'); };
+    update({ label: options.label });
+    return own({ element: node, update, destroy() { } }, children);
+}
+export interface SplitPaneState {
+    readonly navigationOpen?: boolean;
+}
+export interface SplitPane extends Control<SplitPaneState> {
+    setNavigationOpen(open: boolean): void;
+}
+export function createSplitPane(options: SplitPaneState & {
+    readonly navigation: Control;
+    readonly content: Control;
+    readonly onNavigationToggle?: (open: boolean) => void;
+}): SplitPane {
+    check(options, ['navigationOpen', 'navigation', 'content', 'onNavigationToggle']);
+    const children = [options.navigation, options.content];
+    nodes(children);
+    const nav = element('aside', 'pui-split-navigation', entry(options.navigation).node);
+    const body = element('main', 'pui-split-content', entry(options.content).node);
+    const scrim = element('button', 'pui-split-scrim');
+    scrim.type = 'button';
+    scrim.setAttribute('aria-label', 'Close navigation');
+    const node = element('div', 'pui-split', nav, scrim, body), narrow = matchMedia('(max-width:760px)');
+    let destroyed = false, open = !!options.navigationOpen, trigger: HTMLElement | null = null;
+    const sync = () => { node.classList.toggle('pui-navigation-open', open); nav.inert = narrow.matches && !open; body.inert = narrow.matches && open; };
+    const update = (state: Readonly<SplitPaneState>) => { check(state, ['navigationOpen']); open = !!state.navigationOpen; sync(); };
+    const setNavigationOpen = (next: boolean) => {
+        if (destroyed)
+            return;
+        if (next && !open && document.activeElement instanceof HTMLElement && document.activeElement !== document.body)
+            trigger = document.activeElement;
+        open = next;
+        sync();
+        if (narrow.matches) {
+            if (open)
+                focusableElements(nav)[0]?.focus({ preventScroll: true });
+            else if (trigger?.isConnected)
+                trigger.focus({ preventScroll: true });
+        }
+        options.onNavigationToggle?.(open);
+    };
+    const rememberTrigger = (event: PointerEvent) => { const target = event.target instanceof Element ? event.target.closest<HTMLElement>('button,input,select,textarea,a[href],[tabindex]') : null; if (!open && target && body.contains(target))
+        trigger = target; };
+    const close = () => setNavigationOpen(false);
+    const keyboard = (event: KeyboardEvent) => {
+        if (!narrow.matches || !open)
+            return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            close();
+        }
+        else if (event.key === 'Tab') {
+            const targets = [...focusableElements(nav), scrim], current = targets.indexOf(document.activeElement as HTMLElement);
+            event.preventDefault();
+            targets[(current + (event.shiftKey ? -1 : 1) + targets.length) % targets.length]?.focus();
+        }
+    };
+    scrim.addEventListener('click', close);
+    node.addEventListener('pointerdown', rememberTrigger);
+    node.addEventListener('keydown', keyboard);
+    narrow.addEventListener('change', sync);
+    sync();
+    return own<SplitPaneState, Pick<SplitPane, 'setNavigationOpen'>>({ element: node, update, destroy() { destroyed = true; scrim.removeEventListener('click', close); node.removeEventListener('pointerdown', rememberTrigger); node.removeEventListener('keydown', keyboard); narrow.removeEventListener('change', sync); } }, children, { setNavigationOpen });
+}
+export interface ListItem {
+    readonly key: string;
+    readonly content: Control;
+}
+export interface ListState {
+    readonly items: readonly ListItem[];
+}
+export function createList(options: ListState): Control<ListState> {
+    check(options, ['items']);
+    const children: Control[] = [], node = element('div', 'pui-control-list');
+    let control: Control<ListState>;
+    let current = new Map<string, Control>();
+    const update = (state: Readonly<ListState>) => {
+        check(state, ['items']);
+        const keys = new Set<string>(), seen = new Set<Control>(), next = new Map<string, Control>();
+        for (const item of state.items) {
+            check(item, ['key', 'content']);
+            if (keys.has(item.key) || seen.has(item.content))
+                throw new Error('List keys and controls must be unique.');
+            keys.add(item.key);
+            seen.add(item.content);
+            if (current.get(item.key) !== item.content)
+                nodes([item.content]);
+            next.set(item.key, item.content);
+        }
+        for (const [key, child] of current)
+            if (next.get(key) !== child)
+                child.destroy();
+        const focused = document.activeElement instanceof HTMLElement && node.contains(document.activeElement) ? document.activeElement : null;
+        let cursor = node.firstChild;
+        for (const child of next.values()) {
+            const value = entry(child);
+            value.owner = control;
+            if (value.node !== cursor)
+                node.insertBefore(value.node, cursor);
+            cursor = value.node.nextSibling;
+        }
+        if (focused?.isConnected && document.activeElement !== focused)
+            focused.focus({ preventScroll: true });
+        children.splice(0, children.length, ...next.values());
+        current = next;
+    };
+    control = own({ element: node, update, destroy() { } }, children);
+    update(options);
+    return control;
+}
+export interface MarkdownState {
+    readonly text: string;
+}
+export interface MarkdownOptions extends MarkdownState {
+    readonly onLink?: (url: string) => ActionResult | void | Promise<ActionResult | void>;
+    readonly onCopy?: (text: string) => ActionResult | Promise<ActionResult>;
+    readonly onError?: (message: string) => void;
+}
+export function createMarkdown(options: MarkdownOptions): Control<MarkdownState> {
+    check(options, ['text', 'onLink', 'onCopy', 'onError']);
+    const node = element('div', 'pui-markdown');
+    let text: string | undefined;
+    let destroyed = false;
+    const status = element('span', 'pui-sr-only');
+    status.setAttribute('role', 'status');
+    const feedback = createCopyFeedback({ status, isDisabled: () => destroyed, onError: error => options.onError?.(error instanceof Error ? error.message : String(error)) });
+    const update = (state: Readonly<MarkdownState>) => { check(state, ['text']); if (text === state.text)
+        return; text = state.text; const source = element('template'); source.innerHTML = renderMarkdown(text); if (!options.onCopy)
+        source.content.querySelectorAll<HTMLButtonElement>('[data-copy-code]').forEach(button => { button.hidden = true; }); patchChildren(node, source.content); node.append(status); };
+    const click = (event: MouseEvent) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const copy = target?.closest<HTMLButtonElement>('[data-copy-code]');
+        if (copy && options.onCopy) {
+            event.preventDefault();
+            const code = copy.closest('.pui-code-block')?.querySelector('code')?.textContent ?? '';
+            void feedback.copy(copy, async () => { const result = await options.onCopy!(code); if (!result.ok)
+                throw new Error(result.error); }, 'Copied.');
+            return;
+        }
+        const link = target?.closest<HTMLAnchorElement>('a[href]');
+        if (link && options.onLink) {
+            event.preventDefault();
+            Promise.resolve().then(() => options.onLink!(link.getAttribute('href') ?? '')).then(result => { if (!destroyed && result && !result.ok)
+                options.onError?.(result.error); }).catch(error => { if (!destroyed)
+                options.onError?.(error instanceof Error ? error.message : String(error)); });
+        }
+    };
+    node.addEventListener('click', click);
+    update({ text: options.text });
+    return own({ element: node, update, destroy() { destroyed = true; feedback.destroy(); node.removeEventListener('click', click); } });
+}
+export interface DiffState {
+    readonly text: string;
+}
+export function createDiff(options: DiffState): Control<DiffState> { check(options, ['text']); const node = element('pre', 'pui-sdk-pre pui-diff'); let text = ''; const update = (state: Readonly<DiffState>) => { check(state, ['text']); if (text === state.text)
+    return; text = state.text; const source = element('template'); source.innerHTML = renderDiff(text); patchChildren(node, source.content); }; update(options); return own({ element: node, update, destroy() { } }); }
