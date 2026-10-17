@@ -3,7 +3,7 @@ import {createButtonPart,createCalloutPart,createStackPart,createTextPart,type B
 
 export type Result = {ok: true}|{ok: false;error: string};
 export type FailureAction = 'continue'|'settings'|'diagnostics';
-export interface TaskFailureState {visible: boolean;message: string;advice: string;canContinue: boolean;workspaceId?: string}
+export interface TaskFailureState {visible: boolean;message: string;advice: string;canContinue: boolean;workspaceId?: string;disabled?: boolean}
 export interface TaskFailureCallbacks {onAction?(action: FailureAction,workspaceId?: string): void|Result|Promise<void|Result>;onError?(message: string): void}
 export interface TaskFailureComposition {readonly part: CalloutPart;update(state: Readonly<TaskFailureState>): void;destroy(): void}
 
@@ -24,7 +24,8 @@ export function composeTaskFailure(initial: Readonly<TaskFailureState>,callbacks
     }
     message.update({text: next.message});advice!.update({text: next.advice});
     const desired: Array<{action: FailureAction;label: string}> = [{action: next.canContinue ? 'continue' : 'settings',label: next.canContinue ? 'Review and continue' : 'Check model settings'},{action: 'diagnostics',label: 'Save diagnostics'}];
-    for (const view of desired) if (!rows.has(view.action)) rows.set(view.action,createButtonPart({label: view.label,variant: 'secondary',onAction() {if (alive) void run(view.action);}}));
+    for (const view of desired) if (!rows.has(view.action)) rows.set(view.action,createButtonPart({label: view.label,variant: 'secondary',onAction() {if (alive && (view.action !== 'continue' || !state.disabled)) void run(view.action);}}));
+    for (const view of desired) rows.get(view.action)!.update({label: view.label,variant: 'secondary',disabled: view.action === 'continue' && !!next.disabled});
     actions!.replace(desired.map(view => rows.get(view.action)!));for (const action of rows.keys()) if (!desired.some(view => view.action === action)) rows.delete(action);
   };
   update(initial);return {part,update,destroy() {alive = false;part.destroy();rows.clear();}};

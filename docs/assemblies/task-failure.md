@@ -65,13 +65,17 @@ export function attachTaskFailure(
 ```
 
 `update` receives visibility, message, advice, `canContinue` and the current
-workspace ID. Continue sends that workspace ID from the visible state at the
+workspace ID. Its local `disabled` flag gates only Continue. In the complete
+Desk composition, host busy disables Continue; otherwise the selected workspace
+is checked against `availability.workspaces`. A missing workspace uses the old
+`availability.active` fallback. Settings and Diagnostics retain their original
+availability even when recovery is disabled. Continue sends that workspace ID from the visible state at the
 time of activation. Settings and Diagnostics send only their action. Preserve
 the controller's original selected-workspace and activity checks before
 recovery or export; a UI action does not grant permission to act on a different
 workspace.
 
-The original actions leave business pending/availability with the controller.
+The original actions leave business pending and availability state with the controller.
 The composition therefore adds no local pending lock: a diagnostics callback
 may remain unresolved while the button stays enabled. The existing activity
 guard decides whether a repeated request is valid. Failed results and thrown
@@ -89,7 +93,7 @@ idempotent, and an unattached composition should be destroyed when discarded.
 ```sh
 npm run check
 node scripts/verify-assemblies.ts
-npx playwright test tests/parts-task-failure.spec.ts
+npx playwright test tests/parts-task-failure.spec.ts tests/parts-desk.spec.ts
 ```
 
 The permanent suite passed 42 checks across Chromium and WebKit. It compares
@@ -103,3 +107,8 @@ retention, updated workspace scope, the old controller-owned pending/error
 behavior, sibling preservation and parent teardown. Direct part cases preserve
 caller ownership on rejected constructors, reject presentation escapes and
 verify disposal once before a child password is wiped.
+
+The full-application regression additionally compares nine availability states
+against the old app in both engines: selected/other workspace runs, clearing a
+run, global activity, host busy, missing workspace/active fallback and changing
+the selected workspace. Settings and Diagnostics stay enabled in that matrix.

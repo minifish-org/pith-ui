@@ -70,7 +70,8 @@ export function mountDesk(mount: HTMLElement,options: DeskOptions = {}) {
   const busy = createStatusActionsPart({children: [],hidden: true}),error = createFeedbackPart({presentation: 'banner',tone: 'error',message: '',hidden: true});
   const pending = composePendingMessages({items: [],running: false,busy: false},{onQueueAction: callbacks.onQueueAction});
   const approval = composeApproval({approval: null},{onAction: callbacks.onApproval});
-  const failure = composeTaskFailure({visible: false,message: '',advice: '',canContinue: false},{onAction: action => callbacks.onAction?.(action),onError: report});
+  let failureState: Parameters<typeof composeTaskFailure>[0] = {visible: false,message: '',advice: '',canContinue: false};
+  const failure = composeTaskFailure(failureState,{onAction: action => callbacks.onAction?.(action),onError: report});
   const emptyRuntime: RuntimeState = {visible: false,summary: '',duration: '',speed: '',inputTokens: '',outputTokens: '',cacheRead: '',cacheWrite: '',contextTokens: '',contextWindow: '',compactions: '',toolFailures: '',recordedCost: '',latestCost: ''};
   const ledger = composeCostLedger(),runtime = composeRuntime(emptyRuntime,{costLedger: ledger.part,onCostsChange: callbacks.onCostsChange});
   const notices = composeCompletionNotices([],{onOpen: callbacks.onCompletionOpen,onDismiss: callbacks.onCompletionDismiss});
@@ -109,6 +110,7 @@ export function mountDesk(mount: HTMLElement,options: DeskOptions = {}) {
   }
   const compactDisabled = () => !!availability.busy || !!availability.active || working || !activeId || !currentMessages.length;
   const syncFrame = () => {frameState = {...frameState,availability,compactDisabled: compactDisabled()};frame.update(frameState);};
+  const syncFailure = () => failure.update({...failureState,disabled: !!availability.busy || (failureState.workspaceId ? !!availability.workspaces?.includes(failureState.workspaceId) : !!availability.active)});
   const syncComposer = () => composer.updateComposer({...composerState,model: {...composerModel,disabled: composerModel.disabled || !!availability.global || !!availability.busy}});
   function openEditor(slot: 'message'|'queue',initial: TextEditorState & {value: string},actions: Parameters<typeof composeTextEditor>[1] = {}) {
     let state = initial;
@@ -128,8 +130,8 @@ export function mountDesk(mount: HTMLElement,options: DeskOptions = {}) {
     updateConversation(state: Readonly<ConversationBodyState>) {if (disposed) return;if (state.id !== activeId) {viewer.close();runtime.resetCosts();ledger.clear();}activeId = state.id;currentMessages = state.messages;working = state.working;reader.update(state);welcome.update({...welcomeState,hidden: !!state.messages.length});syncFrame();},
     updateWelcome(state: Readonly<WelcomeState>) {if (!disposed) {welcomeState = state;welcome.update({...state,hidden: !!currentMessages.length});}},
     updateMessageAvailability(state: typeof messageAvailability) {if (!disposed) {messageAvailability = {...state};reader.updateAvailability(state);}},
-    updateAvailability(state: Readonly<DeskAvailability>) {if (!disposed) {availability = state;composer.updateAvailability(state);syncComposer();syncFrame();artifacts.update({...artifactsState,disabled: !!artifactsState.disabled || !!state.busy || state.conversations?.includes(artifactsState.ownerId)},artifactsCallbacks);}},
-    updatePending: pending.update,updateApproval: approval.update,updateFailure: failure.update,updateRuntime: runtime.update,updateTiming: runtime.updateTiming,
+    updateAvailability(state: Readonly<DeskAvailability>) {if (!disposed) {availability = state;composer.updateAvailability(state);syncComposer();syncFailure();syncFrame();artifacts.update({...artifactsState,disabled: !!artifactsState.disabled || !!state.busy || state.conversations?.includes(artifactsState.ownerId)},artifactsCallbacks);}},
+    updatePending: pending.update,updateApproval: approval.update,updateFailure(state: Readonly<Parameters<typeof composeTaskFailure>[0]>) {if (!disposed) {failureState = state;syncFailure();}},updateRuntime: runtime.update,updateTiming: runtime.updateTiming,
     updateNotices: notices.update,
     readCosts: runtime.readCosts,resetCosts() {if (!disposed) {runtime.resetCosts();ledger.clear();}},
     updateCosts(state: {visible: boolean;error?: string;loading?: boolean;report?: CostLedgerState}) {if (disposed) return;runtime.updateCostsVisible(state.visible);if (state.error) ledger.setError(state.error);else if (state.loading) ledger.loading();else if (state.report) ledger.update(state.report);},

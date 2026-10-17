@@ -127,7 +127,10 @@ message or an explicit hidden flag. It occupies its original panels position.
 `updateAvailability` projects the host mutation and the existing scoped run
 state. Navigation menus use their own conversation/workspace ID. An unrelated
 idle conversation remains editable while another conversation runs. Global
-model selection and Compact retain their original constraints. Message action
+model selection and Compact retain their original constraints. Task recovery
+uses its current workspace ID against running workspaces, falling back to the
+active scope when that ID is absent; host busy also disables Continue.
+Settings and Diagnostics are not gated by that recovery scope. Message action
 availability remains the separate `updateMessageAvailability` snapshot;
 global/active running state does not invent a prohibition on historical copies.
 The old copy controller's busy option affects its pending/restoration state,
