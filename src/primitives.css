@@ -2,7 +2,7 @@
 .pui .pui-control-stack, .pui .pui-control-form-fields { display: grid; gap: var(--pui-space-md); min-width: 0; }
 .pui .pui-control-form-fields { border: 0; margin: 0; padding: 0; }
 .pui .pui-control-text > :is(p,h3,pre) { overflow-wrap: anywhere; }
-.pui .pui-control-text > :is(h3,pre), .pui .pui-control-text:not(.pui-disclosure-readout .pui-control-text[data-role="body"]) > p { margin: 0; }
+.pui .pui-control-text > :is(h3,pre), .pui .pui-control-text:not(:where(.pui-disclosure-readout .pui-control-text[data-role="body"],.pui-dialog-form .pui-dialog-body .pui-control-text[data-role="body"]:not(.pui-confirm *,.pui-table *))) > p { margin: 0; }
 .pui .pui-control-text pre { white-space: pre-wrap; }
 .pui .pui-control-copy { display: inline-flex; }
 .pui .pui-owned-controls { display: contents; }
@@ -603,13 +603,13 @@
 /* Small modal controls preserve the published form flow; native fieldsets still
    merge disabled state while their children participate in the document flow. */
 .pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-field-label { font-size:var(--pui-text-medium);line-height:var(--pui-line-height); }
-.pui :is(.pui-form-dialog,.pui-form-inline) { display:block; }
-.pui :is(.pui-form-dialog,.pui-form-inline)>.pui-control-form-fields { display:contents; }
-.pui :is(.pui-form-dialog,.pui-form-inline)>.pui-control-form-fields>.pui-field { margin:var(--pui-space-lg) 0 var(--pui-space-sm); }
-.pui :is(.pui-form-dialog,.pui-form-inline) .pui-control:not(textarea),.pui :is(.pui-form-dialog,.pui-form-inline) .pui-select-trigger { border-radius:7px; }
-.pui .pui-form-dialog>.pui-control-form-fields>.pui-label-hidden { margin-top:var(--pui-space-sm); }
+.pui .pui-form-dialog,.pui .pui-dialog-form .pui-form-inline { display:block; }
+.pui .pui-form-dialog>.pui-control-form-fields,.pui .pui-dialog-form .pui-form-inline>.pui-control-form-fields { display:contents; }
+.pui .pui-form-dialog .pui-field,.pui .pui-dialog-form .pui-form-inline .pui-field { margin:var(--pui-space-lg) 0 var(--pui-space-sm); }
+.pui .pui-form-dialog .pui-control:not(textarea),.pui .pui-form-dialog .pui-select-trigger,.pui .pui-dialog-form .pui-form-inline .pui-control:not(textarea),.pui .pui-dialog-form .pui-form-inline .pui-select-trigger { border-radius:7px; }
+.pui .pui-form-dialog .pui-field.pui-label-hidden { margin-top:var(--pui-space-sm); }
 .pui .pui-form-dialog>.pui-actions { margin-top:var(--pui-space-lg);padding-top:var(--pui-space-lg);border-top:1px solid var(--pui-border); }
-.pui .pui-form-inline>.pui-actions { justify-content:flex-start;margin:var(--pui-space-md) 0 0;padding:0;border:0; }
+.pui .pui-dialog-form .pui-form-inline>.pui-actions { justify-content:flex-start;margin:var(--pui-space-md) 0 0;padding:0;border:0; }
 .pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-button:not(.pui-icon-button,.pui-text-action,.pui-action-picker,.pui-action-suggestion,.pui-list-row-select) { font-weight:var(--pui-weight-strong);border-radius:7px; }
 .pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-button:not(.pui-primary,.pui-danger,.pui-warning-confirm,.pui-icon-button,.pui-text-action,.pui-action-picker,.pui-action-suggestion,.pui-list-row-select) { background:var(--pui-surface-subtle); }
 .pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-button:not(.pui-primary,.pui-danger,.pui-warning-confirm,.pui-icon-button,.pui-text-action,.pui-action-picker,.pui-action-suggestion,.pui-list-row-select):hover:not(:disabled) { background:var(--pui-surface-hover); }
@@ -634,8 +634,8 @@
 .pui .pui-section-model>.pui-control-stack { display:block; }
 .pui .pui-section-model .pui-field { margin:0 0 var(--pui-space-md); }
 .pui .pui-section-model .pui-field-label { color:var(--pui-muted);font-weight:var(--pui-weight-regular); }
-.pui :is(.pui-form-dialog,.pui-form-inline) .pui-checkbox { margin:var(--pui-space-lg) 0;align-items:center; }
-.pui :is(.pui-form-dialog,.pui-form-inline) .pui-checkbox input { margin:0; }
+.pui .pui-form-dialog .pui-checkbox,.pui .pui-dialog-form .pui-form-inline .pui-checkbox { margin:var(--pui-space-lg) 0;align-items:center; }
+.pui .pui-form-dialog .pui-checkbox input,.pui .pui-dialog-form .pui-form-inline .pui-checkbox input { margin:0; }
 .pui .pui-section-model .pui-checkbox { margin:var(--pui-space-lg) 0 var(--pui-space-md); }
 .pui .pui-section-model .pui-disclosure-inline { position:static;top:auto;margin:var(--pui-space-lg) 0 0;padding:var(--pui-space-md) 0;border-radius:0;border-top:1px solid var(--pui-border);border-bottom:1px solid var(--pui-border); }
 .pui .pui-section-model .pui-disclosure-inline>summary { padding:0;min-height:0;font-size:var(--pui-text-small); }
