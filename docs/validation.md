@@ -28,6 +28,8 @@ Focus checks verify the absence of focus outlines, glows and border-color highli
 
 Maintained visual comparison is separate: `node scripts/visual.ts` checks 46 PNGs: 30 historical behavior-fixture images across five compositions, two themes and three viewports, plus 16 public composition examples including a narrow viewport. It requires the recorded macOS/Apple Silicon environment; Linux CI does not compare Mac system-font pixels. Only explicit `node scripts/visual.ts --update` records candidate baseline changes. See `visual-baselines/README.md`. No image update implies human acceptance.
 
+When the catalog grows, the existing example comparisons first assert the new navigation labels and then normalize only those added catalog links, version and count to the accepted documentation metadata. Demo content, measurements and component pixels remain untouched; catalog additions do not justify replacing the example baselines.
+
 ## Shared behavior matrix
 
 | Area | Essential scenarios |
@@ -61,6 +63,8 @@ The showroom labels simulated data and actions. It does not log credentials or s
 ## Product comparison and resource budget
 
 For a new consumer extraction, preserve the prior correct version as a reproducible baseline. Use the same fixtures, themes, viewport and timing on both sides. A useful screenshot pair should compare the same UI state rather than unrelated screens.
+
+The previous published library implementation and the consumer's actual call sites determine the layout contract. Read their templates, CSS and state updates together: preserve parent/child structure, grouping and ordering, width constraints, scroll ownership, responsive breakpoints and icon artwork. Transfer these rules into small constrained controls and consumer composition. Derive layout assertions from that source; screenshots verify the resulting output. Do not infer placement from a screenshot or tune arbitrary offsets until an image appears similar.
 
 For Pith Desk's initial extraction, the maintainer explicitly revised production JS+CSS growth from 15% to at most 25% on 2026-10-16 after reviewing the measured tradeoff. Median warmed CPU/retained JS-heap growth remains at most 20% for input and streaming across five paired runs. Report native process memory separately and state how shared pages are counted. The library CI cannot measure the consumer's native host by itself.
 
