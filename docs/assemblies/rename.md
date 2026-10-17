@@ -21,17 +21,22 @@ lifecycle. Label, input and feedback remain separate native elements; there is
 no wrapper around each control. The library decides every presentation rule.
 
 ```ts
-import {mountRename, type RenameAssembly} from '../../examples/assemblies/rename.js';
+import {composeRename} from '../../examples/assemblies/rename.js';
+import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
 
-export function openRename(mount: HTMLElement): RenameAssembly {
-  return mountRename(mount, {id: 'conversation-a', title: 'Project notes'}, {
+export function openRename(mount: HTMLElement, applicationBody: Part) {
+  const assembly = composeRename({id: 'conversation-a', title: 'Project notes'}, {
     async onSubmit({id, title}) {
       // Connect the application's existing rename write here. This example
       // deliberately does not perform a business write.
       return id && title ? {ok: true} : {ok: false, error: 'A title is required.'};
     },
     onClose() { /* Release this opening from the application's owner. */ },
-  }, {appearance: 'light'});
+  });
+  const root = createStackPart({children: [applicationBody, assembly.part]});
+  const application = mountParts(mount, root, {appearance: 'light'});
+  assembly.open();
+  return {assembly, application};
 }
 ```
 
@@ -52,11 +57,21 @@ Cancel, Escape, close, and destroy retire pending outcomes, preserve `read()`'s
 last draft, restore the opener and notify `onClose` once. Destruction is
 idempotent. A late failed result cannot recreate controls or show feedback.
 
+`composeRename` constructs an unmounted opaque `DialogPart`; it cannot append
+itself or open until its owner mounts it. Include that part directly in the
+application tree, then call `open()`. Only the outer `MountedParts` owns
+appearance; `application.setAppearance('dark')` updates the live dialog without
+resetting its draft or focus. `mountRename` remains a standalone demonstration
+adapter. A parent's destruction invokes the dialog's `onDispose` before child
+controls are released, so this local assembly captures its last draft and
+retires pending outcomes. Destroying an unopened composition is silent.
+
 `tests/parts-rename.spec.ts` compares the actual old application's dialog in
 both appearances and browser engines, including long literal content, errors,
 disabled state and narrow/short viewports. Presentation comparisons use the
 same native application parent: WebKit's CSSOM automatic minimum serialization
 depends on its flex context even for top-layer dialogs. Draft, reset,
 validation, pending and disposal tests also run with an ordinary standalone
-mount. The complete application shell and shared live appearance owner require
-their separate assembly proof before Desk migration.
+mount. `tests/parts-navigation-composition.spec.ts` verifies direct ownership,
+live appearance and parent disposal. The complete application shell still
+requires its separate assembly proof before Desk migration.
