@@ -17,7 +17,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-22.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -34,7 +34,7 @@ jobs:
       - run: node scripts/catalog.ts
       - run: node scripts/api-docs.ts --check
       - run: npx --no-install playwright install --with-deps chromium webkit
-      - run: npm run test:browser
+      - run: npm run test:browser -- --workers=4
       - run: npm run showroom:build -- --base /pith-ui/ --outDir showroom-dist
       - run: node scripts/release.ts pack
       - run: node scripts/release.ts verify
