@@ -46,7 +46,9 @@ const chooseTarget = createButton({ label: '选择测量目标', onAction: () =>
 specs.insertBefore(chooseTarget.element, specBody);
 const related = element('div', 'gallery-related');
 const code = element('code'); const codePre = element('pre', 'gallery-code', code);
-const docs = element('section', 'gallery-docs', element('h2', '', '使用示例'), element('p', '', '示例展示公开 API。请求、目标校验、草稿、凭证和原生能力由应用提供。'), codePre, element('h3', '', '关联积木'), related);
+const codeHeading = element('h2', '', '使用示例');
+const codeContract = element('p');
+const docs = element('section', 'gallery-docs', codeHeading, codeContract, codePre, element('h3', '', '关联积木'), related);
 const actions = element('div', 'gallery-live-actions');
 const replay = createButton({ label: '重播 / 重新创建', onAction: () => { if (mounted[0]?.replay) mounted.forEach(item => item.replay?.()); else mountPreview(); applyMotion(); } });
 const destroy = createButton({ label: '销毁实例', onAction: () => { disposePreview(); preview.replaceChildren(emptyPreview); measure(); } });
@@ -192,6 +194,10 @@ function render(): void {
   const selected = catalog.find(item => item.id === state.item)!;
   heading.replaceChildren(element('p', 'gallery-breadcrumb', `${layerNames[selected.layer]} / ${selected.category} / ${selected.id}`), element('h2', '', selected.title), element('p', '', selected.description));
   code.textContent = selected.code;
+  codeHeading.textContent = selected.entry === 'internal' ? '库内实现片段' : '使用示例';
+  codeContract.textContent = selected.entry === 'internal'
+    ? '此项展示库内组合实现，不是默认入口的公开 API。复用小积木请查看基础组件；完整应用示例使用可选的 pith-ui/app。'
+    : `${selected.entry} · 公开受限接口。内容、状态和业务回调由使用者提供，字体、间距和交互由库管理。`;
   related.replaceChildren();
   const parents = catalog.filter(item => item.related?.includes(selected.id));
   for (const item of [...new Set([...(selected.related ?? []), ...parents.map(item => item.id)])].map(id => catalog.find(item => item.id === id)).filter(item => !!item)) {

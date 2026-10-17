@@ -1,4 +1,10 @@
 /* All selectors belong to Pith UI; no document-wide resets. */
+.pui .pui-control-stack, .pui .pui-control-form-fields { display: grid; gap: var(--pui-space-md); min-width: 0; }
+.pui .pui-control-form-fields { border: 0; margin: 0; padding: 0; }
+.pui .pui-control-text > :is(p,h3,pre) { margin: 0; overflow-wrap: anywhere; }
+.pui .pui-control-text pre { white-space: pre-wrap; }
+.pui .pui-control-copy { display: inline-flex; }
+.pui .pui-owned-controls { display: contents; }
 .pui .pui-button, .pui .pui-control, .pui .pui-checkbox, .pui .pui-dialog, .pui .pui-notice, .pui .pui-form-section, .pui .pui-list-row, .pui .pui-disclosure, .pui .pui-popover, .pui .pui-collection, .pui .pui-status, .pui .pui-progress {
   box-sizing: border-box;
   font-family: var(--pui-font-ui);

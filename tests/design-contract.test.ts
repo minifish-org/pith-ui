@@ -96,13 +96,24 @@ test('public component APIs keep density semantic and do not expose numeric styl
   const densities: Record<Density,true> = {normal:true,compact:true}; assert.deepEqual(Object.keys(densities),['normal','compact']);
   const exports = readFileSync(join(root,'src/index.ts'),'utf8');
   const violations: string[] = [];
-  for (const match of exports.matchAll(/export \* from '\.\/([^']+)\.js'/g)) {
+  for (const match of exports.matchAll(/export(?: \*| (?:type )?\{[^}]+\}) from '\.\/([^']+)\.js'/g)) {
     const file=join(root,'src',match[1]+'.ts'),source=ts.createSourceFile(file,readFileSync(file,'utf8'),ts.ScriptTarget.Latest,true);
     const check = (node:ts.Node):void => {if(ts.isPropertySignature(node) && ['fontSize','lineHeight','gap','fontFamily','fontWeight','letterSpacing'].includes(node.name.getText(source).replace(/^['"]|['"]$/g,''))) violations.push(`${relative(root,file)}: ${node.name.getText(source)}`);ts.forEachChild(node,check);};
     for (const statement of source.statements) if (ts.canHaveModifiers(statement) && ts.getModifiers(statement)?.some(modifier=>modifier.kind===ts.SyntaxKind.ExportKeyword)) {
       if(ts.isInterfaceDeclaration(statement)||ts.isTypeAliasDeclaration(statement)) check(statement);
       else if(ts.isFunctionDeclaration(statement)) statement.parameters.forEach(check);
     }
+  }
+  assert.deepEqual(violations,[]);
+});
+
+test('small-control padding and margins use the fixed spacing scale', () => {
+  const css=readFileSync(join(root,'src/primitives.css'),'utf8').replace(/\/\*[\s\S]*?\*\//g,'');
+  const violations:string[]=[];
+  for(const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g))for(const declaration of rule[2].matchAll(/((?:padding|margin)(?:-[\w-]+)?)\s*:\s*([^;{}]+)(?:;|$)/g)){
+    if(rule[1].includes('.pui-sr-only')&&declaration[2].trim()==='-1px')continue;
+    const value=declaration[2].trim().replace(/var\(\s*(--[\w-]+)\s*\)/g,'var($1)');
+    if(!value.split(/\s+/).every(part=>part==='0'||(declaration[1].startsWith('margin')&&part==='auto')||token(part,spaceTokens)))violations.push(`${rule[1].trim()}: ${declaration[1]}: ${value}`);
   }
   assert.deepEqual(violations,[]);
 });

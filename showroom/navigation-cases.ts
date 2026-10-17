@@ -1,3 +1,4 @@
+import {createContextMenu as createControlMenu,createButton as createControlButton,createStack,mount} from '../src/index.js';
 import {createWorkspaceNavigation, createWorkspacePicker, createRenameConversation} from '../src/navigation/navigation.js';
 import {createContextMenu} from '../src/navigation/context-menu.js';
 import {createApprovalPanel} from '../src/tasks/approval.js';
@@ -26,9 +27,15 @@ export const navigationCases:ShowcaseCase[]=[
     },
   },
   {
-    id:'context-menu',title:'上下文菜单与键盘导航',layer:'blocks',category:'应用与导航',description:'菜单定位不越出窗口；支持方向键、Home/End、Escape 和返回触发按钮。',states:['normal','disabled','long'],related:['workspace-navigation','menu'],
-    code:`const menu = createContextMenu({ onAction: item => handle(item.action) });\ndocument.body.append(menu.element);\n// Button actions align with the button's lower edge and flip near viewport edges.\nmenu.open(trigger, { label: 'Conversation actions', items: [{ label: 'Rename', action: 'rename' }, { label: 'Delete', action: 'delete', danger: true }] });\n// A context menu on a blank canvas may explicitly use a pointer point:\n// menu.open(focusSource, state, { point: { x: event.clientX, y: event.clientY } });`,
-    mount(context){const element=document.createElement('div');const menu=createContextMenu({onAction:item=>{context.log(`菜单操作：${item.action}`);menu.close(true);}});const open=()=>menu.open(button.element,{label:'演示会话操作',items:[{label:long(context,'Rename conversation'),action:'rename',disabled:disabled(context)},{label:'Export Markdown',action:'export'},{label:'Delete conversation',action:'delete',danger:true}]});const button=createButton({label:'打开会话菜单',onAction:open});element.append(button.element,menu.element);return{element,replay:open,destroy(){menu.destroy();button.destroy();element.remove();}};},
+    id:'context-menu',title:'上下文菜单与键盘导航',layer:'components',category:'浮层',description:'只接受库内触发积木；菜单贴近触发按钮，复用固定样式与键盘行为，异步失败保留菜单。',states:['normal','disabled','long'],related:['workspace-navigation','menu'],
+    code:`import {mount,createContextMenu,createButton,createStack} from 'pith-ui';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nconst menu=createContextMenu({label:'Actions',items:[{id:'rename',label:'Rename',onAction:()=>({ok:true})}]});\nconst trigger=createButton({label:'Actions',onAction:()=>menu.open(trigger)});\nmount(host,createStack({children:[trigger,menu]}));`,
+    mount(context){
+      const element=document.createElement('div');
+      const menu=createControlMenu({label:'演示会话操作',items:[{id:'rename',label:long(context,'Rename conversation'),disabled:disabled(context),onAction:()=>context.action()},{id:'export',label:'Export Markdown',onAction:()=>context.action()},{id:'delete',label:'Delete conversation',intent:'danger',onAction:()=>context.action()}],onError:message=>context.log(message)});
+      const open=()=>menu.open(button);
+      const button=createControlButton({label:'打开会话菜单',onAction:open});
+      const mounted=mount(element,createStack({children:[button,menu]}));return{element,replay:open,destroy:mounted.destroy};
+    },
   },
   {
     id:'workspace-picker',title:'工作区选择与添加',layer:'blocks',category:'应用与导航',description:'选择已有目录或填写路径。原生文件夹选择及业务创建通过宿主连接。',states:['normal','error','disabled','empty','long'],related:['workspace-navigation','text-input'],

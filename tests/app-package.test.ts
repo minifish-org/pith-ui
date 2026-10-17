@@ -82,8 +82,8 @@ test('the complete maintained reference compiles and builds through only install
   assert.ok(assets.some(name => name.endsWith('.js')) && assets.some(name => name.endsWith('.css')), 'The application consumer production build must include JS and CSS.');
 });
 
-test('the installed generic root retains its maintained examples and callback compatibility under strict declarations', () => {
-  for (const [source, target] of [['docs/examples.ts', 'generic-examples.ts'], ['tests/callback-compatibility.ts', 'callback-compatibility.ts']]) {
+test('the installed default entry strictly compiles its small-control compositions', () => {
+  for (const [source, target] of [['docs/examples.ts', 'generic-examples.ts']]) {
     const file = join(consumer, target!);
     writeFileSync(file, readFileSync(join(root, source!), 'utf8').replaceAll("'../src/index.js'", "'pith-ui'"));
     assert.deepEqual(diagnosticText(compile(file)), []);

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import packageMetadata from '../package.json' with { type: 'json' };
+import {catalog} from '../showroom/catalog.js';
 
 const pages = ['workspace-chat', 'workspace-reading', 'workspace-approval', 'settings-login-page', 'resources-files-page'] as const;
 const sizes = [{ width: 900, height: 600 }, { width: 1280, height: 800 }, { width: 1440, height: 900 }] as const;
@@ -16,7 +17,7 @@ for (const item of pages) for (const theme of ['light', 'dark'] as const) for (c
     await page.goto(`/?item=${item}&theme=${theme}&state=normal&width=${viewport.width}&compare=none&motion=reduced`);
     await expect(page.locator('.gallery-demo-host')).toBeVisible();
     await expect(page.locator('.gallery-version')).toHaveText(packageMetadata.version);
-    await expect(page.locator('.gallery-count')).toHaveText('78 项 · 从完整界面逐层查看');
+    await expect(page.locator('.gallery-count')).toHaveText(`${catalog.length} 项 · 从完整界面逐层查看`);
     await expect(page.locator('.gallery-navigation button[data-item="application-reference"]')).toHaveCount(1);
     const applicationLink = page.locator('.gallery-related a[href*="item=application-reference"]');
     await expect(applicationLink).toHaveCount(item === 'workspace-reading' ? 0 : 1);
@@ -44,5 +45,23 @@ for (const item of pages) for (const theme of ['light', 'dark'] as const) for (c
     // Reduced motion is already selected. Chromium's animation fast-forward
     // during a full-page capture can transiently reflow and clamp nested scrolls.
     await expect(page).toHaveScreenshot(`${item}-${theme}-${viewport.width}x${viewport.height}.png`, { fullPage: true, animations: 'allow' });
+  });
+}
+
+for(const item of ['controls-form-page','controls-actions-page'])for(const theme of ['light','dark'] as const)for(const viewport of [...sizes,{width:390,height:844}]){
+  test(`${item} ${theme} ${viewport.width}x${viewport.height}`,async({page})=>{
+    await page.setViewportSize(viewport);await page.emulateMedia({colorScheme:theme,reducedMotion:'reduce'});
+    const errors:string[]=[];page.on('pageerror',error=>errors.push(error.message));
+    await page.goto(`/?item=${item}&theme=${theme}&width=${viewport.width}&motion=reduced`);
+    await expect(page.locator('.gallery-docs')).toContainText('pith-ui · 公开受限接口');
+    await expect(page.locator('.gallery-version')).toHaveText(packageMetadata.version);
+    await expect(page.locator('.gallery-count')).toHaveText(`${catalog.length} 项 · 从完整界面逐层查看`);
+    await page.locator('.gallery-version').evaluate(node=>{node.textContent='0.3.0';});
+    await page.locator('.gallery-count').evaluate(node=>{node.textContent='87 项 · 从完整界面逐层查看';});
+    await page.evaluate(async()=>{await document.fonts.ready;});
+    await expect(page.locator('.gallery-spec-values')).toContainText('CSS px');
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
+    expect(errors).toEqual([]);
+    await expect(page).toHaveScreenshot(`${item}-${theme}-${viewport.width}x${viewport.height}.png`,{fullPage:true,animations:'allow'});
   });
 }

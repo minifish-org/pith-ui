@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => { await page.goto('/tests/fixture.html'); })
 test('primary hover and selected rows use the same theme semantics as product controls', async ({ page }) => {
   for (const theme of ['light', 'dark'] as const) {
     await page.evaluate(async theme => {
-      const path = '/src/index.ts'; const { createButton, createListRow, setAppearance } = await import(path);
+      const path = '/src/internal-components.ts'; const { createButton, createListRow, setAppearance } = await import(path);
       document.body.replaceChildren(); setAppearance(document.body, theme);
       const button = createButton({ label: 'Primary', intent: 'primary' }); const row = createListRow({ title: 'Selected', selected: true }); document.body.append(button.element, row.element);
     }, theme);
@@ -35,7 +35,7 @@ test('permission dropdown anchors to the complete control rather than just its t
 
 test('keyboard focus remains on controls without an outline or glow', async ({ page }) => {
   await page.evaluate(async () => {
-    const path = '/src/index.ts'; const ui = await import(path);
+    const path = '/src/internal-components.ts'; const ui = await import(path);
     const blocks = [ui.createButton({ label: 'Action' }), ui.createIconButton({ label: 'Icon action', icon: 'plus' }), ui.createTextInput({ label: 'Text' }), ui.createSearchInput({ label: 'Search' }), ui.createNumberInput({ label: 'Number' }), ui.createTextArea({ label: 'Multiline' }), ui.createCheckbox({ label: 'Enabled' }), ui.createSelect({ label: 'Choice', options: [{ value: 'a', label: 'A' }] }), ui.createDisclosure({ title: 'Details', content: document.createTextNode('Content') })];
     for (const block of blocks) document.body.append(block.element);
     const legacy = document.createElement('div'); legacy.className = 'pui-modal'; legacy.innerHTML = '<button class="pui-secondary-button">Product action</button><input aria-label="Product input"><textarea aria-label="Product text"></textarea>'; document.body.append(legacy);

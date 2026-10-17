@@ -2,7 +2,7 @@
 
 Read `AI.md`, the relevant entry in `docs/catalog.md`, and the actual implementation before changing a block. Use `rg` and targeted reads. Prefer RTK when available for supported terminal commands.
 
-- Pith Desk and approved application consumers follow `APP.md`: UI imports are only `pith-ui/app` and `pith-ui/styles.css`, with one checked mount and pure semantic scenes/sessions. Preserve the existing controllers. A missing port needs a regression and a narrow library change; do not bypass it through root factories, generated nodes or CSS. The unrestricted root entry remains for general component consumers.
+- The default pith-ui entry is the small constrained controls API: opaque handles, owned composition and a checked mount. Do not export raw DOM, arbitrary slots, styles, density or legacy root factories. pith-ui/app is an optional whole-application composition, not a mandatory integration boundary. Both use the same private components/controllers. Product adapters and the internal-components barrel are private; historical internal tests do not grant public consumption permissions. Preserve existing controllers and add a regression before changing a capability.
 
 - Handwritten logic, configuration scripts and new tests use TypeScript. CSS owns presentation; use HTML native behavior before adding TS. Generated JavaScript/declarations live in `dist/`.
 - Preserve observed correct behavior and historical regression assertions. Characterize a concrete behavior gap before fixing it. Keep business protocol, identity and persistence out of the library.

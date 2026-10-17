@@ -1,13 +1,13 @@
 # Pith UI application consumption contract
 
-This is the constrained application contract for Pith Desk and applications choosing the same boundary. It is shipped with the package whose API it describes. Read the installed [`dist/app/index.d.ts`](./dist/app/index.d.ts), the exact dependency and integrity in the consumer lockfile, and this document together. A repository `main` document or a newer showroom is not a substitute for the installed version's declarations.
+This is the optional complete application composition. Use the default pith-ui entry for smaller constrained building blocks; no application shell is required. Choose pith-ui/app only when its complete Pith-shaped interface fits. Read the installed declarations, exact dependency and integrity together.
 
-The allowed UI imports are `pith-ui/app` and `pith-ui/styles.css`. The general `pith-ui` entry remains available for independent component compositions; Pith Desk must not use it, private package paths, copied components or internal CSS to bypass this contract. A missing application capability needs a tested semantic port in the library before the application consumes it.
+This composition accepts data and semantic callbacks and owns its generated DOM. Its own UI imports are pith-ui/app and pith-ui/styles.css. Do not inspect or decorate its internal nodes. Independent small-control trees use hosts owned by the consumer, not internal app nodes. A missing capability should become a narrow tested library interface, not a CSS or DOM workaround.
 
 <!-- PUI_APP_VERSION_START -->
-This contract accompanies `pith-ui@0.2.2`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
+This contract accompanies `pith-ui@0.3.0`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
 
-The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.2.2/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.2.2/examples/application/index.html). These sources are not bundled into the npm runtime package.
+The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.3.0/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.3.0/examples/application/index.html). These sources are not bundled into the npm runtime package.
 <!-- PUI_APP_VERSION_END -->
 
 ## One mount, four scenes
@@ -43,6 +43,8 @@ app.workspace.updateConversation({id: 'chat', messages, working: false});
 The full, compiled reference controller and HTML entry linked in the version block exercise every scene with explicit simulated data. Their sources are versioned in the repository, outside the npm runtime package. The showroom item is [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference); it embeds that same application and links its full page. Use the showroom deployment corresponding to the tested package version. These are demonstrations, not evidence of publication or human acceptance.
 
 `Application` exposes the four plain scene objects, `read()`, `setAppearance(appearance)`, `downloadFile({blob, name})` and `destroy()`. `read()` reports `{hasModal, appearance}` for business read gating. `onUIStateChange` observes that presentation state; it does not acknowledge a task or persist a read marker.
+
+`attachDialog(dialog)` also accepts a small `createDialog`, `createTextEditDialog` or `createConfirmDialog` control from the default entry. The library mounts it in an owned overlay scope, includes it in modal guards, synchronizes its theme and disposes it with the application. The returned `destroy()` releases that attachment early. This is a typed composition port, not a DOM slot; non-dialog controls are rejected. A consumer can therefore replace a coarse dialog opening with small-control composition without querying the shell. For independent small layouts use `mount` in a host owned by the consumer.
 
 The application entry also exports the pure `formatCost`, `thinkingLabel` and `customModelDefaults` helpers. They return data without creating UI or granting access to the general component API. `customModelDefaults()` returns a fresh `{id: '', contextWindow: 128000, maxTokens: 8192}` for a new independent connection's initial model. Add model uses the same defaults. Existing connection values, explicit resets and the current draft are preserved; editing another row never changes the defaults. These editable starting values do not establish provider capabilities. Consume a new helper only after upgrading to a published version that exports it; a newer source document does not extend an installed package.
 

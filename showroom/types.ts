@@ -25,5 +25,6 @@ export interface ShowcaseCase {
   controls?: readonly ('outcome')[];
   related?: readonly string[];
   code: string;
+  entry?: 'pith-ui' | 'pith-ui/app' | 'internal';
   mount(context: DemoContext): MountedDemo;
 }

@@ -99,3 +99,34 @@ test('the typed showroom includes the complete constrained reference as a page',
   assert.equal(referencePage, true); assert.equal(frame, true); assert.equal(fullPageLink, true);
   assert.match(readFileSync(join(root, 'showroom/catalog.ts'), 'utf8'), /applicationCases/);
 });
+
+test('each application scene page provides a strictly compilable public-entry example', () => {
+  const text = readFileSync(join(root, 'showroom/application-cases.ts'), 'utf8');
+  const source = ts.createSourceFile('application-cases.ts', text, ts.ScriptTarget.Latest, true);
+  const expected = new Set(['application-workspace', 'application-settings', 'application-resources', 'application-files']);
+  const checked: string[] = [];
+  const options: ts.CompilerOptions = {target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler, lib: ['lib.es2022.d.ts', 'lib.dom.d.ts'], strict: true, noEmit: true, skipLibCheck: false, verbatimModuleSyntax: true};
+  function visit(node: ts.Node): void {
+    if (ts.isObjectLiteralExpression(node)) {
+      const value = (name: string) => (node.properties.find(property => ts.isPropertyAssignment(property) && property.name.getText(source) === name) as ts.PropertyAssignment | undefined)?.initializer;
+      const id = value('id'), code = value('code');
+      if (id && ts.isStringLiteralLike(id) && expected.has(id.text)) {
+        assert.equal(value('layer')?.getText(source), "'pages'");
+        assert.equal(value('category')?.getText(source), "'应用集成'");
+        assert.ok(code && ts.isStringLiteralLike(code), `${id.text} needs an actual TypeScript example`);
+        assert.deepEqual(boundaryViolations(code.text), [], id.text);
+        const virtual = join(root, 'examples/application/showroom-example.ts');
+        const host = ts.createCompilerHost(options), original = host.getSourceFile.bind(host);
+        host.getSourceFile = (file, languageVersion, onError, shouldCreateNewSourceFile) => file === virtual
+          ? ts.createSourceFile(file, code.text, languageVersion, true)
+          : original(file, languageVersion, onError, shouldCreateNewSourceFile);
+        const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([virtual], options, host));
+        assert.deepEqual(diagnostics.map(diagnostic => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')), [], id.text);
+        checked.push(id.text);
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(source);
+  assert.deepEqual(checked.sort(), [...expected].sort());
+});

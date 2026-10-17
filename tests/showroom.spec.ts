@@ -16,7 +16,7 @@ test('every catalog item mounts real content without errors in both themes', asy
 
 test('catalog search, state links, rulers, themes and lifecycle are usable', async ({ page }) => {
   await page.goto('/?item=text-edit-dialog&theme=light&outcome=late');
-  await page.getByLabel('搜索积木', {exact:true}).fill('文本编辑');
+  await page.getByLabel('搜索积木', {exact:true}).fill('text-edit-dialog');
   await expect(page.locator('.gallery-nav [data-item]')).toHaveCount(1);
   await page.getByLabel('搜索积木', {exact:true}).fill('');
   await page.getByRole('combobox', {name:'并排比较',exact:true}).click();

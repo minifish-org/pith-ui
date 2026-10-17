@@ -54,7 +54,7 @@ async function verify(): Promise<void> {
     for (const required of ['dist/index.js', 'dist/index.d.ts', 'dist/app/index.js', 'dist/app/index.d.ts', 'dist/styles.css', 'README.md', 'AI.md', 'API.md', 'APP.md', 'APP-API.md', 'LICENSE']) assert((await readFile(join(installed, required))).byteLength > 0, `Missing or empty package file: ${required}`);
     const verification = await verifyInstalledPackageConsumer(root, temporary);
     await writeFile(join(artifacts, 'package-consumer-verification.json'), JSON.stringify({filename: value.filename, sha256: value.sha256, commit: value.commit, version: value.version, ...verification}, null, 2) + '\n');
-    console.log(`Verified exact tarball ${value.filename}: root and app ESM/types/CSS, complete reference, strict declarations, ${verification.rejectedTypeCases} rejected UI escape cases, callback compatibility and both isolated production builds.`);
+    console.log(`Verified exact tarball ${value.filename}: root and app ESM/types/CSS, complete reference, strict declarations, ${verification.rejectedTypeCases} rejected UI escape cases, small-control constraints and both isolated production builds.`);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 }
 function verifyTag(): void {

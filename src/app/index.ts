@@ -9,6 +9,7 @@ import {createResourcesScene, type ResourcesScene} from './resources.js';
 import {createFilesScene, type FilesScene} from './files.js';
 import type {AppEnvironment, HostResult, OwnedContent, OwnedSurface} from './internal.js';
 import {createApplicationBrandMark} from './brand.js';
+import {mount as mountControl, assertModalControl, type Dialog, type TextEditDialog, type ConfirmDialog, type Mount} from '../controls.js';
 export type {LoadingState, LoadingSession} from './session.js';
 
 export type {ActionResult} from '../core.js';
@@ -33,6 +34,7 @@ export interface ApplicationHost {
   openExternal?(url: string): HostResult;
 }
 export interface ApplicationState {readonly hasModal: boolean; readonly appearance: Appearance}
+export type ApplicationDialog = Dialog | TextEditDialog | ConfirmDialog;
 export interface ApplicationOptions {
   readonly brand?: ApplicationBrand;
   readonly appearance?: Appearance;
@@ -48,6 +50,8 @@ export interface Application {
   readonly files: FilesScene;
   read(): ApplicationState;
   setAppearance(appearance: Appearance): void;
+  /** Attach one independently composed small dialog, retaining app modal guards. */
+  attachDialog(dialog: ApplicationDialog): {destroy(): void};
   downloadFile(file: {readonly blob: Blob; readonly name: string}): Promise<ActionResult>;
   destroy(): void;
 }
@@ -188,9 +192,22 @@ export function createApplication(mount: HTMLElement, options: ApplicationOption
   const workspace = createWorkspaceScene(environment, shell, options.workspace ?? {}, brandData);
   const settings = createSettingsScene(environment), resources = createResourcesScene(environment), files = createFilesScene(environment);
   const downloads = new Map<string, ReturnType<typeof setTimeout>>();
+  const attachedDialogs = new Set<Mount>();
   return {
     workspace, settings, resources, files, read,
-    setAppearance(next) {if (destroyed) return; appearance = next; setAppearance(themeRoot, next); syncTheme(); notify(() => options.onUIStateChange?.(read()));},
+    setAppearance(next) {if (destroyed) return; appearance = next; setAppearance(themeRoot, next); for (const dialog of attachedDialogs) dialog.setAppearance(next); syncTheme(); notify(() => options.onUIStateChange?.(read()));},
+    attachDialog(dialog) {
+      if (destroyed) throw new Error('Application has been destroyed.');
+      assertModalControl(dialog);
+      const host = document.createElement('div'); host.className = 'pui-owned-controls';
+      shell.element.append(host);
+      let mounted: Mount;
+      try {mounted = mountControl(host, dialog, {appearance});}
+      catch (error) {host.remove(); throw error;}
+      attachedDialogs.add(mounted);
+      let released = false;
+      return {destroy() {if (released) return; released = true; attachedDialogs.delete(mounted); mounted.destroy(); host.remove(); changed();}};
+    },
     async downloadFile({blob, name}) {
       if (destroyed) return {ok: false, error: 'Application has been destroyed.'};
       const url = URL.createObjectURL(blob);
@@ -202,6 +219,7 @@ export function createApplication(mount: HTMLElement, options: ApplicationOption
     destroy() {
       if (destroyed) return; destroyed = true;
       observer.disconnect(); disposals.splice(0).forEach(dispose => dispose());
+      for (const dialog of attachedDialogs) dialog.destroy(); attachedDialogs.clear();
       workspace.destroy(); settings.destroy(); resources.destroy(); files.destroy();
       for (const owner of [...fixed.values()]) owner.release(); fixed.clear();
       for (const release of [...frameOwners.values()]) release(); frameOwners.clear();

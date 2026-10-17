@@ -61,7 +61,7 @@ test('native reset consistently restores construction values without replacing f
 
 test('a select follows disabled fieldset transitions and only its visible trigger is focusable', async ({ page }) => {
   await page.evaluate(async () => {
-    const path = '/src/index.ts'; const { createSelect, focusableElements } = await import(path);
+    const path = '/src/internal-components.ts'; const { createSelect, focusableElements } = await import(path);
     const fieldset = document.createElement('fieldset'); fieldset.disabled = true; document.body.append(fieldset);
     const select = createSelect({ label: 'Grouped choice', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] }); fieldset.append(select.element);
     select.update({ label: 'Grouped choice', options: [{ value: 'a', label: 'A' }, { value: 'b', label: 'B' }] });

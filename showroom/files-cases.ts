@@ -1,3 +1,4 @@
+import {createCopyButton,mount} from '../src/index.js';
 import type { DemoContext, ShowcaseCase } from './types.js';
 import { createFileActions, createArtifactPanel, createResourcesPanel, createFilePreview } from '../src/files/panels.js';
 import { createCostLedger, createUpdatePanel, createCompletionNotices, createCopyFeedback, historyStatusMarkup, type CompletionNoticeDisplay } from '../src/files/systems.js';
@@ -11,7 +12,7 @@ function actions(context: DemoContext, kind: string, path: string) {
 }
 export const filesCases: ShowcaseCase[] = [
   {
-    id: 'file-actions', title: '文件操作栏', layer: 'components', category: '操作',
+    id: 'file-actions', title: '文件操作栏', layer: 'blocks', category: '操作',
     description: '预览、打开、定位与复制采用统一间距；原生动作及权限由宿主决定。', states: ['normal', 'disabled', 'long'], related: ['artifact-panel', 'file-preview'],
     code: `const actions = createFileActions({ kind: 'artifact', ownerId, path, preview: true, copyMode: 'file', onAction: handleFileAction });`,
     mount(context) {
@@ -129,14 +130,11 @@ export const filesCases: ShowcaseCase[] = [
   {
     id: 'copy-feedback', controls: ['outcome'], title: '复制结果反馈', layer: 'components', category: '反馈',
     description: '异步复制有即时禁用、成功反馈与错误；宿主决定真正的复制方式。', states: ['normal', 'disabled'], related: ['file-actions', 'conversation-messages'],
-    code: `const feedback = createCopyFeedback({ status, isDisabled, onError });\nawait feedback.copy(button, copyUsingHost, 'Copied');`,
+    code: `import {mount,createCopyButton} from 'pith-ui';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nconst copy=createCopyButton({value:'Example',onCopy:async text=>{console.log(text);return {ok:true};}});\nmount(host,copy);`,
     mount(context) {
-      const element = document.createElement('div'), status = document.createElement('div'); status.setAttribute('role', 'status');
-      const button = createButton({ label: '复制示例', disabled: context.state === 'disabled' });
-      const feedback = createCopyFeedback({ status, isDisabled: () => context.state === 'disabled', onError: (error) => { status.textContent = String(error); context.log(String(error)); } });
-      const click = () => { void feedback.copy(button.element, async () => { const result = await context.action(); if (!result.ok) throw new Error(result.error); }, '已复制演示内容'); };
-      button.element.addEventListener('click', click); element.append(button.element, status);
-      return { element, destroy() { button.element.removeEventListener('click', click); feedback.destroy(); button.destroy(); element.remove(); } };
+      const element=document.createElement('div');
+      const button=createCopyButton({label:'复制示例',value:'Example',disabled:context.state==='disabled',onCopy:()=>context.action(),onError:message=>context.log(message)});
+      const mounted=mount(element,button);return{element,destroy:mounted.destroy};
     },
   },
 ];

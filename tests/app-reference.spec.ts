@@ -113,3 +113,50 @@ test('the showroom exposes an embedded reference and a reproducible full-page li
   await expect(frame.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
   await expect(frame.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
+
+for (const scene of [
+  {id: 'workspace', title: '应用场景：工作区聊天 App workspace', dialog: undefined},
+  {id: 'settings', title: '应用场景：设置与连接 App settings', dialog: 'Settings'},
+  {id: 'resources', title: '应用场景：工作区资源 App resources', dialog: 'Workspace resources'},
+  {id: 'files', title: '应用场景：文件与预览 App files', dialog: '报告.md'},
+]) {
+  test(`Pages links directly to the constrained ${scene.id} scene`, async ({page}) => {
+    await page.goto(`/?item=application-${scene.id}&theme=dark&width=1280`);
+    await expect(page.getByRole('heading', {name: scene.title, exact: true})).toBeVisible();
+    await expect(page.getByRole('link', {name: '打开完整参考应用', exact: true})).toHaveAttribute('href',
+      new RegExp(`examples/application/index\\.html\\?theme=dark&scene=${scene.id}$`));
+    // Chromium does not scroll the outer gallery for a partly visible iframe
+    // when clicking a control inside a native modal in that frame.
+    await page.locator('iframe').scrollIntoViewIfNeeded();
+    const frame = page.frameLocator('iframe[title="受限入口参考应用 · 模拟数据"]');
+    await expect(frame.locator('html')).toHaveAttribute('data-theme', 'dark');
+    if (scene.dialog) {
+      const dialog = frame.getByRole('dialog', {name: scene.dialog, exact: true});
+      await expect(dialog).toBeVisible();
+      if (scene.id === 'settings') {
+        await dialog.getByLabel('API key', {exact: false}).fill('scene-draft');
+        await dialog.getByRole('button', {name: 'Test connection', exact: true}).click();
+        await expect(dialog.getByText('模拟连接失败；输入已保留。', {exact: false})).toBeVisible();
+        await expect(dialog.getByLabel('API key', {exact: false})).toHaveValue('scene-draft');
+      } else if (scene.id === 'resources') {
+        await expect(dialog.getByText('review', {exact: true})).toBeVisible();
+      } else {
+        await expect(dialog.getByRole('heading', {name: '模拟报告', exact: true})).toBeVisible();
+      }
+      await dialog.press('Escape');
+      await expect(dialog).toHaveCount(0);
+    }
+    await expect(frame.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
+    // The full-page link preserves the same starting scene outside the gallery.
+    await page.goto(`/examples/application/index.html?theme=light&scene=${scene.id}`);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    if (scene.dialog) await expect(page.getByRole('dialog', {name: scene.dialog, exact: true})).toBeVisible();
+    else await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
+  });
+}
+
+test('an unknown reference scene falls back to the operable workspace', async ({page}) => {
+  await page.goto('/examples/application/index.html?scene=unknown');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('textbox', {name: 'Message Pith', exact: true})).toBeVisible();
+});

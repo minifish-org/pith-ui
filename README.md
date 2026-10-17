@@ -1,18 +1,20 @@
 # Pith UI
 
-Native TypeScript UI building blocks for AI-assisted application development. Choose a complete block, provide typed content and callbacks, and reuse its reviewed layout and interaction rules.
+Small constrained TypeScript UI building blocks for AI-assisted composition. Choose a button, input, select, form, layout or surface; provide content/state/callbacks. The library owns typography, spacing, styling, interaction and disposal. A full application is optional.
 
-Pith Desk's approved consumption boundary is the constrained **`pith-ui/app`** entry: one checked mount and four semantic scenes, with no generated-node, template or styling access. Read the bundled [application consumption contract](./APP.md) first. The general **`pith-ui`** entry remains available for independent component compositions; it is not a fallback around the application's boundary.
+The default **pith-ui** entry exposes opaque component handles. **pith-ui/app** is an optional complete Pith-shaped composition; it is not a prerequisite for reuse. Version 0.3 replaces the unrestricted root API without compatibility aliases. See [AI.md](./AI.md), [API.md](./API.md) and the [composition guide](./docs/guide.md).
 
-The source is TypeScript and CSS. The package contains compiled ESM, declarations and a separate stylesheet. It uses browser DOM APIs, native controls and system fonts; no UI framework or animation runtime is required.
+TypeScript/CSS source builds to ESM and declarations plus one portable stylesheet. No UI framework, downloaded font or animation runtime. Fixed system UI/code fonts, 12/14/16 CSS px type, 400/600 weights, 1.5 line height and 4/8/12/16/24 CSS px spacing. Components choose roles; consumers do not style individual nodes.
 
-Presentation is fixed rather than assembled from style choices: system UI and monospace code fonts, small/medium/large text at 12/14/16 CSS px, regular/strong weights at 400/600, a shared 1.5 line height, and 4/8/12/16/24 CSS px spacing. Blocks choose the appropriate role automatically. Applications supply their own branding.
+Small compositions to try first: [connection form](https://minifish-org.github.io/pith-ui/?item=controls-form-page), [actions and surfaces](https://minifish-org.github.io/pith-ui/?item=controls-actions-page). They use the default entry without a complete app.
 
 ## Try the components
 
 The [interactive showroom](https://minifish-org.github.io/pith-ui/) groups **design foundations → base components → product blocks → composed pages**. It exposes real controls, theme and state comparisons, CSS-pixel measurements, spacing rulers and motion playback. Showroom data and actions are simulated and labelled accordingly. Automated checks do not substitute for human acceptance.
 
 The [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference) page embeds the [complete TypeScript reference application](./examples/application/main.ts): chat and simulated streaming, queues, approval, model/settings/login/MCP, resources, files and branch history. Use the deployment matching the package under review; source examples and a public site do not establish that a version has been published or manually accepted.
+
+In **Pages / 应用集成**, start directly with [App workspace](https://minifish-org.github.io/pith-ui/?item=application-workspace), [App settings](https://minifish-org.github.io/pith-ui/?item=application-settings), [App resources](https://minifish-org.github.io/pith-ui/?item=application-resources) or [App files](https://minifish-org.github.io/pith-ui/?item=application-files). These are four entry points into the same `pith-ui/app` reference, with simulated data and reproducible full-page links. Other Pages show private library compositions and are labelled accordingly.
 
 Run it locally with Node 22.18 or newer:
 
@@ -21,96 +23,31 @@ npm ci
 npm run dev
 ```
 
-## Use the package
+## Use small building blocks
 
-Choose an approved, verified registry version that exports `./app`, install it with `--save-exact`, and commit the consumer lockfile. The declarations and documents in that installed artifact define the contract. A consumer migration must not depend on a local tarball, `file:`/`link:`, source alias or symlink. See [installation and migration](./APP.md#migration-and-validation).
-
-The application entry owns its DOM and presentation:
+Install a published exact version and commit the lockfile. Do not use source aliases or local package links for application integration.
 
 ```ts
-import {createApplication, type ConversationMessage} from 'pith-ui/app';
+import {mount, createTextInput, createFormSection, createForm} from 'pith-ui';
 import 'pith-ui/styles.css';
-
-const mount = document.getElementById('app');
-if (!(mount instanceof HTMLElement)) throw new Error('Missing application mount');
-const messages: ConversationMessage[] = [
-  {id: 'intro', role: 'assistant', text: 'This example uses in-memory data.'},
-];
-const app = createApplication(mount, {
-  brand: {name: 'Example', qualifier: 'Desk'},
-  workspace: {onSubmit(text) {
-    messages.push({id: String(messages.length), role: 'user', text});
-    app.workspace.resetDraft('');
-    app.workspace.updateConversation({id: 'chat', messages, working: false});
-    return {ok: true};
-  }},
-});
-app.workspace.updateComposer({action: 'send'});
-app.workspace.updateConversation({id: 'chat', messages, working: false});
-// The embedding owner calls app.destroy() when released.
+const host = document.getElementById('app');
+if (!(host instanceof HTMLElement)) throw new Error('Missing mount');
+const name = createTextInput({label: 'Name', required: true});
+const fields = createFormSection({title: 'Connection', children: [name]});
+const form = createForm({children: [fields], submitLabel: 'Save', onSubmit: async () => {
+  console.log(name.read()); // Connect the application-owned write here.
+  return {ok: true};
+}});
+const mounted = mount(host, form, {appearance: 'system'});
+// mounted.destroy() releases the complete tree.
 ```
 
-The four scenes are `workspace`, `settings`, `resources` and `files`. Controllers retain requests, identities, drafts, policy, credentials, transactions and native capabilities. The [application contract](./APP.md) maps every feature and names each session's methods; [`dist/app/index.d.ts`](./dist/app/index.d.ts) in the installed package is authoritative.
+The only DOM handoff is mount. Content slots accept library controls, not HTML/Node/renderers. No element/control/panel handles, class/style, density or per-control font/size/gap knobs. update preserves live drafts; read/reset/focus are explicit. A child has one owner. Errors, pending, disabled and late responses retain tested behavior. See the [catalog](./docs/catalog.md) and [compiled examples](./docs/examples.ts).
 
-For a general component consumer outside that application boundary, the root entry remains available:
+Choose [pith-ui/app](./APP.md) only when the complete workspace/settings/resources/files composition fits. It shares the same private controllers/styles with the small components. Business protocols, persistence, credentials, permissions and native actions remain outside the library.
 
-```ts
-import { createTextEditDialog, setAppearance } from 'pith-ui';
-import 'pith-ui/styles.css';
+## Development and validation
 
-// Include document.body when dialogs are mounted there.
-setAppearance(document.body, 'system');
+Use the locked toolchain and npm ci. Run npm run check, npm test, npm run test:browser, node scripts/catalog.ts and npm run showroom:build. Verify an actual packed package with scripts/verify-package.ts. See [validation](./docs/validation.md) and [releasing](./docs/releasing.md). Builds, publication, showroom deployment, native tests and human acceptance are separate evidence.
 
-const editor = createTextEditDialog({
-  title: 'Edit message',
-  onSubmit: async (text) => {
-    const saved = await saveMessage(text); // Your existing business action.
-    return saved ? { ok: true } : { ok: false, error: 'Save failed. Your edit is retained.' };
-  },
-});
-editor.open({ value: 'Original message' });
-// When this owner is released:
-// editor.destroy();
-```
-
-`saveMessage` is an application callback, not a Pith UI API. [Complete, type-checked examples](https://github.com/minifish-org/pith-ui/blob/main/docs/examples.ts) show how to connect it and clean up ownership.
-
-## What belongs where
-
-| Pith UI | Application |
-|---|---|
-| Visual tokens, component layout, native controls | Branding and business data |
-| Focus, disclosure, menu, local feedback, reading position | HTTP/WebSocket, authentication, persistence |
-| Pending/error presentation and content rendering | Permission, identity and target validation |
-| Sanitized Markdown, code/diff/file/image presentation | File acquisition, native actions, object-URL ownership |
-| Interactive examples and component regression tests | End-to-end product policy and release validation |
-
-The first consumer is Pith Desk. Its existing controllers retain their request, draft, approval and recovery semantics. Its UI integration must use the application scenes instead of reconstructing shared views through lower-level factories.
-
-Focus adds no outlines, glows or border highlights, and no replacement background cue. Native focus, keyboard activation and restoration remain, alongside existing hover, caret, text selection and business-state feedback. Keyboard users no longer have a focus ring for locating the active control; the showroom focus exhibit includes an inspection-only observer.
-
-## Find a block
-
-- **Foundations:** color, typography, spacing, dimensions, borders, surfaces, focus and motion.
-- **Base components:** actions, fields, status, feedback, dialog/menu/popover, form/layout and scrolling.
-- **Product blocks:** navigation, conversation reader, composer/queue, models, tasks/approval, settings/connections, OAuth/MCP, resources, files, branch history and system information.
-- **Pages:** working compositions of those blocks, rather than separate copies of their implementations.
-
-Read the bundled [application contract](./APP.md), [general component API reference](./API.md), [complete catalog](https://github.com/minifish-org/pith-ui/blob/main/docs/catalog.md), [integration guide](https://github.com/minifish-org/pith-ui/blob/main/docs/guide.md), [AI usage instructions](./AI.md), [validation guide](https://github.com/minifish-org/pith-ui/blob/main/docs/validation.md) and [release procedure](https://github.com/minifish-org/pith-ui/blob/main/docs/releasing.md). Match repository documentation and the showroom to the installed version when reviewing a release.
-
-## Develop and validate
-
-```sh
-npm run check
-npm run build
-npm test
-node scripts/catalog.ts
-node scripts/api-docs.ts --check
-npx --no-install playwright install chromium webkit
-npm run test:browser
-npm run showroom:build
-```
-
-The lockfile fixes tool and dependency versions. All handwritten logic, including new scripts and tests, is TypeScript; JavaScript and declarations are generated build products. The library and showroom build separately, so measurement tools and fixtures do not ship to applications.
-
-Pith UI is licensed under [AGPL-3.0-only](./LICENSE). Runtime dependencies retain their own licenses.
+AGPL-3.0-only. See [LICENSE](./LICENSE).

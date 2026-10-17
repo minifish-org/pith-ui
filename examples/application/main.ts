@@ -290,6 +290,13 @@ render();
 app.workspace.updateWelcome({workspace, hasApiKey: true, hasConnections: true, modelName: 'Balanced Demo'});
 app.files.updateArtifacts({ownerId: conversationId, files: [...fileContents].map(([path, file]) => ({path, name: file.name})), loading: false, error: '', copyMode: 'path'}, {onPreview: openPreview, onFileAction: fileAction});
 
+// Deep links select a starting scene in this simulated example only. They are
+// not application routing or additional configuration in the runtime package.
+const startingScene = new URLSearchParams(location.search).get('scene');
+if (startingScene === 'settings') openSettings();
+else if (startingScene === 'resources') openResources();
+else if (startingScene === 'files') openPreview({owner: {kind: 'artifact', id: conversationId}, name: '报告.md', path: 'output/报告.md'});
+
 /** A host embedding this controller can dispose all simulated work explicitly. */
 export function destroyReferenceApplication(): void {
   if (destroyed) return; destroyed = true; taskGeneration++;

@@ -66,10 +66,10 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
     const ui = await import('pith-ui'); const app = await import('pith-ui/app');
     if (typeof app.createApplication !== 'function') throw new Error('Missing application factory');
     if (Object.keys(app).some(name => name.startsWith('create') && name !== 'createApplication')) throw new Error('Low-level factories escaped through pith-ui/app');
-    if ('reconcileViews' in ui || 'clearViews' in ui) throw new Error('Internal HTML reconciliation must not be public');
+    if (['element','icon','createField','createWorkspaceShell','createConversationView','Generation','setAppearance','createCopyFeedback'].some(name=>name in ui)) throw new Error('Internal DOM/product factories must not be public');
     console.log(JSON.stringify({generic: Object.keys(ui), app: Object.keys(app)}));
   `], consumer)) as {generic: string[]; app: string[]};
-  for (const name of ['createButton', 'createConversationView', 'createTextEditDialog', 'createConfirmDialog', 'createSelect', 'Generation']) assert(runtime.generic.includes(name), `Expected public export is missing: ${name}`);
+  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton']) assert(runtime.generic.includes(name), `Expected public export is missing: ${name}`);
 
   const reference = await readFile(join(root, 'examples/application/main.ts'), 'utf8');
   const ts = (await import(pathToFileURL(join(root, 'node_modules/typescript/lib/typescript.js')).href)).default as typeof import('typescript');
@@ -91,24 +91,21 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
   };
   visit(parsed);
   assert(appImported && cssImported, 'The complete reference must consume both public app and stylesheet entries');
-  const generic = `import { createButton, createConversationView, createTextEditDialog, createSelect, setAppearance, type UIBlock, type ActionResult } from 'pith-ui';
+  const generic = `import {mount,createButton,createTextInput,createListSelect,createTextEditDialog,createForm,createStack,type ActionResult} from 'pith-ui';
 import 'pith-ui/styles.css';
-setAppearance(document.body, 'light');
-const save = createButton({ label: 'Save', intent: 'primary', onAction: async (): Promise<ActionResult> => ({ ok: true }) });
-const view = createConversationView();
-view.update({ id: 'package-consumer', messages: [{ id: 'answer', role: 'assistant', text: 'Package consumer', actions: { copy: 'Copy response' } }], working: false });
-const editor = createTextEditDialog({ title: 'Edit', onSubmit: async text => text.trim() ? { ok: true } : { ok: false, error: 'Enter text' } });
-const models = createSelect({ label: 'Models', size: 5, options: [{ value: 'a', label: 'Model A' }] });
-const block: UIBlock<{ label: string }> = save;
-document.body.append(view.element, block.element, models.element);
-save.element.addEventListener('click', () => editor.open({ value: '中文 example 🐟' }));
-editor.destroy();
+const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
+const name=createTextInput({label:'Name',value:'中文 draft'});
+const models=createListSelect({label:'Models',multiple:true,values:['a'],options:[{value:'a',label:'Model A'}],onChange:values=>{values.forEach(String);}});
+const form=createForm({children:[name,models],onSubmit:async():Promise<ActionResult>=>({ok:true})});
+const editor=createTextEditDialog({title:'Edit',onSubmit:async text=>text.trim()?{ok:true}:{ok:false,error:'Enter text'}});
+const open=createButton({label:'Edit',onAction:()=>editor.open({value:name.read()})});
+mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
 `;
   await writeFile(join(consumer, 'main.ts'), reference);
   await writeFile(join(consumer, 'generic-consumer.ts'), generic);
-  for (const [source, target] of [['docs/examples.ts', 'public-examples.ts'], ['tests/callback-compatibility.ts', 'callback-compatibility.ts']] as const) await writeFile(join(consumer, target), (await readFile(join(root, source), 'utf8')).replaceAll("'../src/index.js'", "'pith-ui'"));
+  for (const [source, target] of [['docs/examples.ts', 'public-examples.ts']] as const) await writeFile(join(consumer, target), (await readFile(join(root, source), 'utf8')).replaceAll("'../src/index.js'", "'pith-ui'"));
   const compilerOptions = {target: 'ES2022', module: 'NodeNext', moduleResolution: 'NodeNext', strict: true, noEmit: true, lib: ['ES2022', 'DOM', 'DOM.Iterable'], types: [], skipLibCheck: false, verbatimModuleSyntax: true};
-  await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({compilerOptions, include: ['main.ts', 'generic-consumer.ts', 'public-examples.ts', 'callback-compatibility.ts']}, null, 2));
+  await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({compilerOptions, include: ['main.ts', 'generic-consumer.ts', 'public-examples.ts']}, null, 2));
   const compiler = join(root, 'node_modules/typescript/bin/tsc');
   await run(process.execPath, [compiler, '--project', join(consumer, 'tsconfig.json')], consumer);
 
@@ -131,6 +128,24 @@ editor.destroy();
     }
     assert(rejected, `Packed public declarations accepted forbidden UI surface: ${source}`);
   }
+  const forbiddenControls = [
+    ["createButton({label:'Save',density:'compact'});",'density'],
+    ["createButton({label:'Save',appearance:'secondary'});",'appearance'],
+    ["createButton({label:'Save',style:{padding:8}});",'style'],
+    ["createButton({label:'Save'}).element;",'element'],
+    ["createTextInput({label:'Name'}).control;",'control'],
+    ["createStack({children:[document.body]});",'HTMLElement'],
+    ["createSelect({label:'Provider',options:[],multiple:true});",'multiple'],
+    ["createListSelect({label:'Models',options:[],size:10});",'size'],
+  ];
+  for (const [source, diagnostic] of forbiddenControls) {
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
+    let rejected=false;
+    try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}
+    catch(error) {const failure=error as {code?:unknown;stdout?:string;stderr?:string};const output=`${failure.stdout??''}\n${failure.stderr??''}`;assert(typeof failure.code==='number'&&output.includes('rejected-control.ts')&&output.includes(diagnostic!),`Unexpected control rejection: ${output}`);rejected=true;}
+    assert(rejected,`Packed default declarations accepted forbidden UI surface: ${source}`);
+  }
   const html = (entry: string) => `<!doctype html><html><head><meta charset="utf-8"><title>Installed Pith UI consumer</title></head><body><div id="app"></div><script type="module" src="/${entry}"></script></body></html>`;
   const vite = join(root, 'node_modules/vite/bin/vite.js');
   await writeFile(join(consumer, 'index.html'), html('main.ts'));
@@ -140,7 +155,7 @@ editor.destroy();
   await writeFile(join(consumer, 'index.html'), html('main.ts'));
   const consumerAssets = await assets(join(consumer, 'dist')), genericConsumerAssets = await assets(join(consumer, 'generic-dist'));
   for (const built of [consumerAssets, genericConsumerAssets]) assert(built.some(asset => asset.path.endsWith('.js') && asset.bytes > 0) && built.some(asset => asset.path.endsWith('.css') && asset.bytes > 0), 'Consumer production builds must contain JavaScript and CSS');
-  return {exports: runtime.generic, appExports: runtime.app, consumerTypecheck: 'passed', consumerProductionBuild: 'passed', genericConsumerProductionBuild: 'passed', referenceSha256: createHash('sha256').update(reference).digest('hex'), rejectedTypeCases: forbidden.length, consumerAssets, genericConsumerAssets};
+  return {exports: runtime.generic, appExports: runtime.app, consumerTypecheck: 'passed', consumerProductionBuild: 'passed', genericConsumerProductionBuild: 'passed', referenceSha256: createHash('sha256').update(reference).digest('hex'), rejectedTypeCases: forbidden.length + forbiddenControls.length, consumerAssets, genericConsumerAssets};
 }
 
 interface Packed {filename: string; integrity: string; shasum: string; size: number; unpackedSize: number; files: Array<{path: string; size: number}>}
