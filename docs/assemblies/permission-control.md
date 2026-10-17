@@ -42,7 +42,7 @@ composer form; the simple surrounding stack below demonstrates ownership.
 import {
   composePermissionControl, type PermissionState,
 } from '../../examples/assemblies/permission-control.js';
-import {createStackPart, mountParts} from '../../src/parts/index.js';
+import {createStackPart, mountParts} from 'pith-ui';
 
 interface PermissionController {
   change(mode: string): void;

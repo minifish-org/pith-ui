@@ -1,5 +1,5 @@
 /** Minimal formal-parts consumer examples. Large blueprints are in examples/assemblies. */
-import {createInputPart,createSelectPart,createButtonPart,createFormPart,createStackPart,mountParts} from '../src/parts/index.js';
+import {createInputPart,createSelectPart,createButtonPart,createFormPart,createStackPart,mountParts} from 'pith-ui';
 
 export function mountPreferences(host: HTMLElement,onSave: (value: {name: string;provider: string}) => Promise<{ok: true}|{ok: false;error: string}>) {
   const name = createInputPart({label: 'Name',value: 'Example'});

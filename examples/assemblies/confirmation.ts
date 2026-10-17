@@ -3,7 +3,7 @@ import {
   createActionsPart, createButtonPart, createDialogPart, createFeedbackPart,
   createFormPart, createTextFlowPart, createTextPart, mountParts,
   type DialogPart, type FormPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface ConfirmationState {
   title: string;

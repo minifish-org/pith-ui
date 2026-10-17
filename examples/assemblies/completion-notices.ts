@@ -1,5 +1,5 @@
 /** Internal consumer assembly. Desk owns completion history and dismissal. */
-import {createButtonPart,createEmblemPart,createTextPart,createToastBodyPart,createToastPart,createToastStackPart,type LayoutPart,type TextPart} from '../../src/parts/index.js';
+import {createButtonPart,createEmblemPart,createTextPart,createToastBodyPart,createToastPart,createToastStackPart,type LayoutPart,type TextPart} from 'pith-ui';
 
 export interface CompletionNoticeDisplay {id: string;runID: string;title: string;workspace: string}
 export interface CompletionNoticesComposition {readonly part: LayoutPart;update(notices: readonly CompletionNoticeDisplay[]): void;destroy(): void}

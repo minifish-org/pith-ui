@@ -42,7 +42,7 @@ full workspace uses its existing composer panel slot for `approval.part`.
 import {
   composeApproval, type ApprovalState,
 } from '../../examples/assemblies/approval.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface ApprovalController {
   approve(id: string, action: 'deny' | 'always' | 'allow'): void;

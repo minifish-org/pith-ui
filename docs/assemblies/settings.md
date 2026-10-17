@@ -70,7 +70,7 @@ import {
   type SettingsDraft, type SettingsProvider, type SettingsCredential,
   type UpdateState, type ProviderAction,
 } from '../../examples/assemblies/settings.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface SettingsController {
   save(draft: SettingsDraft): Promise<Result>;

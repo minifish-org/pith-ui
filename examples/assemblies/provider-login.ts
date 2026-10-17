@@ -4,7 +4,7 @@ import {
   createFormPart,createInlineGroupPart,createInputPart,createLinkPart,createSelectPart,
   createStackPart,createTextFlowPart,mountParts,
   type ChoicePart,type DialogPart,type FormPart,type MountPartsOptions,type Part,type ValuePart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type Result = {ok: true} | {ok: false;error: string};
 export interface ProviderLoginState {phase: string;message: string;url?: string;code?: string;prompt?: string;promptType?: string;options?: readonly {id: string;label: string}[] | null;error?: string;disabled?: boolean}

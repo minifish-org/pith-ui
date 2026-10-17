@@ -4,7 +4,7 @@ import {
   createButtonPart,createDialogPart,createFeedbackPart,createFieldLabelPart,createFooterPart,createFormPart,createInputPart,
   createLabelledDividerPart,createOptionActionPart,createOptionGroupPart,createSeparatedGroupPart,createTextPart,mountParts,
   type DialogPart,type FormPart,type MountPartsOptions,type OptionActionPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface PickerWorkspace {id: string;name: string;path: string}
 export interface WorkspacePickerState {workspaces: readonly PickerWorkspace[];error?: string;disabled?: boolean}

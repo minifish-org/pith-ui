@@ -4,7 +4,7 @@ import {
   createFieldGroupPart, createFieldLabelPart, createFormPart, createTextareaPart,
   createTextPart, mountParts,
   type DialogPart, type FormPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface TextEditorState {
   title: string;

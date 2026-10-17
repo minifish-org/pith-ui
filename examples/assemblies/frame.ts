@@ -7,7 +7,7 @@ import {
   createTreeItemPart, createTreePart, mountParts,
   type ActivityPart, type BrandMarkOptions, type ButtonPart, type DialogPart, type FramePart, type MenuPartItem,
   type MountPartsOptions, type Part, type TextPart, type TreeBranchPart, type TreeItemPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 type HostResult = void | {ok: true} | {ok: false; error: string};
 export interface FrameConversation {

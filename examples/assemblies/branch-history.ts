@@ -2,7 +2,7 @@
 import {
   createButtonPart,createCardHeadingPart,createDialogPart,createFeedbackPart,createSelectableCardPart,createStackPart,createTextPart,mountParts,
   type DialogPart,type FeedbackPart,type MountPartsOptions,type Part,type SelectableCardPart,type StackPart,type TextPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface HistoryNode {id: string;role: string;text: string;active: boolean}
 export interface HistoryState {nodes: readonly HistoryNode[]|null;loading?: boolean;error?: string}

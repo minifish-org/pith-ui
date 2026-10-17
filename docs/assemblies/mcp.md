@@ -62,7 +62,7 @@ import {
   composeMCPConnections, type MCPAction, type MCPConnection,
   type MCPDraft, type MCPState, type Result,
 } from '../../examples/assemblies/mcp.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface ConnectionsController {
   save(draft: MCPDraft): Promise<Result>;

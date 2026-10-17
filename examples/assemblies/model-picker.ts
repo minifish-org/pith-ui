@@ -8,7 +8,7 @@ import {
   createFieldLabelPart, createFooterPart, createFormPart, createInputPart,
   createSelectPart, createTextPart, mountParts,
   type ChoicePart, type FormPart, type DialogPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface ModelSelection {provider: string; model: string; thinkingLevel: string}
 export interface ModelProvider {id: string; name: string; model?: string; thinkingLevel?: string}

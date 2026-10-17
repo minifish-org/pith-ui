@@ -39,7 +39,7 @@ ellipsis, button appearance and the responsive paragraph break.
 
 ```ts
 import {composeWelcome, type WelcomeState} from '../../examples/assemblies/welcome.js';
-import {type BrandMarkOptions} from '../../src/parts/index.js';
+import {type BrandMarkOptions} from 'pith-ui';
 
 interface WelcomeController {
   action(action: 'model'|'settings'|'workspace'): void;

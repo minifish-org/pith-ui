@@ -27,7 +27,7 @@ pixel, animation or arbitrary icon options.
 
 ```ts
 import {composeCompletionNotices, type CompletionNoticeDisplay} from '../../examples/assemblies/completion-notices.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 export function attachCompletionNotices(
   mount: HTMLElement,

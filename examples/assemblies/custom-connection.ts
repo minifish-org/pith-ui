@@ -4,7 +4,7 @@ import {
   createFieldGridPart,createFieldsetPart,createFooterPart,createFormPart,createInputPart,
   createLabelledFieldPart,createSelectPart,createStackPart,createTextPart,mountParts,
   type ButtonPart,type DialogPart,type FormPart,type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type Result = {ok: true} | {ok: false;error: string};
 export interface CustomModel {id: string;name?: string;contextWindow?: number;maxTokens?: number;reasoning?: boolean;input?: readonly string[];cost?: {input: number;output: number;cacheRead: number;cacheWrite: number}}

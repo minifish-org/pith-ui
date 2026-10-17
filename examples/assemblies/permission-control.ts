@@ -1,5 +1,5 @@
 /** Internal consumer recipe. Permission policy and confirmation remain with the application. */
-import {createCompactSelectPart,createContextNotePart,type CompactSelectPart,type ContextNotePart} from '../../src/parts/index.js';
+import {createCompactSelectPart,createContextNotePart,type CompactSelectPart,type ContextNotePart} from 'pith-ui';
 
 export interface PermissionState {mode: string;description: string;disabled?: boolean}
 export interface PermissionComposition {readonly control: CompactSelectPart;readonly description: ContextNotePart;update(state: Readonly<PermissionState>): void;destroy(): void}

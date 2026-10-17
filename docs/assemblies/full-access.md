@@ -28,7 +28,7 @@ in the caller's existing controller.
 
 ```ts
 import {composeFullAccess, type FullAccessResult} from '../../examples/assemblies/full-access.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 export function openFullAccess(
   mount: HTMLElement,

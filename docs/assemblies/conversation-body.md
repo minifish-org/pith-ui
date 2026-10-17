@@ -48,7 +48,7 @@ import {
   type ConversationBodyState,
   type ConversationBodyCallbacks,
 } from '../../examples/assemblies/conversation-body.js';
-import type {AnnouncementPart} from '../../src/parts/index.js';
+import type {AnnouncementPart} from 'pith-ui';
 
 export function buildConversationText(
   state: ConversationBodyState,

@@ -44,7 +44,7 @@ This index maps all 36 regions in the frozen rc.27/UI 0.2.2 contract to applicat
 Every source imports only formal parts and sibling recipes. The local application coordinator retains shared feature-slot replacement, scoped availability, modal state and native host callbacks. The frozen old source remains an internal oracle and is excluded from published entry dependencies.
 
 ```ts
-import {createTextPart} from '../../src/parts/index.js';
+import {createTextPart} from 'pith-ui';
 // Each linked recipe composes opaque handles with the same ownership rules.
 const content = createTextPart({text: 'Application-owned content'});
 content.destroy();

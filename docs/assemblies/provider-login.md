@@ -49,7 +49,7 @@ invocation shows the controller boundary:
 import {
   composeProviderLogin, type ProviderLoginState, type Result,
 } from '../../examples/assemblies/provider-login.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface LoginController {
   answer(loginID: string, answer: string): Promise<Result>;

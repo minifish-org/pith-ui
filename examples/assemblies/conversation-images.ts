@@ -1,4 +1,4 @@
-import {createImageGroupPart,createImagePart,type LayoutPart,type ImagePart,type ImageData} from '../../src/parts/index.js';
+import {createImageGroupPart,createImagePart,type LayoutPart,type ImagePart,type ImageData} from 'pith-ui';
 
 export interface ImageTarget {readonly conversationId: string;readonly messageId: string;readonly index: number}
 export interface ImageReference {index: number;mimeType?: string}

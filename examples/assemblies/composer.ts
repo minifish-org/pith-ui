@@ -1,5 +1,5 @@
 /** Internal executable blueprint. Draft, action and permission policy belong to Desk. */
-import {createButtonPart,createCompactSelectPart,createComposerRegionPart,createComposerPanelsPart,createInputToolbarPart,createInputContextPart,createInputActionsPart,createMessageInputPart,createFilePickerPart,createFormPart,createFeedbackPart,createContextNotePart,type LayoutPart,type ImageData,type NativeFileDropData} from '../../src/parts/index.js';
+import {createButtonPart,createCompactSelectPart,createComposerRegionPart,createComposerPanelsPart,createInputToolbarPart,createInputContextPart,createInputActionsPart,createMessageInputPart,createFilePickerPart,createFormPart,createFeedbackPart,createContextNotePart,type LayoutPart,type ImageData,type NativeFileDropData} from 'pith-ui';
 import {composePermissionControl,type PermissionState} from './permission-control.js';
 import {composeAttachments,type AttachmentsState} from './attachments.js';
 

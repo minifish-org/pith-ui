@@ -129,7 +129,7 @@ standalone validation/demo adapter. In the application, build the unopened
 dialog and transfer its genuine part directly into the shared tree:
 
 ```ts
-import {createStackPart, mountParts} from '../../src/parts/index.js';
+import {createStackPart, mountParts} from 'pith-ui';
 import {
   composeResourcesInventory, type InventoryCallbacks, type InventoryState,
 } from '../../examples/assemblies/resource-inventory.js';

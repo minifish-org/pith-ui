@@ -2,7 +2,7 @@
 import {
   createButtonPart,createCaptionPart,createImagePart,createThumbnailPart,createThumbnailStripPart,mountParts,
   type ButtonPart,type CaptionPart,type ImageData,type ImagePart,type MountPartsOptions,type ThumbnailPart,type ThumbnailStripPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface AttachmentItem {id: string;url: string;name: string}
 export interface AttachmentsState {items: readonly AttachmentItem[];disabled?: boolean}

@@ -30,7 +30,7 @@ child. This compiled example accepts that child without exposing a native node.
 
 ```ts
 import {composeRuntime, type RuntimeState} from '../../examples/assemblies/runtime.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 export function attachRuntime(
   mount: HTMLElement,

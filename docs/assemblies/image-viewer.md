@@ -31,7 +31,7 @@ The modal part chooses the original wide image-modal geometry and heading.
 ## Connect a native image part
 
 ```ts
-import {createImagePart, createStackPart, mountParts} from '../../src/parts/index.js';
+import {createImagePart, createStackPart, mountParts} from 'pith-ui';
 import {composeImageViewer} from '../../examples/assemblies/image-viewer.js';
 
 export function attachPreviewImage(

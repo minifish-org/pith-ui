@@ -62,7 +62,7 @@ then establish one outer mount and appearance owner. `mountFrame` is only the
 standalone internal example adapter.
 
 ```ts
-import {mountParts, type Part} from '../../src/parts/index.js';
+import {mountParts, type Part} from 'pith-ui';
 import {
   composeFrame, type FrameState, type FrameCallbacks,
 } from '../../examples/assemblies/frame.js';

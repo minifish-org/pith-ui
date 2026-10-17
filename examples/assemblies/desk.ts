@@ -1,6 +1,6 @@
 /** Internal Desk blueprint. Only the small parts imported by the individual
  * recipes are package APIs; this controller will move into Desk unchanged. */
-import {createDownloadPart,createFeedbackPart,createStatusActionsPart,createTextPart,createButtonPart,mountParts,type DialogPart,type BrandMarkOptions} from '../../src/parts/index.js';
+import {createDownloadPart,createFeedbackPart,createStatusActionsPart,createTextPart,createButtonPart,mountParts,type DialogPart,type BrandMarkOptions} from 'pith-ui';
 import {composeFrame,type FrameState,type FrameCallbacks} from './frame.js';
 import {composeConversationReader} from './conversation-reader.js';
 import type {ConversationBodyState,ConversationBodyCallbacks} from './conversation-body.js';

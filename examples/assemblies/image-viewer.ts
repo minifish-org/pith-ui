@@ -2,7 +2,7 @@
 import {
   createButtonPart, createDialogPart, createMediaToolbarPart, createTextPart,
   createZoomImagePart, mountParts, type DialogPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface ImageViewerInput {src: string; alt?: string}
 export interface ImageViewerCallbacks {onClose?(): void}

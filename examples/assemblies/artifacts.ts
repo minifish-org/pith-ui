@@ -5,7 +5,7 @@ import {
   createFeedbackPart, createIconPart, createInspectorHeadingPart, createInspectorPart,
   createStackPart, createTextPart,
   type AnchoredGroupPart, type AnnouncementPart, type ButtonPart, type CardPart, type DialogPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface ArtifactsState {
   readonly ownerId: string;readonly files: readonly {readonly name: string;readonly path: string}[];

@@ -4,7 +4,7 @@ import {
   createFooterPart, createFormPart, createInputPart, createLabelledFieldPart,
   createStackPart, createTextareaPart, createTextPart, mountParts,
   type DialogPart, type FormPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type ResourceKind = 'instructions' | 'skill' | 'template';
 export type ResourceResult = {ok: true} | {ok: false; error: string};

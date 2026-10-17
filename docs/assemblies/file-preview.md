@@ -38,7 +38,7 @@ The recipe specifies no CSS, class, dimensions, animation timing or raw markup.
 ## Connect shared parts and application callbacks
 
 ```ts
-import {createAnnouncementPart, createStackPart, mountParts} from '../../src/parts/index.js';
+import {createAnnouncementPart, createStackPart, mountParts} from 'pith-ui';
 import {composeFilePreview, type PreviewInput, type PreviewCallbacks} from '../../examples/assemblies/file-preview.js';
 import {composeImageViewer} from '../../examples/assemblies/image-viewer.js';
 

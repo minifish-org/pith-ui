@@ -13,6 +13,7 @@ Start with the [frozen inventory](docs/contracts/rc27-ui-022.md) and [coverage m
 | Input, permissions and file drops | [Composer](docs/assemblies/composer.md), [attachments](docs/assemblies/attachments.md), [permission](docs/assemblies/permission-control.md) |
 | Pending messages | [Queue](docs/assemblies/pending-messages.md) |
 | Approval, failures and runtime | [Approval](docs/assemblies/approval.md), [failure](docs/assemblies/task-failure.md), [runtime](docs/assemblies/runtime.md) |
+| Request costs and completion notices | [Ledger](docs/assemblies/cost-ledger.md), [notices](docs/assemblies/completion-notices.md) |
 | Message and pending-message edit | [Text edit](docs/assemblies/text-edit.md) |
 | Confirmations | [Confirmation](docs/assemblies/confirmation.md), [full access](docs/assemblies/full-access.md) |
 | Workspace picker, rename and branches | [Picker](docs/assemblies/workspace-picker.md), [rename](docs/assemblies/rename.md), [branches](docs/assemblies/branch-history.md) |
@@ -21,6 +22,7 @@ Start with the [frozen inventory](docs/contracts/rc27-ui-022.md) and [coverage m
 | Models and provider sign-in | [Models](docs/assemblies/model-picker.md), [login](docs/assemblies/provider-login.md) |
 | Resources and editing | [Inventory](docs/assemblies/resource-inventory.md), [editor](docs/assemblies/resource-editor.md) |
 | Files, preview and zoom | [Artifacts](docs/assemblies/artifacts.md), [preview](docs/assemblies/file-preview.md), [viewer](docs/assemblies/image-viewer.md) |
+| Shared ownership and feature coordination | [Complete local assembly](docs/assemblies/desk.md) |
 
 Copy the relevant blueprint into the consumer and import parts from `pith-ui`. Keep its DTOs and orchestration functions local. The package export map blocks recipe and internal imports. Sources bundled as documentation use the published entry and compile from the installed tarball.
 

@@ -122,7 +122,7 @@ standalone validation/demo adapters. A shared application uses the composable
 builders below, then mounts their genuine dialog parts through one theme owner.
 
 ```ts
-import {createStackPart, mountParts} from '../../src/parts/index.js';
+import {createStackPart, mountParts} from 'pith-ui';
 import {
   composeResourceEditor, composeResourceLoading,
   type ResourceCallbacks, type ResourceState,

@@ -2,7 +2,7 @@
 import {
   createButtonPart,createInputPart,createMetadataPart,createReadingRegionPart,createReadingViewportPart,createSearchToolbarPart,
   type AnnouncementPart,type LayoutPart,type Part,type ReadingViewportPart,type SearchToolbarPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 import {composeConversationBody,type ConversationBodyCallbacks,type ConversationBodyState} from './conversation-body.js';
 
 export interface ConversationReaderComposition {

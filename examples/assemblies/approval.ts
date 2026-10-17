@@ -4,7 +4,7 @@ import {
   createCodePropertyPart,createFeedbackPart,createFoldingPart,createIconPart,createPaginationPart,
   createPreformattedPart,createStackPart,createTextPart,
   type ButtonPart,type PaginationPart,type StackPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface Approval {id: string;toolName: string;warning?: string;canAlwaysAllow: boolean;argsText: string;preview?: {kind: string;path: string;error?: string;diff?: string;truncated?: boolean}}
 export interface ApprovalState {approval: Approval|null;disabled?: boolean}

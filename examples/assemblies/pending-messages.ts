@@ -1,7 +1,7 @@
 import {
   createScrollListPart,createCompactRowPart,createCompactRowBodyPart,createCompactRowActionsPart,createRowTextPart,createBadgePart,createTextPart,createButtonPart,
   type ScrollListPart,type LayoutPart,type ButtonPart,type BadgePart,type RowTextPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface PendingItem {id: string;text: string;mode: string;imageCount?: number}
 export interface PendingState {items: readonly PendingItem[];running: boolean;busy: boolean}

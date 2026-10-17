@@ -4,7 +4,7 @@ import {
   createIconPart, createStackPart, createTextFlowPart, createTextPart,
   createWarningPart, mountParts,
   type DialogPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface FullAccessState {title?: string; error?: string; disabled?: boolean}
 export type FullAccessResult = {ok: true} | {ok: false; error: string};

@@ -3,7 +3,7 @@ import {
   createBrandMarkPart,createBrandTilePart,createButtonPart,createCenteredContentPart,createContextLinePart,createIconNotePart,createIconPart,
   createResponsiveLeadPart,createStepActionPart,createStepGroupPart,createSuggestionGroupPart,createTextFlowPart,createTextPart,
   type BrandMarkOptions,type CenteredContentPart,type LayoutPart,type Part,type StepActionPart,type StepGroupPart,type SuggestionGroupPart,type TextFlowPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface WelcomeState {workspace?: {name: string;path: string};hasApiKey: boolean;hasConnections: boolean;modelName: string;hidden?: boolean}
 export type WelcomeResult = void|{ok: true}|{ok: false;error: string};

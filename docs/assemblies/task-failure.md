@@ -41,7 +41,7 @@ This compiled example shows that part alongside another owned region:
 import {
   composeTaskFailure, type FailureAction, type TaskFailureState, type Result,
 } from '../../examples/assemblies/task-failure.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface RecoveryController {
   act(action: FailureAction, workspaceID?: string): Promise<Result>;

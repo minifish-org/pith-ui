@@ -5,7 +5,7 @@ Executable source: [`composer.ts`](../../examples/assemblies/composer.ts). This 
 The native part tree is `ComposerRegion(ComposerPanels(caller panels), Form(composer: Feedback(error), ThumbnailStrip, FilePicker(images), MessageInput, InputToolbar(InputContext(attach Button, permission CompactSelect), InputActions(model Button, inline CompactSelect, send/stop Button))), ContextNote(attachment-guidance), ContextNote(permission))`. Empty layout parts add only the original DIVs; controls retain native TEXTAREA, INPUT, SELECT, LABEL and BUTTON roots. The library fixes fonts, spacing, colors, growth, icons, image formats and drag feedback.
 
 ```ts
-import {mountParts} from '../../src/parts/index.js';
+import {mountParts} from 'pith-ui';
 import {composeComposer} from '../../examples/assemblies/composer.js';
 const composer = composeComposer({action: 'send'}, {
   onSubmit: async text => ({ok: true}),

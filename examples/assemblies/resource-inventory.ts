@@ -5,7 +5,7 @@ import {
   createGroupedCardPart, createIconPart, createPreformattedPart, createStackPart,
   createTextPart, createToolbarPart, mountParts,
   type ButtonPart, type DialogPart, type LayoutPart, type MountPartsOptions, type Part,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type ResourceKind = 'instructions' | 'skill' | 'template';
 export interface ResourceEntry {readonly name: string; readonly path: string; readonly description?: string; readonly content?: string}

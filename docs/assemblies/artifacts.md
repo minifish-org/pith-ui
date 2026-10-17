@@ -42,7 +42,7 @@ action; the recipe explicitly connects the counter's callback to
 ## Connect shared dependencies and callbacks
 
 ```ts
-import {createAnnouncementPart, createStackPart, mountParts} from '../../src/parts/index.js';
+import {createAnnouncementPart, createStackPart, mountParts} from 'pith-ui';
 import {composeArtifacts, type ArtifactsCallbacks, type ArtifactsState} from '../../examples/assemblies/artifacts.js';
 import {composeImageViewer} from '../../examples/assemblies/image-viewer.js';
 

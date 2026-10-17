@@ -22,7 +22,7 @@ no wrapper around each control. The library decides every presentation rule.
 
 ```ts
 import {composeRename} from '../../examples/assemblies/rename.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 export function openRename(mount: HTMLElement, applicationBody: Part) {
   const assembly = composeRename({id: 'conversation-a', title: 'Project notes'}, {

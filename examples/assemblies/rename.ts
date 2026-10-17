@@ -3,7 +3,7 @@ import {
   createButtonPart, createDialogPart, createFeedbackPart, createFieldLabelPart,
   createFooterPart, createFormPart, createInputPart, mountParts,
   type DialogPart, type FormPart, type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export interface RenameState {id: string; title: string; error?: string; disabled?: boolean}
 export interface RenameDraft {id: string; title: string}

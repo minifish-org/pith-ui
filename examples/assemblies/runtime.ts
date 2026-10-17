@@ -1,5 +1,5 @@
 /** Internal consumer assembly. Runtime values, timing and cost fetching stay in Desk. */
-import {createDescriptionListPart,createDisclosurePart,createScrollAreaPart,createStackPart,createTextPart,type DescriptionEntry,type DescriptionListPart,type DisclosurePart,type Part} from '../../src/parts/index.js';
+import {createDescriptionListPart,createDisclosurePart,createScrollAreaPart,createStackPart,createTextPart,type DescriptionEntry,type DescriptionListPart,type DisclosurePart,type Part} from 'pith-ui';
 
 export interface RuntimeState {visible: boolean;summary: string;duration: string;speed: string;provider?: string;thinkingLevel?: string;inputTokens: string;outputTokens: string;cacheRead: string;cacheWrite: string;contextTokens: string;contextWindow: string;compactions: string;toolFailures: string;recordedCost: string;latestCost: string}
 export interface RuntimeComposition {readonly part: DisclosurePart;update(state: Readonly<RuntimeState>): void;updateTiming(state: {summary: string;duration: string;speed: string}): void;updateCostsVisible(visible: boolean): void;readCosts(): {open: boolean;runtimeOpen: boolean};resetCosts(): void;destroy(): void}

@@ -5,7 +5,7 @@ import {
   createPreformattedPart, createStackPart, createTextPart, createTrailingActionsPart, mountParts,
   type AnnouncementPart, type ButtonPart, type DialogPart, type ImagePart, type MarkdownPart,
   type MountPartsOptions, type PaginationPart, type Part, type PreformattedPart, type TextPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type PreviewKind = 'text' | 'markdown' | 'diff' | 'image';
 export type PreviewResult = void | {ok: true} | {ok: false; error: string};

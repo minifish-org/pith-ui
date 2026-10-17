@@ -1,5 +1,5 @@
 /** Internal consumer recipe. Task recovery, configuration and diagnostics stay with the controller. */
-import {createButtonPart,createCalloutPart,createStackPart,createTextPart,type ButtonPart,type CalloutPart,type StackPart,type TextPart} from '../../src/parts/index.js';
+import {createButtonPart,createCalloutPart,createStackPart,createTextPart,type ButtonPart,type CalloutPart,type StackPart,type TextPart} from 'pith-ui';
 
 export type Result = {ok: true}|{ok: false;error: string};
 export type FailureAction = 'continue'|'settings'|'diagnostics';

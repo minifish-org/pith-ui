@@ -1,5 +1,5 @@
 /** Internal consumer assembly. Saved requests and price estimates remain Desk data. */
-import {createContentViewportPart,createDisclosurePart,createLineBreakPart,createPreformattedPart,createTablePart,createTableRowPart,createTextPart,type ContentViewportPart,type DisclosurePart,type PreformattedPart,type TablePart,type TableRowPart,type TextPart} from '../../src/parts/index.js';
+import {createContentViewportPart,createDisclosurePart,createLineBreakPart,createPreformattedPart,createTablePart,createTableRowPart,createTextPart,type ContentViewportPart,type DisclosurePart,type PreformattedPart,type TablePart,type TableRowPart,type TextPart} from 'pith-ui';
 
 export interface CostRequestDisplay {id: string;purpose: string;status: string;provider: string;providerName?: string;model: string;modelName?: string;time: string;source: string;price: unknown;known: boolean;usage: {input: number;output: number;cacheRead: number;cacheWrite: number;reasoning?: number;cost: {total: number}}}
 export interface CostLedgerState {unknownRequests: number;requests: readonly CostRequestDisplay[]|null}

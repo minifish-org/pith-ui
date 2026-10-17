@@ -36,7 +36,7 @@ event is accepted by the public part.
 ## Connect one shared frame
 
 ```ts
-import {mountParts} from '../../src/parts/index.js';
+import {mountParts} from 'pith-ui';
 import {composeFrame, type FrameState} from '../../examples/assemblies/frame.js';
 import {composeConversationReader} from '../../examples/assemblies/conversation-reader.js';
 import {type ConversationBodyState, type ConversationBodyCallbacks} from '../../examples/assemblies/conversation-body.js';

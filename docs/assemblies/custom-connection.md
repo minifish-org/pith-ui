@@ -61,7 +61,7 @@ import {
   composeCustomConnection, composeCustomConnectionLoading,
   type CustomConnectionDraft, type CustomConnectionState, type Result,
 } from '../../examples/assemblies/custom-connection.js';
-import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
+import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface ConnectionController {
   load(): Promise<CustomConnectionState>;

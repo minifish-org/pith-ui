@@ -5,7 +5,7 @@ import {
   createFormPart,createInputAdornmentPart,createInputPart,createProgressPart,createSectionPart,
   createSelectPart,createStatusPart,createTextPart,createToolbarPart,mountParts,
   type ButtonPart,type ButtonPartState,type DialogPart,type DisclosurePart,type FormPart,type MountPartsOptions,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type Appearance = 'light' | 'dark' | 'system';
 export type Result = {ok: true} | {ok: false;error: string};

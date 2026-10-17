@@ -6,7 +6,7 @@ import {
   createSelectPart,createSeparatedSectionPart,createStackPart,createStatusPart,createTextareaPart,
   createTextPart,createToolbarPart,mountParts,
   type ButtonPart,type CardPart,type DialogPart,type FormPart,type MountPartsOptions,type Part,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 
 export type Result = {ok: true} | {ok: false;error: string};
 type HostResult = void | Result | Promise<void | Result>;

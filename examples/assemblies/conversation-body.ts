@@ -4,7 +4,7 @@ import {
   createReadingColumnPart,createBubblePart,createTextPart,createReadingNotePart,createMarkdownPart,
   createTimestampPart,createMessageFooterPart,createMessageActionsPart,createButtonPart,createCopyButtonPart,createAnnouncementPart,createWorkingIndicatorPart,
   type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,type AnnouncementPart,type ReadingColumnPart,type LocalContentLink,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 import {composeToolGroup,type ToolGroupComposition} from './tool-disclosures.js';
 import {createConversationImageScope,type ImageReference,type GalleryCallbacks,type ImageGalleryComposition} from './conversation-images.js';
 

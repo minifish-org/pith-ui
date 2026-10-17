@@ -4,7 +4,7 @@ import {
   createCompoundDisclosurePart,createDisclosureBodyPart,createIconPart,createTextPart,createMetadataPart,
   createCodePropertyPart,createPreformattedPart,
   type CompoundDisclosurePart,type Part,type PreformattedPart,type CodePropertyPart,type LayoutPart,
-} from '../../src/parts/index.js';
+} from 'pith-ui';
 import type {ImageReference,ImageGalleryComposition} from './conversation-images.js';
 
 export interface ToolMessage {id: string;role: string;text: string;toolName?: string;toolCallId?: string;status?: string;command?: {text: string;cwd: string;exitCode?: number};images?: readonly ImageReference[]}
