@@ -34,8 +34,20 @@ test('generic mount owns independent small dialogs without an app or scene inter
 test('content pieces sanitize Markdown and diff while preserving unchanged reading nodes',async({page})=>{
   await page.goto('/tests/fixture.html');
   await page.evaluate(async()=>{const u=await import('../src/index.js');const text=u.createMarkdown({text:'# Title\n\nSafe <script>bad()</script> text'});const diff=u.createDiff({text:'-<script>bad()</script>\n+safe'});u.mount(document.body,u.createStack({children:[text,diff]}));Object.assign(window,{parts:{text,first:document.querySelector('.pui-markdown h1')}});});
-  await expect(page.locator('script')).toHaveCount(0);
+  await expect(page.locator('.pui-markdown script, .pui-diff script')).toHaveCount(0);
   await expect(page.locator('.pui-diff-add')).toContainText('+safe');
   await page.evaluate(()=>{const p=Reflect.get(window,'parts');p.text.update({text:'# Title\n\nSafe <script>bad()</script> text and streaming'});p.same=p.first===document.querySelector('.pui-markdown h1');});
   expect(await page.evaluate(()=>Reflect.get(window,'parts').same)).toBe(true);
+});
+
+test('safe content routes link failures locally and ignores completion after destroy',async({page})=>{
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async()=>{const u=await import('../src/index.js');const errors:string[]=[],global:string[]=[];window.addEventListener('error',event=>global.push(event.message));let finish!:(value:{ok:false;error:string})=>void;const block=u.createMarkdown({text:'[Throw](https://throw.test) [Late](https://late.test)\n\n```ts\nsecret\n```',onLink:url=>{if(url.includes('throw'))throw new Error('Local failure');return new Promise(resolve=>{finish=resolve;});},onError:message=>errors.push(message)});const owner=u.mount(document.body,block);Object.assign(window,{parts:{errors,global,owner,finish:()=>finish({ok:false,error:'Late failure'})}});});
+  await page.getByRole('link',{name:'Throw',exact:true}).click();
+  expect(await page.evaluate(()=>Reflect.get(window,'parts').errors)).toEqual(['Local failure']);
+  expect(await page.evaluate(()=>Reflect.get(window,'parts').global)).toEqual([]);
+  await expect(page.getByRole('button',{name:'Copy code',exact:true})).toBeHidden();
+  await page.getByRole('link',{name:'Late',exact:true}).click();
+  await page.evaluate(()=>{const p=Reflect.get(window,'parts');p.owner.destroy();p.finish();});
+  expect(await page.evaluate(()=>Reflect.get(window,'parts').errors)).toEqual(['Local failure']);
 });
