@@ -41,3 +41,21 @@ test('small confirmations render finite emphasized text safely and retain its no
   await expect(dialog.locator('strong')).toHaveText('<img src=x onerror=alert(1)>');await expect(dialog.locator('img')).toHaveCount(0);
   await expect(dialog.getByRole('button',{name:'Remove',exact:true})).toBeDisabled();expect(await page.evaluate(()=>Reflect.get(window,'controls').same)).toBe(true);
 });
+
+
+for(const kind of ['confirmation','message','pending-message'] as const) test(`small ${kind} retains the existing scene geometry`,async({page})=>{
+  await page.goto('/tests/fixture.html');
+  const result=await page.evaluate(async(kind)=>{
+    const {createApplication}=await import('../src/app/index.js');const ui=await import('../src/index.js');const host=document.createElement('main');document.body.append(host);
+    const app=createApplication(host);
+    const old=kind==='confirmation'?app.workspace.openConfirmation({title:'Parity',action:'Remove',description:{before:'Remove example?'}},{onConfirm:()=>({ok:true})})
+      :kind==='message'?app.workspace.openMessageEditor({title:'Parity',value:'Draft',submitLabel:'Save'}):app.workspace.openQueueEditor({title:'Parity',value:'Draft',submitLabel:'Save'});
+    const measure=()=>{const d=document.querySelector<HTMLDialogElement>('dialog[open]')!,area=d.querySelector('textarea');const css=getComputedStyle(d);return {width:d.getBoundingClientRect().width,padding:css.padding,radius:css.borderRadius,rows:area?.rows,label:d.querySelector('label')?.textContent};};
+    const before=measure();old.destroy();
+    const small=kind==='confirmation'?ui.createConfirmDialog({title:'Parity',confirmLabel:'Remove',message:'Remove example?',onConfirm:()=>({ok:true})})
+      :ui.createTextEditDialog({title:'Parity',purpose:kind} as Parameters<typeof ui.createTextEditDialog>[0]);
+    app.attachDialog(small);if('read' in small)small.open({value:'Draft'});else small.open();
+    const after=measure();app.destroy();return {before,after};
+  },kind);
+  expect(result.after).toEqual(result.before);
+});
