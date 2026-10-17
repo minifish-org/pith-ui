@@ -98,16 +98,23 @@ test('explicit prompt reset clears an earlier submission error', async ({ page }
 });
 test('form validation and submission reset are semantic ports without replacing a draft', async ({ page }) => {
     await page.goto('/tests/fixture.html');
-    await page.evaluate(async () => { const u = await import('../src/index.js'); const input = u.createTextInput({ label: 'Name', value: 'Draft', required: true }); let finish!: (value: {
-        ok: false;
-        error: string;
-    }) => void; const form = u.createForm({ children: [input], onSubmit: () => new Promise(resolve => { finish = resolve; }) }); u.mount(document.body, form); Object.assign(window, { consumer: { input, form, finish: () => finish({ ok: false, error: 'Old submission' }) } }); });
+    await page.evaluate(async () => {
+        const u = await import('../src/index.js');
+        const input = u.createTextInput({ label: 'Name', value: 'Draft', required: true });
+        let finish!: (value: {
+            ok: false;
+            error: string;
+        }) => void;
+        const form = u.createForm({ children: [input], onSubmit: () => new Promise(resolve => { finish = resolve; }) });
+        u.mount(document.body, form);
+        Object.assign(window, { consumer: { input, form, finish: () => finish({ ok: false, error: 'Old submission' }) } });
+    });
     const input = page.getByRole('textbox', { name: /^Name/ });
     await input.focus();
     await input.evaluate((node: HTMLInputElement) => node.setSelectionRange(1, 3));
     expect(await page.evaluate(() => Reflect.get(window, 'consumer').form.validate())).toBe(true);
     await page.getByRole('button', { name: 'Save', exact: true }).click();
-    await expect(input).toBeDisabled();
+    await expect(input).toBeEditable();
     await page.evaluate(() => { const c = Reflect.get(window, 'consumer'); c.form.resetSubmission(); c.finish(); });
     await expect(input).toBeEnabled();
     await expect(input).toHaveValue('Draft');
@@ -151,15 +158,36 @@ test('prompt insertion can separate a reference at the current selection', async
     await page.evaluate(() => Reflect.get(window, 'promptControl').insert('`/path with spaces`', { separate: true }));
     await expect(page.getByRole('textbox', { name: 'Message' })).toHaveValue('before `/path with spaces` after');
 });
-
-test('closing and reopening a composed prompt retires late submission feedback',async({page})=>{
-  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');let finish!:(value:{ok:false;error:string})=>void;const input=u.createPromptInput({label:'Message',value:'Keep',onSubmit:()=>new Promise(resolve=>finish=resolve)});const dialog=u.createDialog({title:'Compose',content:input});u.mount(document.body,dialog);dialog.open();Object.assign(window,{dialog,finish:()=>finish({ok:false,error:'Old failure'})});});
-  await page.getByRole('textbox',{name:'Message'}).press('Enter');await page.evaluate(()=>{Reflect.get(window,'dialog').close();Reflect.get(window,'dialog').open();Reflect.get(window,'finish')();});await expect(page.getByText('Old failure',{exact:true})).not.toBeVisible();await expect(page.getByRole('textbox',{name:'Message'})).toHaveValue('Keep');
+test('closing and reopening a composed prompt retires late submission feedback', async ({ page }) => {
+    await page.goto('/tests/fixture.html');
+    await page.evaluate(async () => { const u = await import('../src/index.js'); let finish!: (value: {
+        ok: false;
+        error: string;
+    }) => void; const input = u.createPromptInput({ label: 'Message', value: 'Keep', onSubmit: () => new Promise(resolve => finish = resolve) }); const dialog = u.createDialog({ title: 'Compose', content: input }); u.mount(document.body, dialog); dialog.open(); Object.assign(window, { dialog, finish: () => finish({ ok: false, error: 'Old failure' }) }); });
+    await page.getByRole('textbox', { name: 'Message' }).press('Enter');
+    await page.evaluate(() => { Reflect.get(window, 'dialog').close(); Reflect.get(window, 'dialog').open(); Reflect.get(window, 'finish')(); });
+    await expect(page.getByText('Old failure', { exact: true })).not.toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Message' })).toHaveValue('Keep');
+});
+test('Markdown availability and source replacement preserve reading nodes and retire old link feedback', async ({ page }) => {
+    await page.goto('/tests/fixture.html');
+    await page.evaluate(async () => { const u = await import('../src/index.js'); const replies: Array<(value: {
+        ok: false;
+        error: string;
+    }) => void> = [], calls: string[] = []; const text = '[Open](https://example.com)\n\n```ts\nconst value=1;\n```'; const markdown = u.createMarkdown({ text, onLink: url => { calls.push(url); return new Promise(resolve => replies.push(resolve)); }, onCopy: async () => ({ ok: true }), onError: error => calls.push(error) }); u.mount(document.body, markdown); Object.assign(window, { markdown, replies, calls, text }); });
+    await page.getByRole('link', { name: 'Open', exact: true }).click();
+    await page.getByRole('link', { name: 'Open', exact: true }).dispatchEvent('click');
+    expect(await page.evaluate(() => Reflect.get(window, 'calls'))).toEqual(['https://example.com']);
+    await page.evaluate(() => { Reflect.get(window, 'markdown').update({ text: Reflect.get(window, 'text'), disabled: true }); });
+    await expect(page.getByRole('link', { name: 'Open', exact: true })).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.locator('[data-copy-code]')).toBeDisabled();
+    await page.evaluate(() => { Reflect.get(window, 'markdown').update({ text: 'Replacement' }); Reflect.get(window, 'replies')[0]({ ok: false, error: 'Old link failure' }); });
+    await expect(page.getByText('Replacement', { exact: true })).toBeVisible();
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
+    expect(await page.evaluate(() => Reflect.get(window, 'calls'))).toEqual(['https://example.com']);
 });
 
-test('Markdown availability and source replacement preserve reading nodes and retire old link feedback',async({page})=>{
-  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const replies:Array<(value:{ok:false;error:string})=>void>=[],calls:string[]=[];const text='[Open](https://example.com)\n\n```ts\nconst value=1;\n```';const markdown=u.createMarkdown({text,onLink:url=>{calls.push(url);return new Promise(resolve=>replies.push(resolve));},onCopy:async()=>({ok:true}),onError:error=>calls.push(error)});u.mount(document.body,markdown);Object.assign(window,{markdown,replies,calls,text});});
-  await page.getByRole('link',{name:'Open',exact:true}).click();await page.getByRole('link',{name:'Open',exact:true}).dispatchEvent('click');expect(await page.evaluate(()=>Reflect.get(window,'calls'))).toEqual(['https://example.com']);
-  await page.evaluate(()=>{Reflect.get(window,'markdown').update({text:Reflect.get(window,'text'),disabled:true});});await expect(page.getByRole('link',{name:'Open',exact:true})).toHaveAttribute('aria-disabled','true');await expect(page.locator('[data-copy-code]')).toBeDisabled();
-  await page.evaluate(()=>{Reflect.get(window,'markdown').update({text:'Replacement'});Reflect.get(window,'replies')[0]({ok:false,error:'Old link failure'});});await expect(page.getByText('Replacement',{exact:true})).toBeVisible();await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,0)));expect(await page.evaluate(()=>Reflect.get(window,'calls'))).toEqual(['https://example.com']);
+test('a form pending submission preserves editable input while the submit guard remains closed',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const field=u.createTextInput({label:'Name',value:'First'});let finish!:(value:{ok:true})=>void;let calls=0;const form=u.createForm({children:[field],onSubmit:()=>{calls++;return new Promise(resolve=>finish=resolve);}});u.mount(document.body,form);Object.assign(window,{form,pendingCalls:()=>calls,finish:()=>finish({ok:true})});});
+  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(page.getByRole('textbox',{name:'Name',exact:true})).toBeEditable();await page.getByRole('textbox',{name:'Name',exact:true}).fill('Next draft');await page.evaluate(()=>Reflect.get(window,'form').submit());expect(await page.evaluate(()=>Reflect.get(window,'pendingCalls')())).toBe(1);await page.evaluate(()=>Reflect.get(window,'finish')());await expect(page.getByRole('textbox',{name:'Name',exact:true})).toHaveValue('Next draft');
 });
