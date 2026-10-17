@@ -6,6 +6,18 @@ test('inline and readout folds retain native triangles while navigation and outp
     const ui = await import('../src/index.js');
     ui.mount(document.body, ui.createStack({context: 'flow', children: ['inline', 'readout', 'navigation', 'output'].map(context => ui.createDisclosure({context: context as 'inline' | 'readout' | 'navigation' | 'output', title: context, content: ui.createText({text: context + ' content'})}))}));
   });
+  // A native marker is painted by the browser and OS font stack. Keep the
+  // accepted macOS measurements, and independently recreate the source HTML
+  // for exact comparison on platforms with a different system-font fallback.
+  await page.evaluate(() => {
+    for (const context of ['inline', 'readout']) {
+      const details = document.createElement('details'), summary = document.createElement('summary'), title = document.createElement('span');
+      details.id = 'native-' + context;
+      Object.assign(details.style, {fontFamily: '-apple-system, BlinkMacSystemFont, \'Segoe UI\', sans-serif', fontSize: '14px', lineHeight: '21px'});
+      Object.assign(summary.style, {display: 'list-item', listStylePosition: 'inside', padding: '8px 0'});
+      title.textContent = context; summary.append(title); details.append(summary); document.body.append(details);
+    }
+  });
   for (const context of ['inline', 'readout']) {
     const fold = page.locator('.pui-disclosure-' + context), summary = fold.locator(':scope > summary');
     await expect(summary).toHaveCSS('display', 'list-item');
@@ -13,11 +25,21 @@ test('inline and readout folds retain native triangles while navigation and outp
     await expect(summary).toHaveCSS('list-style-type', 'disclosure-closed');
     await expect(summary.locator('.pui-disclosure-chevron')).toBeHidden();
     const closedTextOffset = await summary.evaluate(node => {const title = node.querySelector('span:not([class])')!, range = document.createRange(); range.selectNodeContents(title); return range.getBoundingClientRect().x - node.getBoundingClientRect().x;});
-    expect(closedTextOffset).toBe(browserName === 'webkit' ? 14.8544921875 : 14.828125);
+    const native = page.locator('#native-' + context), nativeSummary = native.locator('summary');
+    const nativeClosedOffset = await nativeSummary.evaluate(node => {const range = document.createRange(); range.selectNodeContents(node.querySelector('span')!); return range.getBoundingClientRect().x - node.getBoundingClientRect().x;});
+    expect(closedTextOffset).toBe(nativeClosedOffset);
+    if (process.platform === 'darwin') expect(closedTextOffset).toBe(browserName === 'webkit' ? 14.8544921875 : 14.828125);
+    await expect(summary).toHaveCSS('font-size', '14px');
+    await expect(summary).toHaveCSS('line-height', '21px');
+    await expect(summary).toHaveCSS('padding', '8px 0px');
+    await expect(summary).toHaveCSS('font-family', await nativeSummary.evaluate(node => getComputedStyle(node).fontFamily));
     await summary.press('Space');
     await expect(summary).toHaveCSS('list-style-type', 'disclosure-open');
     const openTextOffset = await summary.evaluate(node => {const title = node.querySelector('span:not([class])')!, range = document.createRange(); range.selectNodeContents(title); return range.getBoundingClientRect().x - node.getBoundingClientRect().x;});
-    expect(openTextOffset).toBe(browserName === 'webkit' ? 14.3828125 : 14.828125);
+    await native.evaluate(node => {(node as HTMLDetailsElement).open = true;});
+    const nativeOpenOffset = await nativeSummary.evaluate(node => {const range = document.createRange(); range.selectNodeContents(node.querySelector('span')!); return range.getBoundingClientRect().x - node.getBoundingClientRect().x;});
+    expect(openTextOffset).toBe(nativeOpenOffset);
+    if (process.platform === 'darwin') expect(openTextOffset).toBe(browserName === 'webkit' ? 14.3828125 : 14.828125);
   }
   for (const context of ['navigation', 'output']) {
     const summary = page.locator('.pui-disclosure-' + context + ' > summary');
