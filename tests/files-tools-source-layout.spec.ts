@@ -44,7 +44,7 @@ async function installTools(page: import('@playwright/test').Page) {
     const list = u.createList({items: [{key: 'read', content: ordinary('read_file')}, {key: 'edit', content: ordinary('edit_file')}, {key: 'command', content: commandFold}]});
     const group = u.createDisclosure({context: 'inline', icon: 'terminal', title: 'Used tools', status: u.createActions({children: [u.createText({role: 'caption', text: '3 calls'}), u.createSlot({hidden: true}), u.createSlot({hidden: true})]}), content: list, open: true});
     const answer = u.createMessage({role: 'assistant', content: u.createMarkdown({text: 'The simulated tool outputs retain their original folds and layout.'})});
-    const reader = u.createReadingArea({label: 'Source reading', identity: 'tools', column: 'reading', items: [{key: 'group', content: group}, {key: 'answer', content: answer}]});
+    const reader = u.createReadingArea({label: 'Source reading', identity: 'tools', column: 'reading', items: [{key: 'group', revision: '1', content: group}, {key: 'answer', revision: '1', content: answer}]});
     const owner = u.mount(document.body, reader); Reflect.set(window, 'sourceTools', {owner, group, commandFold, command, directory, output, reader, answer});
   });
 }
@@ -116,7 +116,7 @@ test('the source reading column keeps the narrow message rhythm without changing
   await page.evaluate(async () => {
     const u = await import('../src/index.js');
     const host = document.createElement('div'); document.body.append(host);
-    u.mount(host, u.createReadingArea({label: 'Ordinary reading', identity: 'ordinary', items: [{key: 'frame', content: u.createMessage({role: 'assistant', content: u.createText({text: 'Independent frame'})})}]}));
+    u.mount(host, u.createReadingArea({label: 'Ordinary reading', identity: 'ordinary', items: [{key: 'frame', revision: '1', content: u.createMessage({role: 'assistant', content: u.createText({text: 'Independent frame'})})}]}));
   });
   const ordinary = page.getByRole('region', {name: 'Ordinary reading'});
   await expect(ordinary.locator('.pui-control-list')).toHaveCSS('gap', '12px');

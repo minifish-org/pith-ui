@@ -60,7 +60,7 @@ for(const item of ['controls-form-page','controls-actions-page'])for(const theme
     // These are new catalog links, not part of either accepted example. Assert
     // their real labels first, then retain the accepted navigation metadata for
     // the existing screenshots. Do not alter demo, measurement or layout pixels.
-    const addedNavigation = ['content-column','surface','grid','brand','step','notification-region','breadcrumb','controls-layout-contexts','table'];
+    const addedNavigation = ['content-column','surface','grid','brand','step','notification-region','breadcrumb','controls-layout-contexts','table','timestamp','warning-action'];
     for (const id of addedNavigation) {
       const entry = catalog.find(item => item.id === id);
       expect(entry).toBeDefined();

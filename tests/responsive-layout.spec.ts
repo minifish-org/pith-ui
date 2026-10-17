@@ -15,7 +15,12 @@ test('navigation and reading regions preserve the accepted responsive measures',
   await page.setViewportSize({width,height:800});
   const small=width<=720,navWidth=small?0:width<=1000?230:260;
   const nav=page.locator('.pui-split-navigation'),main=page.locator('.pui-split-content'),input=page.locator('.pui-column-input');
-  if(small)await expect(nav).toBeHidden();else{await expect(nav).toBeVisible();expect((await nav.boundingBox())!.width).toBe(navWidth);}
+  if(small){
+   // Accepted0.3.1 styles.css738 retains the sidebar at left:-260px;
+   // it is offscreen and inert, rather than removed from layout.
+   await expect.poll(async()=>await nav.boundingBox()).toEqual({x:-260,y:0,width:260,height:800});
+   expect(await nav.evaluate(node=>(node as HTMLElement).inert)).toBe(true);
+  }else{await expect(nav).toBeVisible();expect((await nav.boundingBox())!.width).toBe(navWidth);}
   expect((await main.boundingBox())!.x).toBe(navWidth);
   expect((await input.boundingBox())!.width).toBe(small?width-28:width<=1000?width-navWidth-50:Math.min(810,width-navWidth-80));
   expect((await page.locator('.pui-pane-conversation>.pui-pane-header').boundingBox())!.height).toBe(small?64:79);
