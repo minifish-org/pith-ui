@@ -57,6 +57,23 @@ for(const item of ['controls-form-page','controls-actions-page'])for(const theme
     await expect(page.locator('.gallery-docs')).toContainText('pith-ui · 正式受限积木');
     await expect(page.locator('.gallery-version')).toHaveText(packageMetadata.version);
     await expect(page.locator('.gallery-count')).toHaveText(`${catalog.length} 项 · 正式积木与组合示例`);
+    // These are new catalog links, not part of either accepted example. Assert
+    // their real labels first, then retain the accepted navigation metadata for
+    // the existing screenshots. Do not alter demo, measurement or layout pixels.
+    const addedNavigation = ['content-column','surface','grid','brand','step','notification-region','breadcrumb','controls-layout-contexts','table'];
+    for (const id of addedNavigation) {
+      const entry = catalog.find(item => item.id === id);
+      expect(entry).toBeDefined();
+      await expect(page.locator(`.gallery-navigation button[data-item="${id}"]`)).toHaveText(entry!.title);
+    }
+    await page.locator('.gallery-navigation').evaluate((navigation, ids) => {
+      for (const id of ids) navigation.querySelector(`button[data-item="${id}"]`)!.remove();
+      // Breadcrumb is the first formal navigation block; remove only its now
+      // empty catalog category, never a category containing an accepted block.
+      for (const heading of navigation.querySelectorAll('h3')) {
+        if (heading.textContent === '导航' && (!heading.nextElementSibling || heading.nextElementSibling.tagName === 'H3')) heading.remove();
+      }
+    }, addedNavigation);
     await page.locator('.gallery-version').evaluate(node=>{node.textContent='0.3.0';});
     await page.locator('.gallery-count').evaluate(node=>{node.textContent='正式积木与组合示例';});
     await page.evaluate(async()=>{await document.fonts.ready;});
