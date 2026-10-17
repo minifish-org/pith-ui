@@ -13,7 +13,7 @@ async function setup(page: Page,old: boolean,appearance: 'light'|'dark' = 'light
     // appearance owner; Desk itself has one application theme owner.
     document.body.classList.remove('pui');
     const mount = document.body.appendChild(document.createElement('div')),events: boolean[] = [],calls: string[] = [];
-    const options = {appearance,onUIStateChange(state: {hasModal: boolean}) {events.push(state.hasModal);},workspace: {onBusyAction(key: string) {calls.push(key);},onMessageAction(target: {action: string}) {calls.push(target.action);},onCopyCode() {calls.push('code');}}};
+    const options = {appearance,brand: {name: 'Pith',qualifier: 'Desk',mark: {symbol: 'pith',alt: ''}},onUIStateChange(state: {hasModal: boolean}) {events.push(state.hasModal);},workspace: {onBusyAction(key: string) {calls.push(key);},onMessageAction(target: {action: string}) {calls.push(target.action);},onCopyCode() {calls.push('code');}}};
     const path = old ? '/src/app/index.ts' : '/examples/assemblies/desk.ts',module = await import(path);
     const app = old ? module.createApplication(mount,options) : module.mountDesk(mount,options);
     window.deskPartsHarness = {app,events,calls};
@@ -192,8 +192,12 @@ for (const appearance of ['light','dark'] as const) for (const width of [1280,39
   const measure = () => page.evaluate(async () => {
     await document.fonts.ready;for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
     const inspect = (node: Element) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);return {tag: node.localName,box: [box.x,box.y,box.width,box.height].map(value => Math.round(value*100)/100),
-      styles: ['display','position','font-family','font-size','font-weight','line-height','color','background-color','border-top-width','border-top-color','border-radius','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','gap','min-width','max-width','min-height','max-height','overflow-x','overflow-y','flex-grow','flex-shrink','flex-basis','align-items','justify-content'].map(property => style.getPropertyValue(property))};};
+      styles: ['display',...(node.classList.contains('pui-app') ? [] : ['position']),'font-family','font-size','font-weight','line-height','color','background-color','border-top-width','border-top-color','border-radius','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','gap','min-width','max-width','min-height','max-height','overflow-x','overflow-y','flex-grow','flex-shrink','flex-basis','align-items','justify-content'].map(property => style.getPropertyValue(property))};};
     return ['.pui-app','.pui-sidebar','.pui-brand','.pui-topbar','.pui-breadcrumb','.pui-conversation-actions','.pui-artifacts-control','.pui-chat-scroll','.pui-conversation-region','.pui-welcome','.pui-messages','.pui-composer-region','.pui-composer-panels','.pui-workspace-busy','.pui-inline-error','.pui-task-failure','.pui-run-status','.pui-queued-messages','.pui-composer','.pui-composer-input','.pui-composer-toolbar','.pui-composer-note','.pui-completion-notices'].map(selector => ({selector,nodes: [...document.querySelectorAll(selector)].map(inspect)}));
   });
-  await setup(page,true,appearance);await project();const before = await measure();await setup(page,false,appearance);await project();expect(await measure()).toEqual(before);
+  // The formal viewport boundary deliberately anchors itself independently of
+  // host body margins. Assert that mechanism separately while retaining exact
+  // old/new root bounds and every region's remaining computed properties.
+  await setup(page,true,appearance);await project();expect(await page.locator('.pui-app').evaluate(node => getComputedStyle(node).position)).toBe('static');const before = await measure();
+  await setup(page,false,appearance);await project();expect(await page.locator('.pui-app').evaluate(node => getComputedStyle(node).position)).toBe('absolute');expect(await measure()).toEqual(before);
 });
