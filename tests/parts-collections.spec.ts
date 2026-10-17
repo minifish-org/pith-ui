@@ -77,7 +77,7 @@ test('nested floating surfaces dismiss one layer at a time and respect modal Esc
   await expect(page.getByRole('button', {name: 'Nested menu', exact: true})).toBeFocused();
   await page.evaluate(() => window.collectionsFixture.makeModal());
   await page.keyboard.press('Escape');
-  await expect(page.locator('#collections-modal')).not.toHaveAttribute('open');
+  await expect(page.getByRole('dialog', {name: 'Related modal', includeHidden: true})).not.toHaveAttribute('open');
   await expect(popover).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(popover).toBeHidden();

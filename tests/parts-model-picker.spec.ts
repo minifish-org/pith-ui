@@ -112,7 +112,7 @@ for (const appearance of ['light', 'dark'] as const) for (const viewport of [{wi
     const base = dialog.getBoundingClientRect();
     const nodes = [...dialog.querySelectorAll('h2, label, input[type="search"], select, p, button')].filter(node => {
       const element = node as HTMLElement;
-      return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden' && !element.matches('.pui-select-backing, .pui-sr-only, [role="option"]');
+      return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden' && !element.matches('.pui-select-backing, [role="option"]');
     });
     return {width: base.width, height: base.height, nodes: nodes.map(node => {
       const element = node as HTMLElement, box = element.getBoundingClientRect(), css = getComputedStyle(element);
@@ -194,6 +194,33 @@ for (const appearance of ['light', 'dark'] as const) test(`${appearance}: initia
   for (const target of [page, baseline]) await target.evaluate(initial => {window.modelPartsHarness.model.update(initial);}, state);
   await expect(page.getByRole('searchbox', {name: 'Model', exact: true})).toHaveValue('');
   await expect(page.getByRole('combobox', {name: 'Provider', exact: true})).toHaveJSProperty('tagName', 'BUTTON');
+  expect(await page.evaluate(() => window.modelPartsHarness.model.read())).toEqual(await baseline.evaluate(() => window.modelPartsHarness.model.read()));
+  await baseline.close();
+});
+
+const catalogStates: Array<{name: string; value: ModelState}> = [
+  {name: 'disabled', value: {...state, disabled: true, editor: {...state.editor!, disabled: true}}},
+  {name: 'error', value: {...state, error: 'The catalog could not be refreshed. Your selection is retained.'}},
+  {name: 'empty', value: {editor: {providers: [], models: [], selection: {provider: '', model: '', thinkingLevel: ''}}}},
+  {name: 'null catalog', value: {editor: {providers: null, models: null, selection}}},
+  {name: 'single effort', value: {editor: {...state.editor!, selection: {provider: 'beta', model: 'b-one', thinkingLevel: 'off'}}}},
+  {name: 'long content', value: {editor: {...state.editor!, providers: state.editor!.providers!.map(provider => ({...provider, name: provider.name.repeat(12)})), models: state.editor!.models!.map(model => ({...model, name: model.name.repeat(14)}))}}},
+];
+for (const appearance of ['light', 'dark'] as const) for (const fixture of catalogStates) test(`${appearance}: ${fixture.name} model state matches the old scene`, async ({page, context}) => {
+  const baseline = await context.newPage();
+  await openModel(baseline, true, appearance, fixture.value);
+  await openModel(page, false, appearance, fixture.value);
+  const projection = (target: Page) => target.getByRole('dialog').evaluate(dialog => ({
+    text: (dialog as HTMLElement).innerText,
+    height: dialog.getBoundingClientRect().height,
+    controls: [...dialog.querySelectorAll('input, select, button')].map(node => {
+      const control = node as HTMLInputElement | HTMLSelectElement | HTMLButtonElement, css = getComputedStyle(control), box = control.getBoundingClientRect();
+      return {tag: control.tagName, value: control.value, disabled: control.disabled, hidden: control.hidden,
+        required: 'required' in control ? control.required : false, selected: control instanceof HTMLSelectElement ? [...control.options].map(option => [option.value, option.textContent, option.selected]) : [],
+        width: box.width, height: box.height, opacity: css.opacity, background: css.backgroundColor, color: css.color, border: css.border, padding: css.padding, font: css.fontSize};
+    }),
+  }));
+  expect(await projection(page)).toEqual(await projection(baseline));
   expect(await page.evaluate(() => window.modelPartsHarness.model.read())).toEqual(await baseline.evaluate(() => window.modelPartsHarness.model.read()));
   await baseline.close();
 });

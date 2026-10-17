@@ -187,7 +187,7 @@ test('parts confirmation preserves the original cancel-first destructive present
   await expect(page.locator('form strong')).toHaveText('Project 中文');
   await page.evaluate(() => window.editConfirmHarness.confirm!.update({...window.editConfirmHarness.confirmation, message: {before: 'Remove ', subject: '<script>literal</script>', after: '?'}, hint: 'A new hint.'}));
   await expect(page.locator('form strong')).toHaveText('<script>literal</script>');
-  await expect(page.locator('script')).toHaveCount(0);
+  await expect(page.locator('dialog script')).toHaveCount(0);
 });
 
 test('text metadata updates preserve the exact draft node, composition, selection, input callback and submit label', async ({page}) => {

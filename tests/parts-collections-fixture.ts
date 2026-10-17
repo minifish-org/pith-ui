@@ -1,4 +1,4 @@
-import {createButtonPart, createTextPart, createActionsPart, createStackPart, mountParts} from '../src/parts/index.js';
+import {createButtonPart, createTextPart, createActionsPart, createStackPart, createDialogPart, createInputPart, mountParts} from '../src/parts/index.js';
 import {createListPart, createListRowPart} from '../src/parts/collection.js';
 import {createMenuPart, createPopoverPart} from '../src/parts/floating.js';
 import type {ActionResult} from '../src/core.js';
@@ -19,9 +19,10 @@ const menu = createMenuPart({label: 'Entry actions', items: items(), onError(mes
 const source = createButtonPart({label: 'Open actions', onAction() {menu.open(source);}});
 const inner = createMenuPart({label: 'Nested actions', items: [{key: 'nested', label: 'Nested choice', onAction() {calls.push('nested');}}]});
 const innerSource = createButtonPart({label: 'Nested menu', onAction() {inner.open(innerSource);}});
-const popover = createPopoverPart({label: 'Nested surface', content: createStackPart({children: [createTextPart({text: 'Popover content'}), innerSource, inner]})});
+const relatedDialog = createDialogPart({title: 'Related modal', children: [createInputPart({label: 'Modal input'})]});
+const popover = createPopoverPart({label: 'Nested surface', relatedDialogs: [relatedDialog], content: createStackPart({children: [createTextPart({text: 'Popover content'}), innerSource, inner]})});
 const popoverSource = createButtonPart({label: 'Open popover', onAction() {popover.open(popoverSource);}});
-const root = createStackPart({children: [outside, list, source, menu, popoverSource, popover]});
+const root = createStackPart({children: [outside, list, source, menu, popoverSource, popover, relatedDialog]});
 const mounted = mountParts(document.getElementById('collections-mount')!, root);
 let staleSource: ReturnType<typeof createButtonPart> | undefined;
 let staleMount: ReturnType<typeof mountParts> | undefined;
@@ -46,7 +47,7 @@ export const collectionsFixture = {
     staleMount = mountParts(host, staleSource);
   },
   destroyStaleSource() {staleMount!.destroy();},
-  makeModal() {const dialog = document.createElement('dialog'); dialog.id = 'collections-modal'; const input = document.createElement('input'); input.setAttribute('aria-label', 'Modal input'); dialog.append(input); document.body.append(dialog); dialog.showModal();},
+  makeModal() {relatedDialog.open();},
 };
 declare global {interface Window {collectionsFixture: typeof collectionsFixture}}
 window.collectionsFixture = collectionsFixture;
