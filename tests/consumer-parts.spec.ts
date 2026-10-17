@@ -82,3 +82,12 @@ test('explicit prompt reset clears an earlier submission error',async({page})=>{
   await page.getByRole('textbox',{name:'Message',exact:true}).press('Enter');await expect(page.getByText('Could not send',{exact:true})).toBeVisible();
   await page.evaluate(()=>Reflect.get(window,'prompt').reset('Other draft'));await expect(page.getByText('Could not send',{exact:true})).not.toBeVisible();
 });
+
+test('form validation and submission reset are semantic ports without replacing a draft',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const input=u.createTextInput({label:'Name',value:'Draft',required:true});let finish!:(value:{ok:false;error:string})=>void;const form=u.createForm({children:[input],onSubmit:()=>new Promise(resolve=>{finish=resolve;})});u.mount(document.body,form);Object.assign(window,{consumer:{input,form,finish:()=>finish({ok:false,error:'Old submission'})}});});
+  const input=page.getByRole('textbox',{name:'Name',exact:true});await input.focus();await input.evaluate((node:HTMLInputElement)=>node.setSelectionRange(1,3));
+  expect(await page.evaluate(()=>Reflect.get(window,'consumer').form.validate())).toBe(true);
+  await page.getByRole('button',{name:'Save',exact:true}).click();await expect(input).toBeDisabled();
+  await page.evaluate(()=>{const c=Reflect.get(window,'consumer');c.form.resetSubmission();c.finish();});
+  await expect(input).toBeEnabled();await expect(input).toHaveValue('Draft');await expect(page.getByText('Old submission',{exact:true})).toHaveCount(0);
+});
