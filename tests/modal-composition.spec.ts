@@ -52,6 +52,7 @@ test('a resource row owns a closed source disclosure inside its shared card bord
   await expect(disclosure).toHaveCSS('border-top-width', '1px');
   await expect(summary).toHaveCSS('padding', '8px 12px');
   await expect(summary).toHaveCSS('font-size', '12px');
+  await expect(card.locator('.pui-list-row-icon svg')).toHaveCSS('width', '17px');
   const outer = await card.boundingBox(), title = await card.getByText('AGENTS.md', {exact: true}).boundingBox();
   expect(title!.x - outer!.x).toBe(42);
   await summary.press('Space');
@@ -135,4 +136,17 @@ test('an ordinary confirmation retains its existing default danger presentation'
   });
   expect((await page.getByRole('dialog', {name: 'Remove entry?', exact: true}).boundingBox())!.width).toBe(600);
   await expect(page.getByRole('button', {name: 'Remove', exact: true})).toHaveClass(/pui-danger/);
+});
+
+test('an owned confirmation body cannot also receive a separate message body', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const error = await page.evaluate(async () => {
+    const ui = await import('../src/index.js');
+    const make = Reflect.get(ui, 'createConfirmDialog') as (options: unknown) => ReturnType<typeof ui.createConfirmDialog>;
+    const content = ui.createText({text: 'Owned safe content'});
+    try {make({title: 'Conflicting body', content, message: 'Second body', onConfirm: () => ({ok: true})});}
+    catch (error) {content.destroy(); return String(error);}
+    return '';
+  });
+  expect(error).toMatch(/message|exclusive|both|content/i);
 });
