@@ -733,7 +733,7 @@ export function createListRow(options: ListRowState & {
         block.element.prepend(element('span', 'pui-list-row-marker', entry(options.marker).node));
     if (options.status)
         block.element.append(element('span', 'pui-list-row-status', entry(options.status).node));
-    const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); block.element.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); primary?.update({ label: state.title, disabled: state.disabled }); };
+    const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); block.element.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); primary?.update({ label: state.title, disabled: state.disabled });if(primary){const action=entry(primary).node;if(context==='navigation'&&state.selected)action.setAttribute('aria-current','page');else action.removeAttribute('aria-current');} };
     update(stateOnly(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']));
     return own({ ...block, update }, children);
 }
@@ -1212,7 +1212,8 @@ export function createSplitPane(options: SplitPaneState & {
     const scrim = element('button', 'pui-split-scrim');
     scrim.type = 'button';
     scrim.setAttribute('aria-label', 'Close navigation');
-    const node = element('div', 'pui-split', nav, scrim, body), narrow = matchMedia('(max-width:760px)');
+    const navigationLayout = entry(options.navigation).node.classList.contains('pui-pane-navigation') && entry(options.content).node.classList.contains('pui-pane-conversation');
+    const node = element('div', 'pui-split' + (navigationLayout ? ' pui-split-navigation-layout' : ''), nav, scrim, body), narrow = matchMedia(navigationLayout ? '(max-width:720px)' : '(max-width:760px)');
     let destroyed = false, open = !!options.navigationOpen, trigger: HTMLElement | null = null;
     const sync = () => { node.classList.toggle('pui-navigation-open', open); nav.inert = narrow.matches && !open; body.inert = narrow.matches && open; };
     const update = (state: Readonly<SplitPaneState>) => { check(state, ['navigationOpen']); open = !!state.navigationOpen; sync(); };
