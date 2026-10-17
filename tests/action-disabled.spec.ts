@@ -66,6 +66,9 @@ for (const theme of ['light', 'dark'] as const) {
     await page.evaluate(() => window.actionStyleFixture.setDisabled(true));
     for (const [index, button] of buttons.entries()) {
       await expect(button).toBeDisabled();
+      // WebKit can defer an offscreen opacity transition; inspect the actual
+      // visible control without changing its disabled styling or assertions.
+      await button.scrollIntoViewIfNeeded();
       await expect.soft(button).toHaveCSS('opacity', '0.45', {timeout: 1000});
       await expect.soft(button).toHaveCSS('cursor', 'not-allowed', {timeout: 1000});
       expect(await appearance(button)).toEqual(before[index]);
@@ -75,6 +78,7 @@ for (const theme of ['light', 'dark'] as const) {
     await page.evaluate(() => window.actionStyleFixture.setDisabled(false));
     for (const [index, button] of buttons.entries()) {
       await expect(button).toBeEnabled();
+      await button.scrollIntoViewIfNeeded();
       await expect(button).toHaveCSS('opacity', '1');
       expect(await appearance(button)).toEqual(before[index]);
     }
