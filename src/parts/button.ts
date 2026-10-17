@@ -5,8 +5,8 @@ import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownershi
 import {assertIconName, type IconName} from './text.js';
 
 type OrdinaryButtonVariant = 'standard' | 'primary' | 'secondary' | 'danger' | 'warning';
-type NavigationButtonVariant = 'navigation' | 'navigation-item' | 'toolbar-action' | 'drawer-trigger';
-export type ButtonVariant = OrdinaryButtonVariant | NavigationButtonVariant | 'quiet-icon';
+type NavigationButtonVariant = 'navigation' | 'navigation-item' | 'toolbar-action' | 'drawer-trigger' | 'previous-match' | 'latest' | 'quiet-action';
+export type ButtonVariant = OrdinaryButtonVariant | NavigationButtonVariant | 'quiet-icon' | 'counter' | 'picker';
 interface ButtonState {
   label: string;
   disabled?: boolean;
@@ -19,7 +19,9 @@ type PromptButtonState = ButtonState & (
   | {variant: 'quiet-icon'; icon: IconName; menuExpanded?: boolean}
   | {variant?: OrdinaryButtonVariant; icon?: IconName; menuExpanded?: never}
 );
-export type ButtonPartState = PromptButtonState | ButtonState & {variant: NavigationButtonVariant; icon: IconName; menuExpanded?: never};
+export type ButtonPartState = PromptButtonState | ButtonState & {variant: NavigationButtonVariant; icon: IconName; menuExpanded?: never}
+  | ButtonState & {variant: 'counter'; icon: IconName; count: string; menuExpanded?: never}
+  | ButtonState & {variant: 'picker'; icon: IconName; menuExpanded?: never};
 export type ButtonPartOptions = (ButtonPartState & {purpose?: 'action'} | PromptButtonState & {purpose: 'prompt'}) & {
   /** Prompt actions retain the established generic dialog presentation. */
   type?: 'button' | 'submit' | 'reset';
@@ -33,9 +35,12 @@ const variants: Record<ButtonVariant, string> = {
   warning: 'pui-primary-button pui-warning-button',
   navigation: 'pui-settings-button', 'navigation-item': 'pui-workspace-item pui-empty-workspace',
   'toolbar-action': 'pui-quiet-icon pui-compact-action', 'drawer-trigger': 'pui-quiet-icon pui-mobile-menu',
+  counter: 'pui-quiet-icon pui-artifacts-toggle',
+  'previous-match': 'pui-quiet-icon pui-find-previous',latest: 'pui-secondary-button pui-back-to-latest','quiet-action': 'pui-quiet-icon pui-queue-steer',
+  picker: 'pui-picker-button',
 };
-const stateKeys = ['label', 'variant', 'icon', 'disabled', 'pending', 'title', 'hidden', 'accessibleLabel', 'menuExpanded'] as const;
-const navigationVariants = ['navigation', 'navigation-item', 'toolbar-action', 'drawer-trigger'];
+const stateKeys = ['label', 'variant', 'icon', 'disabled', 'pending', 'title', 'hidden', 'accessibleLabel', 'menuExpanded', 'count'] as const;
+const navigationVariants = ['navigation', 'navigation-item', 'toolbar-action', 'drawer-trigger', 'previous-match', 'latest', 'quiet-action'];
 function validateState(state: Readonly<ButtonPartState>, purpose: 'action' | 'prompt'): void {
   assertOptions(state, stateKeys, 'button state');
   const variant = state.variant ?? 'standard';
@@ -44,8 +49,10 @@ function validateState(state: Readonly<ButtonPartState>, purpose: 'action' | 'pr
   for (const key of ['title', 'accessibleLabel'] as const) if (state[key] !== undefined && typeof state[key] !== 'string') throw new TypeError(`Button ${key} must be text.`);
   for (const key of ['disabled', 'pending', 'hidden', 'menuExpanded'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError(`Button ${key} must be boolean.`);
   if (state.icon !== undefined) assertIconName(state.icon);
-  if ((variant === 'quiet-icon' || navigationVariants.includes(variant)) && !state.icon) throw new TypeError('This action requires a library icon.');
-  if (purpose === 'prompt' && navigationVariants.includes(variant)) throw new TypeError('Navigation actions use action presentation.');
+  const count = 'count' in state ? state.count : undefined;
+  if (variant === 'counter' ? typeof count !== 'string' : count !== undefined) throw new TypeError('Only counter actions require count text.');
+  if ((variant === 'quiet-icon' || variant === 'counter' || variant === 'picker' || navigationVariants.includes(variant)) && !state.icon) throw new TypeError('This action requires a library icon.');
+  if (purpose === 'prompt' && (navigationVariants.includes(variant) || variant === 'counter' || variant === 'picker')) throw new TypeError('Navigation, picker and counter actions use action presentation.');
   if (state.menuExpanded !== undefined && variant !== 'quiet-icon') throw new TypeError('Menu state belongs to quiet menu triggers.');
 }
 const availability = new WeakMap<Part, {disabled: boolean; pending: boolean; hidden: boolean}>();
@@ -95,15 +102,16 @@ export function createButtonPart(options: ButtonPartOptions): ButtonPart {
       glyph = icon ? iconElement(icon) : undefined;
       if (glyph) node.prepend(glyph);
     }
-    const iconOnly = variant === 'quiet-icon' || variant === 'drawer-trigger';
-    const nextCaption = iconOnly && purpose !== 'prompt' ? undefined : purpose === 'prompt' || navigationVariants.includes(variant) ? spanCaption : textCaption;
+    const iconOnly = variant === 'quiet-icon' || variant === 'drawer-trigger' || variant === 'previous-match';
+    const nextCaption = iconOnly && purpose !== 'prompt' ? undefined : purpose === 'prompt' || variant === 'counter' || navigationVariants.includes(variant) ? spanCaption : textCaption;
     if (caption !== nextCaption) {caption?.remove(); caption = nextCaption;}
     if (caption) {
-      if (caption instanceof HTMLElement) caption.className = iconOnly ? 'pui-sr-only' : '';
-      if (caption.textContent !== state.label) caption.textContent = state.label;
+      if (caption instanceof HTMLElement) {caption.className = variant === 'counter' ? 'pui-artifacts-count' : iconOnly ? 'pui-sr-only' : '';if (variant === 'counter') caption.setAttribute('aria-hidden','true');else caption.removeAttribute('aria-hidden');}
+      const value = variant === 'counter' && 'count' in state ? state.count : state.label;
+      if (caption.textContent !== value) caption.textContent = value;
       if (caption.parentNode !== node) node.append(caption);
     }
-    if (iconOnly || variant === 'toolbar-action' || state.accessibleLabel !== undefined) node.setAttribute('aria-label', state.accessibleLabel ?? state.label);
+    if (iconOnly || variant === 'counter' || variant === 'toolbar-action' || state.accessibleLabel !== undefined) node.setAttribute('aria-label', state.accessibleLabel ?? state.label);
     else node.removeAttribute('aria-label');
     if (state.menuExpanded !== undefined) {node.setAttribute('aria-haspopup', 'menu'); node.setAttribute('aria-expanded', String(state.menuExpanded)); ownsMenuState = true;}
     else if (ownsMenuState) {node.removeAttribute('aria-haspopup'); node.removeAttribute('aria-expanded'); ownsMenuState = false;}

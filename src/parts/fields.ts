@@ -1,8 +1,8 @@
 import {adoptNativeControl, reconcileSelectOptions, type NativeControl} from '../foundations.js';
 import {refreshSelect} from '../select.js';
-import {uniqueId} from '../dom.js';
+import {iconElement,uniqueId} from '../dom.js';
 import {assertOptions, createOwnedPart, isPartAlive, nodeOf, retargetPart, type Part} from './ownership.js';
-import {isTextPart, type TextPart} from './text.js';
+import {assertIconName,isTextPart, type IconName,type TextPart} from './text.js';
 import {isBadgePart, type BadgePart} from './status.js';
 
 export interface FieldState {
@@ -24,6 +24,7 @@ export interface ValuePart extends Part {
 export type InputKind = 'text' | 'search' | 'password' | 'url' | 'number';
 export type Autocomplete = 'off' | 'on' | 'url' | 'username' | 'current-password' | 'new-password' | 'one-time-code';
 export interface InputOptions extends FieldState {
+  purpose?: 'text'|'path';
   kind?: InputKind;
   value?: string;
   name?: string;
@@ -37,9 +38,11 @@ export interface InputOptions extends FieldState {
   onChange?(value: string): void;
   /** Native validation intent; no browser Event or control escapes. */
   onInvalid?(): void;
+  /** An optional Enter intent. Without this callback native Enter is untouched. */
+  onEnter?(direction: 'next'|'previous'): void;
 }
 const stateKeys = ['label', 'disabled', 'required', 'readOnly', 'placeholder', 'hidden', 'describedBy'] as const;
-const inputKeys = [...stateKeys, 'kind', 'value', 'name', 'autocomplete', 'min', 'max', 'step', 'pattern', 'onInput', 'onChange', 'onInvalid'];
+const inputKeys = [...stateKeys, 'purpose', 'kind', 'value', 'name', 'autocomplete', 'min', 'max', 'step', 'pattern', 'onInput', 'onChange', 'onInvalid', 'onEnter'];
 const controls = new WeakMap<Part, NativeControl>();
 const secretTextareas = new WeakSet<Part>();
 /** Internal capability for the library's borrowed secret-label control. */
@@ -63,16 +66,16 @@ function applyReferences(control: NativeControl, state: Readonly<FieldState>): v
     if (ids.length) control.setAttribute('aria-describedby', ids.join(' ')); else control.removeAttribute('aria-describedby');
   }
 }
-function validateTextOptions(options: InputOptions): void {
+function validateTextOptions(options: Omit<InputOptions,'purpose'>): void {
   validateState(options);
   for (const key of ['value', 'name', 'pattern'] as const) if (options[key] !== undefined && typeof options[key] !== 'string') throw new TypeError(`Field ${key} must be text.`);
   for (const key of ['min', 'max'] as const) if (options[key] !== undefined && !Number.isFinite(options[key])) throw new TypeError(`Field ${key} must be finite.`);
   if (options.step !== undefined && options.step !== 'any' && (typeof options.step !== 'number' || !Number.isFinite(options.step) || options.step <= 0)) throw new TypeError('Field step must be positive or any.');
   if (options.autocomplete !== undefined && !['off', 'on', 'url', 'username', 'current-password', 'new-password', 'one-time-code'].includes(options.autocomplete)) throw new TypeError('Unsupported autocomplete purpose.');
-  for (const key of ['onInput', 'onChange', 'onInvalid'] as const) if (options[key] !== undefined && typeof options[key] !== 'function') throw new TypeError(`Field ${key} must be a callback.`);
+  for (const key of ['onInput', 'onChange', 'onInvalid', 'onEnter'] as const) if (options[key] !== undefined && typeof options[key] !== 'function') throw new TypeError(`Field ${key} must be a callback.`);
 }
 
-function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: InputOptions, secret = false): ValuePart {
+function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: Omit<InputOptions,'purpose'>, secret = false): ValuePart {
   control.id = uniqueId('pui-field');
   control.defaultValue = options.value ?? '';
   control.value = options.value ?? '';
@@ -81,6 +84,8 @@ function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: Inp
   const native = adoptNativeControl(control, {onInput: options.onInput ? value => options.onInput!(value) : undefined, onChange: options.onChange ? value => options.onChange!(value) : undefined});
   const invalid = () => options.onInvalid?.();
   if (options.onInvalid) control.addEventListener('invalid', invalid);
+  const enter = (event: Event) => {const key = event as KeyboardEvent;if (key.key === 'Enter' && !key.isComposing) {event.preventDefault();options.onEnter?.(key.shiftKey ? 'previous' : 'next');}};
+  if (options.onEnter) control.addEventListener('keydown',enter);
   let part: ValuePart;
   const update = (state: Readonly<FieldState>): void => {
     assertOptions(state, stateKeys, 'field state'); validateState(state);
@@ -95,6 +100,7 @@ function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: Inp
   }, update, focus: native.focus, selectAll() {if (isPartAlive(part)) control.select();}}, {dispose() {
     native.destroy();
     control.removeEventListener('invalid', invalid);
+    control.removeEventListener('keydown',enter);
     if (secret || control instanceof HTMLInputElement && control.type === 'password') {control.value = ''; control.defaultValue = '';}
   }});
   controls.set(part, control);
@@ -107,7 +113,10 @@ export function createInputPart(options: InputOptions): ValuePart {
   assertOptions(options, inputKeys, 'input'); validateTextOptions(options);
   const kind = options.kind ?? 'text';
   if (!['text', 'search', 'password', 'url', 'number'].includes(kind)) throw new TypeError('Unsupported input kind.');
+  if (options.purpose !== undefined && !['text','path'].includes(options.purpose)) throw new TypeError('Unsupported input purpose.');
+  if (options.purpose === 'path' && kind !== 'text') throw new TypeError('A path field requires a text input.');
   const control = document.createElement('input'); control.type = kind;
+  if (options.purpose === 'path') control.spellcheck = false;
   control.className = 'pui-control';
   if (options.min !== undefined) control.min = String(options.min);
   if (options.max !== undefined) control.max = String(options.max);
@@ -116,7 +125,7 @@ export function createInputPart(options: InputOptions): ValuePart {
   return valuePart(control, options);
 }
 
-export interface TextareaOptions extends Omit<InputOptions, 'kind' | 'min' | 'max' | 'step' | 'pattern'> {
+export interface TextareaOptions extends Omit<InputOptions, 'purpose' | 'kind' | 'min' | 'max' | 'step' | 'pattern' | 'onEnter'> {
   purpose?: 'text' | 'markdown' | 'secret' | 'json' | 'message' | 'queue-message';
 }
 export function createTextareaPart(options: TextareaOptions): ValuePart {
@@ -207,6 +216,48 @@ function choicePart(options: SelectOptions, list: boolean): ChoicePart {
 export function createSelectPart(options: SelectOptions): ChoicePart {return choicePart(options, false);}
 /** Native six-row choice list; its geometry and keyboard behavior belong to the library. */
 export function createChoiceListPart(options: ChoiceOptions): ChoicePart {return choicePart(options, true);}
+
+export interface CompactSelectPartState extends Omit<ChoiceState,'catalog'> {tone?: 'standard'|'warning'}
+export interface CompactSelectOptions extends CompactSelectPartState {label: string;icon: IconName;options: readonly ChoiceOption[];value?: string;name?: string;onChange?(value: string): void}
+export interface CompactSelectPart extends ChoicePart {update(state: Readonly<CompactSelectPartState>): void}
+/** A compact icon choice in one native label. Its popup anchors to that label,
+ * and its trailing indicator, hidden caption and warning treatment are fixed. */
+export function createCompactSelectPart(options: CompactSelectOptions): CompactSelectPart {
+  const keys = ['label','disabled','required','hidden','describedBy','options','tone'] as const;
+  const validate = (state: Readonly<CompactSelectPartState>) => {
+    validateState(state);if (state.options !== undefined) validateChoices(state.options);
+    if (state.tone !== undefined && !['standard','warning'].includes(state.tone)) throw new TypeError('Unsupported compact select tone.');
+  };
+  assertOptions(options,[...keys,'icon','value','name','onChange'],'compact select');validate(options);assertIconName(options.icon);
+  if (typeof options.label !== 'string') throw new TypeError('A compact select requires a text label.');
+  validateChoices(options.options);
+  if (options.value !== undefined && typeof options.value !== 'string' || options.name !== undefined && typeof options.name !== 'string') throw new TypeError('Choice value and name must be text.');
+  if (options.onChange !== undefined && typeof options.onChange !== 'function') throw new TypeError('Choice onChange must be a callback.');
+  const node = document.createElement('label');node.dataset.puiSelectAnchor = '';
+  const caption = document.createElement('span');caption.className = 'pui-sr-only';caption.textContent = options.label;
+  const control = document.createElement('select');control.id = uniqueId('pui-compact-choice');control.setAttribute('aria-label',options.label);
+  if (options.name !== undefined) control.name = options.name;
+  reconcileSelectOptions(control,options.options,options.value ?? options.options.find(option => !option.disabled)?.value ?? '');
+  for (const option of control.options) option.defaultSelected = option.selected;
+  node.append(iconElement(options.icon),caption,control,iconElement('down'));
+  let disabled = !!options.disabled,tone = options.tone ?? 'standard',part: CompactSelectPart;
+  const native = adoptNativeControl(control,{onChange: options.onChange ? value => {if (isPartAlive(part) && !disabled) options.onChange!(value);} : undefined});
+  const update = (state: Readonly<CompactSelectPartState>) => {
+    assertOptions(state,keys,'compact select state');validate(state);if (!isPartAlive(part)) return;
+    if (state.disabled !== undefined) disabled = state.disabled;
+    if (state.tone !== undefined) tone = state.tone;
+    node.className = `pui-permission-control${tone === 'warning' ? ' pui-full-access' : ''}`;
+    if (state.label !== undefined) {caption.textContent = state.label;control.setAttribute('aria-label',state.label);}
+    if (state.hidden !== undefined) node.hidden = state.hidden;
+    applyReferences(control,state);
+    if (state.options !== undefined) reconcileSelectOptions(control,state.options);
+    native.update({...state,disabled});
+  };
+  part = createOwnedPart<Omit<CompactSelectPart,keyof Part>>(node,{update,read: native.getValue,reset(value: string) {if (typeof value !== 'string') throw new TypeError('Choice reset must be text.');if (isPartAlive(part)) native.reset(value);},focus() {if (isPartAlive(part)) native.focus();}}, {dispose() {native.destroy();control.remove();}});
+  controls.set(part,control);
+  update({label: options.label,tone,disabled,required: !!options.required,hidden: !!options.hidden,...(options.describedBy !== undefined ? {describedBy: options.describedBy} : {})});
+  return part;
+}
 
 export interface FieldLabelState {label: string; hidden?: boolean}
 export interface FieldLabelPart extends Part {update(state: FieldLabelState): void}

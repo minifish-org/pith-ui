@@ -1,13 +1,13 @@
 import {patchChildren} from '../content/views.js';
 import {assertOptions,createOwnedPart,isPartAlive,type Part} from './ownership.js';
 
-export type MetadataPurpose = 'summary-label'|'field-label'|'count'|'state'|'trailing-state';
+export type MetadataPurpose = 'summary-label'|'field-label'|'count'|'state'|'trailing-state'|'search-count';
 export interface MetadataPartState {text: string;tone?: 'neutral'|'active'|'error';hidden?: boolean}
 export interface MetadataPart extends Part {update(state: Readonly<MetadataPartState>): void}
 /** One native span. Counts and statuses remain caller supplied content. */
 export function createMetadataPart(options: MetadataPartState & {purpose: MetadataPurpose}): MetadataPart {
   assertOptions(options,['purpose','text','tone','hidden'],'metadata');
-  const classes: Record<MetadataPurpose,string> = {'summary-label': 'pui-tool-group-label','field-label': 'pui-tool-field-label',count: 'pui-tool-group-count',state: 'pui-tool-group-count','trailing-state': 'pui-tool-status'};
+  const classes: Record<MetadataPurpose,string> = {'summary-label': 'pui-tool-group-label','field-label': 'pui-tool-field-label',count: 'pui-tool-group-count',state: 'pui-tool-group-count','trailing-state': 'pui-tool-status','search-count': ''};
   const purpose = options.purpose;
   if (!Object.hasOwn(classes,purpose)) throw new TypeError('Unknown metadata purpose.');
   const validate = (state: Readonly<MetadataPartState>) => {
@@ -19,7 +19,7 @@ export function createMetadataPart(options: MetadataPartState & {purpose: Metada
     if (purpose === 'trailing-state' && state.tone === 'active') throw new TypeError('Trailing state supports neutral or error.');
   };
   validate({text: options.text,tone: options.tone,hidden: options.hidden});
-  const node = document.createElement('span');let part: MetadataPart;
+  const node = document.createElement('span');if (purpose === 'search-count') {node.dataset.findCount = '';node.setAttribute('role','status');node.setAttribute('aria-live','polite');}let part: MetadataPart;
   part = createOwnedPart<Omit<MetadataPart,keyof Part>>(node,{update(state: Readonly<MetadataPartState>) {validate(state);if (!isPartAlive(part)) return;
     node.className = purpose === 'state' && state.tone === 'active' ? 'pui-tool-group-running' : purpose === 'state' && state.tone === 'error' ? 'pui-tool-group-failed' : classes[purpose]+(purpose === 'trailing-state' && state.tone === 'error' ? ' pui-tool-status-error' : '');
     node.hidden = !!state.hidden;

@@ -9,18 +9,19 @@ export function assertIconName(name: unknown): asserts name is IconName {
 }
 
 export interface TextPartState {text: string; hidden?: boolean; announce?: 'none' | 'polite'}
-export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'location' | 'footnote' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted';
+export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'location' | 'footnote' | 'surface-status' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted' | 'section-title';
 export interface TextPart extends Part {update(state: Readonly<TextPartState>): void}
 const textParts = new WeakSet<Part>();
 /** Internal capability check for text-only semantic references. */
 export function isTextPart(part: Part): part is TextPart {return textParts.has(part) && isPartAlive(part);}
 const textRoles = {
   text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], path: ['span', 'pui-file-path'], 'path-paragraph': ['p', 'pui-file-path'], location: ['p', 'pui-file-preview-path'], footnote: ['p', 'pui-preview-note'], note: ['p', 'pui-note'], hint: ['p', 'pui-field-hint'],
-  caption: ['p', 'pui-feature-hint'], description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], heading: ['h3', ''], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'], bubble: ['div', 'pui-user-text'], interrupted: ['span', 'pui-message-error-label'],
+  caption: ['p', 'pui-feature-hint'], description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], heading: ['h3', ''], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'], bubble: ['div', 'pui-user-text'], interrupted: ['span', 'pui-message-error-label'], 'surface-status': ['p', 'pui-artifacts-status'], 'section-title': ['div', 'pui-section-heading'],
 } as const;
 function validateText(state: Readonly<TextPartState>): void {
   assertOptions(state, ['text', 'hidden', 'announce'], 'text state');
   if (typeof state.text !== 'string') throw new TypeError('Text content must be a string.');
+  if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Text hidden must be boolean.');
   if (state.announce !== undefined && !['none', 'polite'].includes(state.announce)) throw new TypeError('Unknown text announcement mode.');
 }
 
@@ -33,6 +34,7 @@ export function createTextPart(options: TextPartState & {role?: TextRole}): Text
   const [tag, className] = textRoles[role];
   const node = document.createElement(tag);
   if (className) node.className = className;
+  if (role === 'surface-status') node.setAttribute('role','status');
   const update = (state: Readonly<TextPartState>) => {
     validateText(state);
     if (!isPartAlive(part)) return;
@@ -43,6 +45,28 @@ export function createTextPart(options: TextPartState & {role?: TextRole}): Text
   const part = createOwnedPart(node, {update});
   update(initial); textParts.add(part);
   return part;
+}
+
+export interface ContextNotePartState extends TextPartState {tone?: 'neutral'|'warning'}
+export interface ContextNotePart extends TextPart {update(state: Readonly<ContextNotePartState>): void}
+/** A short centered context hint with one bounded warning state. It is a
+ * genuine text part and can describe a separate control without a wrapper. */
+export function createContextNotePart(options: ContextNotePartState): ContextNotePart {
+  const validate = (state: Readonly<ContextNotePartState>) => {
+    assertOptions(state,['text','hidden','announce','tone'],'context note');
+    const {tone,...text} = state;validateText(text);
+    if (tone !== undefined && !['neutral','warning'].includes(tone)) throw new TypeError('Unsupported context note tone.');
+  };
+  validate(options);
+  const node = document.createElement('p');let part: ContextNotePart;
+  const update = (state: Readonly<ContextNotePartState>) => {
+    validate(state);if (!isPartAlive(part)) return;
+    node.className = `pui-composer-note${state.tone === 'warning' ? ' pui-full-access-note' : ''}`;
+    if (node.textContent !== state.text) {const source = document.createDocumentFragment();source.append(document.createTextNode(state.text));patchChildren(node,source);}
+    node.hidden = !!state.hidden;
+    if (state.announce === 'polite') node.setAttribute('aria-live','polite');else node.removeAttribute('aria-live');
+  };
+  part = createOwnedPart<Omit<ContextNotePart,keyof Part>>(node,{update});textParts.add(part);update(options);return part;
 }
 
 export interface IconPartState {name: IconName; label?: string; hidden?: boolean}

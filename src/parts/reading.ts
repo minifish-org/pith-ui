@@ -10,6 +10,9 @@ function layout(options: {children: readonly Part[]}, className: string): Layout
 }
 /** A bounded reading column. Every message and status remains caller-composed. */
 export interface ReadingColumnPart extends LayoutPart {update(state: {hidden: boolean}): void}
+const readingColumns = new WeakSet<Part>();
+/** Internal genuine-column capability for the library-owned reading viewport. */
+export function isReadingColumnPart(part: Part): part is ReadingColumnPart {return readingColumns.has(part) && isPartAlive(part);}
 export function createReadingColumnPart(options: {children: readonly Part[]; hidden?: boolean; onDispose?(): void}): ReadingColumnPart {
   assertOptions(options, ['children','hidden','onDispose'], 'reading column');
   if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Reading disposal must be a callback.');
@@ -17,7 +20,7 @@ export function createReadingColumnPart(options: {children: readonly Part[]; hid
   const node = document.createElement('div'); node.className = 'pui-messages pui-conversation-messages'; node.setAttribute('aria-live','polite'); node.setAttribute('aria-relevant','additions text');
   node.hidden = !!options.hidden;
   const part = createOwnedPart(node, {update(state: {hidden: boolean}) {assertOptions(state,['hidden'],'reading column state');if (typeof state.hidden !== 'boolean') throw new TypeError('Reading visibility must be boolean.');if (isPartAlive(part)) node.hidden = state.hidden;},replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part,children);}}, {children: options.children});
-  if (options.onDispose) onPartDestroy(part,options.onDispose); return part;
+  readingColumns.add(part);if (options.onDispose) onPartDestroy(part,options.onDispose); return part;
 }
 export interface BubblePartState {speaker: 'self'|'agent'}
 export interface BubblePart extends LayoutPart {update(state: Readonly<BubblePartState>): void}
@@ -35,6 +38,8 @@ export function createBubblePart(options: BubblePartState & {key: string;childre
 /** Metadata and actions stay separate from the reading bubble itself. */
 export function createMessageFooterPart(options: {children: readonly Part[]}): LayoutPart {return layout(options,'pui-message-footer');}
 export function createMessageActionsPart(options: {children: readonly Part[]}): LayoutPart {return layout(options,'pui-message-actions');}
+/** A native image gallery. Images are independent caller-composed parts. */
+export function createImageGroupPart(options: {children: readonly Part[]}): LayoutPart {return layout(options,'pui-message-images');}
 
 export interface ReadingNotePart extends Part {update(state: {text: string}): void}
 export function createReadingNotePart(options: {key: string;text: string}): ReadingNotePart {

@@ -32,7 +32,7 @@ export {createFramePart, createSideRailPart, createMainPart, createTopbarPart, c
   type FramePart, type SideRailPart, type MainPart, type RailHeadingPart, type DrawerPart} from './frame.js';
 export {createBrandMarkPart, createBrandPart, type BrandMarkOptions, type BrandMarkPart, type BrandPartState, type BrandPart} from './brand.js';
 export {createSearchFieldPart, type SearchFieldPart, type SearchFieldPartState, type SearchFieldPartOptions} from './search.js';
-export {createReadingColumnPart, type ReadingColumnPart, createBubblePart, type BubblePart, type BubblePartState, createMessageFooterPart, createMessageActionsPart,
+export {createReadingColumnPart, type ReadingColumnPart, createBubblePart, type BubblePart, type BubblePartState, createMessageFooterPart, createMessageActionsPart, createImageGroupPart,
   createReadingNotePart, type ReadingNotePart, createTimestampPart, type TimestampPart, createWorkingIndicatorPart, type WorkingIndicatorPart, type WorkingIndicatorPartState} from './reading.js';
 export {createTreePart, type TreePart, type TreePartState, createTreeBranchPart, type TreeBranchPart, type TreeBranchPartState,
   createTreeItemPart, type TreeItemPart, type TreeItemPartState, createActivityPart, type ActivityPart, type ActivityPartState,
@@ -48,3 +48,13 @@ export {createCompoundDisclosurePart, type CompoundDisclosurePart, type Compound
 export {createMetadataPart, type MetadataPart, type MetadataPartState, type MetadataPurpose, createCodePropertyPart, type CodePropertyPart} from './metadata.js';
 export {createInlineGroupPart, type InlineGroupPart, type InlineGroupPartState} from './layout.js';
 export {createLinkPart, type LinkPart, type LinkPartState, type LinkPartOptions} from './link.js';
+export {createCompactSelectPart, type CompactSelectPart, type CompactSelectPartState, type CompactSelectOptions} from './fields.js';
+export {createContextNotePart, type ContextNotePart, type ContextNotePartState} from './text.js';
+export {createInspectorHeadingPart, createInspectorPart, createAnchoredGroupPart, type InspectorHeadingState, type InspectorHeadingPart, type InspectorPartOptions, type InspectorPart, type AnchoredGroupState, type AnchoredGroupOptions, type AnchoredGroupPart} from './inspector.js';
+export {createSelectableCardPart, type SelectableCardPart, type SelectableCardState} from './selectable-card.js';
+export {createCalloutPart, type CalloutPart, type CalloutPartState, type CalloutPartOptions} from './cards.js';
+export {createOptionActionPart, createOptionGroupPart, createLabelledDividerPart, createSeparatedGroupPart, type OptionActionState, type OptionActionOptions, type OptionActionPart, type OptionGroupPart, type LabelledDividerPart} from './options.js';
+export {createScrollListPart, type ScrollListPart, createCompactRowPart, createCompactRowBodyPart, createCompactRowActionsPart, createRowTextPart, type RowTextPart, type RowTextPartState} from './compact-list.js';
+export type {BadgePartOptions} from './status.js';
+export {createReadingViewportPart, type ReadingSearchState, type ReadingViewportOptions, type ReadingViewportPart} from './reading-viewport.js';
+export {createSearchToolbarPart, createReadingRegionPart, type SearchToolbarPartState, type SearchToolbarPart} from './reader-layout.js';

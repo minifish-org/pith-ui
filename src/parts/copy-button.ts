@@ -15,7 +15,7 @@ export type CopyButtonPartOptions = CopyOptions<ButtonPartOptions>;
 
 /** The retained native button owns its pending and fixed-lived copied feedback. */
 export function createCopyButtonPart(options: CopyButtonPartOptions): ButtonPart {
-  assertOptions(options, ['label', 'variant', 'icon', 'disabled', 'pending', 'title', 'hidden', 'accessibleLabel', 'menuExpanded', 'purpose', 'type', 'announcement', 'successMessage', 'onCopy', 'onError'], 'copy button');
+  assertOptions(options, ['label', 'variant', 'icon', 'disabled', 'pending', 'title', 'hidden', 'accessibleLabel', 'menuExpanded', 'count', 'purpose', 'type', 'announcement', 'successMessage', 'onCopy', 'onError'], 'copy button');
   if (!isAnnouncementPart(options.announcement)) throw new TypeError('Copy feedback requires a live announcement part.');
   if (typeof options.successMessage !== 'string' && typeof options.successMessage !== 'function') throw new TypeError('Copy success message must be text or a synchronous text provider.');
   if (typeof options.onCopy !== 'function') throw new TypeError('Copy requires a callback.');

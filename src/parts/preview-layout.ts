@@ -3,14 +3,14 @@ import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type P
 
 export type ContentViewportContent = string | readonly Part[] | {readonly message: string; readonly children: readonly Part[]};
 export interface ContentViewportPart extends Part {replace(content: ContentViewportContent): void}
-export interface ContentViewportOptions {purpose: 'preview'; content: ContentViewportContent; announce?: 'none' | 'polite'}
+export interface ContentViewportOptions {purpose: 'preview' | 'inspector'; content: ContentViewportContent; announce?: 'none' | 'polite'}
 /** A bounded content region. Literal loading/error text adds no wrapper. */
 export function createContentViewportPart(options: ContentViewportOptions): ContentViewportPart {
   assertOptions(options, ['purpose', 'content', 'announce'], 'content viewport');
-  if (options.purpose !== 'preview') throw new TypeError('Unknown content viewport purpose.');
+  if (!['preview','inspector'].includes(options.purpose)) throw new TypeError('Unknown content viewport purpose.');
   if (options.announce !== undefined && !['none', 'polite'].includes(options.announce)) throw new TypeError('Unknown content announcement mode.');
-  const node = document.createElement('div');node.className = 'pui-file-preview-body';
-  if (options.announce !== 'none') node.setAttribute('aria-live', 'polite');
+  const node = document.createElement('div');node.className = options.purpose === 'inspector' ? 'pui-artifacts-content' : 'pui-file-preview-body';
+  if (options.announce === 'polite' || options.purpose === 'preview' && options.announce !== 'none') node.setAttribute('aria-live', 'polite');
   let literalNode: Text | undefined;
   const replace = (content: ContentViewportContent): void => {
     let message: string | undefined,children: readonly Part[];

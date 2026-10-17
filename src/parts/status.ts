@@ -2,6 +2,7 @@ import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownershi
 
 export interface BadgePartState {text: string; hidden?: boolean}
 export interface BadgePart extends Part {update(state: Readonly<BadgePartState>): void}
+export interface BadgePartOptions extends BadgePartState {purpose?: 'outline'|'filled'}
 const badges = new WeakSet<Part>();
 /** Internal genuine-handle check for bounded field-label suffixes. */
 export function isBadgePart(part: Part): part is BadgePart {return badges.has(part) && isPartAlive(part);}
@@ -11,15 +12,16 @@ function validate(state: Readonly<BadgePartState>): void {
   if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Badge hidden must be boolean.');
 }
 /** A small text badge. Its border, spacing and type are fixed by the library. */
-export function createBadgePart(options: BadgePartState): BadgePart {
-  validate(options);
-  const node = document.createElement('span'); node.className = 'pui-configured-badge';
+export function createBadgePart(options: BadgePartOptions): BadgePart {
+  assertOptions(options,['text','hidden','purpose'],'badge');const {purpose = 'outline',...initial} = options;validate(initial);
+  if (!['outline','filled'].includes(purpose)) throw new TypeError('Unknown badge purpose.');
+  const node = document.createElement('span'); node.className = purpose === 'filled' ? 'pui-queue-badge' : 'pui-configured-badge';
   let part: BadgePart;
   const update = (state: Readonly<BadgePartState>) => {
     validate(state); if (!isPartAlive(part)) return;
     if (node.textContent !== state.text) node.textContent = state.text; node.hidden = !!state.hidden;
   };
-  part = createOwnedPart<Omit<BadgePart, keyof Part>>(node, {update}); update(options); badges.add(part); return part;
+  part = createOwnedPart<Omit<BadgePart, keyof Part>>(node, {update}); update(initial); badges.add(part); return part;
 }
 
 export interface StatusPartState {message: string; tone?: 'neutral' | 'success' | 'error'; hidden?: boolean}

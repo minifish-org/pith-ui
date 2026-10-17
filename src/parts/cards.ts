@@ -1,6 +1,6 @@
 import {uniqueId} from '../dom.js';
 import type {LayoutPart} from './layout.js';
-import {assertOptions, assertUnownedParts, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
+import {assertOptions, assertUnownedParts, createOwnedPart, isPartAlive, onPartDestroy, replacePartChildren, type Part} from './ownership.js';
 
 export type ContentSectionTone = 'standard' | 'warning';
 export interface ContentSectionPartState {title?: string; tone?: ContentSectionTone; hidden?: boolean}
@@ -79,4 +79,31 @@ export function createGroupedCardPart(options: {summary: readonly Part[]; childr
   }, {children: [body, ...children]});}
   catch (error) {body.destroy(); throw error;}
   return part;
+}
+
+export interface CalloutPartState {tone?: 'neutral'|'warning';label?: string;announce?: 'none'|'polite';hidden?: boolean}
+export interface CalloutPartOptions extends CalloutPartState {children: readonly Part[];onDispose?(): void}
+export interface CalloutPart extends LayoutPart {update(state: Readonly<CalloutPartState>): void}
+/** A bounded native surface. Every heading, message, icon and action remains
+ * an independently composed child; this part supplies no application content. */
+export function createCalloutPart(options: CalloutPartOptions): CalloutPart {
+  const validate = (state: Readonly<CalloutPartState>) => {
+    assertOptions(state,['tone','label','announce','hidden'],'callout state');
+    if (state.tone !== undefined && !['neutral','warning'].includes(state.tone)) throw new TypeError('Unsupported callout tone.');
+    if (state.label !== undefined && typeof state.label !== 'string') throw new TypeError('Callout label must be text.');
+    if (state.announce !== undefined && !['none','polite'].includes(state.announce)) throw new TypeError('Unsupported callout announcement.');
+    if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Callout hidden must be boolean.');
+  };
+  assertOptions(options,['tone','label','announce','hidden','children','onDispose'],'callout');
+  const initial = {tone: options.tone,label: options.label,announce: options.announce,hidden: options.hidden};validate(initial);
+  if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Callout onDispose must be a callback.');
+  const node = document.createElement('section');let part: CalloutPart;
+  const update = (state: Readonly<CalloutPartState>) => {
+    validate(state);if (!isPartAlive(part)) return;
+    node.className = state.tone === 'warning' ? 'pui-approval-card' : 'pui-task-failure';node.hidden = !!state.hidden;
+    if (state.label !== undefined) node.setAttribute('aria-label',state.label);else node.removeAttribute('aria-label');
+    if (state.announce === 'polite') node.setAttribute('role','status');else node.removeAttribute('role');
+  };
+  part = createOwnedPart<Omit<CalloutPart,keyof Part>>(node,{update,replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part,children);}}, {children: options.children});
+  if (options.onDispose) onPartDestroy(part,options.onDispose);update(initial);return part;
 }
