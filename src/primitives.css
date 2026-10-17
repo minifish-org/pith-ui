@@ -178,7 +178,7 @@
 .pui .pui-pane-header { border-bottom:1px solid var(--pui-border); }
 .pui .pui-pane-content { flex:1;min-height:0;min-width:0;overflow:auto;padding:var(--pui-space-lg) var(--pui-space-xl); }
 .pui .pui-control-list { display:flex;flex-direction:column;gap:var(--pui-space-md);min-width:0; }
-.pui .pui-split { display:grid;grid-template-columns:260px minmax(0,1fr);height:100%;min-height:0;position:relative; }
+.pui .pui-split { display:grid;grid-template-rows:minmax(0,1fr);grid-template-columns:260px minmax(0,1fr);height:100%;min-height:0;position:relative; }
 .pui .pui-split-navigation { min-height:0;min-width:0;overflow:auto;background:var(--pui-bg-sidebar);border-right:1px solid var(--pui-border); }
 .pui .pui-split-content { min-width:0;min-height:0;overflow:hidden;background:var(--pui-bg-main); }
 .pui .pui-split-scrim { display:none; }
