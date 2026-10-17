@@ -67,7 +67,7 @@ test('clearing a document error restores its current format, resets paging and r
   await page.evaluate(() => { const f = Reflect.get(window, 'documentFixture'); f.doc.update({ text: f.text, format: 'text' }); });
   await expect(pre).toHaveText(first!);
   await expect(body.getByRole('button', { name: 'Previous', exact: true })).toBeDisabled();
-  expect(await actionNode!.evaluate(node => node === document.querySelector('.pui-dialog-actions button'))).toBe(true);
+  expect(await actionNode!.evaluate(node => node.isConnected && node === [...document.querySelectorAll('dialog button')].find(button => button.textContent === 'Open file'))).toBe(true);
   await expect(action).toBeFocused();
   await page.evaluate(() => Reflect.get(window, 'documentFixture').doc.update(Object.assign({ text: '**Current Markdown**', format: 'markdown' }, { error: 'Temporary error.' })));
   await expect(body).toHaveText('Temporary error.');
