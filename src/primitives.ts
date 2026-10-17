@@ -474,14 +474,16 @@ export function createTextEditDialog(options: TextEditOptions = {}): TextEditBlo
 
 export interface ConfirmState extends DialogState { message?: string | Node; hint?: string; error?: string; disabled?: boolean; pending?: boolean; confirmLabel?: string; }
 export interface ConfirmBlock extends UIBlock<ConfirmState> { readonly element: HTMLDialogElement; readonly confirmButton: HTMLButtonElement; readonly cancelButton: HTMLButtonElement; open(state?: ConfirmState): void; close(): void; refreshAvailability(): void; }
-export function createConfirmDialog(options: ConfirmState & { dialog?: HTMLDialogElement; ids?: { form?: string; error?: string; title?: string; cancel?: string }; unavailable?: () => boolean; onConfirm: () => Promise<ActionResult> | ActionResult; onClose?: () => void }): ConfirmBlock {
+export function createConfirmDialog(options: ConfirmState & { content?: Node; tone?: 'warning'; dialog?: HTMLDialogElement; ids?: { form?: string; error?: string; title?: string; cancel?: string }; unavailable?: () => boolean; onConfirm: () => Promise<ActionResult> | ActionResult; onClose?: () => void }): ConfirmBlock {
   const message = element('p', 'pui-modal-description'); const hint = element('p', 'pui-field-hint'); const error = createNotice({ message: '', tone: 'error' });
   let state: ConfirmState = options; let pending = false;
   const cancel = createButton({ label: 'Cancel', onAction() { if (!state.closeDisabled) dialog.close(); } });
-  const confirm = createButton({ label: options.confirmLabel ?? 'Remove', intent: 'danger', type: 'submit' });
+  const intent = options.tone === 'warning' ? 'primary' : 'danger';
+  const confirm = createButton({ label: options.confirmLabel ?? 'Remove', intent, type: 'submit' });
+  if (options.tone === 'warning') confirm.element.classList.add('pui-warning-confirm');
   const life = new Lifetime();
   const actions = createActions({ children: [cancel.element, confirm.element] });
-  const form = element('form', 'pui-confirm', message, hint, error.element, actions.element);
+  const form = element('form', 'pui-confirm', options.content ?? message, hint, error.element, actions.element);
   if (options.ids?.form) form.id = options.ids.form;
   if (options.ids?.error) error.element.id = options.ids.error;
   if (options.ids?.cancel) cancel.element.id = options.ids.cancel;
@@ -495,7 +497,7 @@ export function createConfirmDialog(options: ConfirmState & { dialog?: HTMLDialo
     if (next.message !== currentMessage) { currentMessage = next.message; if (next.message instanceof Node) message.replaceChildren(next.message); else setText(message, next.message); }
     setText(hint, next.hint); hint.hidden = !next.hint;
     error.update({ message: next.error ?? '', tone: 'error' });
-    confirm.update({ label: next.confirmLabel ?? 'Remove', intent: 'danger', disabled: !!(next.disabled || options.unavailable?.()), pending: !!(next.pending || pending) });
+    confirm.update({ label: next.confirmLabel ?? 'Remove', intent, disabled: !!(next.disabled || options.unavailable?.()), pending: !!(next.pending || pending) });
   };
   const operation = createOperation({
     unavailable: () => !!(state.disabled || state.pending || confirm.element.disabled || options.unavailable?.() || !dialog.element.open),
