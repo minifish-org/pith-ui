@@ -1,4 +1,4 @@
-import { mount, createStack, createText, createPromptInput, createImage, createMessage, createMarkdown, createCopyButton, createReadingArea, createDropArea, createDocument, createURLInput, createSecretTextArea } from '../src/index.js';
+import { mount, createStack, createList, createText, createPromptInput, createImage, createMessage, createMarkdown, createCopyButton, createReadingArea, createDropArea, createDocument, createURLInput, createSecretTextArea } from '../src/index.js';
 import type { Control } from '../src/index.js';
 import type { ShowcaseCase, MountedDemo } from './types.js';
 function show(children: Control[]): MountedDemo { const element = document.createElement('div'); const owner = mount(element, createStack({ children })); return { element, destroy: owner.destroy }; }
@@ -9,11 +9,11 @@ export const consumerCases: ShowcaseCase[] = [
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 const input=createPromptInput({label:'Message',onSubmit:async text=>{console.log(text);return {ok:true};}});mount(host,input);`,
         mount(c) { return show([createPromptInput({ label: 'Message', placeholder: 'Type a message; Shift+Enter adds a line', disabled: c.state === 'disabled', error: c.state === 'error' ? 'Simulated failure; input is retained.' : '', onSubmit: () => c.action(), onImages: files => c.log('演示粘贴：' + files.map(file => file.name).join(', ')) })]); } },
-    { id: 'image', title: '图片与缩放 Image', layer: 'components', category: '展示', description: '图片、附件缩略图和品牌图片各有固定用途；缩放、关闭与销毁归积木，不开放尺寸或 CSS 参数。', states: ['normal', 'disabled'], controls: ['outcome'], related: ['message', 'dialog'],
+    { id: 'image', title: '图片与缩放 Image', layer: 'components', category: '展示', description: '图片、带文件名的104×80附件缩略图和品牌图片各有固定用途。附件列表横向滚动；缩放、关闭与销毁归积木，不开放尺寸或CSS参数。', states: ['normal', 'disabled'], controls: ['outcome'], related: ['message', 'dialog'],
         code: `import {mount,createImage} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 mount(host,createImage({label:'Photo',source:'/photo.png'}));`,
-        mount(c) { return show([createImage({ label: '示例图片', source: image }), createImage({ label: '示例附件', purpose: 'attachment', source: image, removeDisabled: c.state === 'disabled', onRemove: () => c.action() })]); } },
+        mount(c) { return show([createImage({ label: '示例图片', source: image }),createList({items:[1,2,3].map(id=>({key:String(id),content:createImage({label:id===1?'带有较长文件名的示例附件.png':'示例附件'+id+'.png',purpose:'attachment',source:image,removeDisabled:c.state==='disabled',onRemove:()=>c.action()})}))})]); } },
     { id: 'message', title: '消息容器 Message', layer: 'components', category: '展示', description: '一个消息容器只持有内容、元数据和操作积木；会话、流式请求、身份和复制资格由应用决定。', related: ['markdown', 'copy-feedback', 'reading-area'],
         code: `import {mount,createMessage,createMarkdown} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');

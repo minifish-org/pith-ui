@@ -1,5 +1,5 @@
 import * as primitive from './primitives.js';
-import { element, iconElement, setText, focusableElements } from './dom.js';
+import { element, iconElement, setText, focusableElements, uniqueId } from './dom.js';
 import { createCopyFeedback } from './files/systems.js';
 import { createOperation } from './operation.js';
 import { setAppearance } from './theme.js';
@@ -748,7 +748,7 @@ export function createListRow(options: ListRowState & {
     const block = primitive.createListRow({ ...options, titleContent: primary ? entry(primary).node : undefined, actions: options.actions ? element('span', 'pui-list-row-actions', entry(options.actions).node) : undefined });
     const root = options.details ? element('article', 'pui-resource-composition', block.element, entry(options.details).node) : block.element;
     const body = block.element.querySelector('.pui-list-row-body')!;
-    if (options.context === 'resource') { const meta = block.element.querySelector(':scope > small'); if (meta) { meta.classList.add('pui-resource-path'); body.append(meta); } }
+    if (options.context === 'resource' || options.context === 'queue') { const meta = block.element.querySelector(':scope > small'); if (meta) { meta.classList.add(options.context === 'resource' ? 'pui-resource-path' : 'pui-queue-image-count'); body.append(meta); } }
     if (options.marker)
         block.element.prepend(element('span', 'pui-list-row-marker', entry(options.marker).node));
     if (options.status)
@@ -1286,8 +1286,10 @@ export function createSplitPane(options: SplitPaneState & {
     scrim.setAttribute('aria-label', 'Close navigation');
     const navigationLayout = entry(options.navigation).node.classList.contains('pui-pane-navigation') && entry(options.content).node.classList.contains('pui-pane-conversation');
     const node = element('div', 'pui-split' + (navigationLayout ? ' pui-split-navigation-layout' : ''), nav, scrim, body), narrow = matchMedia(navigationLayout ? '(max-width:720px)' : '(max-width:760px)');
+    const toggles=[...node.querySelectorAll<HTMLButtonElement>('.pui-navigation-toggle')];
+    if(toggles.length){nav.id=uniqueId('pui-navigation');for(const toggle of toggles)toggle.setAttribute('aria-controls',nav.id);}
     let destroyed = false, open = !!options.navigationOpen, trigger: HTMLElement | null = null;
-    const sync = () => { node.classList.toggle('pui-navigation-open', open); nav.inert = narrow.matches && !open; body.inert = narrow.matches && open; };
+    const sync = () => { node.classList.toggle('pui-navigation-open', open); nav.inert = narrow.matches && !open; body.inert = narrow.matches && open; for(const toggle of toggles)toggle.setAttribute('aria-expanded',String(open)); };
     const update = (state: Readonly<SplitPaneState>) => { check(state, ['navigationOpen']); open = !!state.navigationOpen; sync(); };
     const setNavigationOpen = (next: boolean) => {
         if (destroyed)
@@ -1342,7 +1344,7 @@ export interface ListState {
 export function createList(options: ListState): Control<ListState> {
     check(options, ['items', 'context']);
     finite(options.context, ['queue'], 'list context');
-    const children: Control[] = [], node = element('div', 'pui-control-list');
+    const children: Control[] = [], node = element(options.context==='queue'?'section':'div', 'pui-control-list');
     let control: Control<ListState>;
     let current = new Map<string, Control>();
     const update = (state: Readonly<ListState>) => {
@@ -1350,6 +1352,8 @@ export function createList(options: ListState): Control<ListState> {
         const context = state.context ?? options.context;
         finite(context, ['queue'], 'list context');
         node.classList.toggle('pui-list-queue', context === 'queue');
+        if(context==='queue'){node.setAttribute('role','region');node.setAttribute('aria-label','Pending messages');node.setAttribute('aria-live','polite');}
+        else{node.removeAttribute('role');node.removeAttribute('aria-label');node.removeAttribute('aria-live');}
         const keys = new Set<string>(), seen = new Set<Control>(), next = new Map<string, Control>();
         for (const item of state.items) {
             check(item, ['key', 'content']);
@@ -1486,4 +1490,7 @@ export function createDiff(options: DiffState): Control<DiffState> {
 }
 // Private composition helpers. These are deliberately absent from index.ts.
 export { own as ownControl, entry as controlEntry, nodes as controlNodes, check as checkOptions };
-export function createURLInput(options: InputOptions): Input { return inputControl(options, 'url'); }
+export function createURLInput(options: InputOptions): Input {
+    const control=inputControl(options,'url'),node=entry(control).node,input=node.querySelector('input')!,wrapper=element('div','pui-url-control');
+    input.before(wrapper);wrapper.append(iconElement('globe'),input);return control;
+}

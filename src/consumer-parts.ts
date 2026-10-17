@@ -121,7 +121,7 @@ export function createImage(options: ImageOptions): ImageControl {
         throw new Error('Unknown image purpose.');
     if (options.onRemove && options.purpose !== 'attachment')
         throw new Error('Only attachment images have a remove action.');
-    const node = element('div', 'pui-image pui-image-' + (options.purpose ?? 'content')), image = element('img'), brand = options.purpose === 'brand'||options.purpose==='intro';
+    const node = element(options.purpose==='attachment'?'figure':'div', 'pui-image pui-image-' + (options.purpose ?? 'content')), image = element('img'), brand = options.purpose === 'brand'||options.purpose==='intro';
     const compact=options.purpose==='intro'?element('source'):undefined;
     if(compact)compact.media='(max-width:720px)';
     const graphic=compact?element('picture','',compact,image):image;
@@ -133,6 +133,8 @@ export function createImage(options: ImageOptions): ImageControl {
     }
     else
         node.append(graphic);
+    const caption=options.purpose==='attachment'?element('figcaption'):undefined;
+    if(caption)node.append(caption);
     let viewer: ReturnType<typeof createImageViewer> | undefined;
     let state: ImageState = { label: options.label, source: '', removeDisabled: options.removeDisabled }, destroyed = false;
     const remove = options.onRemove ? primitive.createIconButton({ label: 'Remove ' + options.label, icon: 'close', onAction: options.onRemove, onError: options.onError }) : undefined;
@@ -171,6 +173,7 @@ export function createImage(options: ImageOptions): ImageControl {
         }
         state = next;
         image.alt = next.label;
+        if(caption&&caption.textContent!==next.label)caption.textContent=next.label;
         if (openButton) {
             openButton.setAttribute('aria-label', 'Open ' + next.label);
             openButton.disabled = !next.source;
