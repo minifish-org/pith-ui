@@ -9,7 +9,7 @@ test.beforeEach(async ({page}) => {
 
 test('native selector height cannot enlarge the visible control or validation anchor',async ({page}) => {
   const samples = await page.evaluate(async () => {
-    const {createSelect} = await import('../src/index.js');
+    const {createSelect} = await import('../src/legacy.js');
     const rect = (node:HTMLElement) => {const value=node.getBoundingClientRect(); return {x:value.x,y:value.y,width:value.width,height:value.height};};
     return (['normal','compact'] as const).map(density => {
       const select=createSelect({label:'Choice',density,value:'short',options:[{value:'short',label:'A'},{value:'long',label:'The longest available native option'}]});

@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 
 test('typography displays only the three supported text sizes', async ({ page }) => {
-  await page.goto('/?item=foundation-typography&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=foundation-typography&theme=light');
   const sizes = await page.locator('.pui-demo-type-sample').evaluateAll(nodes =>
     [...new Set(nodes.map(node => parseFloat(getComputedStyle(node).fontSize)))].sort((a, b) => a - b));
   expect(sizes).toEqual([12, 14, 16]);
 });
 
 test('typography uses two weights and the same proportional line height', async ({ page }) => {
-  await page.goto('/?item=foundation-typography&theme=dark');
+  await page.goto('/tests/legacy-showroom.html?item=foundation-typography&theme=dark');
   const samples = await page.locator('.pui-demo-type-sample').evaluateAll(nodes => nodes.map(node => {
     const style = getComputedStyle(node);
     return { weight: Number(style.fontWeight), ratio: parseFloat(style.lineHeight) / parseFloat(style.fontSize) };
@@ -19,7 +19,7 @@ test('typography uses two weights and the same proportional line height', async 
 });
 
 test('typography explains the system and code font roles without a font chooser', async ({ page }) => {
-  await page.goto('/?item=foundation-typography&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=foundation-typography&theme=light');
   const ui = page.getByRole('region', { name: '系统界面字体', exact: true });
   const code = page.getByRole('region', { name: '等宽代码字体', exact: true });
   await expect(ui).toBeVisible(); await expect(code).toBeVisible();
@@ -31,7 +31,7 @@ test('typography explains the system and code font roles without a font chooser'
 });
 
 test('spacing shows the five supported distances without an arbitrary gap editor', async ({ page }) => {
-  await page.goto('/?item=foundation-spacing&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=foundation-spacing&theme=light');
   const values = await page.locator('.gallery-demo-host code').allTextContents();
   expect(values.filter(value => /^\d+ CSS px$/.test(value)).map(value => Number.parseInt(value))).toEqual([4, 8, 12, 16, 24]);
   await expect(page.getByRole('combobox', { name: '体验组合间距（仅展厅）', exact: true })).toHaveCount(0);
@@ -39,7 +39,7 @@ test('spacing shows the five supported distances without an arbitrary gap editor
 
 for (const item of ['button', 'text-input', 'workspace-chat']) {
   test(`${item} keeps the standard presentation without a density chooser`, async ({ page }) => {
-    await page.goto(`/?item=${item}&theme=light`);
+    await page.goto(`/tests/legacy-showroom.html?item=${item}&theme=light`);
     await expect(page.getByRole('combobox', { name: '密度', exact: true })).toHaveCount(0);
     await page.getByRole('combobox', { name: '并排比较', exact: true }).click();
     await expect(page.getByRole('option', { name: '普通 / 紧凑', exact: true })).toHaveCount(0);
@@ -49,17 +49,17 @@ for (const item of ['button', 'text-input', 'workspace-chat']) {
 }
 
 test('old density links normalize while fixed sizing demonstrations remain available', async ({ page }) => {
-  await page.goto('/?item=button&theme=light&density=compact&compare=density');
+  await page.goto('/tests/legacy-showroom.html?item=button&theme=light&density=compact&compare=density');
   await expect(page.locator('.gallery-demo-host')).toHaveCount(1);
   await expect(page.locator('.gallery-demo-host .pui-compact')).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: '并排比较', exact: true })).toContainText('单项体验');
-  await page.goto('/?item=foundation-sizing&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=foundation-sizing&theme=light');
   await expect(page.locator('.gallery-demo-host').getByRole('button', { name: 'normal action', exact: true })).toBeVisible();
   await expect(page.locator('.gallery-demo-host').getByRole('button', { name: 'compact action', exact: true })).toBeVisible();
 });
 
 test('showroom navigation, headings and specifications follow the same text contract', async ({ page }) => {
-  await page.goto('/?item=button&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=button&theme=light');
   const text = await page.locator('#showroom').evaluate(root => {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const result: Array<{ value: string; size: number; weight: number; ratio: number }> = [];
@@ -79,7 +79,7 @@ test('showroom navigation, headings and specifications follow the same text cont
 });
 
 test('state, theme, width and browser measurements remain functional', async ({ page }) => {
-  await page.goto('/?item=text-input&theme=light&width=800');
+  await page.goto('/tests/legacy-showroom.html?item=text-input&theme=light&width=800');
   const state = page.getByRole('combobox', { name: '合法状态', exact: true });
   await state.click(); await page.getByRole('option', { name: '禁用', exact: true }).click();
   await expect(page.locator('.gallery-demo-host').getByRole('textbox').first()).toBeDisabled();

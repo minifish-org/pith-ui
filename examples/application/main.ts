@@ -1,3 +1,4 @@
+// Internal baseline validation application; excluded from showroom output and npm.
 import {
   createApplication,
   customModelDefaults,
@@ -6,7 +7,7 @@ import {
   type CustomConnectionState, type MCPConnectionItem,
   type ModelPickerState, type ModelSelection, type ProviderLoginState, type ResourcesSession,
   type ResourcesState, type SettingsPanelState,
-} from 'pith-ui/app';
+} from '../../src/app/index.js';
 import 'pith-ui/styles.css';
 
 // This controller deliberately has no DOM beyond the checked application mount.

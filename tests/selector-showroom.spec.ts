@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('showroom selectors use shared option surfaces for fields, controls and permissions', async ({ page }) => {
-  await page.goto('/?item=select&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=select&theme=light');
   const provider = page.getByRole('combobox', { name: 'Provider', exact: true });
   await expect(provider).toHaveAttribute('aria-haspopup', 'listbox');
   await expect(page.locator('.gallery-spec-values dd').first()).toContainText('pui-select-trigger');
@@ -19,7 +19,7 @@ test('showroom selectors use shared option surfaces for fields, controls and per
   await expect(page.locator('.gallery-canvas[data-appearance=light]')).toHaveCount(1);
   await expect(page.locator('.gallery-canvas[data-appearance=dark]')).toHaveCount(1);
 
-  await page.goto('/?item=permission-control&theme=light');
+  await page.goto('/tests/legacy-showroom.html?item=permission-control&theme=light');
   const permission = page.getByRole('combobox', { name: 'Conversation permissions', exact: true });
   await expect(permission).toHaveAttribute('aria-haspopup', 'listbox');
   await permission.click();
@@ -29,17 +29,17 @@ test('showroom selectors use shared option surfaces for fields, controls and per
 });
 
 test('selector showroom exposes supported error, disabled and long-list states', async ({ page }) => {
-  await page.goto('/?item=select&theme=dark&state=error');
+  await page.goto('/tests/legacy-showroom.html?item=select&theme=dark&state=error');
   const provider = () => page.locator('.gallery-demo-host').getByRole('combobox', { name: 'Provider', exact: true });
   await expect(provider()).toHaveAttribute('aria-invalid', 'true');
   await expect(page.locator('.gallery-demo-host')).toContainText('演示读取失败；当前选择保留');
 
-  await page.goto('/?item=select&theme=dark&state=disabled');
+  await page.goto('/tests/legacy-showroom.html?item=select&theme=dark&state=disabled');
   await expect(provider()).toBeDisabled();
   await expect(page.locator('.gallery-demo-host').getByRole('listbox', { name: 'Models (multi-row)', exact: true })).toBeDisabled();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/?item=select&theme=dark&state=long&width=320');
+  await page.goto('/tests/legacy-showroom.html?item=select&theme=dark&state=long&width=320');
   await provider().press('Enter');
   await provider().press('End');
   // Scrolling and viewport placement settle on subsequent animation frames.

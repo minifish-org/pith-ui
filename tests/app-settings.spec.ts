@@ -1,5 +1,5 @@
 import {expect,test} from '@playwright/test';
-import type {ActionResult,CustomConnectionDraft,CustomConnectionState,MCPConnectionDraft,MCPConnectionItem,MCPEditorValue,ModelPickerState,ModelSelection,ProviderActionsState,ProviderLoginState,SettingsCredentialView,SettingsDraft,SettingsPanelState,SettingsProviderOption,UpdatePanelState} from '../src/index.js';
+import type {ActionResult,CustomConnectionDraft,CustomConnectionState,MCPConnectionDraft,MCPConnectionItem,MCPEditorValue,ModelPickerState,ModelSelection,ProviderActionsState,ProviderLoginState,SettingsCredentialView,SettingsDraft,SettingsPanelState,SettingsProviderOption,UpdatePanelState} from '../src/legacy.js';
 
 type Result=ActionResult|Promise<ActionResult>;
 interface Session {update(state:unknown):void;close():void;isOpen():boolean}

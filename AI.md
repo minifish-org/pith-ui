@@ -1,103 +1,18 @@
-# Pith UI: instructions for consumers
+# AI composition instructions
 
-## Choose the consumption contract first
+Import factories and types only from `pith-ui`; import styles from `pith-ui/styles.css`. Use the declarations installed with the exact version. Read [APP.md](APP.md) and the matching compiling recipe before adapting a Desk region.
 
-Pith Desk and approved application integrations must read the bundled [application contract](./APP.md). Import UI values and types only from `pith-ui/app`, plus `pith-ui/styles.css`. Obtain and validate one mount, call `createApplication`, and use the plain `workspace`, `settings`, `resources` and `files` scenes. Their named state methods and session callbacks own the UI. Use the installed `dist/app/index.d.ts` from the exact registry dependency in the consumer lockfile; do not guess methods from a newer source checkout.
+1. Keep application data, identity, permissions, requests, persistence, file acquisition and feature coordination in the application. Port the documented part tree and state/callback wiring into its source.
+2. Configure parts with content, finite semantic options, state and callbacks. Typography, spacing, colors, sizes and motion are library decisions. Unknown options are rejected by both runtime and declarations.
+3. Compose child parts through documented slots. A part is opaque and has one owner. Do not inspect generated DOM, classes or selectors, attach native listeners to it, inject Node/HTML, override CSS or add a wrapper for every node.
+4. Obtain one ordinary mount container and call `mountParts`. Keep that owner for appearance and final destruction. Never reuse a mounted or destroyed part.
+5. Use ordinary updates for snapshots and explicit resets for new targets or deliberate replacement. Preserve existing target/revision checks, drafts and cancellation behavior.
+6. Keep keyed handles and local maps in the consumer. Reuse unchanged children and replace through part methods; parent ownership retires removals. Mark local coordination terminal through supported disposal callbacks before late results arrive.
+7. Use semantic library icons and supported content rendering. Resolve local links to data intents; the application validates and executes native actions. Files and image payloads are data, not DOM extension slots.
+8. Destroy the shared mounted owner on release. Clear application secrets, transactions and resources through existing business lifecycles. Late results must not update or close replacement openings.
 
-Applications supply finite brand data (`name`, optional `qualifier`, optional `mark: {src, darkSrc?, alt}` or `{symbol: 'pith', alt}`), appearance and pure host capabilities. The named Pith resource reuses the existing four-tile mark with library-owned geometry and theme colors. They retain request protocols, identity, versioned drafts, permissions, persistence, credentials, login transactions, file acquisition, native actions, costs, update polling and completion/read acknowledgments. The library owns structure, presentation, focus, local pending/errors, menus/disclosures, navigation expansion, reading and image zoom. The [complete compiled reference](./examples/application/main.ts) demonstrates these boundaries with simulated data; the showroom item is [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference).
+There is no public whole application/page/scene API, `pith-ui/app` or recipe subpath. Bundled assembly source is documentation to copy into the consumer. Do not wrap it into another public scene library.
 
-Do not add UI DOM outside the sole checked mount or inspect generated nodes, selectors, datasets, forms, fields, parts, controls, HTML, classes or styles. Do not import root factories, private paths, markup helpers or a copied component as a workaround. If a scene lacks a real capability, first add a permanent regression and a narrow semantic library port, reusing its existing component. Keep application business logic in its controller. Node slots, render callbacks, arbitrary CSS/density/size options and a UI description DSL are not part of `pith-ui/app`.
+If an old template cannot be expressed, identify its exact native structure or behavior and add the smallest bounded part capability with a permanent regression first. Preserve correct assertions. Do not copy old HTML/CSS into the consumer, add style overrides, expose arbitrary presentation parameters or invent a new visual system.
 
-Keep stable business keys. Update feedback without replacing a live draft; explicitly reset/edit or open a new session for a new target. Combine external availability with local pending, retain failed input, and preserve successful-write/failed-refresh semantics without replaying writes. A closed or replaced session cannot update a later opening; controller generations, cancellation and target checks still remain necessary. Follow the exact typed result of each callback: some return `ActionResult`, while void callbacks are business intents that need authoritative availability updates.
-
-Install only the approved published registry version or prerelease with an exact version and lockfile. Pith Desk must not use local tarballs, `file:`/`link:`, aliases, symlinks or source-path mappings. Build/test/package proof, npm publication, deployed showroom, native acceptance and human review are separate evidence; do not infer one from another.
-
-## General component consumers
-
-The remaining instructions describe the unrestricted `pith-ui` root entry for independent component compositions. They do not grant Pith Desk an escape from the application contract. Pith UI supplies native TypeScript product blocks and base components; these consumers import from `pith-ui` and import CSS once from `pith-ui/styles.css`. Consult the bundled [general API reference](./API.md) for exact factory signatures, state, options, callbacks and handles; the installed declarations remain authoritative. Do not guess parameter names, import private package paths or generate parallel JavaScript implementations.
-
-### Choose the largest appropriate block
-
-1. Locate the intended task in the catalog below and inspect its interactive case.
-2. Prefer the complete product block. Compose base components only when no product block fits.
-3. Supply typed display state, stable item keys and existing application callbacks.
-4. Keep business identity, authorization, API calls and persistence in the application.
-5. Change supported options or documented theme tokens. Add a shared variant and its example when new behavior is required; do not patch internal selectors or copy component source into the application.
-
-Product blocks and standalone factories share the same private action, native-field, feedback, layout and floating-surface implementations. A retained product node does not need a second public factory instance or a class patch. Choose the semantic block interface; private controllers and compatibility markup are not consumer APIs.
-
-- Supply `createWorkspaceShell({ composer: { onSubmit, onStop, onInput, onModel, onThinkingChange }, onDialogClose })`; update its composer state for model, effort, send/queue/stop and availability. Use `openDialog`, `closeDialog` and `setSidebarOpen` for the shell-owned surfaces.
-- `createModelPicker` owns its model editor. Supply `editor` catalog state and `onSubmit`; use `read()` or the callback selection instead of constructing another editor over its fields.
-- Settings and MCP expose typed drafts, credential presentation and explicit reset/edit operations. Use their callbacks and methods; `field()`/`id()` remain compatibility adapters, not the default integration route.
-- Use `customModelDefaults()` for a new independent connection's initial model. The editor uses that same pure data factory for Add model: empty ID, 128000 context tokens and 8192 output tokens. Each call returns fresh values without inheriting another row's edits, capabilities or prices. These are editable starting values, not a model capability claim; preserve values loaded from an existing connection.
-- Messages expose action/code callbacks, action availability and image state. Preserve the host's per-message eligibility rules; do not decorate rendered buttons with a second event-routing scheme.
-- Resources provide their own standard refresh/create toolbar. Node slots remain available for additional compositions, with explicit host ownership.
-- Provider/resource action blocks and MCP lists expose finite action types with semantic target snapshots. Navigation exposes `WorkspaceNavigationAction`, including its triggering button for anchored menus. Prefer these callbacks to dataset inspection; owned callbacks consume their event, while omitted callbacks preserve legacy host delegation.
-
-| Task | First API to inspect |
-|---|---|
-| Workspace and chat layout | `createWorkspaceShell`, `createWorkspaceNavigation`, `createWelcomeView` |
-| Messages, tools and conversation reading | `createConversationView`, `installConversationReader` |
-| Composer, attachments, drag feedback and queued messages | `createComposerView`, `createAttachments`, `createPendingMessages`, `createDropFeedback` |
-| Edit text or confirm a dangerous action | `createTextEditDialog`, `createConfirmDialog` |
-| Model catalog and thinking effort | `createModelPicker`, `createModelEditor` |
-| Permission, approval and runtime | `createPermissionControl`, `createFullAccessConfirmation`, `createApprovalPanel`, `createRuntimePanel`, `createTaskFailure` |
-| Settings and independent endpoints | `createSettingsPanel`, `createCustomConnectionEditor` |
-| Provider sign-in and MCP | `createProviderLoginPanel`, `createMCPConnectionsPanel`, `createMCPConnectionList` |
-| Resource list and source editing | `createResourcesPanel`, `createResourceEditor` |
-| Files, Markdown, diff and images | `createArtifactPanel`, `createFilePreview`, `createPagedPreview`, `createImageViewer` |
-| Branches and system information | `createBranchHistory`, `createCostLedger`, `createUpdatePanel`, `createCompletionNotices` |
-| Smaller compositions | `createButton`, `createField`, native input factories, `createActions`, `createFormSection`, `createCollectionState` |
-
-Full catalog: https://github.com/minifish-org/pith-ui/blob/main/docs/catalog.md
-
-Showroom: https://minifish-org.github.io/pith-ui/?item=text-edit-dialog&theme=light&state=normal&width=800
-
-### State and lifecycle
-
-Most views expose `{ element, update(state), destroy() }`; dialogs add open/close and editors expose read/getValue/reset as declared. Pass complete state values of the concrete component type. Do not assume a method exists on every block.
-
-- Call `update` on the existing instance; do not rebuild the entire page on streamed snapshots.
-- Input `value` initializes a draft. Use `reset` or `open({ value })` explicitly for a new target. Feedback updates must not replace user input.
-- Native `form.reset()` restores construction values. Component `reset` changes the current draft without changing that baseline or emitting a user-change callback. For multi-select, use `values`, `getValues`, `resetValues` and `onValuesChange`; the scalar methods remain available for single-choice compatibility.
-- Stable message IDs and collection keys protect selection, focus, decoded images and scroll positions.
-- An async submit returns `{ ok: true }` or `{ ok: false, error }`. A failed operation retains the draft. Closing or changing the view prevents a stale response from changing new UI; it does not undo a completed business write.
-- Combine external disabled state with local pending state. Do not automatically replay a write because the following refresh failed.
-- Call `destroy()` before releasing an instance. Destroy child block handles supplied through ordinary Node slots yourself; the parent cannot infer their ownership. A `DialogContent` handle passed to `createFeatureDialogFrame` is an explicit ownership transfer and is destroyed when replaced or closed.
-- Use distinct generated prefixes or supported ID options for coexisting instances. Leave legacy unprefixed IDs to the existing application adapter.
-
-### Theme and layout
-
-Call `setAppearance(root, 'light' | 'dark' | 'system')` on an ancestor containing the view. Include `document.body` when a dialog is mounted there. This establishes the `.pui` boundary and `--pui-*` tokens.
-
-Use the block's default presentation. Typography has two automatic roles: the system UI font (`--pui-font-ui`) and system monospace code font (`--pui-font-code`). Small/medium/large text is 12/14/16 CSS px; medium is the default. Use only regular 400 or strong 600 weight, with one proportional line height of 1.5. Code and Markdown retain their semantics without introducing another font scale. The application owns supplied brand and logo Nodes.
-
-Spacing has five values: 4/8/12/16/24 CSS px (`--pui-space-xs/sm/md/lg/xl`). Blocks own their gaps, padding and grouping; do not choose arbitrary values or override an internal element's style. Zero means no space. Borders, icon geometry and control dimensions are separate from the spacing scale.
-
-Choose semantic intent or a documented content capability when needed. Retained `density` options support compatibility and library-owned compact compositions; they are not a per-screen design choice. Standard examples omit them. Single-choice dropdowns share the same Select surface across base components and product blocks. Use `createSelect` for another ordinary choice rather than building a second options popup; call its `focus()` method to focus the visible control. Its native `control` remains a form-value and validation adapter. Explicit `multiple: true` or `size > 1` retains a native visible listbox. Native lists and compact chat actions intentionally have different sizing rules from ordinary fields. CSS px is a layout unit, not a physical screen-pixel measurement.
-
-Focus does not draw an outline or glow or change border colors, for pointer and keyboard interaction alike. Do not add replacement focus backgrounds. Existing navigation/menu focus backgrounds and focus-driven action visibility remain unchanged. Existing hover behavior, caret, text selection, normal surface shadows, drag feedback and selected/error/permission states remain. Native focus, Tab traversal, keyboard activation and dialog focus restoration still work; controls no longer have a visible focus ring, so keyboard users cannot rely on that cue to locate the active control. `focusableElements` returns visible, enabled, non-inert tab targets; hidden native select adapters are excluded. The showroom focus exhibit reports the actual focused control for inspection; this observer is not application UI.
-
-Ordinary buttons, including product actions and visible Select triggers, share disabled feedback: opacity 0.45 and a not-allowed cursor. Native text controls and listboxes retain their own field treatment. Async file actions use the shared button state controller to combine local pending with external availability and expose `aria-busy`; snapshots must not re-enable an in-flight action.
-
-Native multi-row lists use 16 CSS px text. Row spacing follows platform capabilities: Chromium applies option padding; WebKit owns its native row metrics. Do not add empty container height to simulate spacing or replace native keyboard behavior implicitly.
-
-Do not add app-wide resets, new fonts, arbitrary animation timings, internal-class overrides or a UI framework to style these blocks. If a product brand needs a theme, centralize overrides in one reviewed token scope and inspect both themes and relevant states.
-
-### Security and host boundaries
-
-- Set ordinary text through typed factory inputs or `textContent`. Node slots accept trusted nodes constructed by the caller, not untrusted HTML.
-- `renderMarkdown` sanitizes content; embedded media, executable markup, forms and arbitrary CSS are excluded. Local file links require the host's explicit resolver and authenticated download validation.
-- A resolved local link is a UI affordance, not permission to access a file. The host owns native file open/reveal/copy/download actions and cancellation.
-- The host acquires image data, validates supported MIME types and owns object URLs. Revoke URLs when their host scope ends; closing the zoom view does not establish file ownership.
-- Code-copy callbacks on conversations, paged previews and file previews receive `(text, button)`. The host owns clipboard access and error handling; reuse `createCopyFeedback` with that actual button for pending and result feedback. An owned callback consumes the code-copy event; without one, existing host delegation remains available. Do not install a second copy handler or change per-message eligibility rules.
-- Never log credentials, save them in the showroom, or place them in URLs. Empty credential fields and explicit removal actions must preserve the application's existing distinction.
-- Older safe markup helpers remain for general component compatibility adapters. They are not allowed in Pith Desk's application boundary. Prefer factories and Node composition for unrestricted compositions; never invent a generic raw-HTML extension point or bypass sanitization.
-
-### Validate a change
-
-Type-check the public example, run the related component tests, experience normal/error/loading/disabled/long-content states, and check keyboard, focus, repeated actions and destruction. Preserve existing application behavior tests; changing a selector mechanically is different from weakening its assertion.
-
-For chat-sensitive changes check streaming, selection, code scrolling and reading anchors. For forms check input retention, failed submits, late responses and auxiliary buttons not submitting. For layout check both themes, `900×600`, larger desktop sizes and a narrow browser container. Human reviewers use the showroom; automated checks never declare human approval.
-
-Build and install the actual tarball before upgrading an application. Pin a released version in the consumer lockfile. Do not claim a package is published, a showroom is deployed, or an application release is validated based solely on a local build.
+Use the parts-only showroom for component inspection and internal assembly regressions for combinations. Source tests, tarball proof, npm publication, consumer installation, product build and human acceptance are separate evidence states.

@@ -5,7 +5,7 @@ import type {CustomModelValue} from '../src/forms/custom-connection.js';
 type Defaults = () => CustomModelValue;
 
 async function defaults(entry: 'app' | 'general'): Promise<Defaults> {
-  const module = entry === 'app' ? await import('../src/app/index.js') : await import('../src/index.js');
+  const module = entry === 'app' ? await import('../src/app/index.js') : await import('../src/legacy.js');
   const factory: unknown = Reflect.get(module, 'customModelDefaults');
   assert.equal(typeof factory, 'function', `${entry} entry exports the pure custom model defaults function`);
   return factory as Defaults;

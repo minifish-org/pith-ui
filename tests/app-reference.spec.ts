@@ -105,7 +105,7 @@ test('conversation files and branch history are complete semantic compositions',
 });
 
 test('the showroom exposes an embedded reference and a reproducible full-page link', async ({page}) => {
-  await page.goto('/?item=application-reference&theme=dark&width=1280');
+  await page.goto('/tests/legacy-showroom.html?item=application-reference&theme=dark&width=1280');
   await expect(page.getByRole('heading', {name: '受限入口参考应用 Application reference', exact: true})).toBeVisible();
   const link = page.getByRole('link', {name: '打开完整参考应用', exact: true});
   await expect(link).toHaveAttribute('href', /examples\/application\/index\.html\?theme=dark$/);

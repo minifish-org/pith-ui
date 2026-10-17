@@ -31,7 +31,7 @@ async function keyboardModality(page: Page): Promise<void> {await page.keyboard.
 async function mountStandalone(page: Page, theme: Theme): Promise<void> {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async theme => {
-    const ui = await import('../src/index.js'); ui.setAppearance(document.body, theme);
+    const ui = await import('../src/legacy.js'); ui.setAppearance(document.body, theme);
     document.body.style.display = 'grid'; document.body.style.gridTemplateColumns = 'repeat(3, 280px)';
     document.body.style.gap = '16px'; document.body.style.padding = '20px';
     const blocks = [ui.createButton({label:'Action'}), ui.createIconButton({label:'Icon action',icon:'plus'}),
@@ -87,7 +87,7 @@ for (const theme of ['light','dark'] as const) {
   test(`${theme}: composer and sidebar search retain their ordinary borders while actual input and selection survive`,async ({page}) => {
     await page.goto('/tests/fixture.html');
     await page.evaluate(async theme => {
-      const ui = await import('../src/index.js'); ui.setAppearance(document.body,theme);
+      const ui = await import('../src/legacy.js'); ui.setAppearance(document.body,theme);
       const shell = ui.createWorkspaceShell({brand:document.createTextNode('Pith Desk')});
       shell.composer.update({model:{label:'DeepSeek V4.1 Flash',description:'Existing model'},thinking:{value:'max',options:[{value:'high',label:'High'},{value:'max',label:'Max'}]}});
       shell.composer.reset('Draft 中文 text'); document.body.append(shell.element);
@@ -119,7 +119,7 @@ for (const theme of ['light','dark'] as const) {
   test(`${theme}: permission warning, errors, selected navigation and drag feedback survive focus removal`,async ({page}) => {
     await page.goto('/tests/fixture.html');
     await page.evaluate(async theme => {
-      const ui=await import('../src/index.js');ui.setAppearance(document.body,theme);
+      const ui=await import('../src/legacy.js');ui.setAppearance(document.body,theme);
       const permission=ui.createPermissionControl({mode:'full-access',description:'Full access is enabled'});
       const invalid=ui.createTextInput({label:'Invalid endpoint',value:'Retained draft',error:'Connection failed'});
       const selected=ui.createListRow({title:'Current item',selected:true,actions:ui.createButton({label:'Selected action'}).element});
@@ -142,7 +142,7 @@ for (const theme of ['light','dark'] as const) {
   test(`${theme}: menus, popovers, disclosure and chat tab targets keep behavior and ordinary surface shadows`,async ({page}) => {
     await page.goto('/tests/fixture.html');
     await page.evaluate(async theme => {
-      const ui=await import('../src/index.js');ui.setAppearance(document.body,theme);
+      const ui=await import('../src/legacy.js');ui.setAppearance(document.body,theme);
       const menu=ui.createMenu({label:'Actions',items:[{id:'first',label:'First',onAction(){}},{id:'blocked',label:'Blocked',disabled:true,onAction(){}},{id:'last',label:'Last',onAction(){document.body.dataset.lastAction='true';}}]});
       const popover=ui.createPopover({label:'Details panel',content:ui.createTextInput({label:'Popover field'}).element});
       const disclosure=ui.createDisclosure({title:'Expand details',content:document.createTextNode('Expanded information')});
@@ -168,7 +168,7 @@ for (const theme of ['light','dark'] as const) {
   test(`${theme}: resource and modal editors retain selection, input caret, focus restoration and their surface shadows`,async ({page}) => {
     await page.goto('/tests/fixture.html');
     await page.evaluate(async theme => {
-      const ui=await import('../src/index.js');ui.setAppearance(document.body,theme);
+      const ui=await import('../src/legacy.js');ui.setAppearance(document.body,theme);
       const state={workspaceId:'w',workspacePath:'/project',path:'/project/AGENTS.md',kind:'instructions',content:'Source 中文 draft',editable:true,workspaceBusy:false};
       const resource=ui.createResourceEditor(state);const host=document.createElement('section');host.className='pui-modal';host.append(resource.element);
       const opener=ui.createButton({label:'Open editor'});const editor=ui.createTextEditDialog({title:'Edit message'});
@@ -191,7 +191,7 @@ for (const theme of ['light','dark'] as const) {
 test('forced colors do not reintroduce focus outlines or erase selected and error states',async ({page,browserName}) => {
   test.skip(browserName !== 'chromium','Playwright only emulates forced colors in Chromium.');
   await page.emulateMedia({forcedColors:'active'});await mountStandalone(page,'light');
-  await page.evaluate(async ()=>{const ui=await import('../src/index.js');document.body.append(ui.createTextInput({label:'Invalid endpoint',error:'Connection failed'}).element);});
+  await page.evaluate(async ()=>{const ui=await import('../src/legacy.js');document.body.append(ui.createTextInput({label:'Invalid endpoint',error:'Connection failed'}).element);});
   await keyboardModality(page);
   for (const target of [...standaloneTargets(page),page.getByRole('textbox',{name:'Invalid endpoint'})]) {
     await blurAndLeave(page);const before=await paint(target);await target.focus();await expect(target).toBeFocused();
