@@ -8,13 +8,13 @@ export function assertIconName(name: unknown): asserts name is IconName {
 }
 
 export interface TextPartState {text: string; hidden?: boolean; announce?: 'none' | 'polite'}
-export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader';
+export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path-paragraph' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader';
 export interface TextPart extends Part {update(state: Readonly<TextPartState>): void}
 const textParts = new WeakSet<Part>();
 /** Internal capability check for text-only semantic references. */
 export function isTextPart(part: Part): part is TextPart {return textParts.has(part) && isPartAlive(part);}
 const textRoles = {
-  text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], hint: ['p', 'pui-field-hint'],
+  text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], 'path-paragraph': ['p', 'pui-file-path'], hint: ['p', 'pui-field-hint'],
   description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], heading: ['h3', ''], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'],
 } as const;
 function validateText(state: Readonly<TextPartState>): void {

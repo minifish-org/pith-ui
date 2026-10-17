@@ -14,6 +14,8 @@ export interface FormPart extends Part {
   update(state: Readonly<FormPartState>): void;
   replace(children: readonly Part[]): void;
   submit(): void;
+  reportValidity(): boolean;
+  invalidate(): void;
   reset(): void;
   isPending(): boolean;
 }
@@ -52,6 +54,8 @@ export function createFormPart(options: FormPartOptions): FormPart {
     },
     replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part, children);},
     submit() {if (isPartAlive(part)) node.requestSubmit();},
+    reportValidity: () => isPartAlive(part) && node.reportValidity(),
+    invalidate() {if (isPartAlive(part)) operation.invalidate();},
     reset() {if (isPartAlive(part)) {operation.invalidate(); node.reset();}},
     isPending: () => isPartAlive(part) && operation.pending,
   }, {children: options.children, dispose() {operation.destroy(); node.removeEventListener('submit', submit);}});

@@ -452,7 +452,7 @@
 .pui .pui-task-failure p { margin: var(--pui-space-sm) 0 var(--pui-space-md); line-height: var(--pui-line-height); }
 .pui .pui-task-failure > div { display: flex; gap: var(--pui-space-md); align-items: center; }
 .pui .pui-connection-test { border-top: 1px solid var(--pui-border); margin-top: var(--pui-space-lg); padding-top: var(--pui-space-lg); }
-.pui .pui-connection-test [role=status] { font-size: var(--pui-text-medium); line-height: var(--pui-line-height); margin-top: var(--pui-space-sm); }
+.pui .pui-connection-test [role=status], .pui .pui-status-message { font-size: var(--pui-text-medium); line-height: var(--pui-line-height); margin-top: var(--pui-space-sm); }
 .pui .pui-test-success { color: var(--pui-accent); }
 .pui .pui-diagnostics-setting { border-top: 1px solid var(--pui-border); margin-top: var(--pui-space-lg); padding-top: var(--pui-space-md); display: flex; flex-direction: column; gap: var(--pui-space-sm); align-items: flex-start; font-size: var(--pui-text-medium); color: var(--pui-muted); }
 
@@ -541,7 +541,7 @@
 /* Settings uses one spacing rhythm for fields, explanations and actions. */
 .pui .pui-settings-panel .pui-settings-section { display: grid; gap: var(--pui-space-md); align-items: start; margin: var(--pui-space-lg) 0 0; padding: var(--pui-space-lg) 0 0; border: 0; border-top: 1px solid var(--pui-border); color: var(--pui-text); }
 .pui .pui-settings-panel .pui-settings-section h3 { margin: 0; font-size: var(--pui-text-large); line-height: var(--pui-line-height); font-weight: var(--pui-weight-strong); }
-.pui .pui-settings-panel .pui-field-hint, .pui .pui-settings-panel .pui-appearance-hint, .pui .pui-settings-panel .pui-modal-description { margin: 0; font-size: var(--pui-text-small); line-height: var(--pui-line-height); }
+.pui .pui-settings-panel .pui-field-hint, .pui .pui-settings-panel .pui-appearance-hint, .pui .pui-settings-panel .pui-modal-description, .pui .pui-form-layout .pui-feature-hint { margin: 0; font-size: var(--pui-text-small); line-height: var(--pui-line-height); }
 .pui .pui-settings-panel .pui-settings-copy { display: grid; gap: 0; }
 .pui .pui-settings-panel .pui-settings-field { display: grid; gap: var(--pui-space-md); }
 .pui .pui-settings-panel .pui-field-label { margin: 0; font-size: var(--pui-text-medium); line-height: var(--pui-line-height); }
@@ -553,11 +553,11 @@
 .pui .pui-settings-panel .pui-provider-advanced summary { font-size: var(--pui-text-medium); line-height: var(--pui-line-height); }
 .pui .pui-settings-panel .pui-provider-advanced .pui-field-label { margin: var(--pui-space-md) 0; }
 .pui .pui-settings-panel .pui-provider-advanced .pui-field-hint { margin-top: var(--pui-space-md); }
-.pui .pui-settings-panel .pui-settings-section .pui-form-error, .pui [id$="connection-test-result"] { margin: 0; }
-.pui [id$="connection-test-result"]:empty { display: none; }
-.pui .pui-settings-panel [data-update-version]:empty, .pui .pui-settings-panel [data-update-message]:empty { display: none; }
+.pui .pui-settings-panel .pui-settings-section .pui-form-error, .pui [id$="connection-test-result"], .pui .pui-status-message.pui-form-error { margin: 0; }
+.pui [id$="connection-test-result"]:empty, .pui .pui-status-message:empty { display: none; }
+.pui .pui-settings-panel [data-update-version]:empty, .pui .pui-settings-panel [data-update-message]:empty, .pui .pui-form-layout .pui-field-hint:empty, .pui .pui-form-layout .pui-feature-hint:empty { display: none; }
 .pui .pui-settings-panel .pui-modal-footer { margin-top: var(--pui-space-lg); padding-top: var(--pui-space-lg); gap: var(--pui-space-sm); }
-.pui .pui-update-settings progress { width: 100%; margin: 0; accent-color: var(--pui-accent); }
+.pui .pui-update-settings progress, .pui .pui-progress-track { width: 100%; margin: 0; accent-color: var(--pui-accent); }
 
 .pui .pui-app { width: 100%; }
 .pui {

@@ -20,6 +20,7 @@ export interface ActionState {
 export interface ActionController {
   readonly element: HTMLButtonElement;
   update(state: Readonly<ActionState>): void;
+  invalidate(): void;
   destroy(): void;
 }
 export function adoptAction(node: HTMLButtonElement, options: {
@@ -75,7 +76,7 @@ export function adoptAction(node: HTMLButtonElement, options: {
     if (node.disabled || localPending || disposed) return;
     operation!.run(options.onAction!, (result: void | ActionResult) => { if (result && !result.ok) options.onError?.(result.error); });
   }) as EventListener);
-  return { element: node, update, destroy() { disposed = true; operation?.destroy(); life?.destroy(); } };
+  return { element: node, update, invalidate() { operation?.invalidate(); }, destroy() { disposed = true; operation?.destroy(); life?.destroy(); } };
 }
 
 export type NativeControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;

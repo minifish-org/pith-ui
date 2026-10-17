@@ -23,7 +23,7 @@ export type ButtonPartOptions = ButtonPartState & {
   onAction?: UIAction;
   onError?: (message: string) => void;
 };
-export interface ButtonPart extends Part {update(state: Readonly<ButtonPartState>): void; focus(): void}
+export interface ButtonPart extends Part {update(state: Readonly<ButtonPartState>): void; invalidate(): void; focus(): void}
 const variants: Record<ButtonVariant, string> = {
   standard: 'pui-button', primary: 'pui-primary-button', secondary: 'pui-secondary-button',
   danger: 'pui-secondary-button pui-destructive-button', 'quiet-icon': 'pui-quiet-icon',
@@ -84,7 +84,7 @@ export function createButtonPart(options: ButtonPartOptions): ButtonPart {
     // established local pending, external availability and stale response rules.
     action.update({disabled: !!state.disabled, pending: !!state.pending, title: state.title ?? ''});
   };
-  const part = createOwnedPart(node, {update, focus() {if (isPartAlive(part)) node.focus();}}, {dispose: action.destroy});
+  const part = createOwnedPart(node, {update, invalidate() {if (isPartAlive(part)) action.invalidate();}, focus() {if (isPartAlive(part)) node.focus();}}, {dispose: action.destroy});
   const {purpose: _purpose, type: _type, onAction: _onAction, onError: _onError, ...initial} = options;
   try {update(initial as ButtonPartState);} catch (error) {part.destroy(); throw error;}
   return part;

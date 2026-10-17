@@ -3,6 +3,7 @@ import {refreshSelect} from '../select.js';
 import {uniqueId} from '../dom.js';
 import {assertOptions, createOwnedPart, isPartAlive, nodeOf, retargetPart, type Part} from './ownership.js';
 import {isTextPart, type TextPart} from './text.js';
+import {isBadgePart, type BadgePart} from './status.js';
 
 export interface FieldState {
   label?: string;
@@ -18,6 +19,7 @@ export interface ValuePart extends Part {
   reset(value: string): void;
   update(state: Readonly<FieldState>): void;
   focus(): void;
+  selectAll(): void;
 }
 export type InputKind = 'text' | 'search' | 'password' | 'url' | 'number';
 export type Autocomplete = 'off' | 'on' | 'url' | 'username' | 'current-password' | 'new-password' | 'one-time-code';
@@ -33,9 +35,11 @@ export interface InputOptions extends FieldState {
   pattern?: string;
   onInput?(value: string): void;
   onChange?(value: string): void;
+  /** Native validation intent; no browser Event or control escapes. */
+  onInvalid?(): void;
 }
 const stateKeys = ['label', 'disabled', 'required', 'readOnly', 'placeholder', 'hidden', 'describedBy'] as const;
-const inputKeys = [...stateKeys, 'kind', 'value', 'name', 'autocomplete', 'min', 'max', 'step', 'pattern', 'onInput', 'onChange'];
+const inputKeys = [...stateKeys, 'kind', 'value', 'name', 'autocomplete', 'min', 'max', 'step', 'pattern', 'onInput', 'onChange', 'onInvalid'];
 const controls = new WeakMap<Part, NativeControl>();
 
 function validateState(state: Readonly<FieldState>): void {
@@ -58,7 +62,7 @@ function validateTextOptions(options: InputOptions): void {
   for (const key of ['min', 'max'] as const) if (options[key] !== undefined && !Number.isFinite(options[key])) throw new TypeError(`Field ${key} must be finite.`);
   if (options.step !== undefined && options.step !== 'any' && (typeof options.step !== 'number' || !Number.isFinite(options.step) || options.step <= 0)) throw new TypeError('Field step must be positive or any.');
   if (options.autocomplete !== undefined && !['off', 'on', 'url', 'username', 'current-password', 'new-password', 'one-time-code'].includes(options.autocomplete)) throw new TypeError('Unsupported autocomplete purpose.');
-  for (const key of ['onInput', 'onChange'] as const) if (options[key] !== undefined && typeof options[key] !== 'function') throw new TypeError(`Field ${key} must be a callback.`);
+  for (const key of ['onInput', 'onChange', 'onInvalid'] as const) if (options[key] !== undefined && typeof options[key] !== 'function') throw new TypeError(`Field ${key} must be a callback.`);
 }
 
 function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: InputOptions, secret = false): ValuePart {
@@ -68,6 +72,8 @@ function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: Inp
   if (options.name !== undefined) control.name = options.name;
   if (options.autocomplete) control.setAttribute('autocomplete', options.autocomplete);
   const native = adoptNativeControl(control, {onInput: options.onInput ? value => options.onInput!(value) : undefined, onChange: options.onChange ? value => options.onChange!(value) : undefined});
+  const invalid = () => options.onInvalid?.();
+  if (options.onInvalid) control.addEventListener('invalid', invalid);
   let part: ValuePart;
   const update = (state: Readonly<FieldState>): void => {
     assertOptions(state, stateKeys, 'field state'); validateState(state);
@@ -79,8 +85,9 @@ function valuePart(control: HTMLInputElement | HTMLTextAreaElement, options: Inp
   part = createOwnedPart<Omit<ValuePart, keyof Part>>(control, {read: native.getValue, reset(value: string) {
     if (typeof value !== 'string') throw new TypeError('Field reset must be text.');
     native.reset(value);
-  }, update, focus: native.focus}, {dispose() {
+  }, update, focus: native.focus, selectAll() {if (isPartAlive(part)) control.select();}}, {dispose() {
     native.destroy();
+    control.removeEventListener('invalid', invalid);
     if (secret || control instanceof HTMLInputElement && control.type === 'password') {control.value = ''; control.defaultValue = '';}
   }});
   controls.set(part, control);
@@ -106,7 +113,7 @@ export interface TextareaOptions extends Omit<InputOptions, 'kind' | 'min' | 'ma
   purpose?: 'text' | 'markdown' | 'secret' | 'message' | 'queue-message';
 }
 export function createTextareaPart(options: TextareaOptions): ValuePart {
-  assertOptions(options, [...stateKeys, 'value', 'name', 'autocomplete', 'onInput', 'onChange', 'purpose'], 'textarea'); validateTextOptions(options);
+  assertOptions(options, [...stateKeys, 'value', 'name', 'autocomplete', 'onInput', 'onChange', 'onInvalid', 'purpose'], 'textarea'); validateTextOptions(options);
   if (options.purpose !== undefined && !['text', 'markdown', 'secret', 'message', 'queue-message'].includes(options.purpose)) throw new TypeError('Unsupported textarea purpose.');
   const control = document.createElement('textarea');
   control.className = 'pui-control';
@@ -193,19 +200,19 @@ export function createChoiceListPart(options: ChoiceOptions): ChoicePart {return
 export interface FieldLabelState {label: string; hidden?: boolean}
 export interface FieldLabelPart extends Part {update(state: FieldLabelState): void}
 /** A separate native label associated with a previously created field. */
-export function createFieldLabelPart(options: FieldLabelState & {control: ValuePart | ChoicePart; screenReaderOnly?: boolean}): FieldLabelPart {
-  assertOptions(options, ['label', 'control', 'hidden', 'screenReaderOnly'], 'field label');
+export function createFieldLabelPart(options: FieldLabelState & {control: ValuePart | ChoicePart; screenReaderOnly?: boolean; suffix?: BadgePart}): FieldLabelPart {
+  assertOptions(options, ['label', 'control', 'hidden', 'screenReaderOnly', 'suffix'], 'field label');
   validateState(options);
   if (options.screenReaderOnly !== undefined && typeof options.screenReaderOnly !== 'boolean') throw new TypeError('Label screen-reader state must be boolean.');
   if (typeof options.label !== 'string') throw new TypeError('Field label must be text.');
+  if (options.suffix !== undefined && !isBadgePart(options.suffix)) throw new TypeError('A field label suffix must be a live Pith UI badge.');
   nodeOf(options.control);
   const control = controls.get(options.control);
   if (!control) throw new TypeError('A field label requires a Pith UI field.');
-  const label = document.createElement('label'); label.className = 'pui-field-label'; label.htmlFor = control.id; label.textContent = options.label;
+  const label = document.createElement('label'); label.className = 'pui-field-label'; label.htmlFor = control.id;
+  const caption = document.createTextNode(options.label + (options.suffix ? ' ' : '')); label.append(caption);
   if (options.screenReaderOnly) label.className = 'pui-sr-only';
   label.hidden = !!options.hidden;
-  control.setAttribute('aria-label', options.label);
-  if (control instanceof HTMLSelectElement) refreshSelect(control);
   const click = (event: Event) => {
     if (!isPartAlive(options.control) || control.hidden || control.matches(':disabled')) return;
     // The backing control is deliberately outside Tab traversal. Keep a label
@@ -217,13 +224,54 @@ export function createFieldLabelPart(options: FieldLabelState & {control: ValueP
     assertOptions(state, ['label', 'hidden'], 'field label state'); validateState(state);
     if (typeof state.label !== 'string') throw new TypeError('Field label must be text.');
     if (!isPartAlive(part)) return;
-    label.textContent = state.label;
+    caption.data = state.label + (options.suffix ? ' ' : '');
+    if (state.hidden !== undefined) label.hidden = state.hidden;
+    if (isPartAlive(options.control)) {
+      if (!options.suffix) control.setAttribute('aria-label', state.label);
+      if (control instanceof HTMLSelectElement) refreshSelect(control);
+    }
+  }}, {children: options.suffix ? [options.suffix] : [], dispose() {label.removeEventListener('click', click);}});
+  // A native label includes its live badge in the accessible name, including
+  // hidden-state changes. The enhanced select uses the same label reference.
+  // Perform this only after child ownership has been accepted atomically.
+  if (options.suffix) {
+    control.removeAttribute('aria-label');
+    if (control instanceof HTMLSelectElement) {label.id = uniqueId('pui-label'); control.setAttribute('aria-labelledby', label.id);}
+  } else control.setAttribute('aria-label', options.label);
+  if (control instanceof HTMLSelectElement) refreshSelect(control);
+  return part;
+}
+
+/** A native containing label. Unlike a separate field label, it takes ownership
+ * of its control and retains that same control through caption/state updates. */
+export function createLabelledFieldPart(options: FieldLabelState & {control: ValuePart | ChoicePart}): FieldLabelPart {
+  assertOptions(options, ['label', 'control', 'hidden'], 'labelled field'); validateState(options);
+  if (typeof options.label !== 'string') throw new TypeError('Field label must be text.');
+  nodeOf(options.control);
+  const control = controls.get(options.control);
+  if (!control) throw new TypeError('A labelled field requires a Pith UI field.');
+  const label = document.createElement('label'); label.className = 'pui-field-label';
+  const caption = document.createTextNode(options.label); label.append(caption);
+  const click = (event: Event) => {
+    if (!isPartAlive(options.control) || control.hidden || control.matches(':disabled')) return;
+    if (event.target instanceof Node && nodeOf(options.control).contains(event.target)) return;
+    event.preventDefault(); options.control.focus();
+  };
+  const update = (state: FieldLabelState) => {
+    assertOptions(state, ['label', 'hidden'], 'labelled field state'); validateState(state);
+    if (typeof state.label !== 'string') throw new TypeError('Field label must be text.');
+    if (!isPartAlive(part)) return;
+    if (caption.data !== state.label) caption.data = state.label;
     if (state.hidden !== undefined) label.hidden = state.hidden;
     if (isPartAlive(options.control)) {
       control.setAttribute('aria-label', state.label);
       if (control instanceof HTMLSelectElement) refreshSelect(control);
     }
-  }}, {dispose() {label.removeEventListener('click', click);}});
+  };
+  // Validate child transfer before changing any borrowed field attributes.
+  const part = createOwnedPart(label, {update}, {children: [options.control], dispose() {label.removeEventListener('click', click);}});
+  label.addEventListener('click', click);
+  update({label: options.label, hidden: options.hidden});
   return part;
 }
 

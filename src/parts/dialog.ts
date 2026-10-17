@@ -4,7 +4,7 @@ import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type P
 
 export interface DialogPartState {title: string; description?: string; eyebrow?: string; closeDisabled?: boolean}
 export interface DialogPartOptions extends DialogPartState {
-  purpose?: 'form' | 'prompt';
+  purpose?: 'form' | 'prompt' | 'feature';
   children: readonly Part[];
   closeOnBackdrop?: boolean;
   onClose?(): void;
@@ -20,7 +20,7 @@ export interface DialogPart extends Part {
 /** A standard native modal. Content and actions are independently composed parts. */
 export function createDialogPart(options: DialogPartOptions): DialogPart {
   assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose'], 'dialog');
-  if (options.purpose !== undefined && !['form', 'prompt'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
+  if (options.purpose !== undefined && !['form', 'prompt', 'feature'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
   const validate = (state: Readonly<DialogPartState>) => {
     if (typeof state.title !== 'string' || state.eyebrow !== undefined && typeof state.eyebrow !== 'string' || state.description !== undefined && typeof state.description !== 'string') throw new TypeError('Dialog heading must be text.');
     if (state.closeDisabled !== undefined && typeof state.closeDisabled !== 'boolean') throw new TypeError('Dialog closeDisabled must be boolean.');
@@ -29,7 +29,8 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   if (options.closeOnBackdrop !== undefined && typeof options.closeOnBackdrop !== 'boolean') throw new TypeError('Dialog closeOnBackdrop must be boolean.');
   if (options.onClose !== undefined && typeof options.onClose !== 'function') throw new TypeError('Dialog onClose must be a callback.');
   const prompt = options.purpose === 'prompt';
-  const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : 'pui-modal'; node.id = uniqueId('pui-dialog');
+  const feature = options.purpose === 'feature';
+  const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : feature ? 'pui-modal pui-feature-modal' : 'pui-modal'; node.id = uniqueId('pui-dialog');
   const heading = document.createElement(prompt ? 'header' : 'div'); heading.className = prompt ? 'pui-dialog-heading' : 'pui-dialog-heading pui-modal-heading';
   const content = document.createElement('div');
   const eyebrow = document.createElement('span'); eyebrow.className = 'pui-eyebrow';
@@ -44,6 +45,7 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   const headingPart = createOwnedPart(heading, {});
   let bodyPart: Part | undefined;
   if (prompt) {const body = document.createElement('div'); body.className = 'pui-dialog-body'; bodyPart = createOwnedPart(body, {}, {children: options.children});}
+  if (feature) bodyPart = createOwnedPart(document.createElement('div'), {}, {children: [headingPart, ...options.children]});
   let state: Readonly<DialogPartState> = options;
   let part: DialogPart;
   const surface = installDialogLifecycle(node, {closeOnBackdrop: options.closeOnBackdrop ?? !prompt, canClose: () => !state.closeDisabled, onClose: options.onClose});
@@ -63,11 +65,11 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   try {
     part = createOwnedPart<Omit<DialogPart, keyof Part>>(node, {
       update,
-      replace(children: readonly Part[]) {if (isPartAlive(part)) {if (bodyPart) replacePartChildren(bodyPart, children); else replacePartChildren(part, [headingPart, ...children]);}},
+      replace(children: readonly Part[]) {if (isPartAlive(part)) {if (bodyPart) replacePartChildren(bodyPart, feature ? [headingPart, ...children] : children); else replacePartChildren(part, [headingPart, ...children]);}},
       open() {if (isPartAlive(part) && node.isConnected) surface.open();},
       close() {if (isPartAlive(part)) surface.close();},
       isOpen: () => isPartAlive(part) && surface.isOpen(),
-    }, {children: bodyPart ? [headingPart, bodyPart] : [headingPart, ...options.children], dispose() {surface.close(); surface.destroy();}});
+    }, {children: bodyPart ? feature ? [bodyPart] : [headingPart, bodyPart] : [headingPart, ...options.children], dispose() {surface.close(); surface.destroy();}});
   } catch (error) {surface.destroy(); headingPart.destroy(); bodyPart?.destroy(); throw error;}
   update({title: options.title, description: options.description, eyebrow: options.eyebrow, closeDisabled: options.closeDisabled});
   return part;

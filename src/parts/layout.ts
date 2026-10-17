@@ -28,15 +28,18 @@ export function createActionsPart(options: ActionsPartState & {children: readonl
 export function createFooterPart(options: ActionsPartState & {children: readonly Part[]}): ActionsPart {return actionRow(options, 'pui-modal-footer');}
 
 export interface ToolbarPartState {label: string; hidden?: boolean}
+export type ToolbarPurpose = 'tools' | 'feature';
 export interface ToolbarPart extends LayoutPart {update(state: Readonly<ToolbarPartState>): void}
 function validateToolbar(state: Readonly<ToolbarPartState>): void {
   assertOptions(state, ['label', 'hidden'], 'toolbar state');
   if (typeof state.label !== 'string') throw new TypeError('A toolbar label must be a string.');
+  if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Toolbar hidden must be boolean.');
 }
-export function createToolbarPart(options: ToolbarPartState & {children: readonly Part[]}): ToolbarPart {
-  assertOptions(options, ['label', 'hidden', 'children'], 'toolbar');
+export function createToolbarPart(options: ToolbarPartState & {children: readonly Part[]; purpose?: ToolbarPurpose}): ToolbarPart {
+  assertOptions(options, ['label', 'hidden', 'children', 'purpose'], 'toolbar');
+  if (options.purpose !== undefined && !['tools', 'feature'].includes(options.purpose)) throw new TypeError('Unknown toolbar purpose.');
   const initial = {label: options.label, hidden: options.hidden}; validateToolbar(initial);
-  const node = document.createElement('div'); node.className = 'pui-toolbar';
+  const node = document.createElement('div'); node.className = options.purpose === 'feature' ? 'pui-feature-toolbar' : 'pui-toolbar';
   const layout = adoptActionLayout(node, 'toolbar');
   const update = (state: Readonly<ToolbarPartState>) => {
     validateToolbar(state);
