@@ -68,10 +68,10 @@ for(const item of ['controls-form-page','controls-actions-page'])for(const theme
     }
     await page.locator('.gallery-navigation').evaluate((navigation, ids) => {
       for (const id of ids) navigation.querySelector(`button[data-item="${id}"]`)!.remove();
-      // Breadcrumb is the first formal navigation block; remove only its now
-      // empty catalog category, never a category containing an accepted block.
+      // The new breadcrumb and composition example introduce categories. Remove
+      // only those now-empty headings, never one containing an accepted block.
       for (const heading of navigation.querySelectorAll('h3')) {
-        if (heading.textContent === '导航' && (!heading.nextElementSibling || heading.nextElementSibling.tagName === 'H3')) heading.remove();
+        if (['导航','组合示例'].includes(heading.textContent ?? '') && (!heading.nextElementSibling || heading.nextElementSibling.tagName === 'H3')) heading.remove();
       }
     }, addedNavigation);
     await page.locator('.gallery-version').evaluate(node=>{node.textContent='0.3.0';});
