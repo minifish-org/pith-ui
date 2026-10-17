@@ -29,7 +29,9 @@ async function openNavigation(page: Page) {
       content:ui.createStack({children:[list,ui.createSlot({hidden:true}),ui.createSlot({hidden:true})]}),footer});
     const intro=ui.createContentColumn({purpose:'intro',content:ui.createStack({children:[ui.createSlot({content:ui.createStack({context:'flow',children:[
       ui.createActions({align:'center',children:[ui.createText({role:'caption',text:'Working in Review workspace'}),ui.createButton({label:'Change'})]})]})})]})});
-    ui.mount(document.body,ui.createSplitPane({navigation:sidebar,content:ui.createPane({purpose:'conversation',content:intro})}),{appearance:'light',viewport:'window'});
+    const layout=ui.createSplitPane({navigation:sidebar,content:ui.createPane({purpose:'conversation',content:intro})});
+    ui.mount(document.body,layout,{appearance:'light',viewport:'window'});
+    Reflect.set(window,'sourceNavigationLayout',layout);
   });
   await page.mouse.move(1,1);
 }
@@ -91,4 +93,18 @@ test('intro location action retains source secondary-button treatment',async({pa
   await expect(change).toHaveCSS('font-weight','600');
   await expect(change).toHaveCSS('background-color','rgb(240, 242, 246)');
   await expect(change).toHaveCSS('border-radius','7px');
+});
+
+test('narrow navigation remains laid out off screen while inert and returns to its source edge',async({page})=>{
+  await openNavigation(page);
+  await page.setViewportSize({width:560,height:800});
+  const nav=page.getByRole('complementary',{includeHidden:true});
+  const closed=await nav.boundingBox();
+  expect(closed).toEqual({x:-260,y:0,width:260,height:800});
+  await expect(nav).toHaveAttribute('inert','');
+  await page.evaluate(()=>Reflect.get(window,'sourceNavigationLayout').setNavigationOpen(true));
+  await expect.poll(async()=>await nav.boundingBox()).toEqual({x:0,y:0,width:260,height:800});
+  await expect(nav).not.toHaveAttribute('inert','');
+  await page.evaluate(()=>Reflect.get(window,'sourceNavigationLayout').setNavigationOpen(false));
+  await expect.poll(async()=>await nav.boundingBox()).toEqual(closed);
 });
