@@ -176,3 +176,19 @@ test('collection panels, branch notices and a read-only footer preserve their se
   await expect(footer).toHaveCSS('padding-top', '16px');
   await expect(footer).toHaveCSS('border-top-width', '1px');
 });
+
+test('a retained conditional field keeps the same source flow inside its owned slot', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const u = await import('../src/index.js');
+    const form = u.createForm({context: 'dialog', children: [u.createTextInput({label: 'Name'}), u.createSlot({content: u.createStack({context: 'flow', children: [u.createURLInput({label: 'Server URL'}), u.createTextInput({label: 'Bearer token'})]})})], onSubmit: () => ({ok: true})});
+    const dialog = u.createDialog({purpose: 'collection', title: 'Conditional connection fields', content: form});
+    const owner = u.mount(document.body, u.createText({text: 'Host'})); owner.attach(dialog); dialog.open();
+  });
+  const previous = await box(page.getByRole('textbox', {name: 'Name', exact: true}));
+  const urlLabel = await box(page.locator('label').filter({hasText: /^Server URL$/}));
+  expect(urlLabel.y - previous.y - previous.height).toBe(16);
+  const url = await box(page.getByRole('textbox', {name: 'Server URL', exact: true}));
+  const tokenLabel = await box(page.locator('label').filter({hasText: /^Bearer token$/}));
+  expect(tokenLabel.y - url.y - url.height).toBe(16);
+});
