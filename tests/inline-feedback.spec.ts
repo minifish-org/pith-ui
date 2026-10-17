@@ -1,8 +1,8 @@
 import {test, expect} from '@playwright/test';
 import type {Control} from '../src/index.js';
 
-// Source contracts: pith-ui@0.3.1 forms/provider-login.ts status paragraph and
-// form error; feedback stays a live region without introducing a notice card.
+// Source contract: pith-ui@0.3.1 forms/provider-login.ts status paragraph keeps
+// its body size even in the error phase; the separate form error is smaller.
 test('inline feedback keeps plain status and error presentation on the same live node', async ({page}) => {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async () => {
@@ -19,8 +19,12 @@ test('inline feedback keeps plain status and error presentation on the same live
   await expect(status).toHaveCSS('padding', '0px');
   await expect(status).toHaveCSS('border-top-width', '0px');
   await expect(status).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await page.evaluate(() => Reflect.get(window, 'inlineFeedback').feedback.update({message: 'The answer was not accepted.', tone: 'error'}));
+  await page.evaluate(() => Reflect.get(window, 'inlineFeedback').feedback.update({message: 'Provider sign-in failed.', tone: 'error'}));
   const error = page.getByRole('alert');
+  await expect(error).toHaveText('Provider sign-in failed.');
+  await expect(error).toHaveCSS('font-size', '14px');
+  await expect(error).toHaveCSS('line-height', '21px');
+  await page.evaluate(() => Reflect.get(window, 'inlineFeedback').feedback.update({presentation: 'caption', message: 'The answer was not accepted.', tone: 'error'}));
   await expect(error).toHaveText('The answer was not accepted.');
   await expect(error).toHaveCSS('font-size', '12px');
   await expect(error).toHaveCSS('line-height', '18px');
@@ -32,7 +36,10 @@ test('inline feedback keeps plain status and error presentation on the same live
   await expect(error).toBeHidden();
   await page.evaluate(() => Reflect.get(window, 'inlineFeedback').feedback.update({message: 'Signed in.', tone: 'info'}));
   await expect(page.getByRole('status')).toHaveText('Signed in.');
+  await expect(page.getByRole('status')).toHaveCSS('font-size', '12px');
   await expect(page.getByRole('status')).toHaveCSS('padding', '0px');
+  await page.evaluate(() => Reflect.get(window, 'inlineFeedback').feedback.update({presentation: 'inline', message: 'Signed in.', tone: 'info'}));
+  await expect(page.getByRole('status')).toHaveCSS('font-size', '14px');
   await page.evaluate(() => Reflect.get(window, 'inlineFeedback').mounted.destroy());
   await expect(page.locator('[role="status"], [role="alert"]')).toHaveCount(0);
 });

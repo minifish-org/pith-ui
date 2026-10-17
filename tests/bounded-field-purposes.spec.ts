@@ -25,8 +25,15 @@ test('form text areas keep native three-row code fields and private-value lifecy
     expect((await input.boundingBox())!.height).toBe(89);
   }
   const secret = page.getByRole('textbox', {name: 'Environment', exact: true});
+  const show = page.getByRole('button', {name: 'Show', exact: true});
+  const labelBox = await secret.evaluate(node => node.closest('.pui-field')!.querySelector('label')!.getBoundingClientRect().toJSON());
+  const inputBox = (await secret.boundingBox())!, showBox = (await show.boundingBox())!;
+  expect(showBox.height).toBe(40);
+  expect(showBox.x + showBox.width).toBe(inputBox.x + inputBox.width);
+  expect(showBox.y + showBox.height / 2).toBe(labelBox.y + labelBox.height / 2);
+  expect(inputBox.y - showBox.y - showBox.height).toBe(8);
   await expect(secret).toHaveCSS('-webkit-text-security', 'disc');
-  await page.getByRole('button', {name: 'Show', exact: true}).click();
+  await show.click();
   await expect(secret).toHaveValue('{"KEY":"private"}');
   await expect(secret).toHaveCSS('-webkit-text-security', 'none');
   await page.evaluate(() => Reflect.get(window, 'purposeFields').secret.reset('replacement'));
