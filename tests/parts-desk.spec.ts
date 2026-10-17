@@ -54,7 +54,11 @@ test('topbar action layout retains its direct native children and the old fixed 
   const after = await page.evaluate(async () => {
     window.deskPartsHarness.app.destroy();const path = '/src/parts/index.ts',p = await import(path);
     const action = p.createButtonPart({variant: 'toolbar-action',icon: 'compress',label: 'Compact'}),group = p.createTopbarActionsPart({children: [action]});
-    const mount = document.body.appendChild(document.createElement('div'));p.mountParts(mount,p.createTopbarPart({children: [group]}));
+    // Auto margins resolve from the actual flex header width and preceding
+    // breadcrumb. Keep that native frame context on both sides.
+    const trigger = p.createButtonPart({variant: 'drawer-trigger',icon: 'menu',label: 'Open sidebar'}),breadcrumb = p.createBreadcrumbPart({ancestor: 'No workspace',current: 'New conversation'});
+    const header = p.createTopbarPart({children: [trigger,breadcrumb,group]});
+    const mount = document.body.appendChild(document.createElement('div'));p.mountParts(mount,p.createFramePart({children: [p.createSideRailPart({children: []}),p.createMainPart({children: [header]})]}));
     const node = mount.querySelector('.pui-conversation-actions')!,style = getComputedStyle(node);return {styles: ['display','align-items','gap','margin-left','flex-shrink','flex-wrap','justify-content'].map(property => style.getPropertyValue(property)),children: [...node.children].map(child => child.localName)};
   });expect(after).toEqual({styles: before,children: ['button']});
 });
