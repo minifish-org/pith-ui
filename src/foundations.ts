@@ -92,7 +92,9 @@ export function reconcileSelectOptions(control: HTMLSelectElement, entries: read
   entries.forEach((entry, index) => {
     const option = existing.get(entry.value)?.shift() ?? document.createElement('option');
     keep.add(option);
-    if (option.value !== entry.value) option.value = entry.value;
+    // An explicit empty value must not become the option's label when its
+    // text is set below. Native getter equality alone cannot distinguish it.
+    if (!option.hasAttribute('value') || option.value !== entry.value) option.value = entry.value;
     if (option.textContent !== entry.label) option.textContent = entry.label;
     if (option.disabled !== !!entry.disabled) option.disabled = !!entry.disabled;
     if (control.options[index] !== option) control.insertBefore(option, control.options[index] ?? null);

@@ -132,6 +132,7 @@ export interface ChoiceState extends Omit<FieldState, 'readOnly' | 'placeholder'
   catalog?: 'loading' | 'ready';
 }
 export interface ChoiceOptions extends ChoiceState {options: readonly ChoiceOption[]; value?: string; name?: string; onChange?(value: string): void}
+export interface SelectOptions extends ChoiceOptions {purpose?: 'field' | 'preference'}
 export interface ChoicePart extends Part {read(): string; reset(value: string): void; update(state: Readonly<ChoiceState>): void; focus(): void}
 const choiceStateKeys = ['label', 'disabled', 'required', 'hidden', 'describedBy', 'options', 'catalog'];
 function validateChoices(options: readonly ChoiceOption[]): void {
@@ -144,14 +145,15 @@ function validateChoices(options: readonly ChoiceOption[]): void {
     values.add(option.value);
   }
 }
-function choicePart(options: ChoiceOptions, list: boolean): ChoicePart {
-  assertOptions(options, [...choiceStateKeys, 'value', 'name', 'onChange'], 'choice field'); validateState(options); validateChoices(options.options);
+function choicePart(options: SelectOptions, list: boolean): ChoicePart {
+  assertOptions(options, [...choiceStateKeys, 'value', 'name', 'onChange', ...(!list ? ['purpose'] : [])], 'choice field'); validateState(options); validateChoices(options.options);
+  if (options.purpose !== undefined && !['field', 'preference'].includes(options.purpose)) throw new TypeError('Unsupported select purpose.');
   if (options.value !== undefined && typeof options.value !== 'string' || options.name !== undefined && typeof options.name !== 'string') throw new TypeError('Choice value and name must be text.');
   if (options.onChange !== undefined && typeof options.onChange !== 'function') throw new TypeError('Choice onChange must be a callback.');
   if (options.catalog !== undefined && !['loading', 'ready'].includes(options.catalog)) throw new TypeError('Unsupported choice catalog state.');
   let catalog = options.catalog ?? 'ready', disabled = !!options.disabled;
   const control = document.createElement('select');
-  control.id = uniqueId('pui-choice'); control.className = list ? 'pui-model-list pui-control' : 'pui-feature-select pui-control';
+  control.id = uniqueId('pui-choice'); control.className = list ? 'pui-model-list pui-control' : options.purpose === 'preference' ? 'pui-appearance-select pui-control' : 'pui-feature-select pui-control';
   if (list) control.size = 6;
   if (options.name !== undefined) control.name = options.name;
   if (options.label !== undefined) control.setAttribute('aria-label', options.label);
@@ -193,7 +195,7 @@ function choicePart(options: ChoiceOptions, list: boolean): ChoicePart {
     hidden: !!options.hidden, ...(options.describedBy !== undefined ? {describedBy: options.describedBy} : {})});
   return part;
 }
-export function createSelectPart(options: ChoiceOptions): ChoicePart {return choicePart(options, false);}
+export function createSelectPart(options: SelectOptions): ChoicePart {return choicePart(options, false);}
 /** Native six-row choice list; its geometry and keyboard behavior belong to the library. */
 export function createChoiceListPart(options: ChoiceOptions): ChoicePart {return choicePart(options, true);}
 

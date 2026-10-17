@@ -10,6 +10,14 @@ export function createFormLayoutPart(options: {children: readonly Part[]}): Layo
   return part;
 }
 
+/** Contiguous explanatory text and feedback, without additional paragraph gaps. */
+export function createCopyGroupPart(options: {children: readonly Part[]}): LayoutPart {
+  assertOptions(options,['children'],'copy group');
+  const node = document.createElement('div'); node.className = 'pui-settings-copy';
+  const part = createOwnedPart(node,{replace(children: readonly Part[]) {replacePartChildren(part,children);}},{children: options.children});
+  return part;
+}
+
 export interface SectionPartState {title?: string; hidden?: boolean}
 export interface SectionPart extends LayoutPart {update(state: Readonly<SectionPartState>): void}
 function validateSection(state: Readonly<SectionPartState>): void {

@@ -36,6 +36,18 @@ export function nodeOf(part: Part): Element {return live(part).node;}
  * root without adding another wrapper or changing the public part identity. */
 export function retargetPart(part: Part, node: Element): void {live(part).node = node;}
 export function isPartAlive(part: Part): boolean {return !!parts.get(part) && !parts.get(part)!.disposed;}
+/** Internal preflight for constructors with several owned slots. Validate the
+ * combined snapshot before transferring any caller-supplied child. */
+export function assertUnownedParts(children: readonly Part[]): void {
+  if (!Array.isArray(children)) throw new TypeError('Part children must be an array of Pith UI parts.');
+  const unique = new Set<Part>();
+  for (const child of children) {
+    const record = live(child);
+    if (unique.has(child)) throw new Error('A part may appear only once in a parent.');
+    if (record.owner) throw new Error('A part already belongs to another parent or mount.');
+    unique.add(child);
+  }
+}
 /** Internal borrowed-part lifecycle; consumers receive no DOM or event port. */
 export function onPartDestroy(part: Part, callback: () => void): () => void {
   const record = live(part);

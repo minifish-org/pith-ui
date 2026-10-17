@@ -2,9 +2,9 @@ import {iconElement, uniqueId} from '../dom.js';
 import {installDialogLifecycle} from '../surface.js';
 import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
 
-export interface DialogPartState {title: string; description?: string; eyebrow?: string; closeDisabled?: boolean}
+export interface DialogPartState {title: string; description?: string; eyebrow?: string; closeLabel?: string; closeDisabled?: boolean}
 export interface DialogPartOptions extends DialogPartState {
-  purpose?: 'form' | 'prompt' | 'feature';
+  purpose?: 'form' | 'prompt' | 'feature' | 'warning';
   children: readonly Part[];
   closeOnBackdrop?: boolean;
   onClose?(): void;
@@ -19,10 +19,11 @@ export interface DialogPart extends Part {
 
 /** A standard native modal. Content and actions are independently composed parts. */
 export function createDialogPart(options: DialogPartOptions): DialogPart {
-  assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose'], 'dialog');
-  if (options.purpose !== undefined && !['form', 'prompt', 'feature'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
+  assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeLabel', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose'], 'dialog');
+  if (options.purpose !== undefined && !['form', 'prompt', 'feature', 'warning'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
   const validate = (state: Readonly<DialogPartState>) => {
     if (typeof state.title !== 'string' || state.eyebrow !== undefined && typeof state.eyebrow !== 'string' || state.description !== undefined && typeof state.description !== 'string') throw new TypeError('Dialog heading must be text.');
+    if (state.closeLabel !== undefined && typeof state.closeLabel !== 'string') throw new TypeError('Dialog close label must be text.');
     if (state.closeDisabled !== undefined && typeof state.closeDisabled !== 'boolean') throw new TypeError('Dialog closeDisabled must be boolean.');
   };
   validate(options);
@@ -36,7 +37,7 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   const eyebrow = document.createElement('span'); eyebrow.className = 'pui-eyebrow';
   const title = document.createElement('h2'); title.id = uniqueId('pui-dialog-title');
   const description = document.createElement('p'); description.className = 'pui-muted'; description.id = uniqueId('pui-dialog-description');
-  const close = document.createElement('button'); close.type = 'button'; close.className = prompt ? 'pui-button pui-neutral pui-normal pui-icon-button' : 'pui-icon-button pui-quiet-icon';
+  const close = document.createElement('button'); close.type = 'button'; close.className = prompt ? 'pui-button pui-neutral pui-normal pui-icon-button' : options.purpose === 'warning' ? 'pui-quiet-icon' : 'pui-icon-button pui-quiet-icon';
   close.dataset.close = node.id; close.append(iconElement('close'));
   const closeCaption = document.createElement('span'); closeCaption.className = 'pui-sr-only';
   if (prompt) close.append(closeCaption);
@@ -50,7 +51,7 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   let part: DialogPart;
   const surface = installDialogLifecycle(node, {closeOnBackdrop: options.closeOnBackdrop ?? !prompt, canClose: () => !state.closeDisabled, onClose: options.onClose});
   const update = (next: Readonly<DialogPartState>) => {
-    assertOptions(next, ['title', 'description', 'eyebrow', 'closeDisabled'], 'dialog state'); validate(next);
+    assertOptions(next, ['title', 'description', 'eyebrow', 'closeLabel', 'closeDisabled'], 'dialog state'); validate(next);
     if (!isPartAlive(part)) return;
     state = next;
     if (title.textContent !== next.title) title.textContent = next.title;
@@ -59,7 +60,7 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
     if (description.textContent !== (next.description ?? '')) description.textContent = next.description ?? '';
     description.hidden = !next.description;
     if (next.description) {if (!description.parentNode) content.append(description); node.setAttribute('aria-describedby', description.id);} else node.removeAttribute('aria-describedby');
-    const label = `Close ${prompt ? next.title : next.title.toLowerCase()}`;
+    const label = next.closeLabel ?? `Close ${prompt ? next.title : next.title.toLowerCase()}`;
     close.setAttribute('aria-label', label); closeCaption.textContent = label; close.disabled = !!next.closeDisabled;
   };
   try {
@@ -71,6 +72,6 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
       isOpen: () => isPartAlive(part) && surface.isOpen(),
     }, {children: bodyPart ? feature ? [bodyPart] : [headingPart, bodyPart] : [headingPart, ...options.children], dispose() {surface.close(); surface.destroy();}});
   } catch (error) {surface.destroy(); headingPart.destroy(); bodyPart?.destroy(); throw error;}
-  update({title: options.title, description: options.description, eyebrow: options.eyebrow, closeDisabled: options.closeDisabled});
+  update({title: options.title, description: options.description, eyebrow: options.eyebrow, closeLabel: options.closeLabel, closeDisabled: options.closeDisabled});
   return part;
 }

@@ -4,7 +4,7 @@ import {adoptAction} from '../foundations.js';
 import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownership.js';
 import {assertIconName, type IconName} from './text.js';
 
-export type ButtonVariant = 'standard' | 'primary' | 'secondary' | 'danger' | 'quiet-icon';
+export type ButtonVariant = 'standard' | 'primary' | 'secondary' | 'danger' | 'warning' | 'quiet-icon';
 interface ButtonState {
   label: string;
   disabled?: boolean;
@@ -27,6 +27,7 @@ export interface ButtonPart extends Part {update(state: Readonly<ButtonPartState
 const variants: Record<ButtonVariant, string> = {
   standard: 'pui-button', primary: 'pui-primary-button', secondary: 'pui-secondary-button',
   danger: 'pui-secondary-button pui-destructive-button', 'quiet-icon': 'pui-quiet-icon',
+  warning: 'pui-primary-button pui-warning-button',
 };
 const stateKeys = ['label', 'variant', 'icon', 'disabled', 'pending', 'title', 'hidden'] as const;
 const availability = new WeakMap<Part, {disabled: boolean; pending: boolean; hidden: boolean}>();
@@ -60,8 +61,8 @@ export function createButtonPart(options: ButtonPartOptions): ButtonPart {
     if (variant === 'quiet-icon' && !state.icon) throw new TypeError('An icon button requires a library icon.');
     availability.set(part, {disabled: !!state.disabled, pending: !!state.pending, hidden: !!state.hidden});
     if (purpose === 'prompt') {
-      const intent = variant === 'primary' ? 'primary' : variant === 'danger' ? 'danger' : 'neutral';
-      node.className = `pui-button pui-${intent} pui-normal${variant === 'quiet-icon' ? ' pui-icon-button' : variant === 'secondary' ? ' pui-secondary-button' : ''}`;
+      const intent = variant === 'primary' || variant === 'warning' ? 'primary' : variant === 'danger' ? 'danger' : 'neutral';
+      node.className = `pui-button pui-${intent} pui-normal${variant === 'quiet-icon' ? ' pui-icon-button' : variant === 'secondary' ? ' pui-secondary-button' : variant === 'warning' ? ' pui-warning-button' : ''}`;
     } else node.className = variants[variant];
     node.hidden = !!state.hidden;
     if (icon !== state.icon) {
