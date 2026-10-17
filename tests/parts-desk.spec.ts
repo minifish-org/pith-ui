@@ -7,7 +7,11 @@ const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJA
 
 async function setup(page: Page,old: boolean,appearance: 'light'|'dark' = 'light'): Promise<void> {
   await page.goto('/tests/fixture.html');
+  await page.emulateMedia({colorScheme: appearance === 'dark' ? 'light' : 'dark'});
   await page.evaluate(async ({old,appearance}) => {
+    // The fixture's preview scope would shadow the old application's HTML
+    // appearance owner; Desk itself has one application theme owner.
+    document.body.classList.remove('pui');
     const mount = document.body.appendChild(document.createElement('div')),events: boolean[] = [],calls: string[] = [];
     const options = {appearance,onUIStateChange(state: {hasModal: boolean}) {events.push(state.hasModal);},workspace: {onBusyAction(key: string) {calls.push(key);},onMessageAction(target: {action: string}) {calls.push(target.action);},onCopyCode() {calls.push('code');}}};
     const path = old ? '/src/app/index.ts' : '/examples/assemblies/desk.ts',module = await import(path);
