@@ -1,4 +1,53 @@
-import {test, expect} from '@playwright/test';
+import {test, expect, type Page} from '@playwright/test';
+
+async function sourceWarningGeometry(page: Page) {
+  // Independent literal 0.3.1 template/CSS from Desk52c0d4d. The source UI font
+  // remains platform-native; no dimensions or declarations come from Pith UI.
+  return page.evaluate(async () => {
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:1280px;height:800px;border:0';
+    const ready = new Promise<void>(resolve => {frame.onload = () => resolve();});
+    frame.srcdoc = `<!doctype html><html class="pui"><head><style>
+      .pui {font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;font-weight:400;line-height:1.5;letter-spacing:normal;font-synthesis:none}
+      .pui * {box-sizing:border-box}.pui body {margin:0}
+      .pui button {font:inherit;cursor:pointer;border:0;color:inherit}
+      .pui strong {font-weight:600}
+      .pui .pui-icon {display:inline-block;width:19px;height:19px;flex-shrink:0;vertical-align:middle}
+      .pui .pui-primary-button,.pui .pui-secondary-button,.pui .pui-quiet-icon {display:inline-flex;align-items:center;justify-content:center}
+      .pui .pui-primary-button,.pui .pui-secondary-button {gap:8px;min-height:40px;font-size:14px;line-height:1.5;font-weight:600;padding:8px 12px;border-radius:7px}
+      .pui .pui-secondary-button {border:1px solid #D9DFE8}
+      .pui .pui-quiet-icon {padding:4px;border-radius:6px}
+      .pui .pui-modal {width:min(500px,calc(100% - 40px));max-height:calc(100dvh - 60px);overflow-y:auto;border:1px solid #B9C2D0;border-radius:15px;padding:24px}
+      .pui .pui-modal-heading {display:flex;align-items:center;justify-content:space-between}
+      .pui .pui-modal-heading .pui-eyebrow {font-size:12px;letter-spacing:normal;font-weight:600}
+      .pui .pui-modal h2 {font-size:16px;font-weight:600;line-height:1.5;letter-spacing:normal;margin:8px 0 0}
+      .pui .pui-modal .pui-quiet-icon {align-self:flex-start}
+      .pui .pui-modal-description {font-size:14px;line-height:1.5;margin:16px 0 24px}
+      .pui .pui-full-access-explanation {display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid #D8B470;border-radius:9px}
+      .pui .pui-full-access-explanation>.pui-icon {width:21px;height:21px;margin-top:4px}
+      .pui .pui-full-access-explanation strong {font-size:14px;font-weight:600}
+      .pui .pui-full-access-explanation p {font-size:12px;line-height:1.5;margin:8px 0 0}
+      .pui .pui-permission-revoke-note {font-size:12px;line-height:1.5;margin:16px 0 0}
+      .pui .pui-form-error:empty {display:none}
+      .pui .pui-modal-footer {display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #D9DFE8}
+    </style></head><body><dialog class="pui-modal"><div><div class="pui-full-access-confirmation">
+      <div class="pui-modal-heading"><div><span class="pui-eyebrow">CONVERSATION PERMISSIONS</span><h2>Enable full access?</h2></div><button class="pui-quiet-icon"><svg class="pui-icon" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"></path></svg></button></div>
+      <p class="pui-modal-description">Give Pith permission to run <strong>all enabled tools, including external MCP connections,</strong> without asking in <strong>Simulated layout review</strong>.</p>
+      <div class="pui-full-access-explanation"><svg class="pui-icon" viewBox="0 0 24 24"><path d="m12 3 8 4v5c0 5-8 9-8 9s-8-4-8-9V7Z"></path></svg><div><strong>This is access to your computer account and connected services.</strong><p>Commands can read, change, or delete files outside the workspace and access the network. External tools can act on their connected services. There is no OS sandbox.</p></div></div>
+      <p class="pui-permission-revoke-note">This applies only to the current conversation and stays enabled across app restarts until you revoke it. To revoke it, choose “Ask before changes” or “Allow workspace changes” in the composer. Workspace permission alone never grants external MCP tools access.</p>
+      <div class="pui-form-error"></div><div class="pui-modal-footer"><button class="pui-secondary-button">Cancel</button><button class="pui-primary-button">Enable full access</button></div>
+    </div></div></dialog></body></html>`;
+    document.body.append(frame); await ready;
+    try {
+      const doc = frame.contentDocument!;
+      doc.querySelector('dialog')!.showModal();
+      const box = (selector: string) => doc.querySelector(selector)!.getBoundingClientRect();
+      return {width: box('dialog').width, height: box('dialog').height, warningHeight: box('.pui-full-access-explanation').height,
+        introHeight: box('.pui-modal-description').height, hintHeight: box('.pui-permission-revoke-note').height,
+        bodyWidth: box('.pui-full-access-explanation>div').width};
+    } finally {frame.remove();}
+  });
+}
 
 // Accepted 0.3.1 source: dom.dialogHeading and styles365/619–634,
 // feature-toolbar136, workspace choices641–646, resource icons695,
@@ -72,8 +121,10 @@ test('an owned warning body retains its source row, content flow and quiet close
     const owner = u.mount(document.body, u.createText({text: 'Host'})); owner.attach(dialog); dialog.open();
   });
   const dialog = page.getByRole('dialog', {name: 'Enable full access?', exact: true}), close = dialog.getByRole('button', {name: 'Close Enable full access?', exact: true});
+  const source = await sourceWarningGeometry(page);
   const modal = (await dialog.boundingBox())!, heading = (await dialog.locator('.pui-dialog-heading').boundingBox())!, closeBox = (await close.boundingBox())!;
-  expect({width: modal.width, height: modal.height}).toEqual({width: 500, height: 484});
+  expect({width: modal.width, height: modal.height}).toEqual({width: source.width, height: source.height});
+  if (process.platform === 'darwin') expect({width: modal.width, height: modal.height}).toEqual({width: 500, height: 484});
   expect({width: closeBox.width, height: closeBox.height, top: closeBox.y - heading.y}).toEqual({width: 27, height: 27, top: 0});
   const surface = dialog.locator('.pui-notice-surface'), row = surface.locator('>.pui-actions'), icon = row.locator('>[data-icon="shield"]'), body = row.locator('>.pui-control-stack');
   await expect(row).toHaveCSS('flex-wrap', 'nowrap');
@@ -81,11 +132,14 @@ test('an owned warning body retains its source row, content flow and quiet close
   await expect(row).toHaveCSS('padding-top', '0px');
   await expect(row).toHaveCSS('border-top-width', '0px');
   const card = (await surface.boundingBox())!, glyph = (await icon.boundingBox())!, text = (await body.boundingBox())!;
-  expect(card.height).toBe(138);
-  expect(text.width).toBe(383);
+  expect(card.height).toBe(source.warningHeight);
+  expect(text.width).toBe(source.bodyWidth);
+  if (process.platform === 'darwin') expect({height: card.height, width: text.width}).toEqual({height: 138, width: 383});
   expect(text.x - glyph.x - glyph.width).toBe(12);
   expect(glyph.y - text.y).toBe(4);
   const intro = (await dialog.locator('.pui-markdown>p').boundingBox())!, hint = (await dialog.locator('.pui-field-hint').boundingBox())!, footer = (await dialog.locator('.pui-confirm>.pui-actions').boundingBox())!;
+  expect(intro.height).toBe(source.introHeight);
+  expect(hint.height).toBe(source.hintHeight);
   expect(intro.y - heading.y - heading.height).toBe(16);
   expect(card.y - intro.y - intro.height).toBe(24);
   expect(hint.y - card.y - card.height).toBe(16);
