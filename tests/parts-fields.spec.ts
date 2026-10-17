@@ -224,7 +224,7 @@ test('destroy clears secret values and runtime reset rejects non-text values', a
   expect(result).toEqual({secret: '', password: '', invalidReset: true});
 });
 
-test('standalone inputs own the shared control presentation and modal inputs preserve the old cascade', async ({page}) => {
+test('standalone and modal form inputs preserve the existing factory control presentation', async ({page}) => {
   const result = await page.evaluate(async () => {
     const path = '/src/parts/index.ts', old = '/src/primitives.ts';
     const {createInputPart, mountParts} = await import(path), {createTextInput} = await import(old);
@@ -237,9 +237,11 @@ test('standalone inputs own the shared control presentation and modal inputs pre
     const mounted = mountParts(mount, createInputPart({label: 'New field'}));
     const standalone = {expected: styles(reference.control), actual: styles(mount.querySelector('input')!)};
     const modal = document.createElement('dialog'); modal.className = 'pui-modal'; document.body.append(modal);
-    const native = document.createElement('input'); native.type = 'text'; native.disabled = true; modal.append(native, mount); modal.showModal();
+    // Product forms call scopeIds, which adds pui-control before applying modal
+    // rules. A raw browser input would omit that real baseline behavior.
+    modal.append(reference.element, mount); reference.control.disabled = true; modal.showModal();
     const input = mount.querySelector('input')!; input.disabled = true;
-    const inModal = {expected: styles(native), actual: styles(input)};
+    const inModal = {expected: styles(reference.control), actual: styles(input)};
     mounted.destroy(); reference.destroy(); modal.remove();
     return {standalone, inModal};
   });
