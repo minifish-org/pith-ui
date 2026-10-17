@@ -24,13 +24,15 @@ interface ResourceHarness {
 }
 declare global {interface Window {resourcePartsHarness: ResourceHarness}}
 const create: ResourceState = {workspaceId: 'w1', workspacePath: '/demo/project', kind: 'skill', content: '---\nname: my-skill\ndescription: Inspect this workspace.\n---\n\nPreserve behavior 中文.\n', editable: true, workspaceBusy: false};
+const newInstructions: ResourceState = {...create, kind: 'instructions', content: '# Workspace instructions\n\nPreserve the original workspace.'};
+const newTemplate: ResourceState = {...create, kind: 'template', content: '# Summarize\n\nSummarize the original workspace.'};
 const existing: ResourceState = {...create, name: 'inspect', path: '/demo/project/.pi/skills/inspect/SKILL.md'};
 const inherited: ResourceState = {...create, kind: 'instructions', path: '/parent/AGENTS.md', content: '# Inherited instructions\n\nPreserve the original workspace.', editable: false};
 const busy: ResourceState = {...existing, editable: false, workspaceBusy: true};
 
-async function openResource(page: Page, old: boolean, state: ResourceState = create, appearance: 'light' | 'dark' = 'light', committed = false): Promise<void> {
+async function openResource(page: Page, old: boolean, state: ResourceState = create, appearance: 'light' | 'dark' = 'light', committed = false, applicationContext = false): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old, state, appearance, committed}) => {
+  await page.evaluate(async ({old, state, appearance, committed, applicationContext}) => {
     document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const opener = document.createElement('button'); opener.id = 'resource-opener'; opener.textContent = 'Resource opener'; document.body.append(opener); opener.focus();
     const mount = document.body.appendChild(document.createElement('div'));
@@ -54,17 +56,26 @@ async function openResource(page: Page, old: boolean, state: ResourceState = cre
       const path = '/src/app/index.ts'; const {createApplication} = await import(path);
       const app = createApplication(mount, {appearance}); h.editor = app.resources.openEditor(state, callbacks);
     } else {
+      // The production feature dialog is a direct child of the application's
+      // flex root. WebKit serializes native automatic minimums differently in
+      // a block parent even for fixed top-layer dialogs. Parity uses the actual
+      // baseline parent; independent behavior tests keep an ordinary DIV mount.
+      let recipeMount: HTMLElement = mount;
+      if (applicationContext) {
+        const path = '/src/app/index.ts'; const {createApplication} = await import(path);
+        createApplication(mount, {appearance}); recipeMount = mount.querySelector<HTMLElement>('.pui-app')!;
+      }
       const path = '/examples/assemblies/resource-editor.ts'; const {mountResourceEditor} = await import(path);
-      h.editor = mountResourceEditor(mount, state, callbacks, {appearance});
+      h.editor = mountResourceEditor(recipeMount, state, callbacks, {appearance});
     }
     window.resourcePartsHarness = h;
-  }, {old, state, appearance, committed});
+  }, {old, state, appearance, committed, applicationContext});
   await expect(page.locator('dialog[open]')).toBeVisible();
 }
 
-async function openLoading(page: Page, old: boolean, appearance: 'light' | 'dark' = 'light'): Promise<void> {
+async function openLoading(page: Page, old: boolean, appearance: 'light' | 'dark' = 'light', applicationContext = false): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old, appearance}) => {
+  await page.evaluate(async ({old, appearance, applicationContext}) => {
     document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const mount = document.body.appendChild(document.createElement('div'));
     const h = {closed: 0} as ResourceHarness;
@@ -72,11 +83,16 @@ async function openLoading(page: Page, old: boolean, appearance: 'light' | 'dark
       const path = '/src/app/index.ts'; const {createApplication} = await import(path); const app = createApplication(mount, {appearance});
       h.loading = app.resources.openEditorLoading({kind: 'skill'}, {onClose() {h.closed++;}});
     } else {
+      let recipeMount: HTMLElement = mount;
+      if (applicationContext) {
+        const path = '/src/app/index.ts'; const {createApplication} = await import(path);
+        createApplication(mount, {appearance}); recipeMount = mount.querySelector<HTMLElement>('.pui-app')!;
+      }
       const path = '/examples/assemblies/resource-editor.ts'; const {mountResourceLoading} = await import(path);
-      h.loading = mountResourceLoading(mount, {kind: 'skill'}, {onClose() {h.closed++;}}, {appearance});
+      h.loading = mountResourceLoading(recipeMount, {kind: 'skill'}, {onClose() {h.closed++;}}, {appearance});
     }
     window.resourcePartsHarness = h;
-  }, {old, appearance});
+  }, {old, appearance, applicationContext});
   await expect(page.getByRole('dialog', {name: 'Create skill', exact: true})).toBeVisible();
 }
 
@@ -123,18 +139,18 @@ test('small feature dialog, paragraph status, path text and owned native wrappin
   expect(value).toEqual({width: 660, labelChildren: ['#text','input'], association: true, path: 'p', status: 'p', leaks: [false,false,false], duplicateRejected: true});
 });
 
-for (const appearance of ['light','dark'] as const) for (const [name, state] of Object.entries({create, existing, inherited, busy})) {
+for (const appearance of ['light','dark'] as const) for (const [name, state] of Object.entries({create, newInstructions, newTemplate, existing, inherited, busy})) {
   test(`${appearance} resource ${name} assembly preserves the actual Desk feature editor`, async ({page}) => {
     await page.emulateMedia({colorScheme: appearance === 'dark' ? 'light' : 'dark'});
     await openResource(page, true, state, appearance); const old = await presentation(page);
-    await openResource(page, false, state, appearance); expect(await presentation(page)).toEqual(old);
+    await openResource(page, false, state, appearance, false, true); expect(await presentation(page)).toEqual(old);
     await expect(page.locator('dialog[open] [aria-label^="Close"]')).toBeFocused();
   });
 }
 
 for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`resource editor ${viewport.width} keeps the original responsive scrolling and native form geometry`, async ({page}) => {
   await page.setViewportSize(viewport); await openResource(page, true); const old = await presentation(page);
-  await openResource(page, false); expect(await presentation(page)).toEqual(old);
+  await openResource(page, false, create, 'light', false, true); expect(await presentation(page)).toEqual(old);
   await page.getByRole('button',{name: 'Save',exact: true}).scrollIntoViewIfNeeded();
   const box = await page.getByRole('button',{name: 'Save',exact: true}).boundingBox(); expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
 });
@@ -143,7 +159,7 @@ for (const appearance of ['light','dark'] as const) test(`${appearance} resource
   await openLoading(page, true, appearance); const loading = await presentation(page);
   await page.evaluate(() => window.resourcePartsHarness.loading!.update({error: 'Read rejected'})); const update = await presentation(page);
   await page.evaluate(() => window.resourcePartsHarness.loading!.fail('Frame failure')); const fail = await presentation(page);
-  await openLoading(page, false, appearance); expect(await presentation(page)).toEqual(loading);
+  await openLoading(page, false, appearance, true); expect(await presentation(page)).toEqual(loading);
   await page.evaluate(() => window.resourcePartsHarness.loading!.update({error: 'Read rejected'})); expect(await presentation(page)).toEqual(update);
   await page.evaluate(() => window.resourcePartsHarness.loading!.fail('Frame failure')); expect(await presentation(page)).toEqual(fail);
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).toHaveCount(0);
