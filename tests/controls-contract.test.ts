@@ -37,6 +37,9 @@ const mounted = mount(host,view,{appearance:'system'}); mounted.setAppearance('d
 
 test('constrained declarations reject visual options, raw nodes, invalid modes and internal handles', () => {
   const cases = [
+    "createTable({label:'Data',columns:[{key:'item',label:'Item',width:220}],rows:[]});",
+    "createTable({label:'Data',columns:[{key:'item',label:'Item',kind:'number'}],rows:[]});",
+    "createTable({label:'Data',columns:[{key:'item',label:'Item'}],rows:[{key:'row',cells:[document.body]}]});",
     "createButton({label:'Save',context:'link'});",
     "createConfirmDialog({title:'Confirm',content:createText({text:'Body'}),message:'Second body',onConfirm:()=>({ok:true})});",
     "createButton({label:'Save',density:'compact'});",
@@ -74,7 +77,7 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
     "createPopover({label:'Details',content:createText({text:'Safe'})}).panel;",
     "createListSelect({label:'Models',multiple:true,options:[]}).reset('a');",
   ];
-  const imports = "import {createButton,createTextInput,createSelect,createListSelect,createIcon,createStack,createDialog,createPopover,createConfirmDialog,createMenu,createText,createContentColumn,createSurface,createToolbar,createGrid,createBreadcrumb,createStep,createIconButton,createImage,createTextArea,createSecretTextArea} from './index.js';\n";
+  const imports = "import {createButton,createTextInput,createSelect,createListSelect,createIcon,createStack,createDialog,createPopover,createConfirmDialog,createMenu,createText,createContentColumn,createSurface,createToolbar,createGrid,createBreadcrumb,createStep,createIconButton,createImage,createTextArea,createSecretTextArea,createTable} from './index.js';\n";
   // Each case is independently checked, so an unrelated missing import cannot
   // accidentally satisfy an expected declaration rejection.
   assert.deepEqual(diagnostics(imports), []);
