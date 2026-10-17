@@ -4,6 +4,12 @@ The oracle was captured and replayed against a separate unchanged checkout of
 `897f46a83c637a3385adf91e281161cec157cf13`. Desk call sites were audited at
 `3f1ee2418674d0010948e1138ebad33de216094a`.
 
+The recorded OS, browser versions/revisions and locale are in `environment.json`.
+Exact frozen coordinates use macOS 27.0.1 / build 26A434 on arm64, Playwright
+1.64.0, Chromium 156.0.8078.4 and WebKit 27.2. A changed macOS/browser environment
+fails explicitly. Other platforms report these frozen layout cases as skipped;
+the existing behavior suites and live old/new assembly comparisons still run.
+
 `baseline.json` preserves 224 browser/theme/viewport contracts: 51 seeded scenes,
 five additional short-window variants, light and dark themes, and Chromium and
 WebKit. The fixture invokes every one of the 17 scene-opening methods used by
@@ -31,8 +37,9 @@ check. Browser runs also require the mount to be empty after destruction.
 
 ## Explicit baseline recording
 
-Record only from the verified baseline checkout. Copy the four contract fixture,
-spec and data-helper files into that checkout without modifying its `src` files.
+Record only from the verified baseline checkout. Copy the contract fixture,
+spec, data-helper, environment-helper and recorded environment files into that
+checkout without modifying its `src` files.
 Use an isolated test-server port/configuration if another checkout is running.
 
 ```sh

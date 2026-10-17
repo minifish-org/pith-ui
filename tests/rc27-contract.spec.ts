@@ -1,6 +1,7 @@
 import {test, expect} from '@playwright/test';
 import type {RC27Scenario} from './rc27-contract-fixture.js';
 import {readContract, stageContract} from './rc27-contract-data.js';
+import {supportsFrozenRC27, assertFrozenRC27Environment} from './rc27-contract-environment.js';
 
 /**
  * Textual baseline captured before replacing the rc.27 templates.
@@ -20,6 +21,9 @@ const scenarios = [
   'artifacts', 'preview-text', 'preview-markdown', 'preview-diff', 'preview-image',
 ] satisfies readonly RC27Scenario[];
 const update = process.env.RC27_UPDATE_CONTRACT === '1';
+if (update && !supportsFrozenRC27) throw new Error('Record rc.27 geometry only in the documented baseline environment.');
+test.skip(!supportsFrozenRC27, 'Exact frozen rc.27 geometry uses recorded macOS fonts and native controls; live old/new and behavior suites remain cross-platform.');
+test.beforeAll(async ({browser}, info) => {assertFrozenRC27Environment(info.project.name, browser.version());});
 const shortScenarios = new Set<RC27Scenario>(['shell', 'composer', 'tasks', 'custom-connection', 'model-picker']);
 test.use({locale: 'en-US', timezoneId: 'Asia/Singapore'});
 
