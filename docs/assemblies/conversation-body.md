@@ -1,9 +1,9 @@
-# Conversation text body assembly
+# Conversation body assembly
 
-This is the text-message subsection of contract [06](../contracts/rc27-ui-022.md#06-conversation-messages-tools-and-rich-content).
+This covers the text and tool-disclosure subsections of contract [06](../contracts/rc27-ui-022.md#06-conversation-messages-tools-and-rich-content).
 The executable implementation is
 [`examples/assemblies/conversation-body.ts`](../../examples/assemblies/conversation-body.ts).
-Tool groups, images, copy success feedback, and reader/find coordination still
+Images, copy success feedback, and reader/find coordination still
 require their separate proof before the complete conversation contract is met.
 This local example is not a public scene API.
 
@@ -18,9 +18,18 @@ ReadingColumn (caller controls empty-state visibility)
 ├─ Bubble (agent, reading key)
 │  └─ intrinsic body
 │     ├─ Markdown
-│     ├─ Text (interrupted, conditionally hidden)
+│     ├─ Text (interrupted, only when present)
 │     └─ MessageFooter → Timestamp, MessageActions
 ├─ ReadingNote (system, reading key)
+├─ CompoundDisclosure (group, stable fold key)
+│  ├─ intrinsic summary: Icon, Metadata label/count/state, Icon
+│  └─ DisclosureBody (group)
+│     └─ CompoundDisclosure (result, reading and fold keys)
+│        ├─ intrinsic summary: Icon, Text, trailing Metadata, Icon
+│        ├─ DisclosureBody (details, when command exists)
+│        │  ├─ Metadata field label, Preformatted command
+│        │  └─ CodeProperty (directory label and literal code)
+│        └─ DisclosureBody (output, for commands) → label, Preformatted
 └─ WorkingIndicator (optional, library-owned dots and animation)
 ```
 
@@ -55,6 +64,19 @@ literal; assistant Markdown uses the library sanitizer, code-copy behavior and
 retained DOM patching. User text uses a prefix-preserving native Text update,
 which retains a selected unchanged prefix through appended content.
 
+[`tool-disclosures.ts`](../../examples/assemblies/tool-disclosures.ts) contains
+the executable small-part composition for consecutive tool messages. Its local
+data algorithm chooses group prose and counts, reuses a group through a retained
+member, and avoids colliding with a still-owned historical key. Neither the
+disclosure nor any metadata part interprets tool data. Each native details keeps
+its own open state; before an update or conversation switch, the local body
+records those booleans by fold key. Explicit supplied folds take precedence.
+Results keep their keyed details and literal output part during streaming, so
+selected unchanged text and output scroll survive group growth. Command text,
+directory and output labels are explicitly composed; an ordinary tool result
+uses a direct Preformatted child. Library variants own all padding, border,
+color and native disclosure sizing.
+
 The caller chooses copy/edit/branch eligibility in each message and projects
 their independent disabled states through `updateAvailability`. Each callback
 receives a frozen target captured from the current keyed row. Timestamp labels
@@ -75,5 +97,9 @@ timestamps, actions, empty and working states. Separate checks preserve selected
 streaming text, a genuinely overflowing code block's scroll position and focused
 actions. WebKit's native button focus clears a content selection, so selection
 and focused-action retention are checked in separate rendering phases against
-the same old application. Whole-conversation acceptance remains pending the
+the same old application. `tests/parts-tool-disclosure.spec.ts` compares all
+group-label categories, result/command running/done/error and exit labels,
+literal output, counts, both themes and narrow open/closed layouts. It also
+checks retained folds, group growth, prepended history, overlapping group keys,
+selected output and scroll. Whole-conversation acceptance remains pending the
 additional subsections named above.

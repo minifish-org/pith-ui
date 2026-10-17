@@ -1,13 +1,14 @@
-/** Text-message portion of the internal conversation proof. Tool groups,
- * images and reader coordination have their separate acceptance tranches. */
+/** Internal conversation composition. Image loading and reader coordination
+ * have separate acceptance tranches. */
 import {
   createReadingColumnPart,createBubblePart,createTextPart,createReadingNotePart,createMarkdownPart,
   createTimestampPart,createMessageFooterPart,createMessageActionsPart,createButtonPart,createWorkingIndicatorPart,
   type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,
 } from '../../src/parts/index.js';
+import {composeToolGroup,type ToolGroupComposition} from './tool-disclosures.js';
 
-export interface BodyMessage {id: string;role: string;text: string;timestamp?: number;status?: string;actions?: {copy?: boolean|string;edit?: boolean;branch?: {key: string;label?: string}}}
-export interface ConversationBodyState {id: string;messages: readonly BodyMessage[];working: boolean}
+export interface BodyMessage {id: string;role: string;text: string;timestamp?: number;status?: string;toolName?: string;toolCallId?: string;command?: {text: string;cwd: string;exitCode?: number};actions?: {copy?: boolean|string;edit?: boolean;branch?: {key: string;label?: string}}}
+export interface ConversationBodyState {id: string;messages: readonly BodyMessage[];working: boolean;folds?: ReadonlyMap<string,boolean>}
 export interface MessageAction {action: 'copy'|'edit'|'branch';messageId: string;branchKey?: string}
 export type BodyResult = void|{ok: true}|{ok: false;error: string};
 export interface ConversationBodyCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;onError?(message: string): void}
@@ -19,17 +20,18 @@ interface Entry {part: Part;kind: string;update(message: BodyMessage): void;avai
 export function composeConversationBody(initial: Readonly<ConversationBodyState>,callbacks: ConversationBodyCallbacks = {}): ConversationBodyComposition {
   let alive = true,id = initial.id,disabled: Readonly<Partial<Record<MessageAction['action'],boolean>>> = {},working: WorkingIndicatorPart|undefined;
   const entries = new Map<string,Entry>();
+  let groups = new Map<string,Set<string>>();
+  const toolGroups = new Map<string,ToolGroupComposition>(),savedFolds = new Map<string,Map<string,boolean>>();
   const fail = (message: string) => {if (alive) callbacks.onError?.(message);};
-  const root = createReadingColumnPart({children: [],onDispose() {alive = false;entries.clear();working = undefined;}});
+  const root = createReadingColumnPart({children: [],onDispose() {alive = false;entries.clear();toolGroups.clear();groups.clear();savedFolds.clear();working = undefined;}});
   const kindOf = (message: BodyMessage) => message.role === 'system' ? 'system' : message.role === 'user' ? 'user' : message.role === 'tool' ? 'tool' : 'assistant';
   function make(message: BodyMessage): Entry {
     const kind = kindOf(message);
-    if (kind === 'tool') throw new TypeError('Tool groups belong to the tool-disclosure assembly.');
     if (kind === 'system') {const part = createReadingNotePart({key: message.id,text: message.text});return {part,kind,update(next) {part.update({text: next.text});},availability() {}};}
     let current = message,footer: LayoutPart|undefined,actions: LayoutPart|undefined,time: TimestampPart|undefined;
     const buttons = new Map<MessageAction['action'],ButtonPart>();
     const text = kind === 'user' ? createTextPart({role: 'bubble',text: message.text,hidden: !message.text}) : createMarkdownPart({text: message.text,onCopyCode: callbacks.onCopyCode,onError: fail});
-    const interrupted = kind === 'assistant' ? createTextPart({role: 'interrupted',text: 'Response interrupted',hidden: message.status !== 'error'}) : undefined;
+    let interrupted: ReturnType<typeof createTextPart>|undefined;
     const bubble = createBubblePart({key: message.id,speaker: kind === 'user' ? 'self' : 'agent',children: []});
     const availability = () => {for (const [action,button] of buttons) {
       const label = action === 'copy' ? typeof current.actions?.copy === 'string' ? current.actions.copy : 'Copy message' : action === 'edit' ? 'Edit message' : current.actions?.branch?.label || 'Branch from this message';
@@ -38,7 +40,8 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
     const update = (next: BodyMessage) => {
       current = next;
       text.update({text: next.text,...(kind === 'user' ? {hidden: !next.text} : {})});
-      interrupted?.update({text: 'Response interrupted',hidden: next.status !== 'error'});
+      if (kind === 'assistant' && next.status === 'error') interrupted ??= createTextPart({role: 'interrupted',text: 'Response interrupted'});
+      else {interrupted?.destroy();interrupted = undefined;}
       const desired: MessageAction['action'][] = [ ...(next.actions?.copy ? ['copy' as const] : []),...(next.actions?.edit ? ['edit' as const] : []),...(next.actions?.branch ? ['branch' as const] : []) ];
       for (const [action,button] of buttons) if (!desired.includes(action)) {button.destroy();buttons.delete(action);}
       for (const action of desired) if (!buttons.has(action)) buttons.set(action,createButtonPart({variant: 'quiet-icon',icon: action === 'copy' ? 'copy' : action === 'edit' ? 'edit' : 'branch',label: action,
@@ -55,12 +58,30 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
   }
   const update = (state: Readonly<ConversationBodyState>) => {
     if (!alive) return;
-    const keys = new Set<string>();for (const message of state.messages) {if (keys.has(message.id)) throw new TypeError('Message IDs must be unique.');keys.add(message.id);if (kindOf(message) === 'tool') throw new TypeError('This proof assembles text messages only.');}
-    if (state.id !== id) {root.replace([]);entries.clear();working = undefined;id = state.id;}
+    const keys = new Set(state.messages.filter(message => kindOf(message) !== 'tool').map(message => message.id));
+    const allKeys = new Set<string>();for (const message of state.messages) {if (allKeys.has(message.id)) throw new TypeError('Message IDs must be unique.');allKeys.add(message.id);}
+    if (id) savedFolds.set(id,new Map([...toolGroups.values()].flatMap(group => [...group.folds()])));
+    if (state.id !== id) {root.replace([]);entries.clear();toolGroups.clear();groups.clear();working = undefined;id = state.id;}
+    const folds = state.folds ?? savedFolds.get(id) ?? new Map<string,boolean>();
     for (const [key,entry] of entries) if (!keys.has(key)) {entry.part.destroy();entries.delete(key);}
     const children: Part[] = [];
-    for (const message of state.messages) {let entry = entries.get(message.id);if (entry && entry.kind !== kindOf(message)) {entry.part.destroy();entries.delete(message.id);entry = undefined;}
-      if (!entry) {entry = make(message);entries.set(message.id,entry);}else entry.update(message);children.push(entry.part);}
+    const nextGroups = new Map<string,Set<string>>();let groupIndex = 0;
+    for (let index = 0;index < state.messages.length;) {
+      const message = state.messages[index]!;
+      if (kindOf(message) === 'tool') {
+        const start = index;while (index < state.messages.length && kindOf(state.messages[index]!) === 'tool') index++;
+        const tools = state.messages.slice(start,index),members = new Set(tools.map(tool => tool.id));
+        const retained = [...groups].find(([key,previous]) => !nextGroups.has(key) && [...members].some(member => previous.has(member)));
+        const baseKey = `group-${tools[0]!.id}`;let key = retained?.[0] ?? baseKey;
+        if (!retained) for (let suffix = 2;groups.has(key) || nextGroups.has(key);suffix++) key = `${baseKey}-${suffix}`;
+        nextGroups.set(key,members);const legacyKey = `group-${groupIndex++}`;
+        let group = toolGroups.get(key);if (!group) {group = composeToolGroup(key,legacyKey,tools,folds);toolGroups.set(key,group);}else group.update(tools,folds);
+        children.push(group.part);continue;
+      }
+      index++;let entry = entries.get(message.id);if (entry && entry.kind !== kindOf(message)) {entry.part.destroy();entries.delete(message.id);entry = undefined;}
+      if (!entry) {entry = make(message);entries.set(message.id,entry);}else entry.update(message);children.push(entry.part);
+    }
+    for (const [key,group] of toolGroups) if (!nextGroups.has(key)) {group.part.destroy();toolGroups.delete(key);}groups = nextGroups;
     if (state.working) {working ??= createWorkingIndicatorPart({label: 'Working…'});children.push(working);}else {working?.destroy();working = undefined;}
     root.replace(children);root.update({hidden: !state.messages.length});
   };
