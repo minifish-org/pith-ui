@@ -210,33 +210,38 @@ export interface ButtonOptions extends ButtonState {
     readonly onAction?: Action;
     readonly onError?: (message: string) => void;
 }
+export interface TextActionState extends Omit<ButtonState, 'context'> {
+    readonly context?: ButtonState['context'] | 'link';
+}
+export type TextActionOptions = Omit<ButtonOptions, 'context'> & TextActionState;
 const buttonKeys = ['label', 'intent', 'icon', 'title', 'accessibleLabel', 'disabled', 'pending', 'context'];
-function actionControl(options: ButtonOptions, kind: 'button' | 'icon' | 'text'): Control<ButtonState> {
+function actionControl<State extends TextActionState>(options: State & Pick<ButtonOptions, 'onAction' | 'onError'>, kind: 'button' | 'icon' | 'text'): Control<State> {
     check(options, [...buttonKeys, 'onAction', 'onError']);
     icon(options.icon);
     if (kind === 'icon' && !options.icon)
         throw new Error('An icon button requires an icon.');
-    const validate = (state: ButtonState) => {
+    const validate = (state: TextActionState) => {
         check(state, buttonKeys);
         icon(state.icon);
         if (kind === 'icon' && !state.icon)
             throw new Error('An icon button requires an icon.');
     };
-    const stateOf = (state: ButtonState): primitive.ButtonState => ({ label: state.label, intent: state.intent, icon: state.icon, title: state.title, disabled: state.disabled, pending: state.pending });
-    finite(options.context, ['inline', 'navigation', 'suggestion', 'navigation-toggle', 'picker'], 'action context');
+    const stateOf = (state: TextActionState): primitive.ButtonState => ({ label: state.label, intent: state.intent, icon: state.icon, title: state.title, disabled: state.disabled, pending: state.pending });
+    const contexts = ['inline', 'navigation', 'suggestion', 'navigation-toggle', 'picker', ...(kind === 'text' ? ['link'] : [])];
+    finite(options.context, contexts, 'action context');
     const initial = stateOf(options);
     const block = kind === 'icon' ? primitive.createIconButton({ ...initial, icon: options.icon!, onAction: options.onAction, onError: options.onError }) : kind === 'text' ? primitive.createTextAction({ ...initial, onAction: options.onAction, onError: options.onError }) : primitive.createButton({ ...initial, onAction: options.onAction, onError: options.onError });
-    const update = (state: Readonly<ButtonState>) => { validate(state); const context = state.context ?? options.context; finite(context, ['inline', 'navigation', 'suggestion', 'navigation-toggle', 'picker'], 'action context'); block.element.classList.toggle('pui-action-inline', context === 'inline'); block.element.classList.toggle('pui-action-navigation', context === 'navigation'); block.element.classList.toggle('pui-action-suggestion', context === 'suggestion'); block.element.classList.toggle('pui-navigation-toggle', context === 'navigation-toggle'); block.element.classList.toggle('pui-action-picker', context === 'picker'); block.update(stateOf(state)); const accessible = state.accessibleLabel ?? options.accessibleLabel; if (accessible)
+    const update = (state: Readonly<State>) => { validate(state); const context = state.context ?? options.context; finite(context, contexts, 'action context'); block.element.classList.toggle('pui-action-link', context === 'link'); block.element.classList.toggle('pui-action-inline', context === 'inline'); block.element.classList.toggle('pui-action-navigation', context === 'navigation'); block.element.classList.toggle('pui-action-suggestion', context === 'suggestion'); block.element.classList.toggle('pui-navigation-toggle', context === 'navigation-toggle'); block.element.classList.toggle('pui-action-picker', context === 'picker'); block.update(stateOf(state)); const accessible = state.accessibleLabel ?? options.accessibleLabel; if (accessible)
         block.element.setAttribute('aria-label', accessible); };
     update(stateOnly(options, buttonKeys));
     return own({ ...block, update }, [], undefined, block.invalidate);
 }
-export function createButton(options: ButtonOptions): Control<ButtonState> { return actionControl(options, 'button'); }
+export function createButton(options: ButtonOptions): Control<ButtonState> { return actionControl<ButtonState>(options, 'button'); }
 export interface IconButtonState extends Omit<ButtonState, 'icon'> {
     readonly icon: IconName;
 }
-export function createIconButton(options: ButtonOptions & IconButtonState): Control<IconButtonState> { return actionControl(options, 'icon') as Control<IconButtonState>; }
-export function createTextAction(options: ButtonOptions): Control<ButtonState> { return actionControl(options, 'text'); }
+export function createIconButton(options: ButtonOptions & IconButtonState): Control<IconButtonState> { return actionControl<IconButtonState>(options, 'icon'); }
+export function createTextAction(options: TextActionOptions): Control<TextActionState> { return actionControl<TextActionState>(options, 'text'); }
 export interface TextState {
     readonly text: string;
     readonly value?: string;
@@ -366,7 +371,13 @@ export function createSearchInput(options: SearchInputOptions): Input { check(op
     node.append(iconElement('search'));
 } return control; }
 export function createSecretInput(options: InputOptions): Input { return inputControl(options, 'secret'); }
-export function createTextArea(options: InputOptions): Input { return inputControl(options, 'textarea'); }
+export interface TextAreaOptions extends InputOptions { readonly purpose?: 'form' | 'document'; }
+export function createTextArea(options: TextAreaOptions): Input {
+    check(options, [...inputOptionKeys, 'purpose']); finite(options.purpose, ['form', 'document'], 'text area purpose');
+    const {purpose,...state}=options, control=inputControl(state,'textarea');
+    if(purpose){const node=entry(control).node;node.classList.add('pui-textarea-'+purpose);if(purpose==='form')node.querySelector('textarea')!.rows=3;}
+    return control;
+}
 export function createNumberInput(options: NumberInputOptions): Input { return inputControl(options, 'number'); }
 export interface SelectOption {
     readonly value: string;
@@ -399,9 +410,11 @@ export interface MultiSelect extends Control<SelectState> {
     focus(): void;
 }
 const selectKeys = [...fieldKeys, 'options', 'context', 'icon', 'tone'];
-function choice(options: SelectOptions | MultiSelectOptions, list: boolean): Select | MultiSelect {
+export type ListSelectOptions = (SelectOptions | MultiSelectOptions) & {readonly purpose?:'catalog'};
+function choice(options: ListSelectOptions, list: boolean): Select | MultiSelect {
     const multiple = 'multiple' in options && options.multiple;
-    check(options, [...selectKeys, ...(multiple ? ['multiple', 'values', 'onChange'] : [...(list ? ['multiple'] : []), 'value', 'onChange'])]);
+    if(list)finite(options.purpose,['catalog'],'list select purpose');
+    check(options, [...selectKeys, ...(list ? ['purpose'] : []), ...(multiple ? ['multiple', 'values', 'onChange'] : [...(list ? ['multiple'] : []), 'value', 'onChange'])]);
     for (const item of options.options)
         check(item, ['value', 'label', 'disabled']);
     finite(options.context, ['inline'], 'choice context');
@@ -409,9 +422,10 @@ function choice(options: SelectOptions | MultiSelectOptions, list: boolean): Sel
     finite(options.tone, ['neutral', 'warning'], 'choice tone');
     if (list && (options.context || options.icon || options.tone))
         throw new Error('Inline choice is single-row only.');
-    const block = primitive.createSelect({ ...options, selectAnchor: options.context === 'inline', size: list ? 5 : undefined, multiple: !!multiple,
+    const block = primitive.createSelect({ ...options, selectAnchor: options.context === 'inline', size: list ? options.purpose==='catalog'?6:5 : undefined, multiple: !!multiple,
         onChange: multiple ? undefined : (options as SelectOptions).onChange,
         onValuesChange: multiple ? (options as MultiSelectOptions).onChange : undefined });
+    if(list&&options.purpose==='catalog')block.element.classList.add('pui-select-catalog');
     const glyph = element('span', 'pui-inline-choice-icon');
     block.element.append(glyph);
     let glyphName: IconName | undefined;
@@ -440,11 +454,12 @@ function choice(options: SelectOptions | MultiSelectOptions, list: boolean): Sel
 }
 export function createSelect(options: SelectOptions): Select { return choice(options, false) as Select; }
 /** A five-row native list. Multi-selection retains system modifier keys. */
-export function createListSelect(options: MultiSelectOptions): MultiSelect;
+export function createListSelect(options: MultiSelectOptions & {readonly purpose?:'catalog'}): MultiSelect;
 export function createListSelect(options: SelectOptions & {
     readonly multiple?: false;
+    readonly purpose?:'catalog';
 }): Select;
-export function createListSelect(options: SelectOptions | MultiSelectOptions): Select | MultiSelect { return choice(options, true); }
+export function createListSelect(options: ListSelectOptions): Select | MultiSelect { return choice(options, true); }
 export interface CheckboxState {
     readonly label: string;
     readonly description?: string;
@@ -597,7 +612,7 @@ export interface NotificationRegionState {
 }
 export function createNotificationRegion(options: NotificationRegionState & {
     readonly content: Control;
-}): Control<NotificationRegionState> { check(options, ['label', 'content']); const [content] = nodes([options.content]), node = element('aside', 'pui-notification-region', content); const update = (state: Readonly<NotificationRegionState>) => { check(state, ['label']); node.setAttribute('aria-label', state.label ?? 'Notifications'); }; update({ label: options.label }); return own({ element: node, update, destroy() { } }, [options.content]); }
+}): Control<NotificationRegionState> { check(options, ['label', 'content']); const [content] = nodes([options.content]), node = element('section', 'pui-notification-region', content); node.setAttribute('aria-live','polite'); const update = (state: Readonly<NotificationRegionState>) => { check(state, ['label']); node.setAttribute('aria-label', state.label ?? 'Notifications'); }; update({ label: options.label }); return own({ element: node, update, destroy() { } }, [options.content]); }
 export interface BreadcrumbState {
     readonly label: string;
     readonly items: readonly {
@@ -629,13 +644,13 @@ export interface GridState {
 }
 export function createGrid(options: GridState & ChildrenOptions): Control<GridState> { check(options, ['columns', 'children']); const node = element('div', 'pui-pair-grid', ...nodes(options.children)); const update = (state: Readonly<GridState>) => { check(state, ['columns']); finite(state.columns, ['pair'], 'grid columns'); }; update({ columns: options.columns }); return own({ element: node, update, destroy() { } }, options.children); }
 export interface FormSectionState {
-    readonly context?: 'settings' | 'model';
+    readonly context?: 'settings' | 'model' | 'editor';
     readonly title: string;
     readonly description?: string;
 }
 export function createFormSection(options: ChildrenOptions & FormSectionState): Control<FormSectionState> {
     check(options, ['children', 'title', 'description', 'context']);
-    finite(options.context, ['settings', 'model'], 'section context');
+    finite(options.context, ['settings', 'model', 'editor'], 'section context');
     const node = element('div', 'pui-control-stack', ...nodes(options.children));
     if (options.context === 'model') {
         const title = element('legend'), description = element('p', 'pui-muted'), root = element('fieldset', 'pui-section-model', title, description, node);
@@ -644,12 +659,12 @@ export function createFormSection(options: ChildrenOptions & FormSectionState): 
         return own({ element: root, update, destroy() { } }, options.children);
     }
     const block = primitive.createFormSection({ title: options.title, description: options.description, content: node });
-    if (options.context === 'settings')
-        block.element.classList.add('pui-section-settings');
+    if (options.context === 'settings' || options.context === 'editor')
+        block.element.classList.add('pui-section-' + options.context);
     const heading = block.element.querySelector('h3');
     if (heading)
         heading.hidden = !options.title;
-    return own({ ...block, update(state: Readonly<FormSectionState>) { check(state, ['title', 'description', 'context']); finite(state.context, ['settings', 'model'], 'section context'); block.update(state); const title = block.element.querySelector('h3'); if (title)
+    return own({ ...block, update(state: Readonly<FormSectionState>) { check(state, ['title', 'description', 'context']); finite(state.context, ['settings', 'model', 'editor'], 'section context'); block.update(state); const title = block.element.querySelector('h3'); if (title)
             title.hidden = !state.title; } }, options.children);
 }
 export interface ScrollState {
@@ -717,25 +732,30 @@ export function createListRow(options: ListRowState & {
     readonly actions?: Control;
     readonly status?: Control;
     readonly marker?: Control;
+    readonly details?: Control;
     readonly onAction?: Action;
     readonly onError?: (message: string) => void;
 }): Control<ListRowState> {
-    check(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context', 'actions', 'status', 'marker', 'onAction', 'onError']);
+    check(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context', 'actions', 'status', 'marker', 'details', 'onAction', 'onError']);
     finite(options.context, ['navigation', 'resource', 'queue', 'choice'], 'row context');
+    if (options.details && options.context !== 'resource') throw new Error('Owned row details require the resource context.');
     icon(options.icon);
     const primary = options.onAction ? createButton({ label: options.title, disabled: options.disabled, onAction: options.onAction, onError: options.onError }) : undefined;
-    const children = [...(primary ? [primary] : []), ...(options.marker ? [options.marker] : []), ...(options.status ? [options.status] : []), ...(options.actions ? [options.actions] : [])];
+    const children = [...(primary ? [primary] : []), ...(options.marker ? [options.marker] : []), ...(options.status ? [options.status] : []), ...(options.actions ? [options.actions] : []), ...(options.details ? [options.details] : [])];
     nodes(children);
     if (primary)
         entry(primary).node.classList.add('pui-list-row-select');
     const block = primitive.createListRow({ ...options, titleContent: primary ? entry(primary).node : undefined, actions: options.actions ? element('span', 'pui-list-row-actions', entry(options.actions).node) : undefined });
+    const root = options.details ? element('article', 'pui-resource-composition', block.element, entry(options.details).node) : block.element;
+    const body = block.element.querySelector('.pui-list-row-body')!;
+    if (options.context === 'resource') { const meta = block.element.querySelector(':scope > small'); if (meta) { meta.classList.add('pui-resource-path'); body.append(meta); } }
     if (options.marker)
         block.element.prepend(element('span', 'pui-list-row-marker', entry(options.marker).node));
     if (options.status)
         block.element.append(element('span', 'pui-list-row-status', entry(options.status).node));
-    const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); block.element.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); primary?.update({ label: state.title, disabled: state.disabled });if(primary){const action=entry(primary).node;if(context==='navigation'&&state.selected)action.setAttribute('aria-current','page');else action.removeAttribute('aria-current');} };
+    const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); if(options.details&&context!=='resource')throw new Error('Owned row details require the resource context.'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); root.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); primary?.update({ label: state.title, disabled: state.disabled });if(primary){const action=entry(primary).node;if(context==='navigation'&&state.selected)action.setAttribute('aria-current','page');else action.removeAttribute('aria-current');} };
     update(stateOnly(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']));
-    return own({ ...block, update }, children);
+    return own({ ...block, element: root, update }, children);
 }
 export interface CollectionState {
     readonly status: 'ready' | 'loading' | 'empty' | 'error';
@@ -754,8 +774,22 @@ export function createCollectionState(options: CollectionState & {
 export interface NoticeState {
     readonly message: string;
     readonly tone?: 'info' | 'success' | 'warning' | 'error';
+    readonly presentation?: 'inline' | 'caption' | 'compact';
 }
-export function createNotice(state: NoticeState): Control<NoticeState> { check(state, ['message', 'tone']); const block = primitive.createNotice(state); return own({ ...block, update(next: Readonly<NoticeState>) { check(next, ['message', 'tone']); block.update(next); } }); }
+export function createNotice(state: NoticeState): Control<NoticeState> {
+    const keys = ['message', 'tone', 'presentation']; check(state, keys);
+    const block = primitive.createNotice(state);
+    let presentation = state.presentation;
+    const update = (next: Readonly<NoticeState>) => {
+        check(next, keys); const nextPresentation=next.presentation??presentation;
+        finite(nextPresentation, ['inline', 'caption', 'compact'], 'notice presentation');presentation=nextPresentation;
+        block.element.classList.toggle('pui-notice-inline', presentation === 'inline'||presentation==='caption');
+        block.element.classList.toggle('pui-notice-caption', presentation === 'caption');
+        block.element.classList.toggle('pui-notice-compact', presentation === 'compact');
+        block.update(next);
+    };
+    update(state); return own({...block, update});
+}
 export interface StatusState {
     readonly label: string;
     readonly tone?: 'neutral' | 'success' | 'warning' | 'error';
@@ -792,6 +826,7 @@ export interface FormState {
 }
 export interface FormOptions extends FormState, ChildrenOptions {
     readonly context?: 'inline' | 'dialog' | 'settings';
+    readonly auxiliaryActions?: Control;
     readonly onSubmit: () => ActionResult | Promise<ActionResult>;
     readonly onCancel?: () => void;
 }
@@ -801,19 +836,21 @@ export interface Form extends Control<FormState> {
     resetSubmission(): void;
 }
 export function createForm(options: FormOptions): Form {
-    check(options, ['children', 'context', 'cancelLabel', 'submitLabel', 'submitDisabled', 'disabled', 'pending', 'error', 'onSubmit', 'onCancel']);
-    const fields = element('fieldset', 'pui-control-form-fields', ...nodes(options.children));
+    check(options, ['children', 'context', 'auxiliaryActions', 'cancelLabel', 'submitLabel', 'submitDisabled', 'disabled', 'pending', 'error', 'onSubmit', 'onCancel']);
+    const children=[...options.children,...(options.auxiliaryActions?[options.auxiliaryActions]:[])];nodes(children);
+    const fields = element('fieldset', 'pui-control-form-fields', ...options.children.map(child=>entry(child).node));
+    const auxiliary=options.auxiliaryActions?element('fieldset','pui-form-auxiliary',entry(options.auxiliaryActions).node):undefined;
     const error = primitive.createNotice({ message: '', tone: 'error' });
     const submit = primitive.createButton({ label: options.submitLabel ?? 'Save', intent: 'primary', type: 'submit' });
     const cancel = options.onCancel ? primitive.createButton({ label: options.cancelLabel ?? 'Cancel', onAction: options.onCancel }) : undefined;
-    const actions = primitive.createActions({ children: [...(cancel ? [cancel.element] : []), submit.element] });
+    const actions = primitive.createActions({ children: [...(auxiliary?[auxiliary]:[]), ...(cancel ? [cancel.element] : []), submit.element] });
     const form = element('form', 'pui-control-stack', fields, error.element, actions.element);
     finite(options.context, ['inline', 'dialog', 'settings'], 'form context');
     if (options.context)
         form.classList.add('pui-form-' + options.context);
     let state: FormState = { submitLabel: options.submitLabel, submitDisabled: options.submitDisabled, disabled: options.disabled, pending: options.pending, error: options.error };
     let pending = false, destroyed = false;
-    const update = (next: Readonly<FormState>) => { check(next, ['cancelLabel', 'submitLabel', 'submitDisabled', 'disabled', 'pending', 'error']); state = next; cancel?.update({ label: next.cancelLabel ?? options.cancelLabel ?? 'Cancel' }); fields.disabled = !!next.disabled; error.update({ message: next.error ?? '', tone: 'error' }); submit.update({ label: next.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled || next.submitDisabled, pending: !!(next.pending || pending) }); };
+    const update = (next: Readonly<FormState>) => { check(next, ['cancelLabel', 'submitLabel', 'submitDisabled', 'disabled', 'pending', 'error']); state = next; cancel?.update({ label: next.cancelLabel ?? options.cancelLabel ?? 'Cancel' }); fields.disabled = !!next.disabled; if(auxiliary)auxiliary.disabled=!!(next.disabled||next.pending||pending); error.update({ message: next.error ?? '', tone: 'error' }); submit.update({ label: next.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled || next.submitDisabled, pending: !!(next.pending || pending) }); };
     const operation = createOperation({ unavailable: () => destroyed || !!(state.disabled || state.submitDisabled || state.pending), onPending(value) { pending = value; update(state); }, onError(message) { update({ ...state, error: message }); } });
     const onSubmit = (event: SubmitEvent) => {
         event.preventDefault();
@@ -833,7 +870,7 @@ export function createForm(options: FormOptions): Form {
     form.addEventListener('invalid', revealInvalid, true);
     form.addEventListener('submit', onSubmit);
     update(state);
-    return own<FormState, Pick<Form, 'submit' | 'validate' | 'resetSubmission'>>({ element: form, update, destroy() { destroyed = true; operation.destroy(); form.removeEventListener('submit', onSubmit); form.removeEventListener('invalid', revealInvalid, true); error.destroy(); submit.destroy(); cancel?.destroy(); actions.destroy(); } }, options.children, { validate() { return !destroyed && !state.disabled && !state.pending && !pending && form.reportValidity(); }, resetSubmission() {
+    return own<FormState, Pick<Form, 'submit' | 'validate' | 'resetSubmission'>>({ element: form, update, destroy() { destroyed = true; operation.destroy(); form.removeEventListener('submit', onSubmit); form.removeEventListener('invalid', revealInvalid, true); error.destroy(); submit.destroy(); cancel?.destroy(); actions.destroy(); } }, children, { validate() { return !destroyed && !state.disabled && !state.pending && !pending && form.reportValidity(); }, resetSubmission() {
             if (!destroyed) {
                 operation.invalidate();
                 update({ ...state, error: '' });
@@ -938,15 +975,22 @@ export interface ConfirmDialog extends Control<ConfirmState> {
     isOpen(): boolean;
     refreshAvailability(): void;
 }
-const confirmKeys = ['title', 'description', 'closeDisabled', 'message', 'hint', 'error', 'disabled', 'pending', 'confirmLabel'];
-export function createConfirmDialog(options: ConfirmState & {
+const confirmKeys = ['title', 'description', 'eyebrow', 'closeDisabled', 'message', 'hint', 'error', 'disabled', 'pending', 'confirmLabel'];
+export type ConfirmOptions = Omit<ConfirmState, 'message'> & {
+    readonly purpose?: 'form';
+    readonly tone?: 'warning';
     readonly onConfirm: () => ActionResult | Promise<ActionResult>;
     readonly onClose?: () => void;
     readonly unavailable?: () => boolean;
-}): ConfirmDialog {
-    check(options, [...confirmKeys, 'onConfirm', 'onClose', 'unavailable']);
+} & ({readonly message?: ConfirmationMessage; readonly content?: never} | {readonly content: Control; readonly message?: never});
+export function createConfirmDialog(options: ConfirmOptions): ConfirmDialog {
+    check(options, [...confirmKeys, 'purpose', 'tone', 'content', 'onConfirm', 'onClose', 'unavailable']);
+    finite(options.purpose, ['form'], 'confirmation purpose'); finite(options.tone, ['warning'], 'confirmation tone');
+    if (options.content && options.message !== undefined) throw new Error('Confirmation message and owned content are exclusive.');
+    const children = options.content ? [options.content] : [], [content] = nodes(children);
     let signature = '', message: string | Node | undefined;
     const presentation = (state: ConfirmState): primitive.ConfirmState => {
+        if (content && state.message !== undefined) throw new Error('Confirmation message and owned content are exclusive.');
         const value = state.message;
         if (value !== undefined && typeof value !== 'string') {
             if (!value || typeof value.before !== 'string' || (value.subject !== undefined && typeof value.subject !== 'string') || (value.after !== undefined && typeof value.after !== 'string'))
@@ -957,26 +1001,21 @@ export function createConfirmDialog(options: ConfirmState & {
         if (next !== signature) {
             signature = next;
             if (typeof value === 'object') {
-                const fragment = document.createDocumentFragment();
-                fragment.append(value.before);
-                if (value.subject)
-                    fragment.append(element('strong', '', value.subject));
-                fragment.append(value.after ?? '');
-                message = fragment;
-            }
-            else
-                message = value;
+                const fragment = document.createDocumentFragment(); fragment.append(value.before);
+                if (value.subject) fragment.append(element('strong', '', value.subject));
+                fragment.append(value.after ?? ''); message = fragment;
+            } else message = value;
         }
         return { ...state, message };
     };
-    const block = primitive.createConfirmDialog({ ...presentation(options), onConfirm: options.onConfirm, onClose: options.onClose, unavailable: options.unavailable });
+    const retire = () => children.forEach(invalidate);
+    const block = primitive.createConfirmDialog({ ...presentation(stateOnly(options, confirmKeys)), content, tone: options.tone, onConfirm: options.onConfirm, onClose() {retire(); options.onClose?.();}, unavailable: options.unavailable });
+    if (options.purpose === 'form') block.element.classList.add('pui-dialog-form');
     let control: ConfirmDialog;
-    control = own<ConfirmState, Pick<ConfirmDialog, 'open' | 'close' | 'isOpen' | 'refreshAvailability'>>({ ...block, update(state: Readonly<ConfirmState>) { check(state, confirmKeys); block.update(presentation(state)); } }, [], { open(state?: ConfirmState) {
-            if (state)
-                check(state, confirmKeys);
-            mounted(control);
-            block.open(state ? presentation(state) : undefined);
-        }, close: block.close, isOpen: () => block.element.open, refreshAvailability: block.refreshAvailability });
+    control = own<ConfirmState, Pick<ConfirmDialog, 'open' | 'close' | 'isOpen' | 'refreshAvailability'>>({ ...block, update(state: Readonly<ConfirmState>) { check(state, confirmKeys); block.update(presentation(state)); } }, children, { open(state?: ConfirmState) {
+            if (state) check(state, confirmKeys);
+            mounted(control); retire(); block.open(state ? presentation(state) : undefined);
+        }, close() {retire(); block.close();}, isOpen: () => block.element.open, refreshAvailability: block.refreshAvailability });
     return control;
 }
 export interface PopoverState {

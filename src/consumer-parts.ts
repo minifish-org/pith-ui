@@ -104,32 +104,35 @@ export function createPromptInput(options: PromptOptions): PromptInput {
 export interface ImageState {
     readonly label: string;
     readonly source: string;
+    readonly compactSource?: string;
     readonly removeDisabled?: boolean;
 }
-export interface ImageOptions extends ImageState {
-    readonly purpose?: 'content' | 'attachment' | 'brand' | 'intro';
+export type ImageOptions = ImageState & {
     readonly onRemove?: () => void | ActionResult | Promise<void | ActionResult>;
     readonly onError?: (message: string) => void;
-}
+} & ({readonly purpose:'intro';readonly compactSource?:string} | {readonly purpose?:'content'|'attachment'|'brand';readonly compactSource?:never});
 export interface ImageControl extends Control<ImageState> {
     open(): void;
     close(): void;
 }
 export function createImage(options: ImageOptions): ImageControl {
-    checkOptions(options, ['label', 'source', 'removeDisabled', 'purpose', 'onRemove', 'onError']);
+    checkOptions(options, ['label', 'source', 'compactSource', 'removeDisabled', 'purpose', 'onRemove', 'onError']);
     if (options.purpose && !['content', 'attachment', 'brand', 'intro'].includes(options.purpose))
         throw new Error('Unknown image purpose.');
     if (options.onRemove && options.purpose !== 'attachment')
         throw new Error('Only attachment images have a remove action.');
     const node = element('div', 'pui-image pui-image-' + (options.purpose ?? 'content')), image = element('img'), brand = options.purpose === 'brand'||options.purpose==='intro';
+    const compact=options.purpose==='intro'?element('source'):undefined;
+    if(compact)compact.media='(max-width:720px)';
+    const graphic=compact?element('picture','',compact,image):image;
     const openButton = brand ? undefined : element('button', 'pui-image-open');
     if (openButton) {
         openButton.type = 'button';
-        openButton.append(image);
+        openButton.append(graphic);
         node.append(openButton);
     }
     else
-        node.append(image);
+        node.append(graphic);
     let viewer: ReturnType<typeof createImageViewer> | undefined;
     let state: ImageState = { label: options.label, source: '', removeDisabled: options.removeDisabled }, destroyed = false;
     const remove = options.onRemove ? primitive.createIconButton({ label: 'Remove ' + options.label, icon: 'close', onAction: options.onRemove, onError: options.onError }) : undefined;
@@ -154,8 +157,11 @@ export function createImage(options: ImageOptions): ImageControl {
             throw new Error('Unsupported image source.');
     };
     const update = (next: Readonly<ImageState>) => {
-        checkOptions(next, ['label', 'source', 'removeDisabled']);
-        validate(next.source);
+        checkOptions(next, ['label', 'source', 'compactSource', 'removeDisabled']);
+        validate(next.source);validate(next.compactSource??'');
+        if(next.compactSource&&!compact)throw new Error('Only intro images have a compact source.');
+        if(compact&&next.compactSource!==state.compactSource){if(next.compactSource)compact.srcset=next.compactSource;else compact.removeAttribute('srcset');}
+        node.classList.toggle('pui-image-has-compact',!!next.compactSource);
         if (next.source !== state.source) {
             close();
             if (next.source)
@@ -171,8 +177,8 @@ export function createImage(options: ImageOptions): ImageControl {
         }
         remove?.update({ label: 'Remove ' + next.label, icon: 'close', disabled: next.removeDisabled });
     };
-    update(options.source ? { label: options.label, source: options.source, removeDisabled: options.removeDisabled } : { label: options.label, source: '' });
-    return ownControl<ImageState, Pick<ImageControl, 'open' | 'close'>>({ element: node, update, destroy() { destroyed = true; openButton?.removeEventListener('click', open); viewer?.destroy(); remove?.destroy(); image.removeAttribute('src'); } }, [], { open, close });
+    update({label:options.label,source:options.source,compactSource:options.compactSource,removeDisabled:options.removeDisabled});
+    return ownControl<ImageState, Pick<ImageControl, 'open' | 'close'>>({ element: node, update, destroy() { destroyed = true; openButton?.removeEventListener('click', open); viewer?.destroy(); remove?.destroy(); image.removeAttribute('src');compact?.removeAttribute('srcset'); } }, [], { open, close });
 }
 export interface MessageState {
     readonly role: 'user' | 'assistant' | 'system' | 'tool';
@@ -388,13 +394,21 @@ export function createDocument(options: DocumentOptions): Control<DocumentState>
     update({ text: options.text, format: options.format, disabled: options.disabled });
     return ownControl({ element: node, update, destroy() { destroyed = true; feedback.destroy(); page.destroy(); node.removeEventListener('click', clicked); } });
 }
-export function createSecretTextArea(options: import('./controls.js').InputOptions): import('./controls.js').Input {
-    checkOptions(options, ['label','labelVisibility','status', 'description', 'error', 'required', 'disabled', 'placeholder', 'readOnly', 'value', 'autocomplete', 'onInput', 'onChange']);
+export type SecretTextAreaOptions = import('./controls.js').InputOptions & { readonly purpose?:'form'; };
+export function createSecretTextArea(options: SecretTextAreaOptions): import('./controls.js').Input {
+    checkOptions(options, ['label','labelVisibility','status', 'description', 'error', 'required', 'disabled', 'placeholder', 'readOnly', 'value', 'autocomplete', 'onInput', 'onChange','purpose']);
+    if(options.purpose!==undefined&&options.purpose!=='form')throw new Error('Unknown secret text area purpose.');
     const field = primitive.createTextArea(options), input = field.control as HTMLTextAreaElement;
+    if(options.purpose==='form'){field.element.classList.add('pui-textarea-form');input.rows=3;}
     field.element.classList.add('pui-secret-area');applyFieldPresentation(field.element,options);
     let shown = false, destroyed = false;
-    const toggle = primitive.createTextAction({ label: 'Show', onAction: () => { shown = !shown; render(); } });
-    field.element.append(toggle.element);
+    const action={ label: 'Show', onAction: () => { shown = !shown; render(); } };
+    const toggle=options.purpose==='form'?primitive.createButton(action):primitive.createTextAction(action);
+    if(options.purpose==='form'){
+        toggle.element.classList.add('pui-secondary-button','pui-secret-toggle');
+        const header=element('div','pui-secret-header',field.element.querySelector('.pui-field-label')!,toggle.element);
+        field.element.prepend(header);
+    }else field.element.append(toggle.element);
     toggle.element.setAttribute('aria-controls', input.id);
     const render = () => { field.element.classList.toggle('pui-revealed', shown); toggle.update({ label: shown ? 'Hide' : 'Show', disabled: input.disabled }); toggle.element.setAttribute('aria-pressed', String(shown)); };
     render();

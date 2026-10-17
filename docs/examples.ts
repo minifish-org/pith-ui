@@ -97,3 +97,28 @@ export function boundedDetails(ui:PithUI,host:HTMLElement){
 export function smallIntroduction(ui:PithUI,host:HTMLElement){
  return ui.mount(host,ui.createContentColumn({purpose:'intro',content:ui.createStack({children:[ui.createImage({purpose:'intro',label:'Logo',source:'/logo.svg'}),ui.createText({role:'label',text:'EXAMPLE'}),ui.createText({role:'heading',text:'A consistent starting point'}),ui.createText({role:'lead',text:'A short introduction.\nAn explicitly supplied second line.'}),ui.createSurface({purpose:'panel',content:ui.createStep({number:1,title:'Connect',description:'Choose a connection',onAction:()=>({ok:true})})}),ui.createActions({align:'center',children:[ui.createButton({context:'suggestion',label:'Explain this folder'})]})]})}));
 }
+
+/** A supplied graphic owns its painted edges; the library fixes logical slots. */
+export function naturalBrandGraphics(ui:PithUI,host:HTMLElement){
+ return ui.mount(host,ui.createStack({children:[ui.createBrand({image:ui.createImage({purpose:'brand',label:'Logo',source:'/brand.svg'}),label:'Example',qualifier:'Desk'}),ui.createImage({purpose:'intro',label:'Introduction mark',source:'/intro.svg',compactSource:'/intro-compact.svg'})]}));
+}
+
+/** Source-backed variants retain small composition and own descendant lifetimes. */
+export function boundedResourceEditor(ui:PithUI,host:HTMLElement){
+ const source=ui.createDisclosure({title:'View instructions',content:ui.createText({role:'code',text:'# Example'})});
+ const row=ui.createListRow({context:'resource',title:'AGENTS.md',meta:'/workspace/AGENTS.md',icon:'file',details:source});
+ const feedback=ui.createNotice({presentation:'inline',tone:'info',message:'Ready'});
+ const warning=ui.createConfirmDialog({purpose:'form',tone:'warning',title:'Allow operation?',content:ui.createText({text:'Safe owned explanation.'}),onConfirm:()=>({ok:true})});
+ const editor=ui.createFormSection({context:'editor',title:'',children:[ui.createToolbar({label:'Editor',leading:ui.createText({role:'label',text:'Add connection'}),trailing:ui.createTextAction({context:'link',label:'Open help'})}),feedback]});
+ const mounted=ui.mount(host,ui.createStack({children:[row,editor]}));mounted.attach(warning);return{mounted,warning};
+}
+
+/** Finite native field purposes preserve browser editing and selection behavior. */
+export function boundedNativeFields(ui:PithUI,host:HTMLElement){
+ return ui.mount(host,ui.createStack({children:[ui.createTextArea({purpose:'form',label:'Arguments',value:'[]'}),ui.createSecretTextArea({purpose:'form',label:'Environment',value:'{}'}),ui.createTextArea({purpose:'document',label:'Markdown',value:'# Saved document'}),ui.createListSelect({purpose:'catalog',label:'Choose model',options:[{value:'model',label:'Model'}]})]}));
+}
+
+/** Auxiliary actions share the form footer and inherit its pending gate. */
+export function editorFooter(ui:PithUI,host:HTMLElement,save:()=>Promise<ActionResult>,remove:()=>Promise<ActionResult>){
+ return ui.mount(host,ui.createForm({context:'dialog',children:[ui.createTextArea({purpose:'document',label:'Content'})],auxiliaryActions:ui.createButton({label:'Delete',intent:'danger',onAction:remove}),submitLabel:'Save',onCancel(){},onSubmit:save}));
+}

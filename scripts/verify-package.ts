@@ -92,6 +92,11 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createPane({content:document.body});",'HTMLElement'],
     ["createSlot({style:{padding:1}});",'style'],
     ["createSplitPane({navigation:createText({text:'Nav'}),content:createText({text:'Body'}),width:320});",'width'],
+    ["createButton({label:'Save',context:'link'});",'link'],
+    ["createSelect({label:'Models',options:[],purpose:'catalog'});",'purpose'],
+    ["createTextArea({label:'Notes',rows:3});",'rows'],
+    ["createSecretTextArea({label:'Environment',purpose:'document'});",'document'],
+    ["createConfirmDialog({title:'Confirm',content:createText({text:'Body'}),message:'Second body',onConfirm:()=>({ok:true})});",'message'],
     ["createButton({label:'Save',density:'compact'});",'density'],
     ["createButton({label:'Save',appearance:'secondary'});",'appearance'],
     ["createButton({label:'Save',style:{padding:8}});",'style'],
@@ -106,9 +111,11 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createSurface({content:createText({text:'Body'}),padding:8});",'padding'],
     ["createGrid({columns:3,children:[]});",'columns'],
     ["createBreadcrumb({label:'Location',items:[],fontSize:12});",'fontSize'],
+    ["createImage({purpose:'intro',label:'Logo',source:'/logo.svg',width:48});",'width'],
+    ["createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",'compactSource'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}

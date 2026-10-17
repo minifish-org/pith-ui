@@ -1,6 +1,6 @@
 import {
   createActions, createButton, createCheckbox, createCollectionState, createConfirmDialog,
-  createDialog, createDisclosure, createDivider, createFormSection, createIcon,
+  createDialog, createDisclosure, createDivider, createFormSection, createIcon, createSurface,
   createIconButton, createKeyValue, createListRow, createMenu, createNotice,
   createNumberInput, createPopover, createProgress, createScrollArea, createSearchInput,
   createSecretInput, createSelect, createListSelect, createStatus, createTextAction, createTextArea, createStack, createText, createForm, mount,
@@ -44,7 +44,7 @@ export const primitiveCases: ShowcaseCase[] = [
     id:'form',title:'表单与提交 Form',layer:'components',category:'布局',
     description:'原生校验、提交按钮、错误与异步 pending 由表单管理。失败保留草稿，连续点击不重复写入，关闭所属弹窗后忽略旧结果。',states:['normal','error','disabled','long'],controls:['outcome'],related:['form-section','text-input','number-input','select'],
     code:`import {mount,createTextInput,createForm} from 'pith-ui';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nconst name=createTextInput({label:'Name',required:true});\nconst form=createForm({children:[name],submitLabel:'Save',onSubmit:async()=>{console.log(name.read());return {ok:true};}});\nmount(host,form);`,
-    mount(context){const name=createTextInput({...field(context,'Connection name'),required:true});const form=createForm({children:[name],submitLabel:'Save connection',disabled:disabled(context),error:context.state==='error'?'演示保存失败，草稿保留。':'',onSubmit:()=>context.action()});return group([form]);},
+    mount(context){const name=createTextInput({...field(context,'Connection name'),required:true});const form=createForm({auxiliaryActions:createButton({label:'Delete',intent:'danger',onAction:()=>context.action()}),onCancel(){},children:[name],submitLabel:'Save connection',disabled:disabled(context),error:context.state==='error'?'演示保存失败，草稿保留。':'',onSubmit:()=>context.action()});return group([form]);},
   },
   {
     id: 'button', title: '按钮 Button', layer: 'components', category: '操作',
@@ -75,7 +75,7 @@ export const primitiveCases: ShowcaseCase[] = [
     id: 'text-action', title: '文字操作 Text action', layer: 'components', category: '操作',
     description: '较轻的辅助操作仍使用原生 button，不意外提交表单。', states, related: ['button', 'secret-input'],
     code: `import {mount, createTextAction} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createTextAction({label:'Change',onAction:()=>{}});\nconst mounted = mount(host,block);\n// mounted.destroy() releases the complete owned tree.`,
-    mount(context) { return group([createTextAction({ label: sample(context, 'Change workspace'), disabled: disabled(context), onAction: () => context.action() })]); },
+    mount(context) { return group([createTextAction({ label: sample(context, 'Change workspace'), disabled: disabled(context), onAction: () => context.action() }),createTextAction({context:'link',label:'Open running conversation',disabled:disabled(context),onAction:()=>context.action()})]); },
   },
   {
     id: 'text-input', title: '文本输入 Text input', layer: 'components', category: '输入',
@@ -105,7 +105,7 @@ export const primitiveCases: ShowcaseCase[] = [
     id: 'text-area', title: '多行输入 Text area', layer: 'components', category: '输入',
     description: '长文本、换行、可调整高度；状态更新保留内容与选区。', states: inputStates, related: ['text-edit-dialog'],
     code: `import {mount, createTextArea} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createTextArea({label:'Instructions',value:'First paragraph'});\nconst mounted = mount(host,block);\n// mounted.destroy() releases the complete owned tree.`,
-    mount(context) { return group([createTextArea({ ...field(context, 'Instructions'), value: sample(context, '第一段中文。\n\nSecond paragraph with `code` and emoji 🐟.') })]); },
+    mount(context) { return group([createTextArea({ ...field(context, 'Instructions'), value: sample(context, '第一段中文。\n\nSecond paragraph with `code` and emoji 🐟.') }),createTextArea({purpose:'form',label:'Structured form data',value:'["--help"]'}),createTextArea({purpose:'document',label:'Document editor',value:'# Demonstration document'})]); },
   },
   {
     id: 'select', title: '选择器 Select', layer: 'components', category: '输入',
@@ -121,7 +121,7 @@ export const primitiveCases: ShowcaseCase[] = [
       ];
       const error = context.state === 'error' ? '演示读取失败；当前选择保留，可以重新选择。' : '';
       return group([createSelect({ label: 'Provider', description: '单选下拉：点击或按 Enter 打开；方向键移动，Enter 确认，Esc 取消。禁用项不可选择。', value: 'pith', options: providerOptions, disabled: disabled(context), error, onChange: value => context.log(`Provider: ${value}`) }),
-        createListSelect({ label: 'Models (multi-row)', description: '16 CSS px 原生多选列表，使用系统键盘与修饰键；WebKit 不应用选项内边距，行距由平台决定。回调提供全部选中项，初始选中 Model 1、Model 3。', options, multiple: true, values:['0','2'], disabled: disabled(context), error, onChange: values => context.log(`演示所选模型：${values.join(', ') || '未选择'}`) })]);
+        createListSelect({ label: 'Models (multi-row)', description: '16 CSS px 原生多选列表，使用系统键盘与修饰键；WebKit 不应用选项内边距，行距由平台决定。回调提供全部选中项，初始选中 Model 1、Model 3。', options, multiple: true, values:['0','2'], disabled: disabled(context), error, onChange: values => context.log(`演示所选模型：${values.join(', ') || '未选择'}`) }),createListSelect({purpose:'catalog',label:'Model catalog (six rows)',options,value:'0'})]);
     },
   },
   {
@@ -153,7 +153,7 @@ export const primitiveCases: ShowcaseCase[] = [
     mount(context) {
       const action = createButton({ label: 'Preview', disabled: disabled(context), onAction: () => context.action() });
       const row = createListRow({onAction:()=>context.action(),onError:message=>context.log(message),disabled:context.state==='disabled', title: 'SKILL.md', description: sample(context, '/workspace/.pi/skills/example/SKILL.md'), icon: 'file', meta: 'Read only', actions: action, selected: true });
-      return group([row]);
+      return group([row,createListRow({context:'resource',title:'AGENTS.md',icon:'file',meta:'/workspace/AGENTS.md',details:createDisclosure({title:'View instructions',content:createText({role:'code',text:'# Demonstration instructions'})}),actions:createButton({context:'inline',label:'Open',onAction:()=>context.action()})})]);
     },
   },
   {
@@ -178,7 +178,7 @@ export const primitiveCases: ShowcaseCase[] = [
     id: 'notice', title: '反馈提示 Notice', layer: 'components', category: '反馈',
     description: '提示、成功、警告、错误。警告与错误采用 alert，其他状态使用 status。', states: ['normal', 'error', 'long'], related: ['status', 'collection-state'],
     code: `import {mount, createNotice} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createNotice({message:'Could not save. Draft retained.',tone:'error'});\nconst mounted = mount(host,block);\n// mounted.destroy() releases the complete owned tree.`,
-    mount(context) { return group((['info', 'success', 'warning', 'error'] as const).map(tone => createNotice({ message: sample(context, `${tone}: this is demonstration feedback.`), tone }))); },
+    mount(context) { return group([ ...(['info', 'success', 'warning', 'error'] as const).map(tone => createNotice({ message: sample(context, `${tone}: this is demonstration feedback.`), tone })),createNotice({presentation:'inline',message:'Plain status: demonstration connection test.',tone:'info'}),createNotice({presentation:'caption',message:'Plain error: the demonstration request failed.',tone:'error'}),createNotice({presentation:'compact',message:'Compact error: draft retained.',tone:'error'})]); },
   },
   {
     id: 'collection-state', title: '集合状态 Collection state', layer: 'components', category: '反馈',
@@ -225,7 +225,8 @@ export const primitiveCases: ShowcaseCase[] = [
     mount(context) {
       const confirm = createConfirmDialog({ title: 'Delete resource?', onConfirm: () => context.action() });
       const open = (): void => confirm.open({ title: 'Delete resource?', message: sample(context, 'Remove the selected resource permanently? Demonstration data only.'), disabled: disabled(context), pending: context.state === 'pending', error: context.state === 'error' ? 'Removal failed. Please try again.' : '' });
-      return group([createButton({ label: 'Open confirmation', intent: 'danger', onAction: open }), confirm], open);
+      const warning=createConfirmDialog({purpose:'form',tone:'warning',eyebrow:'DEMONSTRATION',title:'Enable access?',confirmLabel:'Enable access',content:createSurface({purpose:'notice',tone:'warning',content:createActions({children:[createIcon({name:'shield',context:'notice'}),createText({text:'Connected services can perform actions.'})]})}),onConfirm:()=>context.action()});
+      return group([createButton({ label: 'Open confirmation', intent: 'danger', onAction: open }),createButton({label:'Open warning confirmation',onAction:()=>warning.open()}), confirm,warning], open);
     },
   },
   {
@@ -253,7 +254,7 @@ export const primitiveCases: ShowcaseCase[] = [
       const endpoint = createTextInput({ ...field(context, 'Endpoint'), value: 'https://example.test/v1' });
       const children = [name, endpoint];
       const section = createFormSection({ title: 'Connection', description: sample(context, 'Configure the provider. These fields are demonstration data.'), children });
-      return group([section]);
+      return group([section,createFormSection({context:'editor',title:'',children:[createToolbar({label:'Editor section',leading:createText({role:'label',text:'Add connection'}),trailing:createButton({label:'New connection',onAction:()=>context.action()})}),createTextInput({label:'Name'})]})]);
     },
   },
   {
