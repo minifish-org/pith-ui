@@ -76,7 +76,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 
 ### createDocument
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L356)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L357)
 
 ```ts
 export declare function createDocument(options: DocumentOptions): Control<DocumentState>;
@@ -156,7 +156,7 @@ Related gallery: [reading-area](https://minifish-org.github.io/pith-ui/?item=rea
 
 ### createSecretTextArea
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L401)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L423)
 
 ```ts
 export declare function createSecretTextArea(options: SecretTextAreaOptions): import('./controls.js').Input;
@@ -168,7 +168,7 @@ Related gallery: [secret-text-area](https://minifish-org.github.io/pith-ui/?item
 
 ### DocumentOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L352)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L353)
 
 ```ts
 export interface DocumentOptions extends DocumentState {
@@ -188,6 +188,7 @@ export interface DocumentState {
     readonly text: string;
     readonly format: 'text' | 'markdown' | 'diff';
     readonly disabled?: boolean;
+    readonly error?: string;
 }
 ```
 
@@ -395,7 +396,7 @@ Referenced public types and APIs: [`Control`](#control).
 
 ### SecretTextAreaOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L400)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/consumer-parts.ts#L422)
 
 ```ts
 export type SecretTextAreaOptions = import('./controls.js').InputOptions & {
@@ -472,7 +473,7 @@ Related gallery: [checkbox](https://minifish-org.github.io/pith-ui/?item=checkbo
 
 ### createCollectionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L801)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L803)
 
 ```ts
 export declare function createCollectionState(options: CollectionState & {
@@ -487,7 +488,7 @@ Related gallery: [collection-state](https://minifish-org.github.io/pith-ui/?item
 
 ### createConfirmDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1055)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1057)
 
 ```ts
 export declare function createConfirmDialog(options: ConfirmOptions): ConfirmDialog;
@@ -513,7 +514,7 @@ Related gallery: [content-column](https://minifish-org.github.io/pith-ui/?item=c
 
 ### createContextMenu
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1163)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1165)
 
 ```ts
 export declare function createContextMenu(options: ContextMenuState & {
@@ -527,7 +528,7 @@ Related gallery: [context-menu](https://minifish-org.github.io/pith-ui/?item=con
 
 ### createCopyButton
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1218)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1220)
 
 ```ts
 export declare function createCopyButton(options: CopyButtonState & {
@@ -542,7 +543,7 @@ Related gallery: [controls-actions-page](https://minifish-org.github.io/pith-ui/
 
 ### createDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L963)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L965)
 
 ```ts
 export declare function createDialog(options: DialogState & {
@@ -559,7 +560,7 @@ Related gallery: [dialog](https://minifish-org.github.io/pith-ui/?item=dialog).
 
 ### createDiff
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1511)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1513)
 
 ```ts
 export declare function createDiff(options: DiffState): Control<DiffState>;
@@ -589,7 +590,7 @@ Related gallery: [controls-layout-contexts](https://minifish-org.github.io/pith-
 
 ### createDivider
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L879)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L881)
 
 ```ts
 export declare function createDivider(state?: DividerState): Control<DividerState>;
@@ -601,7 +602,7 @@ Related gallery: [divider](https://minifish-org.github.io/pith-ui/?item=divider)
 
 ### createForm
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L907)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L909)
 
 ```ts
 export declare function createForm(options: FormOptions): Form;
@@ -661,7 +662,7 @@ Related gallery: [controls-layout-contexts](https://minifish-org.github.io/pith-
 
 ### createKeyValue
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L887)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L889)
 
 ```ts
 export declare function createKeyValue(state: KeyValueState): Control<KeyValueState>;
@@ -673,7 +674,7 @@ Related gallery: [key-value](https://minifish-org.github.io/pith-ui/?item=key-va
 
 ### createList
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1380)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1382)
 
 ```ts
 export declare function createList(options: ListState): Control<ListState>;
@@ -685,7 +686,7 @@ Related gallery: [controls-layout-contexts](https://minifish-org.github.io/pith-
 
 ### createListRow
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L767)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L768)
 
 ```ts
 export declare function createListRow(options: ListRowState & {
@@ -734,7 +735,7 @@ Related gallery: [select](https://minifish-org.github.io/pith-ui/?item=select).
 
 ### createMarkdown
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1441)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1443)
 
 ```ts
 export declare function createMarkdown(options: MarkdownOptions): Control<MarkdownState>;
@@ -746,7 +747,7 @@ Related gallery: [markdown](https://minifish-org.github.io/pith-ui/?item=markdow
 
 ### createMenu
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1143)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1145)
 
 ```ts
 export declare function createMenu(options: MenuState & {
@@ -760,7 +761,7 @@ Related gallery: [menu](https://minifish-org.github.io/pith-ui/?item=menu).
 
 ### createNotice
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L815)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L817)
 
 ```ts
 export declare function createNotice(state: NoticeState): Control<NoticeState>;
@@ -798,7 +799,7 @@ Related gallery: [controls-form-page](https://minifish-org.github.io/pith-ui/?it
 
 ### createPane
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1279)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1281)
 
 ```ts
 export declare function createPane(options: PaneState & {
@@ -814,7 +815,7 @@ Related gallery: [pane](https://minifish-org.github.io/pith-ui/?item=pane).
 
 ### createPopover
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1103)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1105)
 
 ```ts
 export declare function createPopover(options: PopoverState & {
@@ -829,7 +830,7 @@ Related gallery: [controls-actions-page](https://minifish-org.github.io/pith-ui/
 
 ### createProgress
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L875)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L877)
 
 ```ts
 export declare function createProgress(state: ProgressState): Control<ProgressState>;
@@ -891,7 +892,7 @@ Related gallery: [controls-form-page](https://minifish-org.github.io/pith-ui/?it
 
 ### createSlot
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1250)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1252)
 
 ```ts
 export declare function createSlot(options?: SlotState & {
@@ -905,7 +906,7 @@ Related gallery: [slot](https://minifish-org.github.io/pith-ui/?item=slot).
 
 ### createSplitPane
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1310)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1312)
 
 ```ts
 export declare function createSplitPane(options: SplitPaneState & {
@@ -933,7 +934,7 @@ Related gallery: [controls-actions-page](https://minifish-org.github.io/pith-ui/
 
 ### createStatus
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L835)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L837)
 
 ```ts
 export declare function createStatus(state: StatusState): Control<StatusState>;
@@ -1027,7 +1028,7 @@ Related gallery: [text-area](https://minifish-org.github.io/pith-ui/?item=text-a
 
 ### createTextEditDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1013)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1015)
 
 ```ts
 export declare function createTextEditDialog(options?: TextEditOptions): TextEditDialog;
@@ -1063,7 +1064,7 @@ Related gallery: [button](https://minifish-org.github.io/pith-ui/?item=button), 
 
 ### createURLInput
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1529)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1531)
 
 ```ts
 export declare function createURLInput(options: InputOptions): Input;
@@ -1204,7 +1205,7 @@ Referenced public types and APIs: [`Control`](#control).
 
 ### CollectionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L796)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L798)
 
 ```ts
 export interface CollectionState {
@@ -1216,7 +1217,7 @@ export interface CollectionState {
 
 ### ConfirmationMessage
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1028)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1030)
 
 ```ts
 export type ConfirmationMessage = string | {
@@ -1228,7 +1229,7 @@ export type ConfirmationMessage = string | {
 
 ### ConfirmDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1041)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1043)
 
 ```ts
 export interface ConfirmDialog extends Control<ConfirmState> {
@@ -1243,7 +1244,7 @@ Referenced public types and APIs: [`ConfirmState`](#confirmstate), [`Control`](#
 
 ### ConfirmOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1048)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1050)
 
 ```ts
 export type ConfirmOptions = Omit<ConfirmState, 'message'> & {
@@ -1265,7 +1266,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult), [`ConfirmStat
 
 ### ConfirmState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1033)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1035)
 
 ```ts
 export interface ConfirmState extends DialogState {
@@ -1292,7 +1293,7 @@ export interface ContentColumnState {
 
 ### ContextMenu
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1158)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1160)
 
 ```ts
 export interface ContextMenu extends Control<ContextMenuState> {
@@ -1306,7 +1307,7 @@ Referenced public types and APIs: [`ContextMenuState`](#contextmenustate), [`Con
 
 ### ContextMenuState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1153)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1155)
 
 ```ts
 export interface ContextMenuState {
@@ -1333,7 +1334,7 @@ export interface Control<State = unknown> {
 
 ### CopyButtonState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1212)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1214)
 
 ```ts
 export interface CopyButtonState {
@@ -1346,7 +1347,7 @@ export interface CopyButtonState {
 
 ### Dialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L958)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L960)
 
 ```ts
 export interface Dialog extends Control<DialogState> {
@@ -1360,7 +1361,7 @@ Referenced public types and APIs: [`Control`](#control), [`DialogState`](#dialog
 
 ### DialogState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L952)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L954)
 
 ```ts
 export interface DialogState {
@@ -1373,7 +1374,7 @@ export interface DialogState {
 
 ### DiffState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1508)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1510)
 
 ```ts
 export interface DiffState {
@@ -1413,7 +1414,7 @@ Referenced public types and APIs: [`IconName`](#iconname).
 
 ### DividerState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L876)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L878)
 
 ```ts
 export interface DividerState {
@@ -1439,7 +1440,7 @@ export interface FieldState {
 
 ### Form
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L902)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L904)
 
 ```ts
 export interface Form extends Control<FormState> {
@@ -1453,7 +1454,7 @@ Referenced public types and APIs: [`Control`](#control), [`FormState`](#formstat
 
 ### FormOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L896)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L898)
 
 ```ts
 export interface FormOptions extends FormState, ChildrenOptions {
@@ -1480,7 +1481,7 @@ export interface FormSectionState {
 
 ### FormState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L888)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L890)
 
 ```ts
 export interface FormState {
@@ -1590,7 +1591,7 @@ export type Intent = 'neutral' | 'primary' | 'danger';
 
 ### KeyValueState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L880)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L882)
 
 ```ts
 export interface KeyValueState {
@@ -1604,7 +1605,7 @@ export interface KeyValueState {
 
 ### ListItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1372)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1374)
 
 ```ts
 export interface ListItem {
@@ -1622,6 +1623,7 @@ Referenced public types and APIs: [`Control`](#control).
 ```ts
 export interface ListRowState {
     readonly title: string;
+    readonly tooltip?: string;
     readonly description?: string;
     readonly meta?: string;
     readonly selected?: boolean;
@@ -1647,7 +1649,7 @@ Referenced public types and APIs: [`MultiSelectOptions`](#multiselectoptions), [
 
 ### ListState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1376)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1378)
 
 ```ts
 export interface ListState {
@@ -1660,7 +1662,7 @@ Referenced public types and APIs: [`ListItem`](#listitem).
 
 ### MarkdownLinkOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1429)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1431)
 
 ```ts
 export type MarkdownLinkOptions = {
@@ -1676,7 +1678,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult).
 
 ### MarkdownOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1436)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1438)
 
 ```ts
 export type MarkdownOptions = MarkdownState & MarkdownLinkOptions & {
@@ -1690,7 +1692,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult), [`MarkdownLin
 
 ### MarkdownState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1425)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1427)
 
 ```ts
 export interface MarkdownState {
@@ -1701,7 +1703,7 @@ export interface MarkdownState {
 
 ### Menu
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1129)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1131)
 
 ```ts
 export interface Menu extends Control<MenuState> {
@@ -1715,7 +1717,7 @@ Referenced public types and APIs: [`Control`](#control), [`MenuState`](#menustat
 
 ### MenuItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1118)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1120)
 
 ```ts
 export interface MenuItem {
@@ -1732,7 +1734,7 @@ Referenced public types and APIs: [`Action`](#action).
 
 ### MenuState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1126)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1128)
 
 ```ts
 export interface MenuState extends PopoverState {
@@ -1816,7 +1818,7 @@ Referenced public types and APIs: [`SelectState`](#selectstate).
 
 ### NoticeState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L810)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L812)
 
 ```ts
 export interface NoticeState {
@@ -1878,7 +1880,7 @@ export interface OrdinarySurfaceState {
 
 ### PaneState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1275)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1277)
 
 ```ts
 export interface PaneState {
@@ -1889,7 +1891,7 @@ export interface PaneState {
 
 ### Popover
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1098)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1100)
 
 ```ts
 export interface Popover extends Control<PopoverState> {
@@ -1903,7 +1905,7 @@ Referenced public types and APIs: [`Control`](#control), [`PopoverState`](#popov
 
 ### PopoverState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1090)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1092)
 
 ```ts
 export interface PopoverState {
@@ -1920,7 +1922,7 @@ Referenced public types and APIs: [`IconName`](#iconname).
 
 ### ProgressState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L870)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L872)
 
 ```ts
 export interface ProgressState {
@@ -2009,7 +2011,7 @@ Referenced public types and APIs: [`FieldState`](#fieldstate), [`IconName`](#ico
 
 ### Slot
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1247)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1249)
 
 ```ts
 export interface Slot extends Control<SlotState> {
@@ -2021,7 +2023,7 @@ Referenced public types and APIs: [`Control`](#control), [`SlotState`](#slotstat
 
 ### SlotState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1244)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1246)
 
 ```ts
 /** Fixed layout pieces contain only other library controls; no application state. */
@@ -2032,7 +2034,7 @@ export interface SlotState {
 
 ### SplitPane
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1307)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1309)
 
 ```ts
 export interface SplitPane extends Control<SplitPaneState> {
@@ -2044,7 +2046,7 @@ Referenced public types and APIs: [`Control`](#control), [`SplitPaneState`](#spl
 
 ### SplitPaneState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1304)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1306)
 
 ```ts
 export interface SplitPaneState {
@@ -2065,7 +2067,7 @@ export interface StackState {
 
 ### StatusState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L829)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L831)
 
 ```ts
 export interface StatusState {
@@ -2136,7 +2138,7 @@ Referenced public types and APIs: [`InputOptions`](#inputoptions).
 
 ### TextEditDialog
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1000)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L1002)
 
 ```ts
 export interface TextEditDialog extends Control<TextEditState> {
@@ -2157,7 +2159,7 @@ Referenced public types and APIs: [`Control`](#control), [`TextEditState`](#text
 
 ### TextEditOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L992)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L994)
 
 ```ts
 export interface TextEditOptions extends Partial<TextEditState> {
@@ -2174,7 +2176,7 @@ Referenced public types and APIs: [`ActionResult`](#actionresult), [`TextEditSta
 
 ### TextEditState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L984)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.5.0-next.1/src/controls.ts#L986)
 
 ```ts
 export interface TextEditState extends DialogState {
