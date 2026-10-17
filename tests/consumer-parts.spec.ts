@@ -66,3 +66,19 @@ test('the window mount supplies fixed viewport layout without consumer CSS',asyn
   await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createText({text:'Full window'}),{viewport:'window'});});
   const viewport=page.viewportSize()!;const bounds=await page.locator('body').boundingBox();expect(bounds?.x).toBe(0);expect(bounds?.y).toBe(0);expect(bounds?.width).toBe(viewport.width);expect(bounds?.height).toBe(viewport.height);
 });
+
+test('URL constraints block submission and secret reset restores masking',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const submitted:string[]=[];const url=u.createURLInput({label:'Endpoint',value:'not-a-url',required:true});const secret=u.createSecretTextArea({label:'Private JSON',value:'{"KEY":"private"}'});const password=u.createSecretInput({label:'Password',value:'old'});u.mount(document.body,u.createStack({children:[u.createForm({children:[url],onSubmit:async()=>{submitted.push(url.read());return{ok:true};}}),secret,password]}));Object.assign(window,{consumer:{url,secret,password,submitted}});});
+  await page.getByRole('button',{name:'Save',exact:true}).click();expect(await page.evaluate(()=>Reflect.get(window,'consumer').submitted)).toEqual([]);
+  await page.getByRole('textbox',{name:'Endpoint',exact:true}).fill('https://example.test');await page.getByRole('button',{name:'Save',exact:true}).click();
+  expect(await page.evaluate(()=>Reflect.get(window,'consumer').submitted)).toEqual(['https://example.test']);
+  const json=page.getByRole('textbox',{name:'Private JSON',exact:true});await page.getByRole('button',{name:'Show',exact:true}).first().click();
+  await page.evaluate(()=>{const c=Reflect.get(window,'consumer');c.secret.reset('');c.password.reset('');});await expect(json).toHaveValue('');
+  await expect(page.getByRole('button',{name:'Show',exact:true})).toHaveCount(2);
+});
+
+test('explicit prompt reset clears an earlier submission error',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const prompt=u.createPromptInput({label:'Message',value:'Draft',onSubmit:async()=>({ok:false,error:'Could not send'})});u.mount(document.body,prompt);Object.assign(window,{prompt});});
+  await page.getByRole('textbox',{name:'Message',exact:true}).press('Enter');await expect(page.getByText('Could not send',{exact:true})).toBeVisible();
+  await page.evaluate(()=>Reflect.get(window,'prompt').reset('Other draft'));await expect(page.getByText('Could not send',{exact:true})).not.toBeVisible();
+});
