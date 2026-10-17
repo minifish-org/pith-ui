@@ -112,7 +112,8 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createTextEditDialog({rows:5});",'rows'],
     ["createContentColumn({purpose:'reading',content:createText({text:'Read'}),width:700});",'width'],
     ["createSurface({content:createText({text:'Body'}),padding:8});",'padding'],
-    ["createGrid({columns:3,children:[]});",'columns'],
+    // Literal-value errors name the accepted type, rather than the property.
+    ["createGrid({columns:3,children:[]});",'Type \'number\' is not assignable to type \'"pair"\'.'],
     ["createBreadcrumb({label:'Location',items:[],fontSize:12});",'fontSize'],
     ["createImage({purpose:'intro',label:'Logo',source:'/logo.svg',width:48});",'width'],
     ["createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",'compactSource'],
