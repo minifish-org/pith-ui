@@ -166,3 +166,34 @@ test('native downloads retain exact names, delivery results and delayed or termi
     });expect(value).toEqual({first: {ok: true},second: {ok: true},names: ['Report 中文.md','diagnostics.json'],urls: true,revoked: 2,unique: 2,late: {ok: false,error: 'Application has been destroyed.'}});
   }
 });
+
+for (const appearance of ['light','dark'] as const) for (const width of [1280,390]) for (const mode of ['conversation','welcome'] as const) test(`${appearance} ${width} complete ${mode} frame retains the actual region layout`,async ({page}) => {
+  await page.setViewportSize({width,height: 800});
+  const project = async () => {await page.evaluate(({mode,png}) => {
+    const {app} = window.deskPartsHarness;
+    app.workspace.updateNavigation({groups: [{id: 'workspace',name: 'Workspace 中文',path: '/workspace',selected: true,children: [{id: 'active',title: 'Review project',active: true}]}],empty: null});
+    app.workspace.updateShell({workspace: 'Workspace 中文',conversation: 'Review project',reconnecting: true,busy: mode === 'conversation' ? {key: 'running',message: 'A task is running in an overlapping folder.',actionLabel: 'Open running conversation'} : null,error: {message: mode === 'conversation' ? 'An inline failure\nwith retained details.' : ''}});
+    app.workspace.updateWelcome({workspace: {name: 'Workspace 中文',path: '/workspace'},hasApiKey: true,hasConnections: true,modelName: 'Model A'});
+    app.workspace.updateConversation({id: 'active',messages: mode === 'conversation' ? [{id: 'user',role: 'user',text: 'Review this project 中文',actions: {copy: true,edit: true}},{id: 'assistant',role: 'assistant',text: 'A **verified** response.\n\n```ts\nconst ready = true;\n```',actions: {copy: 'Copy response'}}] : [],working: false});
+    app.workspace.updateComposer({action: 'send',actionDisabled: false,model: {label: 'Model A',description: 'provider / model-a'},thinking: {options: [{value: 'off',label: 'Thinking off'},{value: 'high',label: 'Thinking: high'}],value: 'high'}});
+    app.workspace.resetDraft('Review project\nPreserve the current behavior.');
+    app.workspace.updatePermission({mode: 'workspace',description: 'Workspace changes require approval.'});
+    app.workspace.updateAttachments({items: mode === 'conversation' ? [{id: 'draft-image',name: 'Diagram.png',url: png}] : []});
+    app.workspace.updateImageGuidance(mode === 'conversation' ? 'The selected model supports image attachments.' : '');
+    app.workspace.updatePending({items: mode === 'conversation' ? [{id: 'pending',text: 'Queued follow-up 中文',mode: 'followUp',imageCount: 1}] : [],running: false,busy: false});
+    app.workspace.updateApproval({approval: mode === 'conversation' ? {id: 'approval',toolName: 'run_command',warning: 'Review this command.',canAlwaysAllow: false,argsText: '{"command":"inspect"}'} : null});
+    app.workspace.updateFailure({visible: mode === 'conversation',message: 'A task failed.',advice: 'Review settings or continue this conversation.',canContinue: true});
+    app.workspace.updateRuntime({visible: mode === 'conversation',summary: 'Completed · Model A · 1,200 tokens',duration: '1m 12s',speed: '18.5',inputTokens: '900',outputTokens: '300',cacheRead: '100',cacheWrite: '20',contextTokens: '1,100',contextWindow: '128,000',compactions: '2',toolFailures: '1',recordedCost: '~$0.001234',latestCost: 'Unknown'});
+    app.workspace.updateCosts({visible: mode === 'conversation',report: {unknownRequests: 0,requests: []}});
+    app.workspace.updateNotices(mode === 'conversation' ? [{id: 'completed',runID: 'run-completed',title: 'Completed task',workspace: 'Workspace 中文'}] : []);
+    app.files.updateArtifacts({ownerId: 'active',files: [{name: 'Report.md',path: '/workspace/Report.md'}],loading: false,error: '',copyMode: 'path'},{});
+    app.workspace.updateAvailability({busy: false,global: false,active: false,conversations: [],workspaces: []});
+  },{mode,png});await page.waitForTimeout(40);};
+  const measure = () => page.evaluate(async () => {
+    await document.fonts.ready;for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
+    const inspect = (node: Element) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);return {tag: node.localName,box: [box.x,box.y,box.width,box.height].map(value => Math.round(value*100)/100),
+      styles: ['display','position','font-family','font-size','font-weight','line-height','color','background-color','border-top-width','border-top-color','border-radius','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-right','margin-bottom','margin-left','gap','min-width','max-width','min-height','max-height','overflow-x','overflow-y','flex-grow','flex-shrink','flex-basis','align-items','justify-content'].map(property => style.getPropertyValue(property))};};
+    return ['.pui-app','.pui-sidebar','.pui-brand','.pui-topbar','.pui-breadcrumb','.pui-conversation-actions','.pui-artifacts-control','.pui-chat-scroll','.pui-conversation-region','.pui-welcome','.pui-messages','.pui-composer-region','.pui-composer-panels','.pui-workspace-busy','.pui-inline-error','.pui-task-failure','.pui-run-status','.pui-queued-messages','.pui-composer','.pui-composer-input','.pui-composer-toolbar','.pui-composer-note','.pui-completion-notices'].map(selector => ({selector,nodes: [...document.querySelectorAll(selector)].map(inspect)}));
+  });
+  await setup(page,true,appearance);await project();const before = await measure();await setup(page,false,appearance);await project();expect(await measure()).toEqual(before);
+});
