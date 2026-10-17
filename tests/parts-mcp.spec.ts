@@ -38,7 +38,14 @@ async function openMCP(page: Page,old: boolean,options: Options = {}): Promise<v
     if (old) {const path = '/src/app/index.ts';const {createApplication} = await import(path);h.session = createApplication(mount,{appearance}).settings.openConnections(h.initial,callbacks);}
     else {const path = '/examples/assemblies/mcp.ts';const {mountMCPConnections} = await import(path);h.session = mountMCPConnections(mount,h.initial,callbacks,{appearance});}
     if (!options.cold) h.session.setConnections(h.entries);
-    if (options.editor) h.session.edit(options.editor);
+    if (options.editor) {
+      // Native focus scrolling must use the painted inventory, as it does when
+      // Desk's loaded connection list is edited by its user.
+      await document.fonts.ready;
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      h.session.edit(options.editor);
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }
     window.mcpPartsHarness = h;
   },{old,options,entries});
   await expect(page.getByRole('dialog',{name: 'Connections',exact: true})).toBeVisible();
@@ -100,9 +107,26 @@ for (const appearance of ['light','dark'] as const) for (const [name,options] of
   await expect(page.getByRole('dialog')).toHaveCSS('background-color',appearance === 'dark' ? 'rgb(34, 37, 42)' : 'rgb(255, 255, 255)');
 });
 
+async function settledMCPScroll(page: Page): Promise<{scrollTop: number;scrollHeight: number;clientHeight: number}> {
+  const state = await page.evaluate(async () => {
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const modal = document.querySelector<HTMLDialogElement>('dialog[open]')!;
+    const read = () => ({scrollTop: modal.scrollTop,scrollHeight: modal.scrollHeight,clientHeight: modal.clientHeight});
+    const before = read();
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    return {before,after: read()};
+  });
+  expect(state.after,'native dialog scrolling is settled across painted frames').toEqual(state.before);
+  return state.after;
+}
+
 for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`MCP ${viewport.width} preserves responsive editor and expanded OAuth disclosure geometry`,async ({page}) => {
-  await page.setViewportSize(viewport);await openMCP(page,true,{editor: httpEditor,applicationContext: true});await page.getByText('OAuth settings (optional)',{exact: true}).click();const old = await presentation(page);
-  await openMCP(page,false,{editor: httpEditor,applicationContext: true});await page.getByText('OAuth settings (optional)',{exact: true}).click();expect(await presentation(page)).toEqual(old);
+  await page.setViewportSize(viewport);await openMCP(page,true,{editor: httpEditor,applicationContext: true});
+  await expect(page.getByRole('textbox',{name: 'Server URL',exact: true})).toBeFocused();const oldFocusScroll = await settledMCPScroll(page);
+  await page.getByText('OAuth settings (optional)',{exact: true}).click();await expect(page.locator('dialog[open] details.pui-provider-advanced')).toHaveJSProperty('open',true);const oldExpandedScroll = await settledMCPScroll(page),old = await presentation(page);
+  await openMCP(page,false,{editor: httpEditor,applicationContext: true});
+  await expect(page.getByRole('textbox',{name: 'Server URL',exact: true})).toBeFocused();expect(await settledMCPScroll(page)).toEqual(oldFocusScroll);
+  await page.getByText('OAuth settings (optional)',{exact: true}).click();await expect(page.locator('dialog[open] details.pui-provider-advanced')).toHaveJSProperty('open',true);expect(await settledMCPScroll(page)).toEqual(oldExpandedScroll);expect(await presentation(page)).toEqual(old);
 });
 
 test('switching transport preserves both drafts while only native active controls validate and submit raw JSON',async ({page}) => {
