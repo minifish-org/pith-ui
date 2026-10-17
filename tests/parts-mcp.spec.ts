@@ -170,3 +170,25 @@ test('clear-token and clear-secrets ports are explicit, and closing wipes retain
   await page.evaluate(() => {const h = window.mcpPartsHarness;h.releases[0]!.resolve({ok: false,error: 'Late failure'});h.session.update({error: 'Late snapshot'});h.session.edit();h.session.setConnections([]);h.session.clearSecrets();h.session.destroy();});
   expect(await page.evaluate(() => ({read: window.mcpPartsHarness.session.read(),closed: window.mcpPartsHarness.closed,open: window.mcpPartsHarness.session.isOpen()}))).toMatchObject({read: {bearerToken: '',env: ''},closed: 1,open: false});
 });
+
+test('a composed MCP dialog shares the application theme and retires secrets and pending operations when its parent is destroyed',async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async ({entries,stdioEditor}) => {
+    const recipePath = '/examples/assemblies/mcp.ts',partsPath = '/src/parts/index.ts';const {composeMCPConnections} = await import(recipePath),p = await import(partsPath);
+    const h = {initial: {},entries,values: [],releases: [],closed: 0} as unknown as Harness;
+    const session = composeMCPConnections({}, {onSubmit(draft: Draft) {h.values.push({action: 'save',value: draft});return new Promise<Result>(resolve => h.releases.push({action: 'save',resolve}));},onClose() {h.closed++;}});
+    h.session = session;const mount = document.body.appendChild(document.createElement('div'));
+    h.shared = p.mountParts(mount,p.createStackPart({children: [p.createTextPart({text: 'Application body'}),session.part]}),{appearance: 'light'});
+    session.open();session.setConnections(entries);session.edit(stdioEditor);window.mcpPartsHarness = h;
+  },{entries,stdioEditor});
+  const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});await env.fill('{"TOKEN":"private shared draft"}');
+  await env.evaluate(node => {const control = node as HTMLTextAreaElement;window.mcpPartsHarness.control = control;control.focus();control.setSelectionRange(2,9);});
+  await page.evaluate(() => window.mcpPartsHarness.shared!.setAppearance('dark'));await expect(page.getByRole('dialog')).toHaveCSS('background-color','rgb(34, 37, 42)');await expect(env).toBeFocused();
+  expect(await env.evaluate(node => ({same: node === window.mcpPartsHarness.control,selection: [(node as HTMLTextAreaElement).selectionStart,(node as HTMLTextAreaElement).selectionEnd]}))).toEqual({same: true,selection: [2,9]});
+  await page.getByRole('button',{name: 'Save connection',exact: true}).click();await page.evaluate(() => window.mcpPartsHarness.shared!.destroy());
+  const value = await page.evaluate(async () => {
+    const h = window.mcpPartsHarness;h.releases[0]!.resolve({ok: false,error: 'Retired write failure'});await new Promise(resolve => setTimeout(resolve,0));h.session.update({error: 'Late snapshot'});h.session.setConnections([]);h.session.edit();h.session.fail('Late failure');h.session.destroy();
+    return {closed: h.closed,open: h.session.isOpen(),secret: h.control!.value,draft: h.session.read()};
+  });
+  expect(value).toMatchObject({closed: 1,open: false,secret: '',draft: {bearerToken: '',env: ''}});await expect(page.locator('dialog,input,textarea')).toHaveCount(0);
+});
