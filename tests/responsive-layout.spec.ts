@@ -42,3 +42,20 @@ test('a short conversation keeps long panels scrollable above a multiline input'
  expect(await panel.evaluate(node=>node.scrollHeight>node.clientHeight)).toBe(true);
  expect(await page.evaluate(()=>document.documentElement.scrollHeight)).toBe(560);
 });
+
+test('form contexts preserve measured label weight, native legend padding and field spacing',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const dialog=u.createDialog({purpose:'form',title:'Measured fields',content:u.createStack({children:[u.createTextInput({label:'Connection name'}),u.createFormSection({context:'settings',title:'Provider',children:[u.createTextInput({label:'API key'})]}),u.createFormSection({context:'model',title:'Custom model',children:[u.createTextInput({label:'Model ID'})]})]})});const owner=u.mount(document.body,u.createText({text:'Host'}));owner.attach(dialog);dialog.open();});
+ for(const label of ['Connection name','API key'])await expect(page.locator('.pui-field').filter({has:page.getByRole('textbox',{name:label,exact:true})}).locator('label')).toHaveCSS('font-weight','600');
+ await expect(page.locator('.pui-section-model label')).toHaveCSS('font-weight','400');await expect(page.locator('.pui-section-model>legend')).toHaveCSS('padding-left','2px');
+ for(const [label,gap]of [['Connection name',8],['API key',12],['Model ID',8]]as const){const field=page.locator('.pui-field').filter({has:page.getByRole('textbox',{name:label,exact:true})});const a=(await field.locator('label').boundingBox())!,b=(await field.getByRole('textbox').boundingBox())!;expect(b.y-a.y-a.height).toBe(gap);}
+});
+
+test('input footer text and effort controls retain the measured 34px row and separate eight pixel note',async({page})=>{
+ await page.setViewportSize({width:1280,height:800});await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createContentColumn({purpose:'input',content:u.createStack({children:[u.createSurface({content:u.createPromptInput({label:'Message'}),footer:u.createToolbar({label:'Actions',trailing:u.createActions({children:[u.createTextAction({context:'inline',label:'Demo model'}),u.createSelect({context:'inline',label:'Effort',options:[{value:'high',label:'Thinking: high'}]}),u.createIconButton({context:'inline',label:'Send',icon:'arrow'})]})})}),u.createText({role:'caption',text:'Permission description'})]})}));});
+ expect((await page.getByRole('button',{name:'Demo model'}).boundingBox())!.height).toBe(34);expect((await page.getByRole('combobox',{name:'Effort'}).boundingBox())!.height).toBe(34);const surface=(await page.locator('.pui-input-surface').boundingBox())!,caption=(await page.getByText('Permission description',{exact:true}).boundingBox())!;expect(caption.y-surface.y-surface.height).toBe(8);
+});
+
+test('only a selected navigation primary action marks the current page',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const current=u.createListRow({context:'navigation',title:'Current conversation',selected:true,onAction(){}});Reflect.set(window,'currentNavigationRow',current);u.mount(document.body,u.createStack({children:[current,u.createListRow({title:'Selected generic item',selected:true,onAction(){}})]}));});
+ await expect(page.getByRole('button',{name:'Current conversation'})).toHaveAttribute('aria-current','page');await expect(page.getByRole('button',{name:'Selected generic item'})).not.toHaveAttribute('aria-current');await page.evaluate(()=>Reflect.get(window,'currentNavigationRow').update({title:'Current conversation',selected:false}));await expect(page.getByRole('button',{name:'Current conversation'})).not.toHaveAttribute('aria-current');
+});
