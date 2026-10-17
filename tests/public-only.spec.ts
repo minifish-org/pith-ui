@@ -20,3 +20,11 @@ test('removed app and internal deep links do not restore a hidden implementation
     await expect(page.locator('iframe')).toHaveCount(0);
   }
 });
+
+test('side by side themes reach each public mount even when system theme differs',async({page})=>{
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.goto('/?item=button&compare=theme');
+  const colors=await page.locator('.gallery-demo-host').evaluateAll(nodes=>nodes.map(node=>getComputedStyle(node.querySelector('button')!).backgroundColor));
+  expect(colors).toHaveLength(2);
+  expect(colors[0]).not.toBe(colors[1]);
+});
