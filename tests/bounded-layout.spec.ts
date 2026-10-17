@@ -71,3 +71,8 @@ test('message copying uses an explicit icon while file copying keeps the existin
  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createActions({children:[u.createCopyButton({presentation:'icon',label:'Copy message',value:'Message',onCopy:()=>({ok:true})}as never),u.createCopyButton({label:'Copy path',value:'/tmp/file',onCopy:()=>({ok:true})})]}));});
  await expect(page.getByRole('button',{name:'Copy message'}).locator('svg')).toHaveCount(1);await expect(page.getByRole('button',{name:'Copy path'}).locator('svg')).toHaveCount(0);await page.getByRole('button',{name:'Copy message'}).click();
 });
+
+test('a selected navigation disclosure keeps its selected state independently of opening and actions',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const control=u.createDisclosure({context:'navigation',selected:true,title:'Current workspace',icon:'folder',content:u.createText({text:'Items'})}as never);u.mount(document.body,control);Reflect.set(window,'selectedDisclosure',control);});
+ await expect(page.locator('summary')).toHaveCSS('color','rgb(41, 44, 51)');await page.evaluate(()=>Reflect.get(window,'selectedDisclosure').update({title:'Current workspace',selected:false}));await expect(page.locator('.pui-disclosure-navigation')).not.toHaveClass(/pui-selected/);
+});
