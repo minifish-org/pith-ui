@@ -115,6 +115,7 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createSurface({content:createText({text:'Ordinary'}),selected:true});",'No overload matches this call.'],
     ["createSurface({content:createText({text:'Ordinary'})}).update({selected:true});","Type 'true' is not assignable to type 'undefined'."],
     ["createListRow({title:'Row',tooltip:document.body});","Type 'HTMLElement' is not assignable to type 'string'."],
+    ["createDocument({text:'Body',format:'text',error:document.body});","Type 'HTMLElement' is not assignable to type 'string'."],
     // Literal-value errors name the accepted type, rather than the property.
     ["createGrid({columns:3,children:[]});",'Type \'number\' is not assignable to type \'"pair"\'.'],
     ["createBreadcrumb({label:'Location',items:[],fontSize:12});",'fontSize'],
@@ -122,7 +123,7 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",'compactSource'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable,createListRow} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable,createListRow,createDocument} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}
