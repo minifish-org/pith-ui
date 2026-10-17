@@ -1,0 +1,44 @@
+import {test,expect} from '@playwright/test';
+
+// Fixed geometry from the pre-migration desktop baseline, including its
+// medium window and mobile breakpoints. Consumers cannot provide pixels.
+test('navigation and reading regions preserve the accepted responsive measures',async({page})=>{
+ await page.setViewportSize({width:1280,height:800});await page.goto('/tests/fixture.html');
+ await page.evaluate(async()=>{
+  const u=await import('../src/index.js');
+  const navigation=u.createPane({purpose:'navigation',header:u.createText({text:'Brand'}),content:u.createText({text:'Workspaces'})});
+  const content=u.createPane({purpose:'conversation',header:u.createToolbar({label:'Navigation',leading:u.createBreadcrumb({label:'Location',items:[{key:'workspace',label:'Workspace',icon:'folder'},{key:'conversation',label:'Conversation'}]}),trailing:u.createIconButton({label:'Files',icon:'file'})}),content:u.createReadingArea({label:'Conversation',identity:'one',column:'reading',viewport:'fill',items:[]}),footer:u.createContentColumn({purpose:'input',content:u.createPromptInput({label:'Message'})})});
+  const split=u.createSplitPane({navigation,content});Reflect.set(window,'responsiveSplit',split);u.mount(document.body,split,{viewport:'window'});
+ });
+ for(const width of [1280,1000,900,740,720,560]){
+  await page.setViewportSize({width,height:800});
+  const small=width<=720,navWidth=small?0:width<=1000?230:260;
+  const nav=page.locator('.pui-split-navigation'),main=page.locator('.pui-split-content'),input=page.locator('.pui-column-input');
+  if(small)await expect(nav).toBeHidden();else{await expect(nav).toBeVisible();expect((await nav.boundingBox())!.width).toBe(navWidth);}
+  expect((await main.boundingBox())!.x).toBe(navWidth);
+  expect((await input.boundingBox())!.width).toBe(small?width-28:width<=1000?width-navWidth-50:Math.min(810,width-navWidth-80));
+  expect((await page.locator('.pui-pane-conversation>.pui-pane-header').boundingBox())!.height).toBe(small?64:79);
+  expect(await main.evaluate(node=>(node as HTMLElement).inert)).toBe(false);
+  if(!small)expect(await nav.evaluate(node=>(node as HTMLElement).inert)).toBe(false);
+ }
+ await page.evaluate(()=>Reflect.get(window,'responsiveSplit').setNavigationOpen(true));
+ expect((await page.locator('.pui-split-navigation').boundingBox())!.width).toBe(260);
+ expect(await page.locator('.pui-split-content').evaluate(node=>(node as HTMLElement).inert)).toBe(true);
+});
+
+test('a short conversation keeps long panels scrollable above a multiline input',async({page})=>{
+ await page.setViewportSize({width:900,height:560});await page.goto('/tests/fixture.html');
+ await page.evaluate(async()=>{
+  const u=await import('../src/index.js');
+  const panel=u.createScrollArea({label:'Pending task details',content:u.createStack({children:Array.from({length:30},(_,i)=>u.createText({text:'Long approval detail '+i}))})});
+  const editor=u.createSurface({content:u.createPromptInput({label:'Message',value:'A multiline draft\n'.repeat(8)}),footer:u.createToolbar({label:'Actions',trailing:u.createIconButton({label:'Send message',context:'inline',icon:'arrow'})})});
+  const content=u.createPane({purpose:'conversation',header:u.createToolbar({label:'Navigation',children:[u.createText({text:'Conversation'})]}),content:u.createReadingArea({label:'Reading',identity:'one',column:'reading',viewport:'fill',items:[]}),footer:u.createContentColumn({purpose:'input',content:u.createStack({context:'flow',children:[u.createSlot({content:panel}),editor,u.createText({role:'caption',text:'Permission description'})]})})});
+  u.mount(document.body,u.createSplitPane({navigation:u.createPane({purpose:'navigation',content:u.createText({text:'Saved conversations'})}),content}),{viewport:'window'});
+ });
+ const send=(await page.getByRole('button',{name:'Send message'}).boundingBox())!;
+ expect(send.y+send.height).toBeLessThanOrEqual(560);
+ const panel=page.getByRole('region',{name:'Pending task details'});
+ expect((await panel.boundingBox())!.height).toBeGreaterThan(0);
+ expect(await panel.evaluate(node=>node.scrollHeight>node.clientHeight)).toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollHeight)).toBe(560);
+});
