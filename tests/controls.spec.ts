@@ -173,3 +173,22 @@ test('idle actions activate once after availability changes and release their fi
   await expect(page.getByText('Stale first failure',{exact:true})).toHaveCount(0);
   expect(await page.evaluate(()=>Reflect.get(window,'activation').calls())).toBe(1);
 });
+
+for(const kind of ['action','copy'] as const)test(`closing and reopening an owned ${kind} retires its pending feedback`,async({page})=>{
+  await page.evaluate(async kind=>{
+    const u=await import('../src/index.js');let finish!:(value:import('../src/index.js').ActionResult)=>void;const errors:string[]=[];
+    const task=()=>new Promise<import('../src/index.js').ActionResult>(resolve=>finish=resolve);
+    const action=kind==='copy'?u.createCopyButton({value:'Saved text',label:'Deferred action',onCopy:task,onError:message=>errors.push(message)}):u.createButton({label:'Deferred action',onAction:task,onError:message=>errors.push(message)});
+    const dialog=u.createDialog({title:'Retained surface',content:action});
+    u.mount(document.body,u.createStack({children:[u.createButton({label:'Open retained surface',onAction:()=>dialog.open()}),dialog]}));
+    Object.assign(window,{retained:{finish:()=>finish({ok:false,error:'Previous target failed'}),errors}});
+  },kind);
+  await page.getByRole('button',{name:'Open retained surface',exact:true}).click();
+  await page.getByRole('button',{name:'Deferred action',exact:true}).click();
+  await page.getByRole('button',{name:'Close Retained surface',exact:true}).click();
+  await page.getByRole('button',{name:'Open retained surface',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Deferred action',exact:true})).toBeEnabled();
+  await page.evaluate(()=>Reflect.get(window,'retained').finish());
+  expect(await page.evaluate(()=>Reflect.get(window,'retained').errors)).toEqual([]);
+  await expect(page.getByText('Previous target failed',{exact:true})).toHaveCount(0);
+});
