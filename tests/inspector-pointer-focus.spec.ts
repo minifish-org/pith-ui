@@ -21,6 +21,8 @@ for(const purpose of ['ordinary','inspector'] as const){
     await open.click();
     expect(await page.evaluate(()=>Reflect.get(window,'pointerFixture').calls)).toEqual(['open']);
     await expect(page.getByRole('button',{name:'Files',exact:true})).toHaveAttribute('aria-expanded','true');
+    await open.focus();await open.evaluate((node:HTMLButtonElement)=>node.blur());
+    await expect(page.getByRole('button',{name:'Files',exact:true})).toHaveAttribute('aria-expanded','false');
   });
 
   test(`${purpose} popover still dismisses real focus departure, outside activation, Escape and destroyed listeners`,async({page})=>{
