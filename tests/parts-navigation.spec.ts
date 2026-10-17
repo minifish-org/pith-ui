@@ -4,7 +4,7 @@ interface NavigationItem {id: string;title?: string;active: boolean;status?: {ki
 interface NavigationGroup {id: string;name: string;path: string;selected: boolean;children: NavigationItem[];canRemove?: boolean}
 interface FrameState {workspace?: string;conversation?: string;reconnecting?: boolean;navigation: {groups: NavigationGroup[];empty: 'workspaces'|'search'|null;disabled?: boolean};compactDisabled?: boolean}
 interface FrameHarness {update(state: FrameState): void;search(value: string): void;setSidebarOpen(open: boolean): void;closeNavigationMenu(): void;setAppearance(mode: 'light'|'dark'|'system'): void;destroy(): void}
-declare global {interface Window {framePartsHarness: {frame: FrameHarness;state: FrameState;events: string[];retained?: {group: Element;row: Element;button: Element;status: Element;scroll: number}}}}
+declare global {interface Window {framePartsHarness: {frame: FrameHarness;state: FrameState;events: string[];openModal(): void;retained?: {group: Element;row: Element;button: Element;status: Element;scroll: number}}}}
 const populated: FrameState = {workspace: 'Project 中文',conversation: 'Original conversation',reconnecting: true,navigation: {empty: null,groups: [
   {id: 'work',name: 'Project 中文',path: '/original/project',selected: true,children: [
     {id: 'active',title: 'Original conversation',active: true,status: {kind: 'approval'}},
@@ -24,13 +24,18 @@ async function openFrame(page: Page, old: boolean, state: FrameState = populated
     const mount = document.body.appendChild(document.createElement('div'));mount.id = 'app';const events: string[] = [];
     const callbacks = {onAction(action: string) {events.push('action:'+action);},onSelectConversation(id: string) {events.push('select:'+id);},onNewConversation(id: string) {events.push('new:'+id);},
       onWorkspaceAction(action: string,id: string) {events.push('workspace:'+action+':'+id);},onConversationAction(action: string,id: string) {events.push('conversation:'+action+':'+id);},onSearch(value: string) {events.push('search:'+value);}};
-    let frame: FrameHarness;
+    let frame: FrameHarness,openModal: () => void;
     if (old) {
       const path = '/src/app/index.ts';const {createApplication} = await import(path);const app = createApplication(mount,{appearance,brand: {name: 'Pith',qualifier: 'Desk',mark: {symbol: 'pith',alt: ''}},workspace: callbacks});
       app.workspace.updateShell(state);app.workspace.updateNavigation(state.navigation);
       frame = {...app.workspace,update(next: FrameState) {app.workspace.updateShell(next);app.workspace.updateNavigation(next.navigation);},setAppearance: app.setAppearance,destroy: app.destroy};
-    } else {const path = '/examples/assemblies/frame.ts';const {mountFrame} = await import(path);frame = mountFrame(mount,state,callbacks,{appearance});}
-    window.framePartsHarness = {frame,state,events};
+      openModal = () => {app.settings.openSettings({baseUrl: 'https://example.test',hasApiKey: false,ready: true},{});};
+    } else {
+      const path = '/examples/assemblies/frame.ts',settingsPath = '/examples/assemblies/settings.ts';const {mountFrame} = await import(path),{composeSettings} = await import(settingsPath);
+      const settings = composeSettings({baseUrl: 'https://example.test',hasApiKey: false,ready: true},{},'Pith Desk');
+      frame = mountFrame(mount,state,callbacks,{appearance},{dialogs: [settings.part]});openModal = settings.open;
+    }
+    window.framePartsHarness = {frame,state,events,openModal};
   },{old,state,appearance});
 }
 async function framePresentation(page: Page): Promise<unknown> {
@@ -170,5 +175,52 @@ test('compact action keeps its own async pending across ordinary shell snapshots
     await page.evaluate(() => (window as unknown as {compactPending: {snapshot(): void}}).compactPending.snapshot());await expect(compact).toBeDisabled();
     await page.evaluate(() => (window as unknown as {compactPending: {finish(): void}}).compactPending.finish());await expect(compact).toBeEnabled();
     expect(await page.evaluate(() => (window as unknown as {compactPending: {errors: string[]}}).compactPending.errors)).toEqual(['Compaction failed']);
+  }
+});
+
+for (const appearance of ['light','dark'] as const) for (const width of [1280,390]) test(`${appearance} ${width} open navigation menu matches old layout, position and paint`,async ({page},testInfo) => {
+  await page.setViewportSize({width,height: 844});
+  const capture = async (old: boolean) => {
+    await openFrame(page,old,populated,appearance);
+    if (width < 720) await page.evaluate(() => window.framePartsHarness.frame.setSidebarOpen(true));
+    await page.evaluate(() => {for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();});
+    await page.getByRole('button',{name: 'Actions for Original conversation',exact: true}).click();
+    const menu = page.getByRole('menu',{name: 'Conversation actions'});await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeFocused();
+    await page.mouse.move(width-1,843);
+    const presentation = await menu.evaluate(node => {
+      const inspect = (item: Element) => {const box = item.getBoundingClientRect(),style = getComputedStyle(item);return {tag: item.localName,classes: [...item.classList].sort(),text: item === node ? '' : item.textContent,
+        box: [box.x,box.y,box.width,box.height].map(value => Math.round(value*100)/100),role: item.getAttribute('role'),label: item.getAttribute('aria-label'),
+        styles: ['position','display','z-index','font-family','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-top-color','border-radius','min-width','max-height','overflow-y','box-shadow'].map(key => style.getPropertyValue(key)),
+        ...(item instanceof HTMLButtonElement ? {disabled: item.disabled,title: item.getAttribute('title')} : {})};};
+      return {panel: inspect(node),items: [...node.children].map(inspect),focused: document.activeElement?.textContent};
+    });
+    return {presentation,pixels: await menu.screenshot({animations: 'disabled',caret: 'hide'})};
+  };
+  const old = await capture(true),parts = await capture(false);expect(parts.presentation).toEqual(old.presentation);
+  if (!old.pixels.equals(parts.pixels)) {await testInfo.attach('old-menu',{body: old.pixels,contentType: 'image/png'});await testInfo.attach('parts-menu',{body: parts.pixels,contentType: 'image/png'});}
+  expect(parts.pixels.equals(old.pixels),'menu painted pixels').toBe(true);
+});
+
+test('navigation menu keyboard, disabled rows, outside focus and modal exclusion match the old application',async ({page}) => {
+  const state: FrameState = {...populated,navigation: {...populated.navigation,groups: populated.navigation.groups.map(group => ({...group,children: group.children.map(entry => entry.id === 'active' ? {...entry,actions: {history: false}} : entry)}))}};
+  for (const old of [true,false]) {
+    await openFrame(page,old,state);const source = page.getByRole('button',{name: 'Actions for Original conversation',exact: true}),menu = page.getByRole('menu',{name: 'Conversation actions'});
+    await source.click();await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeFocused();await page.keyboard.press('ArrowDown');await expect(page.getByRole('menuitem',{name: 'Export Markdown',exact: true})).toBeFocused();
+    await page.keyboard.press('End');await expect(page.getByRole('menuitem',{name: 'Delete conversation',exact: true})).toBeFocused();await page.keyboard.press('Home');await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeFocused();
+    await page.keyboard.press('ArrowUp');await expect(page.getByRole('menuitem',{name: 'Delete conversation',exact: true})).toBeFocused();await page.keyboard.press('Escape');await expect(menu).toBeHidden();await expect(source).toBeFocused();
+    await source.click();await page.getByRole('searchbox',{name: 'Search conversation titles'}).focus();await expect(menu).toBeHidden();
+    await source.click();await page.keyboard.press('Tab');await expect(menu).toBeHidden();
+    await source.click();await page.evaluate(() => window.framePartsHarness.openModal());await expect(page.getByRole('dialog',{name: 'Settings',exact: true})).toBeVisible();await expect(menu).toBeHidden();
+    await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name: 'Settings',exact: true})).not.toBeVisible();await expect(menu).toBeHidden();
+  }
+});
+
+for (const movement of ['resize','scroll'] as const) test(`navigation menu dismisses on ${movement} like the actual old application`,async ({page}) => {
+  for (const old of [true,false]) {
+    await page.setViewportSize({width: 1280,height: 800});await openFrame(page,old);await page.getByRole('button',{name: 'Actions for Original conversation',exact: true}).click();
+    const menu = page.getByRole('menu',{name: 'Conversation actions'});await expect(menu).toBeVisible();
+    if (movement === 'resize') await page.setViewportSize({width: 1200,height: 800});
+    else await page.locator('nav').evaluate(node => node.dispatchEvent(new Event('scroll',{bubbles: true})));
+    await expect(menu,old ? 'baseline dismisses moved anchor' : 'assembled menu dismisses moved anchor').toBeHidden();
   }
 });

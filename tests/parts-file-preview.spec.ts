@@ -83,6 +83,20 @@ test('bounded preview containers and pagination reject presentation escapes and 
   expect(result).toEqual({foreign: true,retained: true,css: true,windowSize: true,pages: [1,1],previousDisabled: false,nextDisabled: true,literal: 'Literal <img src=x onerror=alert(1)>',html: true,root: 'pui-feature-toolbar pui-preview-pagination',children: ['button','span','button'],leaks: false});
 });
 
+test('viewport literal text and composed footnotes share one root and reject invalid children without mutation', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),note = p.createTextPart({role: 'footnote',text: 'Truncated source'});
+    const viewport = p.createContentViewportPart({purpose: 'preview',content: {message: 'Read failed',children: [note]}}),mount = document.body.appendChild(document.createElement('div'));p.mountParts(mount,viewport);
+    const native = mount.querySelector('p'),text = mount.firstElementChild!.firstChild;let foreign = false,duplicate = false;
+    try {viewport.replace({message: 'Changed',children: [{}]});} catch {foreign = true;}
+    try {viewport.replace({message: 'Changed',children: [note,note]});} catch {duplicate = true;}
+    const retained = native === mount.querySelector('p') && text === mount.firstElementChild!.firstChild && mount.textContent === 'Read failedTruncated source';
+    viewport.replace({message: 'Read failed',children: [note]});const same = text === mount.firstElementChild!.firstChild;
+    return {foreign,duplicate,retained,same,nodes: [...mount.firstElementChild!.childNodes].map(node => node.nodeType === Node.TEXT_NODE ? '#text' : (node as Element).localName)};
+  });expect(result).toEqual({foreign: true,duplicate: true,retained: true,same: true,nodes: ['#text','p']});
+});
+
 for (const appearance of ['light','dark'] as const) for (const kind of ['loading','text','markdown','diff','image','error'] as const) test(`${appearance} ${kind} file preview assembly preserves the actual application content, actions and layout`, async ({page}) => {
   await setup(page,true,kind,appearance);const old = await presentation(page);
   await setup(page,false,kind,appearance);expect(await presentation(page)).toEqual(old);
