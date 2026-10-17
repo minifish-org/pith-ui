@@ -11,3 +11,9 @@ test('input guidance stays a plain left-aligned caption with the original note g
  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createContentColumn({purpose:'input',content:u.createStack({context:'flow',children:[u.createSurface({content:u.createPromptInput({label:'Message'})}),u.createSlot({content:u.createText({role:'caption',text:'Choose an image-capable model.'})})]})}));});
  const note=page.getByText('Choose an image-capable model.',{exact:true});await expect(note).toHaveCSS('font-size','12px');expect(await note.evaluate(n=>{const slot=n.closest('.pui-slot')!,s=getComputedStyle(slot);return{margin:s.marginTop,align:getComputedStyle(n).textAlign,border:s.borderTopWidth,background:s.backgroundColor};})).toEqual({margin:'8px',align:'start',border:'0px',background:'rgba(0, 0, 0, 0)'});
 });
+
+test('a local input error keeps its source-defined space before editing content',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createSurface({content:u.createStack({context:'flow',children:[Reflect.get(u,'createNotice')({presentation:'caption',tone:'error',message:'Draft retained'}),u.createPromptInput({label:'Message'})]})}));});
+ const error=page.getByRole('alert');expect(await error.evaluate(n=>{const s=getComputedStyle(n);return{margin:s.marginTop,font:s.fontSize,line:s.lineHeight,border:s.borderTopWidth,padding:s.padding,background:s.backgroundColor};})).toEqual({margin:'16px',font:'12px',line:'18px',border:'0px',padding:'0px',background:'rgba(0, 0, 0, 0)'});
+ expect((await error.boundingBox())!.y+(await error.boundingBox())!.height).toBeLessThanOrEqual((await page.getByRole('textbox',{name:'Message'}).boundingBox())!.y);
+});
