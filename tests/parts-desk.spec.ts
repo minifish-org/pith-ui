@@ -315,3 +315,33 @@ test('an open resource editor keeps the old workspace-scoped Save availability w
       draft: 'Unsaved Markdown 中文',selection: [2,9],retained: true,presentation: value.before})));
   }
 });
+
+test('an editor without a workspace ID retains the old active-scope Save fallback',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);
+    const rows = await page.evaluate(() => {
+      const {app} = window.deskPartsHarness;
+      app.resources.openEditor({workspaceId: '',workspacePath: '/resource-workspace',path: '/resource-workspace/AGENTS.md',
+        kind: 'instructions',content: 'Retained draft',editable: true,workspaceBusy: false});
+      const dialog = document.querySelector<HTMLDialogElement>('dialog[open]')!,save = dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!,
+        remove = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Delete resource')!,body = dialog.querySelector('textarea')!;
+      const cases = [
+        {name: 'idle fallback',availability: {}},
+        {name: 'active scope running',availability: {active: true}},
+        {name: 'workspace and global scopes do not gate active fallback',availability: {active: false,global: true,workspaces: ['resource-workspace']}},
+        {name: 'host busy gates active fallback',availability: {busy: true}},
+        {name: 'active fallback clears',availability: {active: false,busy: false}},
+      ];
+      const result = cases.map(entry => {app.workspace.updateAvailability(entry.availability);return {name: entry.name,saveDisabled: save.disabled,
+        deleteDisabled: remove.disabled,readOnly: body.readOnly,value: body.value};});
+      app.destroy();return result;
+    });
+    expect(rows).toEqual([
+      {name: 'idle fallback',saveDisabled: false},
+      {name: 'active scope running',saveDisabled: true},
+      {name: 'workspace and global scopes do not gate active fallback',saveDisabled: false},
+      {name: 'host busy gates active fallback',saveDisabled: true},
+      {name: 'active fallback clears',saveDisabled: false},
+    ].map(entry => ({...entry,deleteDisabled: false,readOnly: false,value: 'Retained draft'})));
+  }
+});
