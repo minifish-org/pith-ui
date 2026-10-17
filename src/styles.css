@@ -499,6 +499,8 @@
 .pui .pui-custom-model > .pui-destructive-button { margin-top: var(--pui-field-gap); }
 .pui .pui-custom-model label { display: block; margin-bottom: var(--pui-space-md); font-size: var(--pui-text-medium); color: var(--pui-muted); }
 .pui .pui-custom-model input:not([type=checkbox]) { width: 100%; margin-top: var(--pui-space-sm); }
+.pui .pui-custom-model .pui-field-label { margin-top: 0; font-weight: inherit; }
+.pui .pui-custom-model input.pui-control { display: inline-block; }
 .pui .pui-modal textarea.pui-resource-editor { width: 100%; min-height: 300px; padding: var(--pui-space-md); resize: vertical; font-family: var(--pui-font-code); font-size: var(--pui-text-medium); line-height: var(--pui-line-height); color: var(--pui-text); background: var(--pui-surface-input); border: 1px solid var(--pui-border); border-radius: 10px; }
 .pui .pui-custom-model label.pui-checkbox-field { display: flex; }
 .pui .pui-branch-node { padding: var(--pui-space-lg); margin: var(--pui-space-sm) 0; border: 1px solid var(--pui-border); border-radius: 12px; }
