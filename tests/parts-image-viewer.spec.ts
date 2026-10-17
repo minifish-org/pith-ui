@@ -46,6 +46,18 @@ async function presentation(page: Page): Promise<unknown> {
   });
 }
 
+test('media toolbar composes a genuine status text and actions with one intrinsic action group', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const value = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),status = p.createTextPart({text: '100% · 12 × 8'}),button = p.createButtonPart({label: 'Fit',variant: 'secondary'});
+    const toolbar = p.createMediaToolbarPart({status,actions: [button]}),mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,toolbar);
+    const result = {root: mount.firstElementChild!.className,children: [...mount.firstElementChild!.children].map(node => node.localName),status: mount.querySelector('[role=status]')!.textContent,actions: mount.querySelector('div > div')!.querySelectorAll('button').length,leaks: Object.values(toolbar).some(value => value instanceof Node)};tree.destroy();
+    const free = p.createTextPart({text: 'Free'});let rejected = false;try {p.createMediaToolbarPart({status: free,actions: [free]});} catch {rejected = true;}
+    const remount = document.body.appendChild(document.createElement('div')),remounted = p.mountParts(remount,free);const reusable = remount.textContent === 'Free';remounted.destroy();return {...result,rejected,reusable};
+  });
+  expect(value).toEqual({root: 'pui-image-viewer-toolbar',children: ['span','div'],status: '100% · 12 × 8',actions: 1,leaks: false,rejected: true,reusable: true});
+});
+
 for (const appearance of ['light','dark'] as const) for (const tiny of [false,true]) test(`${appearance} ${tiny ? 'tiny' : 'large'} image viewer assembly preserves actual application fit and toolbar`, async ({page}) => {
   await openViewer(page,true,appearance,tiny);const fit = await presentation(page);
   await page.getByRole('button',{name: 'Original size',exact: true}).click();const original = await presentation(page);
