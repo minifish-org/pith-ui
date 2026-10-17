@@ -148,3 +148,26 @@ test('bounded modal placeholders retain the small source text while ordinary fie
   expect(await page.getByRole('textbox', {name: 'Folder path', exact: true}).evaluate(node => getComputedStyle(node, '::placeholder').fontSize)).toBe('12px');
   expect(await page.getByRole('textbox', {name: 'Ordinary text', exact: true, includeHidden: true}).evaluate(node => getComputedStyle(node, '::placeholder').fontSize)).toBe('14px');
 });
+
+test('small form hints keep their source top rhythm after actions and collapsed native field margins', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const u = await import('../src/index.js');
+    const dialog = u.createDialog({purpose: 'collection', title: 'Connection source', content: u.createForm({context: 'dialog', onSubmit: () => ({ok: true}), children: [
+      u.createTextInput({label: 'Server URL'}), u.createText({role: 'description', text: 'A saved endpoint is retained.'}),
+      u.createButton({label: 'Add model'}), u.createText({role: 'caption', text: 'Limits and capabilities are supplied by the application.'}),
+    ]})});
+    const owner = u.mount(document.body, u.createText({role: 'description', text: 'Ordinary description'})); owner.attach(dialog); dialog.open();
+  });
+  const description = page.getByText('A saved endpoint is retained.', {exact: true}), note = page.getByText('Limits and capabilities are supplied by the application.', {exact: true});
+  for (const paragraph of [description, note]) {
+    await expect(paragraph).toHaveCSS('font-size', '12px');
+    await expect(paragraph).toHaveCSS('line-height', '18px');
+    await expect(paragraph).toHaveCSS('margin', '8px 0px 0px');
+  }
+  const field = (await page.getByRole('textbox', {name: 'Server URL', exact: true}).boundingBox())!, hint = (await description.boundingBox())!;
+  expect(hint.y - field.y - field.height).toBe(8);
+  const action = (await page.getByRole('button', {name: 'Add model', exact: true}).boundingBox())!, caption = (await note.boundingBox())!;
+  expect(caption.y - action.y - action.height).toBe(8);
+  await expect(page.getByText('Ordinary description', {exact: true})).toHaveCSS('margin', '0px');
+});
