@@ -299,7 +299,8 @@
 .pui .pui-list-row-actions { order:2; }
 .pui .pui-status-inline { padding:0;border-radius:0;background:transparent; }
 .pui .pui-status-indicator { width:6px;height:6px;min-width:6px;min-height:6px;padding:0;border-radius:50%;font-size:0;background:var(--pui-accent); }
-.pui .pui-status-indicator.pui-status-warning { width:12px;height:12px;min-width:12px;background:transparent;border:1px solid var(--pui-warning-text); }
+.pui .pui-status-indicator.pui-status-warning { width:12px;height:12px;min-width:12px;background:transparent;border:0; }
+.pui .pui-status-indicator.pui-status-warning>.pui-icon { width:12px;height:12px;color:var(--pui-warning-text); }
 .pui .pui-status-indicator.pui-status-busy { width:10px;height:10px;min-width:10px;background:transparent;border:1.5px solid var(--pui-accent);border-right-color:transparent;animation:pui-indicator-spin 1s linear infinite; }
 @keyframes pui-indicator-spin { to{transform:rotate(360deg)} }
 @media(prefers-reduced-motion:reduce){.pui .pui-status-indicator.pui-status-busy{animation:none}.pui .pui-disclosure-chevron{transition:none}}
@@ -443,9 +444,6 @@
 .pui .pui-disclosure-inline { position:relative;top:calc(-1 * var(--pui-space-sm));margin-bottom:var(--pui-space-sm); }
 .pui .pui-status-indicator.pui-status-busy { width:12px;height:12px;min-width:12px;border:0;animation:none;display:inline-flex;align-items:center;justify-content:center; }
 .pui .pui-status-indicator.pui-status-busy>.pui-status-marker { width:13px;height:13px;flex-shrink:0;border:2px solid var(--pui-accent);border-right-color:transparent;border-radius:50%;animation:pui-indicator-spin 1s linear infinite; }
-.pui .pui-status-indicator.pui-status-warning { position:relative; }
-.pui .pui-status-indicator.pui-status-warning::before { content:'';position:absolute;left:4px;top:2px;width:1px;height:4px;background:var(--pui-warning-text); }
-.pui .pui-status-indicator.pui-status-warning::after { content:'';position:absolute;left:4px;bottom:2px;width:1px;height:1px;background:var(--pui-warning-text); }
 .pui .pui-column-intro>.pui-control-stack>.pui-slot>.pui-stack-flow>.pui-actions,.pui .pui-column-intro>.pui-control-stack>.pui-slot>.pui-panel-surface { margin-top:var(--pui-space-xl); }
 @media(prefers-reduced-motion:reduce){.pui .pui-status-indicator.pui-status-busy>.pui-status-marker{animation:none}}
 .pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-required-mark { display:none; }
