@@ -26,7 +26,9 @@ async function setup(page: Page, old: boolean, appearance: 'light' | 'dark' = 'l
       // Retain only a cloned baseline shell context. Destroy the original app
       // so no old event listener can help the composed parts pass behavior.
       const shell = mount.querySelector('.pui-app')!.cloneNode(true) as HTMLElement;app.destroy();mount.replaceChildren(shell);
-      const oldControl = shell.querySelector('.pui-artifacts-control')!,slot = document.createElement('div');oldControl.replaceWith(slot);
+      // Mount the formal root directly in the actual flex action container.
+      // A block validation wrapper changes native computed min-height:auto.
+      const slot = shell.querySelector('.pui-conversation-actions')!;
       const path = '/src/parts/index.ts',recipePath = '/examples/assemblies/artifacts.ts',p = await import(path),{composeArtifacts} = await import(recipePath);
       const announcement = p.createAnnouncementPart({message: ''}),announcerMount = document.body.appendChild(document.createElement('div')),announcerTree = p.mountParts(announcerMount,announcement,{appearance});
       const related = p.createDialogPart({purpose: 'preview',title: 'Related preview',children: [p.createTextPart({text: 'Related content'})]}),dialogMount = shell.appendChild(document.createElement('div')),dialogTree = p.mountParts(dialogMount,related,{appearance});h.related = related;
@@ -36,6 +38,7 @@ async function setup(page: Page, old: boolean, appearance: 'light' | 'dark' = 'l
   },{old,appearance,variant});
 }
 async function open(page: Page): Promise<void> {await page.locator('.pui-artifacts-toggle').click();await expect(page.locator('.pui-artifacts-panel')).toBeVisible();await page.mouse.move(0,0);}
+async function settleNativeFocus(page: Page): Promise<void> {await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));}
 async function presentation(page: Page): Promise<unknown> {
   return page.evaluate(async () => {
     await document.fonts.ready;for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
@@ -47,7 +50,7 @@ async function presentation(page: Page): Promise<unknown> {
       ...(node instanceof HTMLButtonElement ? {label: node.getAttribute('aria-label'),title: node.title,disabled: node.disabled} : {}),
       ...(node.hasAttribute('role') ? {role: node.getAttribute('role')} : {}),
     };};
-    return {root: inspect(root),nodes: [...root.querySelectorAll('.pui-artifacts-toggle,.pui-artifacts-count,.pui-artifacts-panel,.pui-artifacts-heading,h2,h2 > span,.pui-artifacts-status,.pui-artifacts-content,.pui-file-card,.pui-file-info,strong,.pui-file-path,.pui-file-actions,button,p.pui-form-error')].map(inspect),svg: [...root.querySelectorAll('svg')].map(node => node.innerHTML),labelled: panel.getAttribute('aria-labelledby') === panel.querySelector('h2')!.id,controlled: root.querySelector('.pui-artifacts-toggle')!.getAttribute('aria-controls') === panel.id,focused: document.activeElement === panel};
+    return {anchor: [origin.x,origin.y].map(value => Math.round(value * 100) / 100),root: inspect(root),nodes: [...root.querySelectorAll('.pui-artifacts-toggle,.pui-artifacts-count,.pui-artifacts-panel,.pui-artifacts-heading,h2,h2 > span,.pui-artifacts-status,.pui-artifacts-content,.pui-file-card,.pui-file-info,strong,.pui-file-path,.pui-file-actions,button,p.pui-form-error')].map(inspect),svg: [...root.querySelectorAll('svg')].map(node => node.innerHTML),labelled: panel.getAttribute('aria-labelledby') === panel.querySelector('h2')!.id,controlled: root.querySelector('.pui-artifacts-toggle')!.getAttribute('aria-controls') === panel.id,focused: document.activeElement === panel};
   });
 }
 
@@ -103,36 +106,62 @@ test('artifacts visibility, Escape, outside focus and related dialog exclusions 
 });
 
 test('keyed artifact metadata preserves native rows, text selection, scroll and busy action ownership', async ({page}) => {
+  const pendingVisibility: boolean[] = [];
   for (const old of [true,false]) {
     await setup(page,old,'light','many');await open(page);
     await page.evaluate(() => {const h = window.artifactsHarness,row = document.querySelector('.pui-file-card')!,path = row.querySelector('.pui-file-path')!,range = document.createRange();range.setStart(path.firstChild!,0);range.setEnd(path.firstChild!,10);getSelection()!.removeAllRanges();getSelection()!.addRange(range);h.selection = getSelection()!.toString();h.row = row;document.querySelector('.pui-artifacts-content')!.scrollTop = 140;h.state = {...h.state,loading: true,files: h.state.files.map((file,index) => index ? file : {...file,name: 'Updated result.md'}),disabled: true};h.session.update(h.state);});
     expect(await page.evaluate(() => ({row: window.artifactsHarness.row === document.querySelector('.pui-file-card'),selection: window.artifactsHarness.selection === getSelection()!.toString(),scroll: document.querySelector('.pui-artifacts-content')!.scrollTop}))).toEqual({row: true,selection: true,scroll: 140});
     for (const button of await page.locator('.pui-file-card').first().getByRole('button').all()) await expect(button).toBeDisabled();await expect(page.locator('.pui-artifacts-toggle')).toBeEnabled();
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,disabled: false};h.session.update(h.state);document.querySelector('.pui-artifacts-content')!.scrollTop = 0;});
-    const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Open',exact: true}).click();await expect(row.getByRole('button',{name: 'Open',exact: true})).toBeDisabled();await expect(row.getByRole('button',{name: 'Reveal',exact: true})).toBeEnabled();
-    await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,disabled: false};h.session.update(h.state);});await expect(row.getByRole('button',{name: 'Open',exact: true})).toBeDisabled();
-    await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));await expect(row.getByRole('button',{name: 'Open',exact: true})).toBeEnabled();
+    const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Open',exact: true}).click();
+    // Chromium blurs a focused button when it becomes disabled; the existing
+    // focus-out surface then closes. WebKit retains panel focus. Availability
+    // is still a native control state, even while the section is hidden.
+    await expect(row.locator('button').nth(1)).toBeDisabled();await expect(row.locator('button').nth(2)).toBeEnabled();await settleNativeFocus(page);pendingVisibility.push(await page.evaluate(() => window.artifactsHarness.session.isOpen()));
+    await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,disabled: false};h.session.update(h.state);});await expect(row.locator('button').nth(1)).toBeDisabled();
+    await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));await expect(row.locator('button').nth(1)).toBeEnabled();
     expect(await page.evaluate(() => window.artifactsHarness.calls)).toEqual([{action: 'open',target: {owner: {kind: 'artifact',id: 'original-owner'},name: 'Updated result.md',path: '/workspace/reports/result-0.md'},frozen: true,argc: 2}]);
   }
+  expect(pendingVisibility[1]).toBe(pendingVisibility[0]);
 });
 
 test('copy mode snapshots keep a pending native button and capture the original action and announcement', async ({page}) => {
+  const pendingVisibility: boolean[] = [];
   for (const old of [true,false]) {
-    await setup(page,old);await open(page);const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Copy file',exact: true}).click();await expect(row.getByRole('button',{name: 'Reveal',exact: true})).toBeEnabled();
+    await setup(page,old);await open(page);const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Copy file',exact: true}).click();await expect(row.locator('button').nth(2)).toBeEnabled();await settleNativeFocus(page);pendingVisibility.push(await page.evaluate(() => window.artifactsHarness.session.isOpen()));
     await page.evaluate(() => {const h = window.artifactsHarness;h.button = document.querySelector('.pui-file-card')!.querySelectorAll('button')[3];h.state = {...h.state,copyMode: 'path'};h.session.update(h.state);});
     expect(await page.evaluate(() => window.artifactsHarness.button === document.querySelector('.pui-file-card')!.querySelectorAll('button')[3])).toBe(true);
-    await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));await expect(row.getByRole('button',{name: 'File copied.',exact: true})).toHaveText('Copied');
-    await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,loading: true};h.session.update(h.state);});await expect(row.getByRole('button',{name: 'File copied.',exact: true})).toHaveText('Copied');
+    await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));await expect(row.locator('button').nth(3)).toHaveText('Copied');await expect(row.locator('button').nth(3)).toHaveAttribute('aria-label','File copied.');
+    await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,loading: true};h.session.update(h.state);});await expect(row.locator('button').nth(3)).toHaveText('Copied');await expect(row.locator('button').nth(3)).toHaveAttribute('aria-label','File copied.');
     expect(await page.evaluate(() => window.artifactsHarness.calls.map(call => call.action))).toEqual(['copy']);
   }
+  expect(pendingVisibility[1]).toBe(pendingVisibility[0]);
 });
 
 test('owner switches, row removal and parent disposal retire pending artifact outcomes', async ({page}) => {
   for (const old of [true,false]) {
     await setup(page,old);await open(page);await page.locator('.pui-file-card').first().getByRole('button',{name: 'Preview',exact: true}).click();
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,ownerId: 'next-owner',files: [{name: 'Next.md',path: '/next.md'}]};h.session.update(h.state);h.resolve!({ok: false,error: 'Retired old error'});});await expect(page.locator('.pui-artifacts-panel')).toBeHidden();await open(page);await expect(page.locator('.pui-artifacts-panel')).not.toContainText('Retired old error');
-    await page.getByRole('button',{name: 'Copy file',exact: true}).click();await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: []};h.session.update(h.state);h.resolve!({ok: false,error: 'Removed row error'});});await expect(page.locator('.pui-artifacts-control')).toBeHidden();
+    await page.getByRole('button',{name: 'Open',exact: true}).click();await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: []};h.session.update(h.state);h.resolve!({ok: false,error: 'Removed row error'});});await expect(page.locator('.pui-artifacts-control')).toBeHidden();
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: [{name: 'Final.md',path: '/final.md'}]};h.session.update(h.state);});await open(page);await page.getByRole('button',{name: 'Reveal',exact: true}).click();
     await page.evaluate(() => {const h = window.artifactsHarness;h.tree.destroy();h.tree.destroy();h.resolve!({ok: false,error: 'Disposed error'});h.session.update({...h.state,files: [{name: 'Late.md',path: '/late.md'}]});h.session.close();h.session.destroy();});await expect(page.locator('.pui-artifacts-panel')).toHaveCount(0);expect(await page.evaluate(() => window.artifactsHarness.session.isOpen())).toBe(false);
+  }
+});
+
+test('the frozen old removed-copy defect is recorded while genuine part disposal prevents stale control revival', async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);await open(page);await page.locator('.pui-file-card').first().getByRole('button',{name: 'Copy file',exact: true}).click();
+    await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: []};h.session.update(h.state);});await expect(page.locator('.pui-artifacts-control')).toBeHidden();
+    await page.evaluate(() => window.artifactsHarness.resolve!({ok: false,error: 'Removed copy row error'}));
+    if (old) {
+      // Baseline app/files.ts artifactCopy.onError guards owner only. A copy
+      // rejection for a removed row revives the control with an obsolete error.
+      await expect(page.locator('.pui-artifacts-control')).toBeVisible();await expect(page.locator('.pui-artifacts-toggle')).toHaveAttribute('aria-label','Conversation files unavailable');await expect(page.locator('.pui-artifacts-content .pui-form-error')).toHaveText('Removed copy row error');
+    } else {
+      // This is the recorded correctness exception: destroying the genuine
+      // copy button retires its pending result, as the formal Part contract says.
+      await expect(page.locator('.pui-artifacts-control')).toBeHidden();await expect(page.locator('.pui-artifacts-content .pui-form-error')).toBeEmpty();
+    }
+    expect(await page.evaluate(() => window.artifactsHarness.session.isOpen())).toBe(false);await page.evaluate(() => window.artifactsHarness.tree.destroy());
   }
 });

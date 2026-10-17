@@ -2,34 +2,46 @@
  * have separate acceptance tranches. */
 import {
   createReadingColumnPart,createBubblePart,createTextPart,createReadingNotePart,createMarkdownPart,
-  createTimestampPart,createMessageFooterPart,createMessageActionsPart,createButtonPart,createWorkingIndicatorPart,
-  type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,
+  createTimestampPart,createMessageFooterPart,createMessageActionsPart,createButtonPart,createCopyButtonPart,createAnnouncementPart,createWorkingIndicatorPart,
+  type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,type AnnouncementPart,type ReadingColumnPart,
 } from '../../src/parts/index.js';
 import {composeToolGroup,type ToolGroupComposition} from './tool-disclosures.js';
+import {createConversationImageScope,type ImageReference,type GalleryCallbacks,type ImageGalleryComposition} from './conversation-images.js';
 
-export interface BodyMessage {id: string;role: string;text: string;timestamp?: number;status?: string;toolName?: string;toolCallId?: string;command?: {text: string;cwd: string;exitCode?: number};actions?: {copy?: boolean|string;edit?: boolean;branch?: {key: string;label?: string}}}
+export interface BodyMessage {id: string;role: string;text: string;timestamp?: number;status?: string;toolName?: string;toolCallId?: string;command?: {text: string;cwd: string;exitCode?: number};images?: readonly ImageReference[];actions?: {copy?: boolean|string;edit?: boolean;branch?: {key: string;label?: string}}}
 export interface ConversationBodyState {id: string;messages: readonly BodyMessage[];working: boolean;folds?: ReadonlyMap<string,boolean>}
 export interface MessageAction {action: 'copy'|'edit'|'branch';messageId: string;branchKey?: string}
 export type BodyResult = void|{ok: true}|{ok: false;error: string};
-export interface ConversationBodyCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;onError?(message: string): void}
-export interface ConversationBodyComposition {readonly part: LayoutPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;destroy(): void}
+export interface ConversationBodyCallbacks extends GalleryCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;onError?(message: string): void}
+export interface ConversationBodyComposition {readonly part: ReadingColumnPart;readonly announcement: AnnouncementPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;destroy(): void}
 interface Entry {part: Part;kind: string;update(message: BodyMessage): void;availability(): void}
 
 /** Reading column -> caller-keyed bubbles/notes and optional working indicator.
  * Each bubble explicitly composes its text, timestamp, footer and actions. */
-export function composeConversationBody(initial: Readonly<ConversationBodyState>,callbacks: ConversationBodyCallbacks = {}): ConversationBodyComposition {
+export function composeConversationBody(initial: Readonly<ConversationBodyState>,callbacks: ConversationBodyCallbacks = {},sharedAnnouncement?: AnnouncementPart): ConversationBodyComposition {
   let alive = true,id = initial.id,disabled: Readonly<Partial<Record<MessageAction['action'],boolean>>> = {},working: WorkingIndicatorPart|undefined;
   const entries = new Map<string,Entry>();
   let groups = new Map<string,Set<string>>();
   const toolGroups = new Map<string,ToolGroupComposition>(),savedFolds = new Map<string,Map<string,boolean>>();
+  const announcement = sharedAnnouncement ?? createAnnouncementPart({message: ''});
+  const images = createConversationImageScope(() => id,callbacks);
   const fail = (message: string) => {if (alive) callbacks.onError?.(message);};
-  const root = createReadingColumnPart({children: [],onDispose() {alive = false;entries.clear();toolGroups.clear();groups.clear();savedFolds.clear();working = undefined;}});
+  const root = createReadingColumnPart({children: [],onDispose() {alive = false;images.destroy();entries.clear();toolGroups.clear();groups.clear();savedFolds.clear();working = undefined;if (!sharedAnnouncement) announcement.destroy();}});
   const kindOf = (message: BodyMessage) => message.role === 'system' ? 'system' : message.role === 'user' ? 'user' : message.role === 'tool' ? 'tool' : 'assistant';
   function make(message: BodyMessage): Entry {
     const kind = kindOf(message);
     if (kind === 'system') {const part = createReadingNotePart({key: message.id,text: message.text});return {part,kind,update(next) {part.update({text: next.text});},availability() {}};}
-    let current = message,footer: LayoutPart|undefined,actions: LayoutPart|undefined,time: TimestampPart|undefined;
+    let current = message,footer: LayoutPart|undefined,actions: LayoutPart|undefined,time: TimestampPart|undefined,gallery: ImageGalleryComposition|undefined;
     const buttons = new Map<MessageAction['action'],ButtonPart>();
+    const invoke = (action: MessageAction['action']) => {
+      if (!alive || disabled[action]) return;
+      const target = Object.freeze({action,messageId: current.id,...(action === 'branch' ? {branchKey: current.actions!.branch!.key} : {})});
+      return callbacks.onMessageAction?.(target);
+    };
+    const dispatch = (action: MessageAction['action']) => {
+      try {void Promise.resolve(invoke(action)).then(result => {if (result && !result.ok) fail(result.error);},error => fail(error instanceof Error ? error.message : String(error)));}
+      catch (error) {fail(error instanceof Error ? error.message : String(error));}
+    };
     const text = kind === 'user' ? createTextPart({role: 'bubble',text: message.text,hidden: !message.text}) : createMarkdownPart({text: message.text,onCopyCode: callbacks.onCopyCode,onError: fail});
     let interrupted: ReturnType<typeof createTextPart>|undefined;
     const bubble = createBubblePart({key: message.id,speaker: kind === 'user' ? 'self' : 'agent',children: []});
@@ -42,17 +54,19 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
       text.update({text: next.text,...(kind === 'user' ? {hidden: !next.text} : {})});
       if (kind === 'assistant' && next.status === 'error') interrupted ??= createTextPart({role: 'interrupted',text: 'Response interrupted'});
       else {interrupted?.destroy();interrupted = undefined;}
+      if (kind === 'user' && next.images?.length) {if (!gallery) gallery = images.gallery(next.id,next.images);else gallery.update(next.images);}else {gallery?.part.destroy();gallery = undefined;}
       const desired: MessageAction['action'][] = [ ...(next.actions?.copy ? ['copy' as const] : []),...(next.actions?.edit ? ['edit' as const] : []),...(next.actions?.branch ? ['branch' as const] : []) ];
       for (const [action,button] of buttons) if (!desired.includes(action)) {button.destroy();buttons.delete(action);}
-      for (const action of desired) if (!buttons.has(action)) buttons.set(action,createButtonPart({variant: 'quiet-icon',icon: action === 'copy' ? 'copy' : action === 'edit' ? 'edit' : 'branch',label: action,
-        onAction() {if (!alive || disabled[action]) return;const target = Object.freeze({action,messageId: current.id,...(action === 'branch' ? {branchKey: current.actions!.branch!.key} : {})});return callbacks.onMessageAction?.(target);},onError: fail}));
+      for (const action of desired) if (!buttons.has(action)) buttons.set(action,action === 'copy'
+        ? createCopyButtonPart({variant: 'quiet-icon',icon: 'copy',label: 'Copy message',announcement,successMessage: 'Message copied',onCopy() {return invoke('copy');},onError: fail})
+        : createButtonPart({variant: 'quiet-icon',icon: action === 'edit' ? 'edit' : 'branch',label: action,onAction() {dispatch(action);}}));
       if (desired.length) {if (!actions) actions = createMessageActionsPart({children: []});actions.replace(desired.map(action => buttons.get(action)!));}
       else {actions?.destroy();actions = undefined;}
       if (next.timestamp && Number.isFinite(new Date(next.timestamp).getTime())) {if (!time) time = createTimestampPart({value: next.timestamp});else time.update({value: next.timestamp});}
       else {time?.destroy();time = undefined;}
       if (time || actions) {if (!footer) footer = createMessageFooterPart({children: []});footer.replace([...(time ? [time] : []),...(actions ? [actions] : [])]);}
       else {footer?.destroy();footer = undefined;}
-      bubble.replace([text,...(interrupted ? [interrupted] : []),...(footer ? [footer] : [])]);availability();
+      bubble.replace([...(gallery ? [gallery.part] : []),text,...(interrupted ? [interrupted] : []),...(footer ? [footer] : [])]);availability();
     };
     update(message);return {part: bubble,kind,update,availability};
   }
@@ -61,7 +75,7 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
     const keys = new Set(state.messages.filter(message => kindOf(message) !== 'tool').map(message => message.id));
     const allKeys = new Set<string>();for (const message of state.messages) {if (allKeys.has(message.id)) throw new TypeError('Message IDs must be unique.');allKeys.add(message.id);}
     if (id) savedFolds.set(id,new Map([...toolGroups.values()].flatMap(group => [...group.folds()])));
-    if (state.id !== id) {root.replace([]);entries.clear();toolGroups.clear();groups.clear();working = undefined;id = state.id;}
+    if (state.id !== id) {root.replace([]);images.reset();entries.clear();toolGroups.clear();groups.clear();working = undefined;id = state.id;}
     const folds = state.folds ?? savedFolds.get(id) ?? new Map<string,boolean>();
     for (const [key,entry] of entries) if (!keys.has(key)) {entry.part.destroy();entries.delete(key);}
     const children: Part[] = [];
@@ -75,7 +89,7 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
         const baseKey = `group-${tools[0]!.id}`;let key = retained?.[0] ?? baseKey;
         if (!retained) for (let suffix = 2;groups.has(key) || nextGroups.has(key);suffix++) key = `${baseKey}-${suffix}`;
         nextGroups.set(key,members);const legacyKey = `group-${groupIndex++}`;
-        let group = toolGroups.get(key);if (!group) {group = composeToolGroup(key,legacyKey,tools,folds);toolGroups.set(key,group);}else group.update(tools,folds);
+        let group = toolGroups.get(key);if (!group) {group = composeToolGroup(key,legacyKey,tools,folds,images.gallery);toolGroups.set(key,group);}else group.update(tools,folds);
         children.push(group.part);continue;
       }
       index++;let entry = entries.get(message.id);if (entry && entry.kind !== kindOf(message)) {entry.part.destroy();entries.delete(message.id);entry = undefined;}
@@ -86,5 +100,5 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
     root.replace(children);root.update({hidden: !state.messages.length});
   };
   update(initial);
-  return {part: root,update,updateAvailability(state) {if (alive) {disabled = {...state};for (const entry of entries.values()) entry.availability();}},destroy() {root.destroy();}};
+  return {part: root,announcement,update,updateAvailability(state) {if (alive) {disabled = {...state};for (const entry of entries.values()) entry.availability();}},destroy() {root.destroy();}};
 }

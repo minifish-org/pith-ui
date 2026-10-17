@@ -3,14 +3,15 @@
 This covers the text and tool-disclosure subsections of contract [06](../contracts/rc27-ui-022.md#06-conversation-messages-tools-and-rich-content).
 The executable implementation is
 [`examples/assemblies/conversation-body.ts`](../../examples/assemblies/conversation-body.ts).
-Images, copy success feedback, and reader/find coordination still
-require their separate proof before the complete conversation contract is met.
+Reader/find coordination still requires its separate proof before the complete
+conversation contract is met.
 This local example is not a public scene API.
 
 ```text
 ReadingColumn (caller controls empty-state visibility)
 ├─ Bubble (self, reading key)
 │  └─ intrinsic body
+│     ├─ ImageGroup → independently keyed native Images (when supplied)
 │     ├─ Text (bubble: literal pre-wrapped text)
 │     └─ MessageFooter
 │        ├─ Timestamp
@@ -31,6 +32,8 @@ ReadingColumn (caller controls empty-state visibility)
 │        │  └─ CodeProperty (directory label and literal code)
 │        └─ DisclosureBody (output, for commands) → label, Preformatted
 └─ WorkingIndicator (optional, library-owned dots and animation)
+
+Frame sibling: shared Announcement (borrowed by message CopyButtons)
 ```
 
 The bubble owns only its article and existing intrinsic body. It creates no
@@ -45,14 +48,17 @@ import {
   type ConversationBodyState,
   type ConversationBodyCallbacks,
 } from '../../examples/assemblies/conversation-body.js';
+import type {AnnouncementPart} from '../../src/parts/index.js';
 
 export function buildConversationText(
   state: ConversationBodyState,
   callbacks: ConversationBodyCallbacks,
+  announcement: AnnouncementPart,
 ) {
   // Attach the opaque result.part beneath the application's reading region.
   // The application, rather than this local assembly, owns mount and theme.
-  return composeConversationBody(state, callbacks);
+  // The frame also owns this shared announcement as a direct sibling.
+  return composeConversationBody(state, callbacks, announcement);
 }
 ```
 
@@ -85,6 +91,25 @@ baseline; invalid or absent instants omit the timestamp. The caller controls
 empty visibility just as the old application did, including an empty working
 conversation.
 
+Copy actions use the genuine CopyButton with the shared Announcement: pending,
+check glyph, accessible success text and its fixed restoration interval survive
+unrelated snapshots. Edit and branch dispatch their captured targets without
+inventing a pending button state; their host errors report only while the local
+body remains alive. The default local announcement is returned as
+`body.announcement` for an outer frame to own; passing the application's shared
+announcement avoids creating another live region. Direct body disposal retires
+its own default announcement, while a borrowed announcement remains host owned.
+
+[`conversation-images.ts`](../../examples/assemblies/conversation-images.ts)
+keeps image targets, Blob resolution, generation checks, MIME allowlist, URL
+cache and revocation in caller coordination. A native ImagePart owns its source,
+accessible loading/unavailable/ready state and click/Enter/Space activation.
+User and tool galleries are explicit ImageGroup + Image children. A failed
+resolution is retried on a later projection; successful images retain native
+identity, decoding and focus. Conversation switching retires pending results
+and releases the previous URLs. The caller connects `onImage` to its independently
+composed image-viewer dialog, owned by the same frame.
+
 The reading column's disposal callback retires the local map before descendants
 are destroyed. Parent-owned destruction and direct destruction share the same
 terminal guard. No raw element, Event, HTML, selector or presentation parameter
@@ -103,3 +128,11 @@ literal output, counts, both themes and narrow open/closed layouts. It also
 checks retained folds, group growth, prepended history, overlapping group keys,
 selected output and scroll. Whole-conversation acceptance remains pending the
 additional subsections named above.
+
+`tests/parts-conversation-actions.spec.ts` compares actual copy pending/check/
+restoration and non-copy dispatch behavior against the old application.
+`tests/parts-conversation-images.spec.ts` compares user/tool galleries in both
+themes and loading/unavailable/ready states, frozen data targets, retries,
+retained decoded image focus, all native activation paths and URL disposal.
+These fixtures retire all original controllers before mounting new parts, so
+an old global delegate cannot make an incomplete assembly pass.

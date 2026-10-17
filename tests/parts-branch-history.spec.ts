@@ -2,7 +2,7 @@ import {expect,test,type Page} from '@playwright/test';
 
 interface HistoryNode {id: string;role: string;text: string;active: boolean}
 interface HistoryState {nodes: HistoryNode[]|null;loading?: boolean;error?: string}
-interface HistoryHarness {session: {update(state: HistoryState): void;fail(message: string): void;close(): void;destroy(): void;isOpen(): boolean};calls: string[];closed: number;resolve?: (result: {ok: true}|{ok: false;error: string}) => void}
+interface HistoryHarness {session: {update(state: HistoryState): void;fail(message: string): void;close(): void;destroy(): void;isOpen(): boolean};calls: string[];closed: number;resolve?: (result: {ok: true}|{ok: false;error: string}) => void;retained?: {card: Element;action: Element}}
 declare global {interface Window {branchPartsHarness: HistoryHarness}}
 const populated: HistoryState = {nodes: [{id: 'one',role: 'user',text: 'Original question\nSecond line',active: false},{id: 'two',role: 'assistant',text: 'Original response',active: true},{id: 'image',role: 'user',text: '',active: false}]};
 
@@ -69,8 +69,13 @@ for (const [name,state] of scenarios) for (const appearance of ['light','dark'] 
 test('branch updates retain keyed actions and current styles without a business write',async ({page}) => {
   for (const old of [true,false]) {
     await openHistory(page,old);const action = page.getByRole('button',{name: 'Continue here',exact: true}).nth(1);await action.focus();
-    await page.evaluate(() => {const h = window.branchPartsHarness;h.session.update({nodes: [populatedForUpdate()[1],populatedForUpdate()[0]]});function populatedForUpdate() {return [{id: 'one',role: 'user',text: 'Original question\nSecond line',active: true},{id: 'two',role: 'assistant',text: 'Updated response',active: false}];}});
-    await expect(page.getByRole('button',{name: 'Continue here',exact: true}).first()).toBeFocused();await expect(page.locator('article.pui-current-branch')).toHaveText('user · current branchContinue hereOriginal question\nSecond line');
+    await page.evaluate(() => {const h = window.branchPartsHarness,action = document.activeElement!;h.retained = {action,card: action.closest('article')!};h.session.update({nodes: [{id: 'one',role: 'user',text: 'Original question\nSecond line',active: true},{id: 'two',role: 'assistant',text: 'Updated response',active: false},{id: 'image',role: 'user',text: '',active: false}]});});
+    await expect(page.getByRole('button',{name: 'Continue here',exact: true}).nth(1)).toBeFocused();await expect(page.locator('article.pui-current-branch')).toHaveText('user · current branchContinue hereOriginal question\nSecond line');
+    // The retained old factory moves rows with insertBefore, which can blur a
+    // moved descendant. Its correct reorder contract is retained native row /
+    // action identity; metadata-only focus above is checked independently.
+    await page.evaluate(() => window.branchPartsHarness.session.update({nodes: [{id: 'two',role: 'assistant',text: 'Updated response',active: false},{id: 'one',role: 'user',text: 'Original question\nSecond line',active: true}]}));
+    expect(await page.evaluate(() => {const r = window.branchPartsHarness.retained!,first = document.querySelector('dialog[open] article')!;return {card: r.card === first,action: first.querySelector('button') === r.action};})).toEqual({card: true,action: true});
     expect(await page.evaluate(() => window.branchPartsHarness.calls)).toEqual([]);
   }
 });

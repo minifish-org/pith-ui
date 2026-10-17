@@ -16,8 +16,12 @@ async function setup(page: Page,old: boolean,role = 'user',mode: 'ready'|'pendin
     const path = '/src/app/index.ts',{createApplication} = await import(path),mount = document.body.appendChild(document.createElement('div')),app = createApplication(mount,{appearance,workspace: callbacks});app.workspace.updateConversation(state);
     if (old) h.body = {update: app.workspace.updateConversation,destroy: app.destroy};
     else {
-      const context = mount.querySelector('.pui-app')!.cloneNode(true);app.destroy();mount.append(context);h.calls.length = 0;h.resolves.length = 0;h.revoked.length = 0;
-      const recipePath = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts',{composeConversationBody} = await import(recipePath),p = await import(partsPath),body = composeConversationBody(state,callbacks);p.mountParts(mount.querySelector('.pui-chat-scroll'),body.part,{appearance});h.body = body;
+      const context = mount.querySelector('.pui-app')!.cloneNode(true);app.destroy();mount.append(context);
+      const recipePath = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts',{composeConversationBody} = await import(recipePath),p = await import(partsPath);
+      // The retired baseline may still enter its already queued data callback
+      // during module loading. Clear fixture observations after that boundary.
+      h.calls.length = 0;h.resolves.length = 0;h.revoked.length = 0;
+      const body = composeConversationBody(state,callbacks);p.mountParts(mount.querySelector('.pui-chat-scroll'),body.part,{appearance});h.body = body;
     }
     for (const details of mount.querySelectorAll<HTMLDetailsElement>('.pui-messages details')) details.open = true;
     window.conversationImageParts = h;

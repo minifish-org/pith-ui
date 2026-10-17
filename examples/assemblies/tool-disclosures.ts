@@ -5,8 +5,9 @@ import {
   createCodePropertyPart,createPreformattedPart,
   type CompoundDisclosurePart,type Part,type PreformattedPart,type CodePropertyPart,type LayoutPart,
 } from '../../src/parts/index.js';
+import type {ImageReference,ImageGalleryComposition} from './conversation-images.js';
 
-export interface ToolMessage {id: string;role: string;text: string;toolName?: string;toolCallId?: string;status?: string;command?: {text: string;cwd: string;exitCode?: number}}
+export interface ToolMessage {id: string;role: string;text: string;toolName?: string;toolCallId?: string;status?: string;command?: {text: string;cwd: string;exitCode?: number};images?: readonly ImageReference[]}
 export interface ToolGroupComposition {readonly part: CompoundDisclosurePart;update(tools: readonly ToolMessage[],folds: ReadonlyMap<string,boolean>): void;folds(): ReadonlyMap<string,boolean>}
 interface ResultEntry {part: CompoundDisclosurePart;key: string;update(message: ToolMessage,folds: ReadonlyMap<string,boolean>): void}
 
@@ -18,7 +19,7 @@ function groupLabel(tools: readonly ToolMessage[]): string {
   return 'Used tools';
 }
 
-export function composeToolGroup(key: string,legacyKey: string,initial: readonly ToolMessage[],folds: ReadonlyMap<string,boolean>): ToolGroupComposition {
+export function composeToolGroup(key: string,legacyKey: string,initial: readonly ToolMessage[],folds: ReadonlyMap<string,boolean>,makeGallery?: (messageId: string,images: readonly ImageReference[]) => ImageGalleryComposition): ToolGroupComposition {
   const entries = new Map<string,ResultEntry>();
   const icon = createIconPart({name: 'terminal'}),label = createMetadataPart({purpose: 'summary-label',text: ''}),count = createMetadataPart({purpose: 'count',text: ''}),chevron = createIconPart({name: 'down'});
   let failed: ReturnType<typeof createMetadataPart>|undefined,running: ReturnType<typeof createMetadataPart>|undefined;
@@ -28,10 +29,10 @@ export function composeToolGroup(key: string,legacyKey: string,initial: readonly
     const foldKey = `${key}-tool-${message.toolCallId || message.id}`;
     const terminal = createIconPart({name: 'terminal'}),caption = createTextPart({text: ''}),status = createMetadataPart({purpose: 'trailing-state',text: ''}),down = createIconPart({name: 'down'});
     const result = createCompoundDisclosurePart({purpose: 'result',readingKey: message.id,foldKey,summary: [terminal,caption,status,down],children: [],open: folds.get(foldKey) ?? folds.get(`${legacyKey}-tool-${message.toolCallId || message.id}`) ?? false});
-    let isCommand: boolean|undefined,output: PreformattedPart,command: PreformattedPart|undefined,directory: CodePropertyPart|undefined,commandDetails: LayoutPart|undefined,outputBody: LayoutPart|undefined;
+    let isCommand: boolean|undefined,output: PreformattedPart,command: PreformattedPart|undefined,directory: CodePropertyPart|undefined,commandDetails: LayoutPart|undefined,outputBody: LayoutPart|undefined,gallery: ImageGalleryComposition|undefined;
     const update = (next: ToolMessage,currentFolds: ReadonlyMap<string,boolean>) => {
       if (isCommand !== !!next.command) {
-        result.replace([]);isCommand = !!next.command;
+        result.replace([]);gallery = undefined;isCommand = !!next.command;
         output = createPreformattedPart({text: next.text});
         if (isCommand) {
           command = createPreformattedPart({kind: 'command',text: next.command!.text});directory = createCodePropertyPart({label: 'Directory',value: next.command!.cwd});
@@ -44,6 +45,8 @@ export function composeToolGroup(key: string,legacyKey: string,initial: readonly
       const state = next.command ? ({running: 'Running',done: 'Completed',error: 'Failed'} as Record<string,string>)[next.status || ''] || next.status || 'Result' : next.status || 'Result';
       status.update({text: state+(next.command?.exitCode !== undefined ? ` · Exit ${next.command.exitCode}` : ''),tone: next.status === 'error' ? 'error' : 'neutral'});
       output.update({text: next.text});command?.update({text: next.command!.text});directory?.update({label: 'Directory',value: next.command!.cwd});
+      if (next.images?.length && makeGallery) {if (!gallery) gallery = makeGallery(next.id,next.images);else gallery.update(next.images);}else {gallery?.part.destroy();gallery = undefined;}
+      result.replace([...(commandDetails ? [commandDetails,outputBody!] : [output]),...(gallery ? [gallery.part] : [])]);
       const expanded = currentFolds.get(foldKey) ?? currentFolds.get(`${legacyKey}-tool-${next.toolCallId || next.id}`);if (expanded !== undefined) result.setOpen(expanded);
     };
     update(message,folds);return {part: result,key: foldKey,update};
