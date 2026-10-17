@@ -165,6 +165,7 @@ for (const appearance of ['light', 'dark'] as const) {
     await expect(files).toHaveAttribute('title', 'Conversation files (1)');
     await files.click();
     await expect(files).toHaveAttribute('aria-expanded', 'true');
+    await expect(files).toHaveAttribute('title', 'Conversation files (1)');
     await expect(files).toHaveCSS('background-color', appearance === 'light' ? 'rgb(224, 229, 238)' : 'rgb(45, 50, 58)');
     await expect(files).toHaveCSS('color', appearance === 'light' ? 'rgb(31, 37, 48)' : 'rgb(240, 241, 243)');
     await files.press('Escape');
@@ -186,5 +187,50 @@ test('inspector tooltips follow their current safe label while ordinary popovers
     Reflect.get(window, 'chromeSource').files.update({label: 'Conversation files are unavailable', triggerLabel: '1', icon: 'file'});
   });
   await expect(page.getByRole('button', {name: 'Conversation files are unavailable', exact: true})).toHaveAttribute('title', 'Conversation files are unavailable');
+  await page.getByRole('button', {name: 'Conversation files are unavailable', exact: true}).click();
+  await expect(page.getByRole('button', {name: 'Conversation files are unavailable', exact: true})).toHaveAttribute('title', 'Conversation files are unavailable');
   await expect(page.getByRole('button', {name: 'Ordinary panel', exact: true})).toHaveAttribute('title', '');
+});
+
+test('input footer rules do not change a notice footer or an ordinary inline icon button', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const ui = await import('../src/index.js');
+    ui.mount(document.body, ui.createSurface({purpose:'notice', content:ui.createText({text:'Notice'}), footer:ui.createToolbar({label:'Notice actions',leading:ui.createIconButton({context:'inline',icon:'image',label:'Notice image'})})}));
+  });
+  const button=page.getByRole('button',{name:'Notice image',exact:true});
+  await expect(button).toHaveCSS('width','32px');
+  await expect(button).toHaveCSS('height','32px');
+  await expect(button.locator('svg')).toHaveCSS('width','17px');
+});
+
+test('mounted warning descendants follow initial, explicit and system themes without replacing input state', async ({page}) => {
+  await page.emulateMedia({colorScheme:'light'});
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const ui=await import('../src/index.js');
+    const input=ui.createTextInput({label:'Theme draft',value:'Retained draft'});
+    const choice=ui.createSelect({label:'Theme permission',context:'inline',icon:'shield',tone:'warning',options:[{value:'full',label:'Full access'}]});
+    const notice=ui.createNotice({tone:'warning',message:'Warning feedback'});
+    const surface=ui.createSurface({purpose:'notice',tone:'warning',content:ui.createText({text:'Warning surface'})});
+    const owner=ui.mount(document.body,ui.createStack({children:[input,choice,notice,surface]}),{appearance:'dark'});
+    Reflect.set(window,'themeOwner',owner);
+  });
+  const input=page.getByRole('textbox',{name:'Theme draft',exact:true});
+  await input.focus();await input.evaluate(node=>(node as HTMLInputElement).setSelectionRange(2,8));
+  const retained=await input.elementHandle();
+  const check=async(dark:boolean)=>{
+    const color=dark?'rgb(50, 41, 29)':'rgb(255, 244, 221)';
+    for(const node of [page.locator('.pui-choice-warning'),page.locator('.pui-notice-warning'),page.locator('.pui-surface-warning')])await expect(node).toHaveCSS('background-color',color);
+    await expect(input).toBeFocused();await expect(input).toHaveValue('Retained draft');
+    expect(await input.evaluate(node=>[(node as HTMLInputElement).selectionStart,(node as HTMLInputElement).selectionEnd])).toEqual([2,8]);
+    expect(await retained!.evaluate(node=>node===document.querySelector('input'))).toBe(true);
+  };
+  await check(true);
+  await page.evaluate(()=>Reflect.get(window,'themeOwner').setAppearance('light'));await check(false);
+  await page.evaluate(()=>Reflect.get(window,'themeOwner').setAppearance('dark'));await check(true);
+  await page.emulateMedia({colorScheme:'dark'});
+  await page.evaluate(()=>Reflect.get(window,'themeOwner').setAppearance('system'));await check(true);
+  await page.emulateMedia({colorScheme:'light'});await check(false);
+  await page.emulateMedia({colorScheme:'dark'});await check(true);
 });
