@@ -27,7 +27,9 @@ async function setup(page: Page,old: boolean,appearance: 'light'|'dark' = 'light
 async function presentation(page: Page): Promise<unknown> {
   return page.evaluate(async () => {
     await document.fonts.ready;const root = document.querySelector('.pui-conversation-find')!,origin = root.getBoundingClientRect();
-    const inspect = (node: Element) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);return {tag: node.localName,text: node instanceof HTMLInputElement ? node.value : node.textContent,
+    // Ignore old template indentation while retaining every visible literal
+    // value, control state, computed style and geometry assertion.
+    const inspect = (node: Element) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);return {tag: node.localName,text: node instanceof HTMLInputElement ? node.value : node.textContent?.trim(),
       box: [box.x-origin.x,box.y-origin.y,box.width,box.height].map(value => Math.round(value*100)/100),hidden: node.hasAttribute('hidden'),
       styles: ['display','position','font-family','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-top-color','border-radius','gap','min-width','max-width','min-height','overflow-y','box-shadow'].map(key => style.getPropertyValue(key)),
       ...(node instanceof HTMLInputElement ? {type: node.type,label: node.getAttribute('aria-label'),placeholder: node.placeholder,autocomplete: node.autocomplete} : {}),
@@ -56,6 +58,16 @@ test('search inputs report only next or previous Enter intent and preserve nativ
     const next = event(),previous = event({shiftKey: true}),composing = event({isComposing: true}),native = event();input!.dispatchEvent(next);input!.dispatchEvent(previous);input!.dispatchEvent(composing);ordinary!.dispatchEvent(native);
     const result = {calls,cancelled: [next.defaultPrevented,previous.defaultPrevented,composing.defaultPrevented,native.defaultPrevented]};tree.destroy();return result;
   });expect(value).toEqual({calls: ['next','previous'],cancelled: [true,true,false,false]});
+});
+test('a reading viewport validates direct ownership and retires when its required column is disposed',async ({page}) => {
+  await page.goto('/tests/fixture.html');const value = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),reading = p.createReadingColumnPart({children: [p.createReadingNotePart({key: 'note',text: 'Literal needle'})]});let missing = false,duplicate = false,notifications = 0;
+    try {p.createReadingViewportPart({reading,children: []});} catch {missing = true;}
+    try {p.createReadingViewportPart({reading,children: [reading,reading]});} catch {duplicate = true;}
+    const viewport = p.createReadingViewportPart({reading,children: [reading],onSearchState() {notifications++;}}),mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,viewport);
+    viewport.openSearch('needle');reading.destroy();const before = notifications;viewport.openSearch('late');viewport.search('late');viewport.beforeUpdate('late');viewport.afterUpdate();viewport.followLatest();
+    const result = {missing,duplicate,remaining: mount.childElementCount,quiet: notifications === before};tree.destroy();tree.destroy();viewport.destroy();return result;
+  });expect(value).toEqual({missing: true,duplicate: true,remaining: 0,quiet: true});
 });
 for (const appearance of ['light','dark'] as const) for (const width of [1280,390]) test(`${appearance} ${width} reader toolbar and latest action preserve actual layout and styles`,async ({page}) => {
   await page.setViewportSize({width,height: 800});await setup(page,true,appearance);await page.evaluate(() => window.readerPartsHarness.reader.openFind());const before = await presentation(page);

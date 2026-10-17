@@ -2,7 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 
 interface Message {id: string;role: string;text: string;toolName?: string;toolCallId?: string;status?: string;command?: {text: string;cwd: string;exitCode?: number}}
 interface State {id: string;messages: Message[];working: boolean}
-interface Handle {update(state: State): void;destroy(): void}
+interface Handle {update(state: State): void;prune(ids: readonly string[]): void;destroy(): void}
 declare global {interface Window {toolPartsHarness: {body: Handle;state: State;retained?: Element;output?: Element}}}
 const tool = (id: string,toolName = 'read_file',status = 'done',command = false): Message => ({id,role: 'tool',toolName,toolCallId: 'call-'+id,status,text: 'Literal <b>tool output</b> 中文\n'+('result line\n'.repeat(35)),...(command ? {command: {text: 'printf "literal <tag> 中文"\nls -la',cwd: '/workspace/中文 project',exitCode: status === 'error' ? 7 : status === 'done' ? 0 : undefined}} : {})});
 const scenarios: Record<string,Message[]> = {
@@ -20,7 +20,7 @@ async function setup(page: Page,old: boolean,messages: Message[] = scenarios.mix
     const appPath = '/src/app/index.ts',{createApplication} = await import(appPath),mount = document.body.appendChild(document.createElement('div'));
     const app = createApplication(mount,{appearance}),state: State = {id: 'tools',messages,working: false};app.workspace.updateConversation(state);
     let body: Handle;
-    if (old) body = {update: app.workspace.updateConversation,destroy: app.destroy};
+    if (old) body = {update: app.workspace.updateConversation,prune: app.workspace.pruneConversations,destroy: app.destroy};
     else {const recipePath = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts',{composeConversationBody} = await import(recipePath),p = await import(partsPath);
       const context = mount.querySelector('.pui-app')!.cloneNode(true);app.destroy();mount.append(context);
       const composition = composeConversationBody(state);p.mountParts(mount.querySelector('.pui-chat-scroll'),composition.part,{appearance});body = composition;}
@@ -93,5 +93,16 @@ test('overlapping group identity never gives a new group the still-owned retaine
       const groups = [...document.querySelectorAll<HTMLDetailsElement>('.pui-tool-group')];return {retained: groups[0] === original,keys: groups.map(node => node.dataset.toolFold),open: groups.map(node => node.open)};
     });
     expect(result).toEqual({retained: true,keys: ['group-a','group-a-2'],open: [true,false]});
+  }
+});
+
+test('conversation pruning drops saved tool folds while ordinary switches restore retained conversations',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old,[tool('a')]);
+    const result = await page.evaluate(() => {
+      const h = window.toolPartsHarness,other = {id: 'other',messages: [],working: false};h.body.update(other);h.body.update(h.state);
+      const restored = document.querySelector<HTMLDetailsElement>('.pui-tool-group')!.open;h.body.update(other);h.body.prune(['other']);h.body.update(h.state);
+      return {restored,pruned: document.querySelector<HTMLDetailsElement>('.pui-tool-group')!.open};
+    });expect(result).toEqual({restored: true,pruned: false});
   }
 });

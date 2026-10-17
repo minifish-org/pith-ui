@@ -48,3 +48,20 @@ for (const action of ['edit','branch'] as const) test(`${action} dispatch retain
     await page.evaluate(() => {const h = window.messageActionParts;h.body.destroy();h.resolves[1]!({ok: false,error: 'Late retired action'});});await page.clock.fastForward(10);expect(await page.evaluate(() => window.messageActionParts.errors)).toEqual(['Host rejected action']);
   }
 });
+
+test('local Markdown links retain conversation-scoped resolution and frozen host targets without navigation',async ({page}) => {
+  for (const old of [true,false]) {
+    await page.goto('/tests/fixture.html');await page.evaluate(async old => {
+      document.body.classList.remove('pui');const calls: unknown[] = [],errors: string[] = [],resolutions: string[][] = [];
+      const callbacks = {resolveLocalLink(href: string,id: string) {resolutions.push([href,id]);return {path: '/workspace/reports/Result 中文.md',conversationId: id};},onLocalFile(target: unknown) {calls.push({target,frozen: Object.isFrozen(target)});return {ok: false,error: 'Native file open failed'};},onError(message: string) {errors.push(message);}};
+      const state = {id: 'original-conversation',messages: [{id: 'answer',role: 'assistant',text: '[Original result](reports/Result%20中文.md)'}],working: false};
+      const path = '/src/app/index.ts',{createApplication} = await import(path),mount = document.body.appendChild(document.createElement('div')),app = createApplication(mount,{workspace: callbacks});app.workspace.updateConversation(state);
+      if (!old) {const context = mount.firstElementChild!.cloneNode(true);app.destroy();mount.replaceChildren(context);calls.length = errors.length = resolutions.length = 0;const recipePath = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts',{composeConversationBody} = await import(recipePath),p = await import(partsPath),body = composeConversationBody(state,callbacks);p.mountParts(mount.querySelector('.pui-chat-scroll'),body.part);}
+      Object.assign(window,{messageLinkParts: {calls,errors,resolutions}});
+    },old);
+    await page.locator('.pui-messages').getByRole('link',{name: 'Original result',exact: true}).click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as {messageLinkParts: {errors: string[]}}).messageLinkParts.errors)).toEqual(['Native file open failed']);
+    expect(await page.evaluate(() => (window as unknown as {messageLinkParts: {calls: unknown[];resolutions: string[][]}}).messageLinkParts)).toEqual({calls: [{target: {path: '/workspace/reports/Result 中文.md',conversationId: 'original-conversation'},frozen: true}],errors: ['Native file open failed'],resolutions: [['reports/Result%20中文.md','original-conversation']]});
+    expect(new URL(page.url()).pathname).toBe('/tests/fixture.html');
+  }
+});
