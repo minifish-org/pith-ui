@@ -29,3 +29,5 @@ A form owns native validation, primary submit action, pending, errors and option
 For a whole Pith-shaped interface, optionally use pith-ui/app and APP.md. It is a larger composition, not a requirement for using the library. Internal product demonstrations do not grant access to unpublished factories. The default entry and app entry share private implementation rather than separate visual systems.
 
 See docs/examples.ts for strictly compiled public examples, API.md for signatures, and the showroom's base components for actual interaction. Test actual registry/tarball consumption; never confuse a local build with publication or human acceptance.
+
+Text editing uses one fixed layout per purpose: `message` (the default, eight native rows) or `pending-message` (five rows). These are the established message and queue editors, not arbitrary height, width, density or font settings. All dialogs retain the shared base dialog geometry.

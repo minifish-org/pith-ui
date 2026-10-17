@@ -53,7 +53,7 @@ for(const kind of ['confirmation','message','pending-message'] as const) test(`s
     const measure=()=>{const d=document.querySelector<HTMLDialogElement>('dialog[open]')!,area=d.querySelector('textarea');const css=getComputedStyle(d);return {width:d.getBoundingClientRect().width,padding:css.padding,radius:css.borderRadius,rows:area?.rows,label:d.querySelector('label')?.textContent};};
     const before=measure();old.destroy();
     const small=kind==='confirmation'?ui.createConfirmDialog({title:'Parity',confirmLabel:'Remove',message:'Remove example?',onConfirm:()=>({ok:true})})
-      :ui.createTextEditDialog({title:'Parity',purpose:kind} as Parameters<typeof ui.createTextEditDialog>[0]);
+      :ui.createTextEditDialog({title:'Parity',purpose:kind});
     app.attachDialog(small);if('read' in small)small.open({value:'Draft'});else small.open();
     const after=measure();app.destroy();return {before,after};
   },kind);

@@ -97,7 +97,7 @@ const host=document.getElementById('app');if(!(host instanceof HTMLElement))thro
 const name=createTextInput({label:'Name',value:'中文 draft'});
 const models=createListSelect({label:'Models',multiple:true,values:['a'],options:[{value:'a',label:'Model A'}],onChange:values=>{values.forEach(String);}});
 const form=createForm({children:[name,models],onSubmit:async():Promise<ActionResult>=>({ok:true})});
-const editor=createTextEditDialog({title:'Edit',onSubmit:async text=>text.trim()?{ok:true}:{ok:false,error:'Enter text'}});
+const editor=createTextEditDialog({title:'Edit',purpose:'pending-message',onSubmit:async text=>text.trim()?{ok:true}:{ok:false,error:'Enter text'}});
 const open=createButton({label:'Edit',onAction:()=>editor.open({value:name.read()})});
 mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
 `;
@@ -137,9 +137,11 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createStack({children:[document.body]});",'HTMLElement'],
     ["createSelect({label:'Provider',options:[],multiple:true});",'multiple'],
     ["createListSelect({label:'Models',options:[],size:10});",'size'],
+    ["createTextEditDialog({purpose:'compact'});",'compact'],
+    ["createTextEditDialog({rows:5});",'rows'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}

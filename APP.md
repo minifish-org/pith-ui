@@ -5,9 +5,9 @@ This is the optional complete application composition. Use the default pith-ui e
 This composition accepts data and semantic callbacks and owns its generated DOM. Its own UI imports are pith-ui/app and pith-ui/styles.css. Do not inspect or decorate its internal nodes. Independent small-control trees use hosts owned by the consumer, not internal app nodes. A missing capability should become a narrow tested library interface, not a CSS or DOM workaround.
 
 <!-- PUI_APP_VERSION_START -->
-This contract accompanies `pith-ui@0.3.0`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
+This contract accompanies `pith-ui@0.3.1`. Exact API: [APP-API.md](./APP-API.md); installed declarations: `dist/app/index.d.ts`.
 
-The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.3.0/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.3.0/examples/application/index.html). These sources are not bundled into the npm runtime package.
+The full reference application source is versioned with this artifact: [TypeScript controller](https://github.com/minifish-org/pith-ui/blob/v0.3.1/examples/application/main.ts) and [HTML entry](https://github.com/minifish-org/pith-ui/blob/v0.3.1/examples/application/index.html). These sources are not bundled into the npm runtime package.
 <!-- PUI_APP_VERSION_END -->
 
 ## One mount, four scenes

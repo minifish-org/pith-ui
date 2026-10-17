@@ -472,7 +472,6 @@ export function createDialog(options: DialogState & {
     nodes(children);
     let control: Dialog;
     const block = primitive.createDialog({ title: options.title, description: options.description, closeDisabled: options.closeDisabled, content: options.content ? entry(options.content).node : undefined, actions: options.actions ? entry(options.actions).node : undefined, onClose() { children.forEach(invalidate); options.onClose?.(); } });
-    block.element.classList.add('pui-modal');
     control = own<DialogState, Pick<Dialog, 'open' | 'close' | 'isOpen'>>({ ...block, update(state: Readonly<DialogState>) { check(state, ['title', 'description', 'closeDisabled']); block.update(state); } }, children, { open() { mounted(control); block.open(); }, close: block.close, isOpen: () => block.element.open });
     return control;
 }
@@ -485,6 +484,8 @@ export interface TextEditState extends DialogState {
     readonly submitLabel?: string;
 }
 export interface TextEditOptions extends Partial<TextEditState> {
+    /** Fixed message editor layouts; pending messages retain five native rows. */
+    readonly purpose?: 'message' | 'pending-message';
     readonly label?: string;
     readonly onInput?: (value: string) => void;
     readonly onSubmit?: (value: string) => ActionResult | Promise<ActionResult>;
@@ -504,10 +505,11 @@ export interface TextEditDialog extends Control<TextEditState> {
 }
 const textEditKeys = ['title', 'description', 'closeDisabled', 'error', 'disabled', 'pending', 'inputDisabled', 'note', 'submitLabel'];
 export function createTextEditDialog(options: TextEditOptions = {}): TextEditDialog {
-    check(options, [...textEditKeys, 'label', 'onInput', 'onSubmit', 'onClose']);
-    const block = primitive.createTextEditDialog(options);
+    check(options, [...textEditKeys, 'purpose', 'label', 'onInput', 'onSubmit', 'onClose']);
+    if (options.purpose && options.purpose !== 'message' && options.purpose !== 'pending-message') throw new Error('Unknown editor purpose.');
+    const block = primitive.createTextEditDialog({...options, label: options.label ?? (options.purpose === 'pending-message' ? 'Pending message' : 'Message')});
+    block.control.rows = options.purpose === 'pending-message' ? 5 : 8;
     let control: TextEditDialog;
-    block.element.classList.add('pui-modal');
     control = own<TextEditState, Pick<TextEditDialog, 'open' | 'close' | 'read' | 'focus' | 'isOpen'>>({ ...block, update(state: Readonly<TextEditState>) { check(state, textEditKeys); block.update(state); } }, [], { open(input: {
             readonly value: string;
             readonly title?: string;
@@ -568,7 +570,6 @@ export function createConfirmDialog(options: ConfirmState & {
     };
     const block = primitive.createConfirmDialog({ ...presentation(options), onConfirm: options.onConfirm, onClose: options.onClose, unavailable: options.unavailable });
     let control: ConfirmDialog;
-    block.element.classList.add('pui-modal');
     control = own<ConfirmState, Pick<ConfirmDialog, 'open' | 'close' | 'isOpen' | 'refreshAvailability'>>({ ...block, update(state: Readonly<ConfirmState>) { check(state, confirmKeys); block.update(presentation(state)); } }, [], { open(state?: ConfirmState) { if (state)
             check(state, confirmKeys); mounted(control); block.open(state ? presentation(state) : undefined); }, close: block.close, isOpen: () => block.element.open, refreshAvailability: block.refreshAvailability });
     return control;

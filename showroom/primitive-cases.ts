@@ -204,8 +204,8 @@ export const primitiveCases: ShowcaseCase[] = [
   },
   {
     id: 'text-edit-dialog', title: '文本编辑弹窗 Text edit', layer: 'components', category: '浮层',
-    description: '保存失败保留文本，快照保留选区，关闭重开后丢弃旧结果。模拟结果由展厅控制。', states: ['normal', 'error', 'disabled', 'pending', 'long'], related: ['text-area', 'dialog'],
-    code: `import {mount, createTextEditDialog} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createTextEditDialog({title:'Edit message',onSubmit:async text=>({ok:true})});\nconst mounted = mount(host,block);\nblock.open({value:'Original message'});\n// mounted.destroy() releases the complete owned tree.`,
+    description: '普通消息固定 8 行，待发送消息固定 5 行；保存失败保留文本与选区，关闭重开丢弃旧结果。模拟结果由展厅控制。', states: ['normal', 'error', 'disabled', 'pending', 'long'], related: ['text-area', 'dialog'],
+    code: `import {mount, createTextEditDialog} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createTextEditDialog({title:'Edit message',purpose:'message',onSubmit:async text=>({ok:true})});\nconst mounted = mount(host,block);\nblock.open({value:'Original message'});\n// mounted.destroy() releases the complete owned tree.`,
     mount(context) {
       const editor = createTextEditDialog({ title: 'Edit message', onSubmit: () => context.action() });
       const open = (): void => {
@@ -213,7 +213,9 @@ export const primitiveCases: ShowcaseCase[] = [
         editor.update({ title: 'Edit message', note: 'Demonstration only. Failed writes retain the text.', disabled: disabled(context) || context.outcome === 'invalid', pending: context.state === 'pending', error: context.state === 'error' ? 'Previous save failed. Your text is kept.' : '' });
       };
       const button = createButton({ label: 'Edit text', onAction: open });
-      return group([button, editor], open);
+      const pending = createTextEditDialog({title:'Edit pending message',purpose:'pending-message',onSubmit:()=>context.action()});
+      const pendingButton = createButton({label:'Edit pending message',onAction:()=>pending.open({value:'Pending message 中文'})});
+      return group([button, pendingButton, editor, pending], open);
     },
   },
   {

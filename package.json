@@ -1,6 +1,6 @@
 {
   "name": "pith-ui",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Native TypeScript building blocks with explicit behavior and a human-verifiable component showroom.",
   "type": "module",
   "license": "AGPL-3.0-only",
