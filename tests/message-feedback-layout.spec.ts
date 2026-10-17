@@ -12,3 +12,9 @@ test('an inline message result stays eight pixels below its content and before t
   expect(await result.evaluate(node=>{const body=node.closest('.pui-message-frame-body')!,markdown=body.querySelector('.pui-markdown')!,style=getComputedStyle(node);return{gap:node.getBoundingClientRect().top-markdown.getBoundingClientRect().bottom,fontSize:style.fontSize,outsideFooter:!node.closest('.pui-message-frame-footer')};})).toEqual({gap:8,fontSize:'12px',outsideFooter:true});
   await expect(page.locator('.pui-message-frame-meta')).toHaveText('12:34');
 });
+
+test('the private copy announcement does not change the final Markdown paragraph or footer gap',async({page})=>{
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async()=>{const ui=await import('../src/index.js');ui.mount(document.body,ui.createMessage({role:'assistant',content:ui.createMarkdown({text:'A complete response'}),time:'12:34'}));});
+  expect(await page.locator('.pui-message-frame').evaluate(node=>{const paragraph=node.querySelector('.pui-markdown>p')!,footer=node.querySelector('.pui-message-frame-footer')!;return{margin:getComputedStyle(paragraph).marginBottom,gap:footer.getBoundingClientRect().top-paragraph.getBoundingClientRect().bottom};})).toEqual({margin:'0px',gap:8});
+});
