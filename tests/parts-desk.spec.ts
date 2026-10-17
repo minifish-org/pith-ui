@@ -9,7 +9,7 @@ async function setup(page: Page,old: boolean,appearance: 'light'|'dark' = 'light
   await page.goto('/tests/fixture.html');
   await page.evaluate(async ({old,appearance}) => {
     const mount = document.body.appendChild(document.createElement('div')),events: boolean[] = [],calls: string[] = [];
-    const options = {appearance,onUIStateChange(state: {hasModal: boolean}) {events.push(state.hasModal);},workspace: {onBusyAction(key: string) {calls.push(key);}}};
+    const options = {appearance,onUIStateChange(state: {hasModal: boolean}) {events.push(state.hasModal);},workspace: {onBusyAction(key: string) {calls.push(key);},onMessageAction(target: {action: string}) {calls.push(target.action);},onCopyCode() {calls.push('code');}}};
     const path = old ? '/src/app/index.ts' : '/examples/assemblies/desk.ts',module = await import(path);
     const app = old ? module.createApplication(mount,options) : module.mountDesk(mount,options);
     window.deskPartsHarness = {app,events,calls};
@@ -124,5 +124,41 @@ test('root teardown wins over close callback reopening and exceptions without re
       app.settings.openSettings({baseUrl: '',hasApiKey: false},{onClose() {throw new Error('Settings cleanup failed');}});app.destroy();app.destroy();
       return {open: app.read().hasModal,reopened: reopened?.isOpen(),dialogs: document.querySelectorAll('dialog[open]').length,frames: document.querySelectorAll('.pui-app').length};
     });expect(value).toEqual({open: false,reopened: false,dialogs: 0,frames: 0});
+  }
+});
+
+test('assembled scoped availability preserves unrelated navigation and allowed historical copies',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);await page.evaluate(() => {
+      const {app,calls} = window.deskPartsHarness;
+      app.workspace.updateNavigation({groups: [{id: 'running-work',name: 'Running work',path: '/running',selected: true,children: [{id: 'running',title: 'Running chat',active: true}]},{id: 'idle-work',name: 'Idle work',path: '/idle',selected: true,children: [{id: 'idle',title: 'Idle chat',active: false}]}],empty: null});
+      app.workspace.updateConversation({id: 'running',working: true,messages: [{id: 'message',role: 'assistant',text: 'Saved response\n\n```ts\nconst ready = true;\n```',actions: {copy: 'Copy response'}}]});
+      app.workspace.updateMessageAvailability({copy: false,edit: true,branch: true});
+      app.workspace.updateAvailability({global: true,active: true,conversations: ['running'],workspaces: ['running-work']});
+      calls.push('projected');
+    });await expect(page.getByRole('button',{name: 'Choose model',exact: true})).toBeDisabled();
+    await page.getByRole('button',{name: 'Actions for Idle chat',exact: true}).click();await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeEnabled();await page.keyboard.press('Escape');
+    await page.getByRole('button',{name: 'Actions for Running chat',exact: true}).click();await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeDisabled();await page.keyboard.press('Escape');
+    await expect(page.getByRole('button',{name: 'Copy response',exact: true})).toBeEnabled();await expect(page.getByRole('button',{name: 'Copy code',exact: true})).toBeEnabled();
+    // The baseline keeps historical copy controls visually available, while
+    // its copy controller blocks activation during a host mutation.
+    await page.evaluate(() => window.deskPartsHarness.app.workspace.updateAvailability({busy: true}));await page.getByRole('button',{name: 'Copy response',exact: true}).click();await page.getByRole('button',{name: 'Copy code',exact: true}).click();expect(await page.evaluate(() => window.deskPartsHarness.calls)).toEqual(['projected']);
+  }
+});
+
+test('native downloads retain exact names, delivery results and delayed or terminal URL cleanup',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);await page.clock.install();await page.clock.pauseAt(new Date());
+    await page.evaluate(async () => {
+      const h = window.deskPartsHarness,deliveries: Array<{name: string;href: string}> = [],revoked: string[] = [];
+      const original = URL.revokeObjectURL.bind(URL);URL.revokeObjectURL = value => {revoked.push(value);original(value);};
+      HTMLAnchorElement.prototype.click = function() {deliveries.push({name: this.download,href: this.href});};
+      Object.assign(h,{deliveries,revoked,first: await h.app.downloadFile({blob: new Blob(['中文 result']),name: 'Report 中文.md'})});
+    });await page.clock.runFor(29_999);expect(await page.evaluate(() => (window.deskPartsHarness as unknown as {revoked: string[]}).revoked)).toEqual([]);await page.clock.runFor(1);
+    const value = await page.evaluate(async () => {
+      const h = window.deskPartsHarness as DeskHarness & {deliveries: Array<{name: string;href: string}>;revoked: string[];first: unknown};
+      const second = await h.app.downloadFile({blob: new Blob(['diagnostics']),name: 'diagnostics.json'});h.app.destroy();const late = await h.app.downloadFile({blob: new Blob(['late']),name: 'late.txt'});
+      return {first: h.first,second,names: h.deliveries.map(value => value.name),urls: h.deliveries.every(value => value.href.startsWith('blob:')),revoked: h.revoked.length,unique: new Set(h.revoked).size,late};
+    });expect(value).toEqual({first: {ok: true},second: {ok: true},names: ['Report 中文.md','diagnostics.json'],urls: true,revoked: 2,unique: 2,late: {ok: false,error: 'Application has been destroyed.'}});
   }
 });
