@@ -199,8 +199,10 @@ export function createSecretInput(options: InputOptions): InputBlock {
   block.element.append(toggle.element);
   const update = block.update;
   block.update = state => { update(state); toggle.update({ label: control.type === 'password' ? 'Show' : 'Hide', disabled: state.disabled }); };
+  const reset=block.reset;
+  block.reset=value=>{reset(value);control.type='password';toggle.update({label:'Show',disabled:control.disabled});toggle.element.setAttribute('aria-pressed','false');};
   const destroy = block.destroy;
-  block.destroy = () => { destroy(); toggle.destroy(); };
+  block.destroy = () => { block.reset('');destroy(); toggle.destroy(); };
   block.update(options);
   return block;
 }

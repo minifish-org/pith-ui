@@ -11,10 +11,12 @@ Every base exhibit uses the default public entry. No font, pixel size, density, 
 | Mount and composition | `mount`, `createStack` | `stack` |
 | Dynamic composition | `createSlot`, `createList` | `slot`, `list` |
 | Regions | `createPane`, `createSplitPane` | `pane`, `split-pane` |
+| Input intent | `createPromptInput`, `createDropArea` | `prompt-input`, `drop-area` |
+| Reading pieces | `createImage`, `createMessage`, `createReadingArea`, `createDocument` | `image`, `message`, `reading-area`, `document` |
 | Safe content | `createMarkdown`, `createDiff` | `markdown`, `diff` |
 | Actions | `createButton`, `createIconButton`, `createTextAction` | `button`, `icon-button`, `text-action` |
 | Copy | `createCopyButton` | `copy-feedback` |
-| Text input | `createTextInput`, `createSearchInput`, `createSecretInput`, `createTextArea`, `createNumberInput` | `text-input`, `search-input`, `secret-input`, `text-area`, `number-input` |
+| Text input | `createTextInput`, `createSearchInput`, `createSecretInput`, `createTextArea`, `createNumberInput`, `createURLInput`, `createSecretTextArea` | `text-input`, `search-input`, `secret-input`, `text-area`, `number-input`, `url-input`, `secret-text-area` |
 | Choice | `createSelect`, `createListSelect`, `createCheckbox` | `select`, `checkbox` |
 | Display | `createText`, `createIcon`, `createListRow`, `createKeyValue`, `createDivider`, `createProgress` | `text`, `icons`, `list-row`, `key-value`, `divider`, `progress` |
 | Feedback | `createNotice`, `createStatus`, `createCollectionState` | `notice`, `status`, `collection-state` |

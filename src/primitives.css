@@ -183,3 +183,29 @@
 .pui .pui-split-content { min-width:0;min-height:0;overflow:hidden;background:var(--pui-bg-main); }
 .pui .pui-split-scrim { display:none; }
 @media(max-width:760px){.pui .pui-split{grid-template-columns:minmax(0,1fr)}.pui .pui-split-navigation{position:absolute;inset:0 auto 0 0;width:260px;z-index:3;display:none}.pui .pui-navigation-open .pui-split-navigation{display:block}.pui .pui-navigation-open .pui-split-scrim{display:block;position:absolute;inset:0;z-index:2;border:0;background:var(--pui-overlay)}}
+
+.pui .pui-prompt textarea { min-height:40px;max-height:180px;resize:none; }
+.pui .pui-prompt>.pui-field-label,.pui .pui-reader-find .pui-field-label { position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%); }
+.pui .pui-image { position:relative;min-width:0; }
+.pui .pui-image-open { display:block;background:transparent;padding:0;max-width:100%; }
+.pui .pui-image img { display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:8px; }
+.pui .pui-image-attachment { display:inline-block;width:80px; }
+.pui .pui-image-attachment img { width:80px;height:80px;object-fit:cover; }
+.pui .pui-image-brand img { width:24px;height:24px;object-fit:contain;border-radius:0; }
+.pui .pui-image .pui-image-remove { position:absolute;top:-4px;right:-4px;min-height:24px;width:24px;height:24px;padding:0;border-radius:50%; }
+.pui .pui-image-remove .pui-icon { width:14px;height:14px; }
+.pui .pui-message-frame { min-width:0;overflow-wrap:anywhere;padding:var(--pui-space-lg);border-radius:10px; }
+.pui .pui-message-frame[data-role="user"] { background:var(--pui-surface-code); }
+.pui .pui-message-frame-meta { font-size:var(--pui-text-small);color:var(--pui-muted);margin-top:var(--pui-space-sm); }
+.pui .pui-message-frame-actions { margin-top:var(--pui-space-sm); }
+@media (hover:hover) { .pui .pui-message-frame-actions { opacity:0; } .pui .pui-message-frame:hover .pui-message-frame-actions,.pui .pui-message-frame:focus-within .pui-message-frame-actions { opacity:1; } }
+.pui .pui-reading-area { display:flex;flex-direction:column;position:relative;min-height:0;min-width:0;height:420px; }
+.pui .pui-reading-fill { height:100%;flex:1; }
+.pui .pui-reader-scroll { flex:1;overflow:auto;min-height:0; }
+.pui .pui-reader-find { flex-shrink:0; }
+.pui .pui-reader-find .pui-field { flex:1;min-width:80px; }
+.pui .pui-drop-area { min-width:0;border-radius:10px; }
+.pui .pui-drop-area.pui-drop-active { background:var(--pui-drop-bg);box-shadow:inset 0 0 0 2px var(--pui-accent); }
+.pui.pui-window-host { position:fixed;inset:0;margin:0;height:100dvh;overflow:hidden; }
+.pui .pui-document { min-width:0; }
+.pui .pui-secret-area:not(.pui-revealed) textarea { -webkit-text-security:disc; }

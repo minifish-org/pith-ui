@@ -35,3 +35,9 @@ Safe Markdown and diff content use `createMarkdown` and `createDiff`. Link openi
 ## Validation
 
 Preserve input method composition, selection, focus, reading position and disclosures. Verify disabled plus pending, failed submit, close/reopen, late response and destroy in Chromium/WebKit. Compile positive and negative public examples against an actual installed package, build production JS/CSS and review both themes in the showroom. Automated success is not human acceptance; source, tarball, publication, deployment and native validation are separate evidence.
+
+Small input and reading pieces: `createPromptInput` handles editing and input intent, `createDropArea` reports drag data, `createImage` owns local zoom, `createMessage` frames one composed item, `createReadingArea` owns reading/search/follow intent, and `createDocument` paginates supplied text. None creates a page, navigation, permission policy, model request or file transaction. A reading item needs a stable key and content revision so unchanged reading nodes stay intact.
+
+Use `mount(..., {viewport: 'window'})` only for the application root; content mounts stay in the surrounding layout. This is fixed viewport behavior, not a style override. Native picking/downloading, business identities and files remain application capabilities. Markdown local links require paired `resolveLink` / `onLocalLink` callbacks returning an opaque data key, never DOM or HTML.
+
+For native URL validation use `createURLInput`; multiline sensitive text uses `createSecretTextArea`. A secret reset restores masking. `Form.validate()` checks native constraints and opens invalid folded fields; `resetSubmission()` retires old submission feedback while retaining drafts. `submitDisabled` blocks writing while leaving read-only content selectable; `disabled` blocks all form fields. Reading areas may own an `empty` control, which is excluded from content search.

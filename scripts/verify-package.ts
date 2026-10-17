@@ -69,7 +69,7 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
     if (['element','icon','createField','createApplication','createWorkspaceShell','createConversationView','Generation','setAppearance','createCopyFeedback'].some(name=>name in ui)) throw new Error('Internal DOM/product factories must not be public');
     console.log(JSON.stringify(Object.keys(ui)));
   `], consumer)) as string[];
-  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
+  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff','createPromptInput','createImage','createMessage','createReadingArea','createDropArea','createDocument','createURLInput','createSecretTextArea']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
   const generic = `import {mount,createButton,createTextInput,createListSelect,createTextEditDialog,createForm,createStack,type ActionResult} from 'pith-ui';
 import 'pith-ui/styles.css';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');

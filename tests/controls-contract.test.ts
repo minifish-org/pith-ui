@@ -69,7 +69,7 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
 
 test('every small-control showroom example compiles through the actual public package',()=>{
   const files=new Map<string,string>();
-  for(const filename of ['primitive-cases.ts','control-page-cases.ts','public-cases.ts','foundation-cases.ts']){
+  for(const filename of ['primitive-cases.ts','control-page-cases.ts','public-cases.ts','consumer-cases.ts','foundation-cases.ts']){
     const source=ts.createSourceFile(filename,readFileSync(resolve('showroom',filename),'utf8'),ts.ScriptTarget.Latest,true);
     const visit=(node:ts.Node):void=>{
       if(filename==='foundation-cases.ts'&&ts.isVariableDeclaration(node)&&ts.isIdentifier(node.name)&&node.name.text==='code'&&node.initializer&&ts.isStringLiteralLike(node.initializer))files.set(resolve('showroom','public-example-foundations.ts'),node.initializer.text);

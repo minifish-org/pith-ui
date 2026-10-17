@@ -47,3 +47,19 @@ export function localComposition(ui: PithUI,host:HTMLElement) {
   mounted.attach(dialog);dialog.open();
   return mounted;
 }
+
+/** Input intent, reading, and content are independent pieces, never a complete scene. */
+export function readingAndInput(ui:PithUI,host:HTMLElement,send:(value:string)=>Promise<ActionResult>,copy:(value:string)=>Promise<ActionResult>) {
+  const reader=ui.createReadingArea({label:'Reading',identity:'document-1',empty:ui.createText({text:'No content'}),items:[{key:'first',revision:'1',content:ui.createMessage({role:'assistant',content:ui.createMarkdown({text:'Safe **content**',onCopy:copy})})}]});
+  const prompt=ui.createPromptInput({label:'Message',onSubmit:send});
+  const footer=ui.createDropArea({content:prompt,onDrop:data=>console.log(data.files.length)});
+  const mounted=ui.mount(host,ui.createPane({content:reader,footer}),{viewport:'window'});
+  return {mounted,find:reader.find,reset:prompt.reset};
+}
+
+export function validatedSecrets(ui:PithUI,host:HTMLElement,save:(draft:{url:string;environment:string})=>Promise<ActionResult>) {
+  const url=ui.createURLInput({label:'Endpoint',required:true});
+  const environment=ui.createSecretTextArea({label:'Environment JSON'});
+  const form=ui.createForm({children:[url,environment],onSubmit:()=>save({url:url.read(),environment:environment.read()})});
+  return {mounted:ui.mount(host,form),reset(){environment.reset('');form.resetSubmission();},validate:form.validate};
+}
