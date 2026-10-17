@@ -345,3 +345,35 @@ test('an editor without a workspace ID retains the old active-scope Save fallbac
     ].map(entry => ({...entry,deleteDisabled: false,readOnly: false,value: 'Retained draft'})));
   }
 });
+
+test('local file links keep conversation scope and copy feedback keeps the old host-busy restoration policy',async ({page}) => {
+  for (const old of [true,false]) {
+    await page.goto('/tests/fixture.html');
+    const value = await page.evaluate(async old => {
+      document.body.classList.remove('pui');
+      const path = old ? '/src/app/index.ts' : '/examples/assemblies/desk.ts',module = await import(path),calls: string[] = [];
+      const options = {workspace: {
+        resolveLocalLink(href: string,conversationId: string) {return {path: href,conversationId};},
+        onLocalFile(target: {path: string;conversationId: string}) {calls.push(`file:${target.conversationId}:${target.path}`);},
+        onCopyCode() {calls.push('code');return {ok: false,error: 'Clipboard unavailable'};},
+        onError(message: string) {calls.push(message);},
+      }};
+      const mount = document.body.appendChild(document.createElement('div')),app = old ? module.createApplication(mount,options) : module.mountDesk(mount,options);
+      app.workspace.updateConversation({id: 'chat',working: true,messages: [{id: 'response',role: 'assistant',text: '[Result](result.txt)\n\n```ts\nconst ready = true;\n```'}]});
+      const link = mount.querySelector<HTMLAnchorElement>('a[data-download-path]')!,code = mount.querySelector<HTMLButtonElement>('[data-copy-code]')!;
+      const sample = () => ({link: link.getAttribute('aria-disabled'),codeDisabled: code.disabled});
+      app.workspace.updateAvailability({});const idle = sample();link.click();
+      app.workspace.updateAvailability({global: true,active: true,conversations: ['chat']});const conversation = sample();
+      app.workspace.updateAvailability({global: true,active: true,conversations: ['other']});const unrelated = sample();
+      app.workspace.updateAvailability({busy: true});const busy = sample();
+      // Existing source-backed behavior: busy affects copy feedback/restoration,
+      // while the first copy activation still executes its callback.
+      code.click();await new Promise(resolve => setTimeout(resolve,0));const restoredDisabled = code.disabled;
+      app.workspace.updateAvailability({});const clearedLink = link.getAttribute('aria-disabled');
+      const retained = link === mount.querySelector('a[data-download-path]') && code === mount.querySelector('[data-copy-code]');
+      app.destroy();return {idle,conversation,unrelated,busy,restoredDisabled,clearedLink,retained,calls};
+    },old);
+    expect(value).toEqual({idle: {link: 'false',codeDisabled: false},conversation: {link: 'true',codeDisabled: false},unrelated: {link: 'false',codeDisabled: false},
+      busy: {link: 'true',codeDisabled: false},restoredDisabled: true,clearedLink: 'false',retained: true,calls: ['file:chat:result.txt','code','Clipboard unavailable']});
+  }
+});
