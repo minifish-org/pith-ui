@@ -1,10 +1,10 @@
 import {test,expect} from '@playwright/test';
 test('compact inline feedback preserves the original small error surface',async({page})=>{
- await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,Reflect.get(u,'createNotice')({message:'Write failed. Draft retained.',tone:'error',context:'inline'}));});
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,Reflect.get(u,'createNotice')({message:'Write failed. Draft retained.',tone:'error',presentation:'compact'}));});
  const error=page.getByRole('alert');expect(await error.evaluate(n=>{const s=getComputedStyle(n);return{font:s.fontSize,line:s.lineHeight,padding:s.padding,radius:s.borderTopLeftRadius,border:s.borderTopWidth,margin:s.marginBottom,whiteSpace:s.whiteSpace};})).toEqual({font:'12px',line:'18px',padding:'12px',radius:'9px',border:'1px',margin:'12px',whiteSpace:'pre-wrap'});
 });
 test('navigation footer inline feedback keeps a small warning marker and quiet separated text',async({page})=>{
- await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createPane({purpose:'navigation',content:u.createText({text:'Navigation'}),footer:u.createStack({context:'flow',children:[u.createSlot({content:Reflect.get(u,'createNotice')({message:'Reconnecting…',tone:'info',context:'inline'})})]})}));});
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createPane({purpose:'navigation',content:u.createText({text:'Navigation'}),footer:u.createStack({context:'flow',children:[u.createSlot({content:Reflect.get(u,'createNotice')({message:'Reconnecting…',tone:'info',presentation:'inline'})})]})}));});
  const status=page.getByRole('status');expect(await status.evaluate(n=>{const s=getComputedStyle(n),dot=getComputedStyle(n,'::before');return{font:s.fontSize,line:s.lineHeight,padding:s.padding,border:s.borderTopWidth,color:s.color,dotWidth:dot.width,dotHeight:dot.height,dotColor:dot.backgroundColor};})).toEqual({font:'12px',line:'18px',padding:'16px 12px 0px',border:'1px',color:'rgb(93, 103, 122)',dotWidth:'6px',dotHeight:'6px',dotColor:'rgb(138, 87, 10)'});
 });
 test('input guidance stays a plain left-aligned caption with the original note gap',async({page})=>{
