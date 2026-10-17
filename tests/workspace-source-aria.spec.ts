@@ -1,0 +1,21 @@
+import {test,expect} from '@playwright/test';
+
+// Accepted workspace.ts assigns native drawer controls, a polite named pending
+// section and a permission description; the bounded controls preserve these
+// internally without application IDs or raw DOM extension APIs.
+test('queued items retain their named polite region without changing ordinary lists',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createStack({children:[u.createList({context:'queue',items:[{key:'heading',content:u.createText({role:'label',text:'Pending messages'})},{key:'draft',content:u.createListRow({context:'queue',title:'Saved draft'})}]}),u.createList({items:[{key:'ordinary',content:u.createText({text:'Ordinary list'})}]})]}));});
+ const queue=page.getByRole('region',{name:'Pending messages',exact:true});await expect(queue).toHaveAttribute('aria-live','polite');expect(await queue.evaluate(n=>n.tagName)).toBe('SECTION');await expect(queue.getByText('Pending messages',{exact:true})).toHaveCSS('color','rgb(31, 37, 48)');await expect(page.locator('.pui-control-list:not(.pui-list-queue)')).not.toHaveAttribute('aria-live');await expect(page.getByRole('status')).toHaveCount(0);
+});
+
+test('owned sidebar toggles refer to unique library navigation IDs and reflect open state',async({page})=>{
+ await page.setViewportSize({width:560,height:800});await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const make=(label:string)=>{const toggle=u.createIconButton({label,icon:'menu',context:'navigation-toggle',onAction(){split.setNavigationOpen(true);}});const split=u.createSplitPane({navigation:u.createPane({purpose:'navigation',content:u.createText({text:'Saved workspace'})}),content:u.createPane({purpose:'conversation',header:toggle,content:u.createText({text:'Chat'})})});const host=document.createElement('div');host.style.height='300px';document.body.append(host);u.mount(host,split);return split;};Reflect.set(window,'sourceDrawer',make('Open first sidebar'));make('Open second sidebar');});
+ const toggle=page.getByRole('button',{name:'Open first sidebar',exact:true}),other=page.getByRole('button',{name:'Open second sidebar',exact:true});await expect(toggle).toHaveAttribute('aria-expanded','false');const id=await toggle.getAttribute('aria-controls');expect(id).toBeTruthy();expect(await other.getAttribute('aria-controls')).not.toBe(id);expect(await page.locator('[id]').evaluateAll((nodes,id)=>nodes.filter(n=>n.id===id).length,id)).toBe(1);
+ await toggle.click();await expect(toggle).toHaveAttribute('aria-expanded','true');await page.evaluate(()=>Reflect.get(window,'sourceDrawer').setNavigationOpen(false));await expect(toggle).toHaveAttribute('aria-expanded','false');
+});
+
+test('an inline permission choice keeps its own accessible description without moving the visible note',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const permission=u.createSelect({context:'inline',icon:'shield',label:'Conversation permissions',description:'Pith can read workspace files.',options:[{value:'ask',label:'Ask before changes'}]});u.mount(document.body,u.createStack({children:[permission,u.createText({role:'caption',text:'Pith can read workspace files.'})]}));Reflect.set(window,'sourcePermission',permission);});
+ const select=page.getByRole('combobox',{name:'Conversation permissions',exact:true});await expect(select).toHaveAccessibleDescription('Pith can read workspace files.');const note=page.locator('.pui-inline-choice>.pui-field-description');await expect(note).toHaveCSS('position','absolute');await expect(note).toHaveCSS('width','1px');await expect(note).toHaveCSS('overflow','hidden');await expect(page.locator('.pui-control-text').getByText('Pith can read workspace files.',{exact:true})).toBeVisible();
+ await page.evaluate(()=>Reflect.get(window,'sourcePermission').update({context:'inline',icon:'shield',label:'Conversation permissions',description:'Changes require approval.',options:[{value:'ask',label:'Ask before changes'}]}));await expect(select).toHaveAccessibleDescription('Changes require approval.');
+});
