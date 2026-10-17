@@ -72,6 +72,17 @@ test('small inspector parts transfer genuine slots atomically and expose no nati
   });expect(result).toEqual({counter: true,foreignHeading: true,duplicate: true,foreignSurface: true,position: true,shape: {root: 'div',children: ['button','section'],count: 'true',panel: '-1',literal: 'Literal <b>text</b>'},closed: true,invalidHidden: true,errorRetained: true,omittedHiddenVisible: true,leaks: false});
 });
 
+test('anchored group disposal validates callbacks before ownership and notifies before child disposal once', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),trigger = p.createButtonPart({variant: 'counter',icon: 'file',count: '2',label: 'Files'});
+    const heading = p.createInspectorHeadingPart({title: 'Files',count: '2 files',action: p.createButtonPart({variant: 'quiet-icon',icon: 'close',label: 'Close'})}),surface = p.createInspectorPart({heading,children: []});let invalid = false,calls = 0,beforeChildren = false;
+    try {p.createAnchoredGroupPart({trigger,surface,onDispose: 'invalid'});} catch {invalid = true;}
+    const mount = document.body.appendChild(document.createElement('div')),group = p.createAnchoredGroupPart({trigger,surface,onDispose() {calls++;trigger.update({variant: 'counter',icon: 'file',count: '3',label: 'Still alive'});beforeChildren = mount.querySelector('.pui-artifacts-count')!.textContent === '3';}}),tree = p.mountParts(mount,group);
+    tree.destroy();group.destroy();tree.destroy();return {invalid,calls,beforeChildren,remaining: mount.childElementCount};
+  });expect(result).toEqual({invalid: true,calls: 1,beforeChildren: true,remaining: 0});
+});
+
 for (const appearance of ['light','dark'] as const) for (const variant of ['files','loading','error','many'] as const) test(`${appearance} ${variant} artifacts assembly preserves the actual topbar control, anchored panel and cards`, async ({page}) => {
   await setup(page,true,appearance,variant);await open(page);const old = await presentation(page);await setup(page,false,appearance,variant);await open(page);expect(await presentation(page)).toEqual(old);
 });
@@ -122,6 +133,6 @@ test('owner switches, row removal and parent disposal retire pending artifact ou
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,ownerId: 'next-owner',files: [{name: 'Next.md',path: '/next.md'}]};h.session.update(h.state);h.resolve!({ok: false,error: 'Retired old error'});});await expect(page.locator('.pui-artifacts-panel')).toBeHidden();await open(page);await expect(page.locator('.pui-artifacts-panel')).not.toContainText('Retired old error');
     await page.getByRole('button',{name: 'Copy file',exact: true}).click();await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: []};h.session.update(h.state);h.resolve!({ok: false,error: 'Removed row error'});});await expect(page.locator('.pui-artifacts-control')).toBeHidden();
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: [{name: 'Final.md',path: '/final.md'}]};h.session.update(h.state);});await open(page);await page.getByRole('button',{name: 'Reveal',exact: true}).click();
-    await page.evaluate(() => {const h = window.artifactsHarness;h.tree.destroy();h.tree.destroy();h.resolve!({ok: false,error: 'Disposed error'});});await expect(page.locator('.pui-artifacts-panel')).toHaveCount(0);
+    await page.evaluate(() => {const h = window.artifactsHarness;h.tree.destroy();h.tree.destroy();h.resolve!({ok: false,error: 'Disposed error'});h.session.update({...h.state,files: [{name: 'Late.md',path: '/late.md'}]});h.session.close();h.session.destroy();});await expect(page.locator('.pui-artifacts-panel')).toHaveCount(0);expect(await page.evaluate(() => window.artifactsHarness.session.isOpen())).toBe(false);
   }
 });
