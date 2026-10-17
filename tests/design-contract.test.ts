@@ -33,8 +33,10 @@ function permitted(property: string, value: string): boolean {
   return true;
 }
 function permittedBoxSpacing(property: string, input: string): boolean {
-  const value=input.trim().replace(/var\(\s*(--[\w-]+)\s*\)/g,'var($1)');
-  return value.split(/\s+/).every(part=>part==='0'||(property.startsWith('margin')&&part==='auto')||token(part,spaceTokens));
+  const value=input.trim().replace(/var\(\s*(--[\w-]+)\s*\)/g,'var($1)').replace(/\s+/g,' ');
+  const terms=value.match(/calc\(-1 \* var\(--[\w-]+\)\)|var\(--[\w-]+\)|\S+/g)??[];
+  if(terms.join(' ')!==value)return false;
+  return terms.every(part=>part==='0'||token(part,spaceTokens)||(property.startsWith('margin')&&(part==='auto'||/^calc\(-1 \* var\(--pui-space-(?:xs|sm|md|lg|xl)\)\)$/.test(part))));
 }
 
 test('source margin overlap only negates an approved spacing token', () => {
