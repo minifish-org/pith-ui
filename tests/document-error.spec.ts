@@ -75,7 +75,7 @@ test('clearing a document error restores its current format, resets paging and r
   await expect(body.locator('strong')).toHaveText('Current Markdown');
   await page.evaluate(() => Reflect.get(window, 'documentFixture').doc.update(Object.assign({ text: '-old\n+new', format: 'diff' }, { error: 'Temporary error.' })));
   await page.evaluate(() => Reflect.get(window, 'documentFixture').doc.update({ text: '-old\n+new', format: 'diff' }));
-  await expect(body.getByLabel('Proposed file changes')).toContainText('-old\n+new');
+  await expect(body.getByLabel('Proposed file changes').locator('.pui-diff-line')).toHaveText(['-old', '+new']);
 });
 
 test('changing document content or errors retires old copy feedback without losing the restored copy action', async ({ page }) => {
