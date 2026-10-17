@@ -784,10 +784,11 @@ export function createDisclosure(options: DisclosureState & {
         actions.addEventListener('click', event => event.stopPropagation());
     }
     let name: IconName | undefined;
+    let chevronKind: IconName = 'chevron';
     const update = (state: Readonly<DisclosureState>) => { check(state, ['title', 'description', 'disabled', 'selected', 'context', 'icon']); block.element.classList.toggle('pui-selected', !!state.selected); const context = state.context ?? options.context; finite(context, ['navigation', 'inline', 'output', 'readout'], 'disclosure context'); block.element.classList.toggle('pui-disclosure-navigation', context === 'navigation'); block.element.classList.toggle('pui-disclosure-inline', context === 'inline'); block.element.classList.toggle('pui-disclosure-output', context === 'output'); block.element.classList.toggle('pui-disclosure-readout', context === 'readout'); chevron.toggleAttribute('hidden', !context); const next = state.icon ?? options.icon; icon(next); if (next !== name) {
         name = next;
         glyph.replaceChildren(...(next ? [iconElement(next)] : []));
-    } glyph.hidden = !next; block.update(state); };
+    } glyph.hidden = !next; const nextChevron = context === 'output' || context === 'inline' && !!next ? 'down' : 'chevron'; if (nextChevron !== chevronKind) { chevron.replaceChildren(...iconElement(nextChevron).childNodes); chevronKind = nextChevron; } block.update(state); };
     update(stateOnly(options, ['title', 'description', 'disabled', 'selected', 'context', 'icon']));
     return own({ ...block, update }, children, { setOpen: block.setOpen, isOpen: block.isOpen });
 }
