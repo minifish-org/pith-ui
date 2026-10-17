@@ -225,3 +225,46 @@ for (const appearance of ['light','dark'] as const) for (const width of [1280,39
   await setup(page,true,appearance);await project();expect(await page.locator('.pui-app').evaluate(node => getComputedStyle(node).position)).toBe('static');const before = await measure();
   await setup(page,false,appearance);await project();expect(await page.locator('.pui-app').evaluate(node => getComputedStyle(node).position)).toBe('absolute');expect(await measure()).toEqual(before);
 });
+
+
+test('task recovery retains the old selected workspace availability and active fallback in the complete assembly',async ({page}) => {
+  const expected = [
+    {name: 'selected workspace idle',continue: false,diagnostics: false},
+    {name: 'another workspace running',continue: false,diagnostics: false},
+    {name: 'selected workspace running',continue: true,diagnostics: false},
+    {name: 'selected workspace clears',continue: false,diagnostics: false},
+    {name: 'global idle does not gate workspace recovery',continue: false,diagnostics: false},
+    {name: 'host busy gates workspace recovery',continue: true,diagnostics: false},
+    {name: 'missing workspace uses active idle scope',continue: true,diagnostics: false},
+    {name: 'missing workspace ignores unrelated workspace runs',continue: false,diagnostics: false},
+    {name: 'new selected workspace uses its own availability',continue: true,diagnostics: false},
+  ];
+  for (const old of [true,false]) {
+    await setup(page,old);
+    const value = await page.evaluate(() => {
+      const {app} = window.deskPartsHarness;
+      const cases = [
+        {name: 'selected workspace idle',workspaceId: 'selected',availability: {}},
+        {name: 'another workspace running',workspaceId: 'selected',availability: {workspaces: ['other'],active: true}},
+        {name: 'selected workspace running',workspaceId: 'selected',availability: {workspaces: ['selected']}},
+        {name: 'selected workspace clears',workspaceId: 'selected',availability: {workspaces: []}},
+        {name: 'global idle does not gate workspace recovery',workspaceId: 'selected',availability: {global: true,active: true}},
+        {name: 'host busy gates workspace recovery',workspaceId: 'selected',availability: {busy: true}},
+        {name: 'missing workspace uses active idle scope',availability: {active: true}},
+        {name: 'missing workspace ignores unrelated workspace runs',availability: {workspaces: ['selected']}},
+        {name: 'new selected workspace uses its own availability',workspaceId: 'other',availability: {workspaces: ['other']}},
+      ];
+      const rows = cases.map(entry => {
+        app.workspace.updateFailure({visible: true,message: 'Task interrupted',advice: 'Review and continue.',canContinue: true,workspaceId: entry.workspaceId});
+        app.workspace.updateAvailability(entry.availability);
+        const buttons = [...document.querySelectorAll<HTMLButtonElement>('.pui-task-failure button')];
+        return {name: entry.name,continue: buttons.find(button => button.textContent === 'Review and continue')!.disabled,diagnostics: buttons.find(button => button.textContent === 'Save diagnostics')!.disabled};
+      });
+      app.workspace.updateFailure({visible: true,message: 'Task interrupted',advice: 'Check the model.',canContinue: false,workspaceId: 'selected'});
+      app.workspace.updateAvailability({busy: true,global: true,active: true,workspaces: ['selected']});
+      const settings = [...document.querySelectorAll<HTMLButtonElement>('.pui-task-failure button')].map(button => ({label: button.textContent,disabled: button.disabled}));
+      app.destroy();return {rows,settings};
+    });
+    expect(value).toEqual({rows: expected,settings: [{label: 'Check model settings',disabled: false},{label: 'Save diagnostics',disabled: false}]});
+  }
+});
