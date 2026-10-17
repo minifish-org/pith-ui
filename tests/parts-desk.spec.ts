@@ -140,9 +140,9 @@ test('assembled scoped availability preserves unrelated navigation and allowed h
     await page.getByRole('button',{name: 'Actions for Idle chat',exact: true}).click();await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeEnabled();await page.keyboard.press('Escape');
     await page.getByRole('button',{name: 'Actions for Running chat',exact: true}).click();await expect(page.getByRole('menuitem',{name: 'Rename',exact: true})).toBeDisabled();await page.keyboard.press('Escape');
     await expect(page.getByRole('button',{name: 'Copy response',exact: true})).toBeEnabled();await expect(page.getByRole('button',{name: 'Copy code',exact: true})).toBeEnabled();
-    // The baseline keeps historical copy controls visually available, while
-    // its copy controller blocks activation during a host mutation.
-    await page.evaluate(() => window.deskPartsHarness.app.workspace.updateAvailability({busy: true}));await page.getByRole('button',{name: 'Copy response',exact: true}).click();await page.getByRole('button',{name: 'Copy code',exact: true}).click();expect(await page.evaluate(() => window.deskPartsHarness.calls)).toEqual(['projected']);
+    // Source-backed baseline: copy's isDisabled option controls pending and
+    // restoration; it does not gate the supplied action. Keep that behavior.
+    await page.evaluate(() => window.deskPartsHarness.app.workspace.updateAvailability({busy: true}));await page.getByRole('button',{name: 'Copy response',exact: true}).click();await page.getByRole('button',{name: 'Copy code',exact: true}).click();expect(await page.evaluate(() => window.deskPartsHarness.calls)).toEqual(['projected','copy','code']);
   }
 });
 
