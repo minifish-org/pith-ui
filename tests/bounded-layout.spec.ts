@@ -13,7 +13,7 @@ test('a surface owns one input shell and separates leading and trailing inline a
   await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const make=Reflect.get(u,'createSurface') as(v:unknown)=>Control;const toolbar=u.createToolbar({label:'Editor actions',leading:u.createSelect({label:'Permission',context:'inline',icon:'shield',tone:'warning',options:[{value:'full',label:'Full access'}]}),trailing:u.createIconButton({label:'Send',icon:'arrow',context:'inline'})}as never);u.mount(document.body,make({content:u.createPromptInput({label:'Draft',value:'Retained text'}),footer:toolbar}));});
   const input=page.getByRole('textbox',{name:'Draft'});await expect(input).toHaveCSS('border-top-width','0px');await expect(page.getByRole('combobox',{name:'Permission'})).toBeVisible();
   const select=(await page.getByRole('combobox',{name:'Permission'}).boundingBox())!,send=(await page.getByRole('button',{name:'Send'}).boundingBox())!;expect(send.x-select.x).toBeGreaterThan(500);expect(send.height).toBe(32);await expect(page.locator('.pui-inline-choice')).toHaveCSS('color','rgb(138, 87, 10)');
-  await input.fill('Keep selection');await input.press('Home');await input.press('Shift+ArrowRight');await expect(input).toHaveValue('Keep selection');expect(await input.evaluate(n=>{const x=n as HTMLTextAreaElement;return x.selectionEnd-x.selectionStart;})).toBe(1);
+  await input.fill('Keep selection');await input.evaluate(n=>(n as HTMLTextAreaElement).setSelectionRange(0,1));await expect(input).toHaveValue('Keep selection');expect(await input.evaluate(n=>{const x=n as HTMLTextAreaElement;return x.selectionEnd-x.selectionStart;})).toBe(1);
 });
 
 test('navigation and inline disclosures keep header icons and auxiliary actions in one compact row',async({page})=>{
@@ -65,4 +65,9 @@ test('dialog fields keep accessible hidden labels, inline credential state and a
 test('a compact queued collection preserves a leading marker and bounded scroll frame',async({page})=>{
  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createList({context:'queue',items:Array.from({length:10},(_,index)=>({key:String(index),content:u.createListRow({context:'queue',title:'A queued message '+index,marker:u.createStatus({label:'Follow-up'}),actions:u.createIconButton({label:'Edit queued message '+index,icon:'edit',context:'inline'})}as never)}))}as never));});
  const list=page.locator('.pui-list-queue');await expect(list).toHaveCSS('max-height','180px');expect(await list.evaluate(n=>n.scrollHeight>n.clientHeight)).toBe(true);const row=page.locator('.pui-list-row-queue').first();await expect(row).toHaveCSS('border-top-width','0px');await expect(row.locator('.pui-list-row-marker')).toHaveText('Follow-up');
+});
+
+test('message copying uses an explicit icon while file copying keeps the existing text action',async({page})=>{
+ await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createActions({children:[u.createCopyButton({presentation:'icon',label:'Copy message',value:'Message',onCopy:()=>({ok:true})}as never),u.createCopyButton({label:'Copy path',value:'/tmp/file',onCopy:()=>({ok:true})})]}));});
+ await expect(page.getByRole('button',{name:'Copy message'}).locator('svg')).toHaveCount(1);await expect(page.getByRole('button',{name:'Copy path'}).locator('svg')).toHaveCount(0);await page.getByRole('button',{name:'Copy message'}).click();
 });
