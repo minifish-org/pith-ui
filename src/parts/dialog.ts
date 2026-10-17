@@ -1,6 +1,6 @@
 import {iconElement, uniqueId} from '../dom.js';
 import {installDialogLifecycle} from '../surface.js';
-import {assertOptions, createOwnedPart, isPartAlive, replacePartChildren, type Part} from './ownership.js';
+import {assertOptions, createOwnedPart, isPartAlive, onPartDestroy, replacePartChildren, type Part} from './ownership.js';
 
 export interface DialogPartState {title: string; description?: string; eyebrow?: string; closeLabel?: string; closeDisabled?: boolean}
 export interface DialogPartOptions extends DialogPartState {
@@ -8,6 +8,8 @@ export interface DialogPartOptions extends DialogPartState {
   children: readonly Part[];
   closeOnBackdrop?: boolean;
   onClose?(): void;
+  /** Fires once before descendants are disposed, including parent teardown. */
+  onDispose?(): void;
 }
 export interface DialogPart extends Part {
   update(state: Readonly<DialogPartState>): void;
@@ -19,7 +21,7 @@ export interface DialogPart extends Part {
 
 /** A standard native modal. Content and actions are independently composed parts. */
 export function createDialogPart(options: DialogPartOptions): DialogPart {
-  assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeLabel', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose'], 'dialog');
+  assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeLabel', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose', 'onDispose'], 'dialog');
   if (options.purpose !== undefined && !['form', 'prompt', 'feature', 'warning'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
   const validate = (state: Readonly<DialogPartState>) => {
     if (typeof state.title !== 'string' || state.eyebrow !== undefined && typeof state.eyebrow !== 'string' || state.description !== undefined && typeof state.description !== 'string') throw new TypeError('Dialog heading must be text.');
@@ -29,6 +31,7 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   validate(options);
   if (options.closeOnBackdrop !== undefined && typeof options.closeOnBackdrop !== 'boolean') throw new TypeError('Dialog closeOnBackdrop must be boolean.');
   if (options.onClose !== undefined && typeof options.onClose !== 'function') throw new TypeError('Dialog onClose must be a callback.');
+  if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Dialog onDispose must be a callback.');
   const prompt = options.purpose === 'prompt';
   const feature = options.purpose === 'feature';
   const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : feature ? 'pui-modal pui-feature-modal' : 'pui-modal'; node.id = uniqueId('pui-dialog');
@@ -72,6 +75,7 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
       isOpen: () => isPartAlive(part) && surface.isOpen(),
     }, {children: bodyPart ? feature ? [bodyPart] : [headingPart, bodyPart] : [headingPart, ...options.children], dispose() {surface.close(); surface.destroy();}});
   } catch (error) {surface.destroy(); headingPart.destroy(); bodyPart?.destroy(); throw error;}
+  if (options.onDispose) onPartDestroy(part, options.onDispose);
   update({title: options.title, description: options.description, eyebrow: options.eyebrow, closeLabel: options.closeLabel, closeDisabled: options.closeDisabled});
   return part;
 }
