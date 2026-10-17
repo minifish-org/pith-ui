@@ -24,9 +24,13 @@ const state: ModelState = {editor: {
   ], selection,
 }};
 
-async function openModel(page: Page, baseline = false): Promise<void> {
+async function openModel(page: Page, baseline = false, appearance: 'light' | 'dark' = 'light', initialState: ModelState = state): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({initial, old}) => {
+  await page.evaluate(async ({initial, old, theme}) => {
+    document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = theme;
+    // This generic fixture already has its own .pui scope on body; an explicit
+    // appearance must be applied there too rather than shadowed by its fallback.
+    document.body.dataset.appearance = theme;
     const harness = {state: initial, calls: [], closed: 0} as unknown as ModelHarness;
     const callbacks = {
       onSubmit(value: Selection) {harness.calls.push(value); return new Promise<{ok: true} | {ok: false; error: string}>(resolve => {harness.release = resolve;});},
@@ -35,16 +39,16 @@ async function openModel(page: Page, baseline = false): Promise<void> {
     if (old) {
       const path = '/src/app/index.ts';
       const {createApplication} = await import(path);
-      const app = createApplication(document.body, {appearance: 'light'});
+      const app = createApplication(document.body, {appearance: theme});
       harness.model = app.settings.openModels(initial, callbacks);
     } else {
       const path = '/examples/assemblies/model-picker.ts';
       const {mountModelPicker} = await import(path);
       const mount = document.body.appendChild(document.createElement('div'));
-      harness.model = mountModelPicker(mount, initial, callbacks);
+      harness.model = mountModelPicker(mount, initial, callbacks, {appearance: theme});
     }
     window.modelPartsHarness = harness;
-  }, {initial: state, old: baseline});
+  }, {initial: initialState, old: baseline, theme: appearance});
   await expect(page.getByRole('dialog', {name: 'Choose a model', exact: true})).toBeVisible();
 }
 
@@ -82,15 +86,33 @@ test('generic native form and modal own validation, pending, focus and teardown 
   await expect(page.locator('dialog')).toHaveCount(0);
 });
 
-test('the internal model recipe uses only the staging parts entry and preserves the old control geometry', async ({page, context}) => {
+test('an unmounted dialog cannot render outside the checked parts mount', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createDialogPart, mountParts} = await import(path);
+    const dialog = createDialogPart({title: 'Mount-owned dialog', children: []});
+    dialog.open();
+    const before = {open: dialog.isOpen(), count: document.querySelectorAll('dialog').length};
+    const mounted = mountParts(document.body.appendChild(document.createElement('div')), dialog);
+    dialog.open();
+    const after = {open: dialog.isOpen(), count: document.querySelectorAll('dialog[open]').length};
+    mounted.destroy();
+    return {before, after};
+  });
+  expect(result).toEqual({before: {open: false, count: 0}, after: {open: true, count: 1}});
+});
+
+for (const appearance of ['light', 'dark'] as const) for (const viewport of [{width: 900, height: 600}, {width: 1280, height: 800}, {width: 1440, height: 900}, {width: 390, height: 844}]) test(`${appearance} ${viewport.width}: the internal model recipe preserves the old visible geometry and presentation`, async ({page, context}) => {
   const baseline = await context.newPage();
-  await openModel(baseline, true);
-  await openModel(page);
+  await page.setViewportSize(viewport); await baseline.setViewportSize(viewport);
+  await openModel(baseline, true, appearance);
+  await openModel(page, false, appearance);
   const metrics = async (target: Page) => target.getByRole('dialog', {name: 'Choose a model', exact: true}).evaluate(dialog => {
     const base = dialog.getBoundingClientRect();
     const nodes = [...dialog.querySelectorAll('h2, label, input[type="search"], select, p, button')].filter(node => {
       const element = node as HTMLElement;
-      return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden' && !element.matches('.pui-select-backing, [role="option"]');
+      return element.getClientRects().length && getComputedStyle(element).visibility !== 'hidden' && !element.matches('.pui-select-backing, .pui-sr-only, [role="option"]');
     });
     return {width: base.width, height: base.height, nodes: nodes.map(node => {
       const element = node as HTMLElement, box = element.getBoundingClientRect(), css = getComputedStyle(element);
@@ -98,6 +120,7 @@ test('the internal model recipe uses only the staging parts entry and preserves 
     })};
   });
   expect(await metrics(page)).toEqual(await metrics(baseline));
+  expect(await page.getByRole('dialog').evaluate(dialog => getComputedStyle(dialog).backgroundColor)).toBe(appearance === 'dark' ? 'rgb(34, 37, 42)' : 'rgb(255, 255, 255)');
   await expect(page.getByRole('searchbox', {name: 'Model', exact: true})).toBeFocused();
   expect(await page.evaluate(() => window.modelPartsHarness.model.read())).toEqual(selection);
   await baseline.close();
@@ -151,4 +174,26 @@ test('closing and destroying the model assembly retire pending UI without replac
   await page.evaluate(() => {window.modelPartsHarness.model.destroy(); window.modelPartsHarness.model.destroy(); window.modelPartsHarness.release!({ok: false, error: 'Retired failure'});});
   await expect(page.locator('dialog, select, [role="listbox"]')).toHaveCount(0);
   expect(await page.evaluate(() => ({closed: window.modelPartsHarness.closed, selection: window.modelPartsHarness.model.read(), open: window.modelPartsHarness.model.isOpen()}))).toEqual({closed: 1, selection, open: false});
+});
+
+for (const appearance of ['light', 'dark'] as const) test(`${appearance}: initial loading keeps the old empty native choices and defers search behavior until the catalog arrives`, async ({page, context}) => {
+  const baseline = await context.newPage();
+  await openModel(baseline, true, appearance, {loading: true});
+  await openModel(page, false, appearance, {loading: true});
+  const projection = (target: Page) => target.getByRole('dialog').evaluate(dialog => ({
+    text: (dialog as HTMLElement).innerText,
+    choices: [...dialog.querySelectorAll('select')].map(select => ({value: select.value, disabled: select.disabled, required: select.required, text: [...select.options].map(option => option.textContent), size: select.size})),
+    paintedChoices: [...dialog.querySelectorAll('select, [role="combobox"]')].filter(node => !(node as HTMLElement).matches('.pui-select-backing')).map(node => {
+      const css = getComputedStyle(node), box = node.getBoundingClientRect();
+      return {tag: node.tagName, text: node.textContent, width: box.width, height: box.height, opacity: css.opacity, background: css.backgroundColor, padding: css.padding};
+    }),
+  }));
+  expect(await projection(page)).toEqual(await projection(baseline));
+  for (const target of [page, baseline]) await target.getByRole('searchbox', {name: 'Model', exact: true}).fill('Typing before catalog');
+  expect(await projection(page)).toEqual(await projection(baseline));
+  for (const target of [page, baseline]) await target.evaluate(initial => {window.modelPartsHarness.model.update(initial);}, state);
+  await expect(page.getByRole('searchbox', {name: 'Model', exact: true})).toHaveValue('');
+  await expect(page.getByRole('combobox', {name: 'Provider', exact: true})).toHaveJSProperty('tagName', 'BUTTON');
+  expect(await page.evaluate(() => window.modelPartsHarness.model.read())).toEqual(await baseline.evaluate(() => window.modelPartsHarness.model.read()));
+  await baseline.close();
 });

@@ -74,6 +74,18 @@ async function openConfirmation(page: Page, old = false): Promise<void> {
   await expect(page.getByRole('dialog', {name: 'Delete conversation?', exact: true})).toBeVisible();
 }
 
+async function openDeskScene(page: Page, kind: 'message' | 'queue-message' | 'confirmation'): Promise<void> {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async ({kind, editor, confirmation}) => {
+    const path = '/src/app/index.ts'; const {createApplication} = await import(path);
+    const mount = document.body.appendChild(document.createElement('div'));
+    const app = createApplication(mount, {appearance: 'light'});
+    if (kind === 'confirmation') app.workspace.openConfirmation({title: confirmation.title, action: confirmation.confirmLabel!, description: confirmation.message!, hint: confirmation.hint}, {onConfirm: () => ({ok: true})});
+    else app.workspace[kind === 'message' ? 'openMessageEditor' : 'openQueueEditor']({...editor, value: 'Original message 中文\nSecond paragraph.'}, {onSubmit: () => ({ok: true})});
+  }, {kind, editor: editorState, confirmation: confirmState});
+  await expect(page.locator('dialog[open]')).toBeVisible();
+}
+
 async function presentation(page: Page): Promise<unknown> {
   return page.evaluate(() => {
     for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
@@ -147,6 +159,15 @@ for (const kind of ['message', 'queue-message'] as const) test(`parts text edito
   await expect(page.getByRole('textbox', {name: kind === 'message' ? 'Message' : 'Pending message', exact: true})).toBeFocused();
 });
 
+for (const kind of ['message', 'queue-message', 'confirmation'] as const) test(`parts assembly preserves the actual Desk ${kind} scene, including its dynamically created generic dialog`, async ({page}) => {
+  await openDeskScene(page, kind);
+  await expect(page.locator('dialog[open]')).toHaveClass('pui-dialog');
+  expect(await page.locator('dialog[open]').evaluate(element => element.getBoundingClientRect().width)).toBe(600);
+  const baseline = await presentation(page);
+  if (kind === 'confirmation') await openConfirmation(page); else await openEditor(page, false, kind);
+  expect(await presentation(page)).toEqual(baseline);
+});
+
 test('parts confirmation preserves the original cancel-first destructive presentation and literal emphasized subject', async ({page}) => {
   await openConfirmation(page, true); const baseline = await presentation(page);
   await openConfirmation(page); expect(await presentation(page)).toEqual(baseline);
@@ -194,7 +215,7 @@ test('close and reopen isolate earlier editor outcomes while explicit input disa
   await expect(page.getByRole('alert')).toBeHidden();
   await page.evaluate(() => window.editConfirmHarness.editor!.update({title: 'Edit the next message', inputDisabled: true, disabled: true, error: 'The conversation changed. Your text is kept here so you can copy it.'}));
   await expect(page.getByRole('textbox')).toBeDisabled(); await expect(page.getByRole('textbox')).toHaveValue('New opening');
-  await expect(page.getByRole('button', {name: 'Save', exact: true})).toBeDisabled();
+  await expect(page.getByRole('button', {name: 'Send again', exact: true})).toBeDisabled();
 });
 
 test('editor close-disabled guards close icon, cancel and Escape; standalone backdrop is inert; destroy is terminal', async ({page}) => {
