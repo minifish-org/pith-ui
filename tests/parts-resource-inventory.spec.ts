@@ -70,7 +70,9 @@ async function presentation(page: Page): Promise<unknown> {
     const nodes = [...dialog.querySelectorAll(selector)].filter(node => !node.hasAttribute('hidden'));
     return {dialog: inspect(dialog),classes: [...dialog.classList].sort(),nodes: nodes.map(inspect),svg: [...dialog.querySelectorAll('svg')].map(svg => svg.innerHTML),
       sections: [...dialog.querySelectorAll('section')].map(section => [...section.children].map(child => child.localName)),
-      cards: [...dialog.querySelectorAll('article')].map(card => [...card.children].map(child => ({tag: child.localName,classes: [...child.classList].sort()}))),
+      // The old action adapter's display:contents DIV adds no box or semantic
+      // grouping. A formal compact row can omit that neutral adapter wrapper.
+      cards: [...dialog.querySelectorAll('article')].map(card => [...card.children].flatMap(child => getComputedStyle(child).display === 'contents' ? [...child.children] : [child]).map(child => ({tag: child.localName,classes: [...child.classList].sort()}))),
       overflow: [dialog.clientWidth,dialog.scrollWidth,dialog.clientHeight,dialog.scrollHeight]};
   });
 }
@@ -170,6 +172,34 @@ test('resource row callbacks use current frozen targets while busy availability 
   await renamed.getByRole('button',{name: 'Use',exact: true}).click();await expect(renamed.getByRole('button',{name: 'Use',exact: true})).toBeDisabled();
   expect(await page.evaluate(() => window.inventoryPartsHarness.actions[1])).toEqual({action: 'use',target: {workspaceId: 'w1',kind: 'skill',name: 'inspect-renamed',path: full.skills[0]!.path},frozen: true});
   await page.evaluate(() => window.inventoryPartsHarness.releases[1]!({ok: false,error: 'Use rejected'}));await expect(page.locator('dialog [role=alert]')).toHaveText('Use rejected');
+});
+
+test('every create action connects its original finite resource kind', async ({page}) => {
+  for (const old of [true,false]) {
+    await openInventory(page,old,empty);
+    for (const [index,label] of ['Create AGENTS.md in this workspace','Add skill','Add prompt template'].entries()) {
+      await page.getByRole('button',{name: label,exact: true}).click();
+      await page.evaluate(index => window.inventoryPartsHarness.releases[index]!({ok: true}),index);
+      await expect(page.getByRole('button',{name: label,exact: true})).toBeEnabled();
+    }
+    expect(await page.evaluate(() => window.inventoryPartsHarness.actions)).toEqual([{action: 'create',target: 'instructions'},{action: 'create',target: 'skill'},{action: 'create',target: 'template'}]);
+  }
+});
+
+test('inherited view, native reveal and template use connect the original row targets', async ({page}) => {
+  for (const old of [true,false]) {
+    await openInventory(page,old);
+    await page.locator('article.pui-resource-card').getByRole('button',{name: 'View / edit',exact: true}).click();
+    await page.evaluate(() => window.inventoryPartsHarness.releases[0]!({ok: true}));
+    await page.locator('article.pui-file-card').filter({has: page.getByText('inspect',{exact: true})}).getByRole('button',{name: 'Reveal',exact: true}).click();
+    await page.evaluate(() => window.inventoryPartsHarness.releases[1]!({ok: true}));
+    await page.locator('article.pui-file-card').filter({has: page.getByText('summarize',{exact: true})}).getByRole('button',{name: 'Use',exact: true}).click();
+    expect(await page.evaluate(() => window.inventoryPartsHarness.actions)).toEqual([
+      {action: 'edit',target: {workspaceId: 'w1',kind: 'instructions',name: 'AGENTS.md',path: '/parent/AGENTS.md'},frozen: true},
+      {action: 'reveal',target: {workspaceId: 'w1',kind: 'skill',name: 'inspect',path: full.skills[0]!.path},frozen: true},
+      {action: 'use',target: {workspaceId: 'w1',kind: 'template',name: 'summarize',path: full.templates[0]!.path},frozen: true},
+    ]);
+  }
 });
 
 test('removed rows and closed inventory discard late outcomes without replay and release once', async ({page}) => {

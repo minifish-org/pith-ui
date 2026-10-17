@@ -21,6 +21,7 @@ interface SettingsHandle {
 interface Harness {
   session: SettingsHandle; initial: SettingsState; credential: Credential; values: Array<{action: string; value?: unknown}>;
   releases: Array<{action: string; resolve(result: Result): void}>; closed: number; control?: HTMLInputElement; button?: HTMLButtonElement;
+  shared?: {setAppearance(mode: Appearance): void;destroy(): void};
 }
 declare global {interface Window {settingsPartsHarness: Harness}}
 const ready: SettingsState = {baseUrl: 'https://provider.example/v1', hasApiKey: true, ready: true,
@@ -29,7 +30,7 @@ const providers: Provider[] = [{id: 'first',name: 'First provider',configured: t
 const credential: Credential = {status: 'Configured',hidden: false,required: false,placeholder: 'Leave blank to keep this provider’s key',removeVisible: true,
   providerActions: {id: 'first',oauth: true,signedIn: false,custom: true}};
 const update: UpdateState = {version: '0.1.0-rc.27',enabled: true,phase: 'available',availableVersion: '0.1.0-rc.28',progress: 0,message: 'An update is available.'};
-interface OpenOptions {appearance?: 'light' | 'dark'; state?: SettingsState; credential?: Credential; providers?: Provider[]; updates?: UpdateState; cold?: boolean; pending?: string[]}
+interface OpenOptions {appearance?: 'light' | 'dark'; state?: SettingsState; credential?: Credential; providers?: Provider[]; updates?: UpdateState; cold?: boolean; pending?: string[];applicationContext?: boolean}
 
 async function openSettings(page: Page, old: boolean, options: OpenOptions = {}): Promise<void> {
   await page.goto('/tests/fixture.html');
@@ -38,6 +39,10 @@ async function openSettings(page: Page, old: boolean, options: OpenOptions = {})
     document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const opener = document.createElement('button'); opener.textContent = 'Settings opener'; opener.id = 'settings-opener'; document.body.append(opener); opener.focus();
     const mount = document.body.appendChild(document.createElement('div'));
+    // Actual Desk dialogs are flex children of the application shell. Match
+    // that native parent context in both oracles, including WebKit's computed
+    // automatic minimum serialization; the recipe has no presentation override.
+    if (!old && options.applicationContext) mount.classList.add('pui-app');
     const h = {initial: options.state ?? ready,credential: options.credential ?? credential,values: [],releases: [],closed: 0} as unknown as Harness;
     const action = (name: string, value?: unknown): Result | Promise<Result> => {
       h.values.push({action: name,...(value === undefined ? {} : {value})});
@@ -187,15 +192,15 @@ const scenarios: Record<string,OpenOptions> = {
 };
 for (const appearance of ['light','dark'] as const) for (const [name,options] of Object.entries(scenarios)) test(`${appearance} settings ${name} assembly preserves the actual application scene`,async ({page}) => {
   await page.emulateMedia({colorScheme: appearance === 'dark' ? 'light' : 'dark'});
-  await openSettings(page,true,{...options,appearance}); const old = await presentation(page);
-  await openSettings(page,false,{...options,appearance}); expect(await presentation(page)).toEqual(old);
+  await openSettings(page,true,{...options,appearance,applicationContext: true}); const old = await presentation(page);
+  await openSettings(page,false,{...options,appearance,applicationContext: true}); expect(await presentation(page)).toEqual(old);
   expect((await presentation(page) as {background: string}).background).toBe(appearance === 'dark' ? 'rgb(34, 37, 42)' : 'rgb(255, 255, 255)');
   if (!options.cold && !options.credential?.hidden) await expect(page.locator('dialog[open] input[type=password]')).toHaveAccessibleName(`API key ${options.credential?.status ?? credential.status}`.trim());
 });
 
 for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`settings ${viewport.width} preserves responsive scrolling and expanded advanced fields`,async ({page}) => {
-  await page.setViewportSize(viewport); await openSettings(page,true); await page.getByText('Advanced connection settings',{exact: true}).click(); const old = await presentation(page);
-  await openSettings(page,false); await page.getByText('Advanced connection settings',{exact: true}).click(); expect(await presentation(page)).toEqual(old);
+  await page.setViewportSize(viewport); await openSettings(page,true,{applicationContext: true}); await page.getByText('Advanced connection settings',{exact: true}).click(); const old = await presentation(page);
+  await openSettings(page,false,{applicationContext: true}); await page.getByText('Advanced connection settings',{exact: true}).click(); expect(await presentation(page)).toEqual(old);
   await page.getByRole('button',{name: 'Save settings',exact: true}).scrollIntoViewIfNeeded();
   const box = await page.getByRole('button',{name: 'Save settings',exact: true}).boundingBox(); expect(box!.y+box!.height).toBeLessThanOrEqual(viewport.height);
 });
@@ -214,12 +219,17 @@ test('settings snapshots retain URL and key drafts, caret and provider choice; h
 });
 
 test('native URL validation expands advanced fields, required credentials block save, and all auxiliary buttons remain non-submit',async ({page}) => {
-  await openSettings(page,false,{credential: {...credential,required: true}});
-  const save = page.getByRole('button',{name: 'Save settings',exact: true}); await save.click();
-  expect(await page.evaluate(() => window.settingsPartsHarness.values.filter(value => value.action === 'save'))).toEqual([]);
-  await page.getByLabel('API key',{exact: false}).fill('Draft key');
-  await page.evaluate(() => {const h = window.settingsPartsHarness; h.session.resetProvider({provider: 'first',baseUrl: 'invalid endpoint',collapseAdvanced: true});});
-  await save.click(); await expect(page.locator('dialog[open] details')).toHaveAttribute('open',''); await expect(page.getByRole('textbox',{name: 'API base URL',exact: true})).toBeFocused();
+  const validate = async (old: boolean) => {
+    await openSettings(page,old,{credential: {...credential,required: true}});
+    const save = page.getByRole('button',{name: 'Save settings',exact: true}); await save.click();
+    expect(await page.evaluate(() => window.settingsPartsHarness.values.filter(value => value.action === 'save'))).toEqual([]);
+    await page.getByLabel('API key',{exact: false}).fill('Draft key');
+    await page.evaluate(() => {const h = window.settingsPartsHarness; h.session.resetProvider({provider: 'first',baseUrl: 'invalid endpoint',collapseAdvanced: true});});
+    await save.click(); await expect(page.locator('dialog[open] details')).toHaveAttribute('open','');
+    return page.evaluate(() => ({tag: document.activeElement?.localName,urlFocused: document.activeElement === document.querySelector('dialog[open] input[type=url]')}));
+  };
+  const originalNativeFocus = await validate(true);
+  expect(await validate(false)).toEqual(originalNativeFocus);
   expect(await page.locator('dialog[open] button:not([type=submit])').evaluateAll(nodes => nodes.every(node => (node as HTMLButtonElement).type === 'button'))).toBe(true);
   await page.getByRole('button',{name: 'Add independent model connection',exact: true}).click();
   expect(await page.evaluate(() => window.settingsPartsHarness.values.filter(value => value.action !== 'draft'))).toEqual([{action: 'create'}]);
@@ -281,4 +291,51 @@ test('closing clears secrets and all late outcomes, preserves host focus and onl
   await page.evaluate(() => {const h = window.settingsPartsHarness; h.releases[0]!.resolve({ok: false,error: 'Late failure'}); h.session.update({...h.initial,error: 'Late snapshot'}); h.session.fail('Late frame failure'); h.session.clearSecrets(); h.session.destroy(); h.session.destroy();});
   expect(await page.evaluate(() => ({read: window.settingsPartsHarness.session.read(),closed: window.settingsPartsHarness.closed,open: window.settingsPartsHarness.session.isOpen()}))).toEqual({read: {provider: 'first',baseUrl: ready.baseUrl,apiKey: ''},closed: 1,open: false});
   await expect(page.locator('dialog,input[type=password]')).toHaveCount(0);
+});
+
+async function openSharedSettings(page: Page): Promise<void> {
+  await page.goto('/tests/fixture.html');
+  const initial = await page.evaluate(async ({ready,providers,credential}) => {
+    const recipePath = '/examples/assemblies/settings.ts',partsPath = '/src/parts/index.ts';
+    const {composeSettings} = await import(recipePath),p = await import(partsPath);
+    const h = {initial: ready,credential,values: [],releases: [],closed: 0} as unknown as Harness;
+    const settings = composeSettings(ready,{onSubmit(draft: Draft) {h.values.push({action: 'save',value: draft});return new Promise<Result>(resolve => h.releases.push({action: 'save',resolve}));},onClose() {h.closed++;}});
+    h.session = settings;
+    settings.open();const beforeMount = settings.isOpen();
+    const sibling = p.createButtonPart({label: 'Sibling action',variant: 'secondary'});
+    const mount = document.body.appendChild(document.createElement('div'));mount.id = 'shared-settings-mount';
+    h.shared = p.mountParts(mount,p.createStackPart({children: [sibling,settings.part]}),{appearance: 'light'});
+    settings.setProviders(providers,'first');settings.setCredential(credential);settings.open();
+    window.settingsPartsHarness = h;
+    return {beforeMount,leaks: Object.values(settings.part).some(value => value instanceof Node)};
+  },{ready,providers,credential});
+  expect(initial).toEqual({beforeMount: false,leaks: false});
+  await expect(page.getByRole('dialog',{name: 'Settings',exact: true})).toBeVisible();
+}
+
+test('a local settings part shares one mount theme and retains its credential draft, native field, focus and caret through live appearance changes',async ({page}) => {
+  await page.emulateMedia({colorScheme: 'light'});await openSharedSettings(page);
+  const siblingColor = await page.getByRole('button',{name: 'Sibling action',exact: true}).evaluate(node => getComputedStyle(node).backgroundColor);
+  const key = page.getByLabel('API key',{exact: false});await key.fill('Shared-tree private draft');
+  await key.evaluate(node => {const input = node as HTMLInputElement;input.focus();input.setSelectionRange(3,12);window.settingsPartsHarness.control = input;});
+  await page.evaluate(() => window.settingsPartsHarness.shared!.setAppearance('dark'));
+  await expect(page.getByRole('dialog')).toHaveCSS('background-color','rgb(34, 37, 42)');
+  expect(await page.getByRole('button',{name: 'Sibling action',exact: true}).evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe(siblingColor);
+  await page.evaluate(() => window.settingsPartsHarness.shared!.setAppearance('light'));
+  await expect(page.getByRole('dialog')).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(page.getByRole('button',{name: 'Sibling action',exact: true})).toHaveCSS('background-color',siblingColor);await expect(key).toHaveValue('Shared-tree private draft');
+  expect(await key.evaluate(node => ({same: node === window.settingsPartsHarness.control,focus: node === document.activeElement,selection: [(node as HTMLInputElement).selectionStart,(node as HTMLInputElement).selectionEnd]}))).toEqual({same: true,focus: true,selection: [3,12]});
+  await page.evaluate(() => window.settingsPartsHarness.session.close());await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.getByRole('button',{name: 'Sibling action',exact: true})).toBeVisible();
+  await expect(page.locator('#shared-settings-mount')).toHaveClass('pui');
+  await page.evaluate(() => window.settingsPartsHarness.shared!.destroy());expect(await page.evaluate(() => window.settingsPartsHarness.closed)).toBe(1);
+});
+
+test('destroying the shared owner retires a settings composition before late callbacks or snapshots can touch disposed children',async ({page}) => {
+  await openSharedSettings(page);await page.getByLabel('API key',{exact: false}).fill('Private draft');await page.getByRole('button',{name: 'Save settings',exact: true}).click();
+  await page.evaluate(() => window.settingsPartsHarness.shared!.destroy());await expect(page.locator('dialog,input')).toHaveCount(0);
+  const state = await page.evaluate(async () => {
+    const h = window.settingsPartsHarness;h.releases[0]!.resolve({ok: false,error: 'Retired failure'});await new Promise(resolve => setTimeout(resolve,0));
+    h.session.update({...h.initial,error: 'Retired snapshot'});h.session.setCredential(h.credential);h.session.setProviders([]);h.session.resetProvider({provider: 'late',baseUrl: 'https://late.example/v1'});h.session.fail('Retired frame');h.session.destroy();
+    return {open: h.session.isOpen(),closed: h.closed,read: h.session.read()};
+  });
+  expect(state).toEqual({open: false,closed: 1,read: {provider: 'first',baseUrl: ready.baseUrl,apiKey: ''}});await expect(page.locator('#shared-settings-mount')).not.toHaveClass('pui');
 });
