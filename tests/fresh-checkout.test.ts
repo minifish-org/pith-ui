@@ -22,8 +22,9 @@ test('npm check works from a fresh source checkout and generates the public pack
     const checked = spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['run', 'check'], {cwd: directory, encoding: 'utf8', timeout: 60000, maxBuffer: 8 * 1024 * 1024});
     assert.equal(checked.error, undefined, checked.error?.message);
     assert.equal(checked.status, 0, checked.stderr || checked.stdout);
-    const declaration = join(directory, 'dist/app/index.d.ts');
+    const declaration = join(directory, 'dist/index.d.ts');
     assert.ok(existsSync(declaration), 'The documented check command prepares its public declaration dependency');
-    assert.match(readFileSync(declaration, 'utf8'), /export declare function createApplication\(/);
+    assert.match(readFileSync(declaration, 'utf8'), /export \* from ['"]\.\/parts\/index\.js['"]/);
+    assert.equal(existsSync(join(directory,'dist/app')),false,'Removed scene output cannot survive a fresh build');
   } finally {rmSync(directory, {recursive: true, force: true});}
 });
