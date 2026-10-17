@@ -1,0 +1,29 @@
+import {test,expect,type Page} from '@playwright/test';
+interface Composer {updateComposer(state: {disabled?: boolean;readOnly?: boolean}): void;updateAvailability(state: {busy?: boolean;conversations: string[];workspaces: string[]}): void;updateAttachments(state: {items: [];disabled?: boolean}): void;setDropPending(value: boolean): void;receiveNativeDrop(drop: {paths: string[];x: number;y: number}): void;updateImageGuidance(message: string): void;destroy(): void}
+declare global {interface Window {dropHarness: {composer: Composer;images: string[][];references: unknown[]}}}
+async function setup(page: Page,old: boolean): Promise<void> {
+  await page.goto('/tests/fixture.html');await page.evaluate(async old => {
+    const h = {images: [] as string[][],references: [] as unknown[],composer: null as unknown as Composer},callbacks = {onImages(files: File[]) {h.images.push(files.map(file => file.name));},onDropReferences(value: unknown) {h.references.push(value);}};
+    const appPath = '/src/app/index.ts',{createApplication} = await import(appPath),mount = document.body.appendChild(document.createElement('div')),app = createApplication(mount,{appearance: 'light',workspace: callbacks});
+    if (old) h.composer = {...app.workspace,destroy: app.destroy};else {app.destroy();const path = '/examples/assemblies/composer.ts',parts = '/src/parts/index.ts',{composeComposer} = await import(path),p = await import(parts),c = composeComposer({},callbacks);p.mountParts(mount,c.part,{appearance: 'light'});h.composer = c;}
+    window.dropHarness = h;
+  },old);
+}
+async function drag(page: Page,type: 'dragover'|'dragleave'|'drop',files: Array<[string,string]> = [],uris = '',inside = false): Promise<{prevented: boolean;active: boolean}> {
+  return page.locator('.pui-composer').evaluate((form,{type,files,uris,inside}) => {const transfer = new DataTransfer();for (const [name,mime] of files) transfer.items.add(new File(['payload'],name,{type: mime}));if (uris) transfer.setData('text/uri-list',uris);const event = new Event(type,{bubbles: true,cancelable: true});Object.defineProperties(event,{dataTransfer: {value: transfer},relatedTarget: {value: inside ? form.querySelector('textarea') : null}});form.dispatchEvent(event);return {prevented: event.defaultPrevented,active: form.classList.contains('pui-drag-images')};},{type,files,uris,inside});
+}
+test('drag feedback clears outside the native form and preserves an internal transition',async ({page}) => {
+  for (const old of [true,false]) {await setup(page,old);expect(await drag(page,'dragover')).toEqual({prevented: true,active: true});expect(await drag(page,'dragleave',[],'',true)).toEqual({prevented: false,active: true});expect(await drag(page,'dragleave')).toEqual({prevented: false,active: false});}
+});
+for (const mode of ['disabled','readOnly','busy','pending'] as const) test(`${mode} availability rejects drag highlighting`,async ({page}) => {
+  for (const old of [true,false]) {await setup(page,old);await page.evaluate(mode => {const c = window.dropHarness.composer;if (mode === 'pending') c.setDropPending(true);else if (mode === 'busy') c.updateAvailability({busy: true,conversations: [],workspaces: []});else c.updateComposer({[mode]: true});},mode);expect(await drag(page,'dragover')).toEqual({prevented: false,active: false});}
+});
+for (const mode of ['ready','attachments-disabled','pending','disabled','readOnly','busy'] as const) test(`${mode} mixed file drop preserves image and reference routing`,async ({page}) => {
+  const results: unknown[] = [];for (const old of [true,false]) {await setup(page,old);await page.evaluate(mode => {const c = window.dropHarness.composer;if (mode === 'attachments-disabled') c.updateAttachments({items: [],disabled: true});else if (mode === 'pending') c.setDropPending(true);else if (mode === 'busy') c.updateAvailability({busy: true,conversations: [],workspaces: []});else if (mode !== 'ready') c.updateComposer({[mode]: true});},mode);const result = await drag(page,'drop',[['Mime.png','image/png'],['Empty.JPG',''],['Unknown.bin','application/octet-stream'],['Unsupported.svg','image/svg+xml']],'file:///tmp/test.md');results.push({result,...await page.evaluate(() => ({images: window.dropHarness.images,references: window.dropHarness.references}))});}expect(results[1]).toEqual(results[0]);
+});
+test('native file drop uses finite incoming pointer coordinates and ignores outside or unavailable hits',async ({page}) => {
+  for (const old of [true,false]) {await setup(page,old);await page.locator('.pui-composer').evaluate(form => {const box = form.getBoundingClientRect(),c = window.dropHarness.composer;c.receiveNativeDrop({paths: ['inside.md'],x: box.x+20,y: box.y+20});c.receiveNativeDrop({paths: ['outside.md'],x: -1,y: -1});c.receiveNativeDrop({paths: ['invalid.md'],x: NaN,y: 1});c.setDropPending(true);c.receiveNativeDrop({paths: ['pending.md'],x: box.x+20,y: box.y+20});});expect(await page.evaluate(() => window.dropHarness.references)).toEqual([{paths: ['inside.md'],hasUnidentifiedFiles: false}]);}
+});
+test('image guidance retains its native paragraph, legal visibility and exact styling',async ({page}) => {
+  const values: unknown[] = [];for (const old of [true,false]) {await setup(page,old);await page.evaluate(() => window.dropHarness.composer.updateImageGuidance('Images need a supported model.'));values.push(await page.locator('.pui-image-guidance').evaluate(node => {const style = getComputedStyle(node);return {tag: node.localName,text: node.textContent,hidden: node.hasAttribute('hidden'),style: ['font-size','line-height','color','text-align','margin-top','margin-bottom','padding-top','padding-bottom'].map(key => style.getPropertyValue(key))};}));await page.evaluate(() => window.dropHarness.composer.updateImageGuidance(''));await expect(page.locator('.pui-image-guidance')).toBeHidden();}expect(values[1]).toEqual(values[0]);
+});

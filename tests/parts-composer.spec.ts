@@ -64,6 +64,9 @@ test('Enter, Shift+Enter, composition and stop retain the old distinct submit be
     await page.evaluate(() => {const h = window.composerPartsHarness;h.composer.updateComposer({...h.state,action: 'stop',readOnly: true});});await field.press('Enter');expect(await page.evaluate(() => window.composerPartsHarness.stops)).toBe(0);await page.getByRole('button',{name: 'Stop agent',exact: true}).click();expect(await page.evaluate(() => window.composerPartsHarness.stops)).toBe(1);
   }
 });
+test('a successful send button activation submits once and keeps the draft',async ({page}) => {
+  for (const old of [true,false]) {await setup(page,old);const field = page.getByRole('textbox',{name: 'Message Pith',exact: true});await field.fill('Once');await page.getByRole('button',{name: 'Send message',exact: true}).click();expect(await page.evaluate(() => window.composerPartsHarness.submits)).toEqual(['Once']);await expect(field).toHaveValue('Once');}
+});
 test('file chooser accepts repeated selection, paste reports image files, and model/effort intents stay separate',async ({page}) => {
   for (const old of [true,false]) {
     await setup(page,old);const picker = page.locator('.pui-composer input[type=file]');for (let index = 0;index < 2;index++) await picker.setInputFiles({name: 'Repeated.png',mimeType: 'image/png',buffer: Buffer.from('image payload')});
