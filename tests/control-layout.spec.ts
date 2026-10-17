@@ -46,7 +46,7 @@ test('an interactive row uses a native primary action distinct from its owned au
 });
 
 test('a small user-message frame retains the accepted light and dark user surfaces',async({page})=>{
-  for(const appearance of ['light','dark'] as const){await page.goto('/tests/fixture.html');await page.evaluate(async appearance=>{const u=await import('../src/index.js');u.mount(document.body,u.createMessage({role:'user',content:u.createText({text:'A saved message'})}),{appearance});},appearance);await expect(page.locator('.pui-message-frame')).toHaveCSS('background-color',appearance==='dark'?'rgb(48, 48, 48)':'rgb(240, 242, 246)');}
+  for(const appearance of ['light','dark'] as const){await page.goto('/tests/fixture.html');await page.evaluate(async appearance=>{const u=await import('../src/index.js');u.mount(document.body,u.createMessage({role:'user',content:u.createText({text:'A saved message'})}),{appearance});},appearance);await expect(page.locator('.pui-message-frame-body')).toHaveCSS('background-color',appearance==='dark'?'rgb(48, 48, 48)':'rgb(240, 242, 246)');}
 });
 
 test('a split pane keeps long reading and navigation bounded while its draft grows and the window narrows',async({page})=>{

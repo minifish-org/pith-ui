@@ -54,13 +54,20 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
     "createPopover({label:'Details',content:document.body});",
     "createConfirmDialog({title:'Delete?',message:document.body,onConfirm:()=>({ok:true})});",
     "createMenu({label:'Actions',items:[{id:'x',label:'X',intent:'primary',onAction:()=>{}}]});",
+    "createContentColumn({purpose:'reading',content:createText({text:'Read'}),width:700});",
+    "createSurface({content:createText({text:'Body'}),padding:8});",
+    "createToolbar({label:'Actions',children:[],gap:4});",
+    "createGrid({columns:3,children:[]});",
+    "createBreadcrumb({label:'Location',items:[],fontSize:12});",
+    "createStep({number:1,title:'Connect',description:'Provider',fontWeight:600});",
+    "createIconButton({label:'Send',icon:'arrow',context:'tiny'});",
     "createButton({label:'Save'}).element;",
     "createTextInput({label:'Name'}).control;",
     "createDialog({title:'Details'}).body;",
     "createPopover({label:'Details',content:createText({text:'Safe'})}).panel;",
     "createListSelect({label:'Models',multiple:true,options:[]}).reset('a');",
   ];
-  const imports = "import {createButton,createTextInput,createSelect,createListSelect,createIcon,createStack,createDialog,createPopover,createConfirmDialog,createMenu,createText} from './index.js';\n";
+  const imports = "import {createButton,createTextInput,createSelect,createListSelect,createIcon,createStack,createDialog,createPopover,createConfirmDialog,createMenu,createText,createContentColumn,createSurface,createToolbar,createGrid,createBreadcrumb,createStep,createIconButton} from './index.js';\n";
   // Each case is independently checked, so an unrelated missing import cannot
   // accidentally satisfy an expected declaration rejection.
   assert.deepEqual(diagnostics(imports), []);
@@ -69,7 +76,7 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
 
 test('every small-control showroom example compiles through the actual public package',()=>{
   const files=new Map<string,string>();
-  for(const filename of ['primitive-cases.ts','control-page-cases.ts','public-cases.ts','consumer-cases.ts','foundation-cases.ts']){
+  for(const filename of ['primitive-cases.ts','control-page-cases.ts','public-cases.ts','consumer-cases.ts','layout-cases.ts','foundation-cases.ts']){
     const source=ts.createSourceFile(filename,readFileSync(resolve('showroom',filename),'utf8'),ts.ScriptTarget.Latest,true);
     const visit=(node:ts.Node):void=>{
       if(filename==='foundation-cases.ts'&&ts.isVariableDeclaration(node)&&ts.isIdentifier(node.name)&&node.name.text==='code'&&node.initializer&&ts.isStringLiteralLike(node.initializer))files.set(resolve('showroom','public-example-foundations.ts'),node.initializer.text);
