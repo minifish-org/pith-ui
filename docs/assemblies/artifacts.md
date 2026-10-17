@@ -103,6 +103,14 @@ blur a focused action when disabling it and dismiss this nonmodal panel;
 WebKit retains panel focus. The regression compares the settled actual old and
 formal result in each browser, alongside control availability.
 
+An integrated application can replace the borrowed related dialog handles with
+the local composition's `setRelatedDialogs`. This delegates to the small
+InspectorPart, validates the whole genuine-handle snapshot before changing any
+relationship, and does not transfer ownership. The complete Desk composition
+registers each new file-preview opening before it receives focus; the shared
+image viewer remains related. Destroyed dialogs retire their own borrowed
+relationship automatically.
+
 Owner changes close the panel and destroy old rows. Removing a regular-action
 row retires its pending result. Parent disposal fires the group's lifecycle
 callback before descendants are released, retires the local controller and

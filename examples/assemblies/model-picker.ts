@@ -39,6 +39,8 @@ export interface ModelPickerAssembly {
 }
 export interface ModelPickerComposition extends ModelPickerAssembly {readonly part: DialogPart;open(): void}
 const effortLabel = (value: string) => value === 'off' ? 'Thinking off' : `Thinking: ${value === 'xhigh' ? 'extra high' : value}`;
+/** Desk's display formatter stays with its local composition. */
+export const thinkingLabel = effortLabel;
 
 /**
  * Part tree: Dialog -> Form -> label/provider, label/search, label/native list,

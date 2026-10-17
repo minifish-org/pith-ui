@@ -8,6 +8,8 @@ import {
 
 export type Result = {ok: true} | {ok: false;error: string};
 export interface CustomModel {id: string;name?: string;contextWindow?: number;maxTokens?: number;reasoning?: boolean;input?: readonly string[];cost?: {input: number;output: number;cacheRead: number;cacheWrite: number}}
+/** Initial values for a new definition; existing definitions remain untouched. */
+export function customModelDefaults(): CustomModel {return {id: '',contextWindow: 128000,maxTokens: 8192};}
 export interface CustomConnectionState {name: string;baseUrl: string;api: string;editing: boolean;models: readonly CustomModel[];error?: string;disabled?: boolean}
 export interface CustomModelDraft {sourceIndex: number;id: string;name: string;contextWindow: number;maxTokens: number;reasoning: boolean;images: boolean;prices: {input: string;output: string;cacheRead: string;cacheWrite: string}}
 export interface CustomConnectionDraft {name: string;baseUrl: string;api: string;apiKey: string;models: CustomModelDraft[]}
@@ -61,7 +63,7 @@ export function composeCustomConnection(initial: Readonly<CustomConnectionState>
     saved = {...read(),apiKey: ''};alive = false;rows.clear();form.invalidate();dialog.destroy();try {callbacks.onClose?.();} catch {}
   };
   const close = () => {if (alive) {dialog.close();release();}};
-  const add = createButtonPart({label: 'Add model',variant: 'secondary',onAction() {if (alive && !state.disabled && !form.isPending()) {addRow({id: '',contextWindow: 128000,maxTokens: 8192});syncButtons();}}});
+  const add = createButtonPart({label: 'Add model',variant: 'secondary',onAction() {if (alive && !state.disabled && !form.isPending()) {addRow(customModelDefaults());syncButtons();}}});
   const cancel = createButtonPart({label: 'Cancel',variant: 'secondary',onAction: close}),save = createButtonPart({label: 'Save connection',variant: 'primary',type: 'submit'});
   function syncButtons(): void {
     if (!alive) return;

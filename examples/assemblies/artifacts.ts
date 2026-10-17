@@ -20,6 +20,7 @@ export interface ArtifactsCallbacks {
 export interface ArtifactsDependencies {readonly announcement: AnnouncementPart;readonly relatedDialogs?: readonly DialogPart[]}
 export interface ArtifactsComposition {
   readonly part: AnchoredGroupPart;update(state: Readonly<ArtifactsState>,callbacks?: ArtifactsCallbacks): void;
+  setRelatedDialogs(dialogs: readonly DialogPart[]): void;
   close(): void;isOpen(): boolean;destroy(): void;
 }
 
@@ -74,5 +75,5 @@ export function composeArtifacts(initial: Readonly<ArtifactsState>, callbacks: A
   }
   render();
   return {part,update(next,nextCallbacks) {if (!alive) return;if (state.ownerId !== next.ownerId) inspector.close();state = next;if (nextCallbacks) handlers = nextCallbacks;render();},
-    close() {if (alive) inspector.close();},isOpen: () => alive && inspector.isOpen(),destroy() {if (alive) part.destroy();}};
+    setRelatedDialogs: inspector.setRelatedDialogs,close() {if (alive) inspector.close();},isOpen: () => alive && inspector.isOpen(),destroy() {if (alive) part.destroy();}};
 }

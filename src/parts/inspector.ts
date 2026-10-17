@@ -22,7 +22,7 @@ export function createInspectorHeadingPart(options: InspectorHeadingState & {act
 }
 
 export interface InspectorPartOptions {heading: InspectorHeadingPart;children: readonly Part[];relatedDialogs?: readonly DialogPart[]}
-export interface InspectorPart extends Part {replace(children: readonly Part[]): void;open(trigger: ButtonPart): void;close(restoreFocus?: boolean): void;isOpen(): boolean}
+export interface InspectorPart extends Part {replace(children: readonly Part[]): void;setRelatedDialogs(dialogs: readonly DialogPart[]): void;open(trigger: ButtonPart): void;close(restoreFocus?: boolean): void;isOpen(): boolean}
 export interface AnchoredGroupState {hidden?: boolean}
 export interface AnchoredGroupOptions extends AnchoredGroupState {trigger: ButtonPart;surface: InspectorPart;onDispose?(): void}
 export interface AnchoredGroupPart extends Part {update(state: Readonly<AnchoredGroupState>): void}
@@ -37,14 +37,29 @@ export function createInspectorPart(options: InspectorPartOptions): InspectorPar
   if (!title || !isPartAlive(options.heading)) throw new TypeError('Inspector heading must be a live Pith UI inspector heading.');
   if (!Array.isArray(options.children)) throw new TypeError('Inspector children must be Pith UI parts.');
   if (options.relatedDialogs !== undefined && !Array.isArray(options.relatedDialogs)) throw new TypeError('Related dialogs must be an array of Pith UI dialog parts.');
-  const relatedParts = options.relatedDialogs ?? [],related = relatedParts.map(dialog => {const node = nodeOf(dialog);if (!(node instanceof HTMLDialogElement)) throw new TypeError('Related dialogs must be Pith UI dialog parts.');return node;});
-  const exclusions: Node[] = [...related];
+  const validateRelated = (dialogs: readonly DialogPart[]): HTMLDialogElement[] => {
+    if (!Array.isArray(dialogs)) throw new TypeError('Related dialogs must be an array of Pith UI dialog parts.');
+    return dialogs.map(dialog => {const node = nodeOf(dialog);if (!(node instanceof HTMLDialogElement)) throw new TypeError('Related dialogs must be Pith UI dialog parts.');return node;});
+  };
+  validateRelated(options.relatedDialogs ?? []);
+  const exclusions: Node[] = [],relatedCleanups: (() => void)[] = [];
   assertUnownedParts([options.heading,...options.children]);
   const node = document.createElement('section');node.id = uniqueId('pui-inspector');node.className = 'pui-artifacts-panel';node.hidden = true;node.tabIndex = -1;node.setAttribute('aria-labelledby',title.id);
   let surface: ReturnType<typeof installAnchoredSurface> | undefined;
   const cleanups: (() => void)[] = [];
   const part: InspectorPart = createOwnedPart<Omit<InspectorPart,keyof Part>>(node,{
     replace(children) {if (isPartAlive(part)) replacePartChildren(part,[options.heading,...children]);},
+    setRelatedDialogs(dialogs) {
+      if (!isPartAlive(part)) return;
+      // Preflight every borrowed handle before releasing any prior link.
+      const related = validateRelated(dialogs);
+      for (const cleanup of relatedCleanups.splice(0)) cleanup();
+      dialogs.forEach((dialog,index) => {
+        const node = related[index]!;exclusions.push(node);
+        const remove = () => {const position = exclusions.indexOf(node);if (position >= 0) exclusions.splice(position,1);};
+        const unsubscribe = onPartDestroy(dialog,remove);relatedCleanups.push(() => {unsubscribe();remove();});
+      });
+    },
     open(trigger) {
       if (!isButtonPart(trigger)) throw new TypeError('Inspector triggers must be live Pith UI buttons.');if (!isPartAlive(part)) return;
       const pair = groups.get(part);if (!pair || pair.trigger !== trigger) throw new Error('An inspector opens from its composed anchored group trigger.');
@@ -60,9 +75,9 @@ export function createInspectorPart(options: InspectorPartOptions): InspectorPar
       surface.open();
     },
     close(restoreFocus = false) {if (typeof restoreFocus !== 'boolean') throw new TypeError('Inspector focus restoration must be boolean.');if (isPartAlive(part)) surface?.close(restoreFocus);},isOpen: () => isPartAlive(part) && !!surface?.isOpen(),
-  },{children: [options.heading,...options.children],dispose() {surface?.destroy();for (const cleanup of cleanups.splice(0)) cleanup();exclusions.length = 0;}});
+  },{children: [options.heading,...options.children],dispose() {surface?.destroy();for (const cleanup of cleanups.splice(0)) cleanup();for (const cleanup of relatedCleanups.splice(0)) cleanup();exclusions.length = 0;}});
   // Related dialogs are borrowed, never transferred or destroyed here.
-  relatedParts.forEach((dialog,index) => {const node = related[index]!;cleanups.push(onPartDestroy(dialog,() => {const position = exclusions.indexOf(node);if (position >= 0) exclusions.splice(position,1);}));});
+  part.setRelatedDialogs(options.relatedDialogs ?? []);
   inspectors.add(part);return part;
 }
 

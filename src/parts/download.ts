@@ -3,7 +3,7 @@ import {assertOptions,createOwnedPart,isPartAlive,type Part} from './ownership.j
 export type DownloadResult = {ok: true}|{ok: false;error: string};
 export interface DownloadPart extends Part {download(file: {blob: Blob;name: string}): Promise<DownloadResult>}
 /** Native file delivery with library-owned URL retirement. No style or DOM port. */
-export function createDownloadPart(options: Record<never,never> = {}): DownloadPart {
+export function createDownloadPart(options: Record<string,never> = {}): DownloadPart {
   assertOptions(options,[],'download');
   const node = document.createElement('a');node.hidden = true;
   const urls = new Map<string,ReturnType<typeof setTimeout>>();

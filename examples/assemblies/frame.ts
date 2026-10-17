@@ -3,7 +3,7 @@
 import {
   createActionsPart, createActivityPart, createBrandMarkPart, createBrandPart, createBreadcrumbPart, createButtonPart,
   createConnectionIndicatorPart, createDrawerPart, createFramePart, createMainPart, createMenuPart, createRailFooterPart,
-  createRailHeadingPart, createSearchFieldPart, createSideRailPart, createTextPart, createTopbarPart, createTreeBranchPart,
+  createRailHeadingPart, createSearchFieldPart, createSideRailPart, createTextPart, createTopbarPart, createTopbarActionsPart, createTreeBranchPart,
   createTreeItemPart, createTreePart, mountParts,
   type ActivityPart, type BrandMarkOptions, type ButtonPart, type DialogPart, type FramePart, type MenuPartItem,
   type MountPartsOptions, type Part, type TextPart, type TreeBranchPart, type TreeItemPart,
@@ -27,11 +27,15 @@ export interface FrameCallbacks {
   onWorkspaceAction?(action: 'remove', id: string): HostResult | Promise<HostResult>;
   onConversationAction?(action: 'rename'|'history'|'export'|'delete', id: string): HostResult | Promise<HostResult>;
   onSearch?(query: string): void; onError?(message: string): void;
+  onModalChange?(open: boolean): void;onDispose?(): void;
 }
 export interface FrameContent {
   /** Already composed conversation/composer bodies, in their native main order. */
   main?: readonly Part[];
   dialogs?: readonly DialogPart[];
+  /** Caller-composed live regions/notices, directly owned beside the main. */
+  siblings?: readonly Part[];
+  topbarActions?: readonly Part[];
   brand?: {name: string; qualifier?: string; mark?: BrandMarkOptions};
 }
 export interface FrameAssembly {
@@ -39,7 +43,7 @@ export interface FrameAssembly {
   setSidebarOpen(open: boolean): void; isSidebarOpen(): boolean;
   closeNavigationMenu(): void; setAppearance(appearance: 'light'|'dark'|'system'): void; destroy(): void;
 }
-export interface FrameComposition extends Omit<FrameAssembly, 'setAppearance'> {readonly part: FramePart}
+export interface FrameComposition extends Omit<FrameAssembly, 'setAppearance'> {readonly part: FramePart;replaceOverlays(parts: readonly DialogPart[]): void;replaceTopbarActions(parts: readonly Part[]): void}
 
 export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCallbacks = {}, content: FrameContent = {}): FrameComposition {
   let state = initial, alive = true, query = '', activeConversation = '', workspace = initial.workspace ?? 'No workspace', conversation = initial.conversation ?? 'New conversation';
@@ -69,11 +73,12 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
   const trigger = createButtonPart({variant: 'drawer-trigger', icon: 'menu', label: 'Open sidebar'});
   const breadcrumb = createBreadcrumbPart({ancestor: workspace, current: conversation});
   const compact = createButtonPart({variant: 'toolbar-action', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: initial.compactDisabled ?? true, onAction() {return callbacks.onAction?.('compact');}, onError: fail});
-  const topbar = createTopbarPart({children: [trigger, breadcrumb, createActionsPart({children: [compact]})]});
-  const main = createMainPart({children: [topbar, ...content.main ?? []]}), part = createFramePart({children: [],onDispose: retire});
+  const topbarActions = createTopbarActionsPart({children: [compact,...content.topbarActions ?? []]});
+  const topbar = createTopbarPart({children: [trigger, breadcrumb,topbarActions]});
+  const main = createMainPart({children: [topbar, ...content.main ?? []]}), part = createFramePart({children: [],onDispose: retire,onModalChange: callbacks.onModalChange});
   const drawer = createDrawerPart({scope: part, panel: rail, content: main, trigger});
   const menu = createMenuPart({label: 'Conversation actions', items: [], onToggle(open) {if (!open) menuTarget = undefined; syncMenuButtons();}, onError: fail});
-  part.replace([rail, menu, drawer, main, ...content.dialogs ?? []]);
+  part.replace([rail, menu, drawer, main, ...content.siblings ?? [], ...content.dialogs ?? []]);
 
   function syncMenuButtons(): void {
     if (!alive) return;
@@ -156,9 +161,11 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
   }
   update(initial);
   function retire(): void {
-    if (!alive) return;alive = false;menuTarget = undefined;branches.clear();rows.clear();expanded.clear();emptyWorkspace = undefined;emptySearch = undefined;
+    if (!alive) return;alive = false;menuTarget = undefined;branches.clear();rows.clear();expanded.clear();emptyWorkspace = undefined;emptySearch = undefined;callbacks.onDispose?.();
   }
   return {part, update, search, closeNavigationMenu, setSidebarOpen: drawer.setOpen, isSidebarOpen: drawer.isOpen,
+    replaceOverlays(parts) {if (alive) part.replace([rail,menu,drawer,main,...content.siblings ?? [],...parts]);},
+    replaceTopbarActions(parts) {if (alive) topbarActions.replace([compact,...parts]);},
     destroy() {part.destroy();}};
 }
 
