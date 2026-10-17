@@ -705,3 +705,12 @@
 .pui .pui-list-queue>.pui-control-text[data-role="label"]:first-child { color:var(--pui-text); }
 .pui .pui-markdown>:nth-last-child(2):has(+.pui-sr-only:last-child) { margin-bottom:0; }
 .pui .pui-message-frame-body>.pui-stack-flow>.pui-slot>.pui-status-inline { display:block; }
+
+/* Bounded modal forms reuse the original secondary destructive actions;
+   generic confirmation actions retain their filled danger presentation. */
+.pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-button.pui-danger:not(.pui-confirm .pui-button) { background:var(--pui-surface-subtle);border-color:var(--pui-border); }
+.pui :is(.pui-dialog-form,.pui-dialog-collection,.pui-dialog-document) .pui-button.pui-danger:not(.pui-confirm .pui-button):hover:not(:disabled) { background:var(--pui-surface-hover); }
+.pui .pui-form-settings .pui-notice-caption:not(.pui-notice-error,.pui-notice-success,.pui-notice-warning) { color:var(--pui-muted); }
+.pui .pui-form-dialog .pui-disclosure-inline { position:static;top:auto;margin:var(--pui-space-lg) 0 0;padding:var(--pui-space-md) 0;border:0;border-top:1px solid var(--pui-border);border-bottom:1px solid var(--pui-border);border-radius:0; }
+.pui .pui-form-dialog .pui-disclosure-inline>summary { min-height:0;padding:0;font-size:var(--pui-text-small);line-height:var(--pui-line-height); }
+.pui .pui-form-dialog .pui-disclosure-inline>.pui-disclosure-content { padding:0; }
