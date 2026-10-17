@@ -5,7 +5,7 @@ Native TypeScript parts for AI-assisted application development. Compose buttons
 The package exports `pith-ui` and `pith-ui/styles.css`. Parts expose no generated element, HTML, selector, class, style, pixel or animation options. A checked mount is the only DOM input. There is no public application, page or scene factory.
 
 ```sh
-npm install --save-exact pith-ui@0.6.1
+npm install --save-exact pith-ui@0.6.2
 ```
 
 ```ts
