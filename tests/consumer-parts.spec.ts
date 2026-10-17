@@ -103,3 +103,14 @@ test('resetting a revealed secret input restores its masked presentation',async(
   await page.getByRole('button',{name:'Show',exact:true}).click();await expect(page.getByLabel('Password',{exact:true})).toHaveAttribute('type','text');
   await page.evaluate(()=>Reflect.get(window,'secret').reset('replacement'));await expect(page.getByLabel('Password',{exact:true})).toHaveAttribute('type','password');
 });
+
+test('submit availability can leave a read-only draft selectable',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const body=u.createTextArea({label:'Source',value:'Read and copy',readOnly:true});const submitted:string[]=[];const form=u.createForm({children:[body],submitDisabled:true,onSubmit:async()=>{submitted.push(body.read());return{ok:true};}});u.mount(document.body,form);Object.assign(window,{submitted});});
+  const body=page.getByRole('textbox',{name:'Source',exact:true});await expect(body).toBeEnabled();await expect(body).toHaveAttribute('readonly','');
+  await expect(page.getByRole('button',{name:'Save',exact:true})).toBeDisabled();expect(await page.evaluate(()=>Reflect.get(window,'submitted'))).toEqual([]);
+});
+
+test('reading empty content stays separate from searchable reading items',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const reader=u.createReadingArea({label:'Reading',identity:'empty',items:[],empty:createEmpty(u)});function createEmpty(u:typeof import('../src/index.js')){return u.createText({text:'Welcome phrase'});}u.mount(document.body,reader);reader.find();});
+  await page.getByRole('searchbox',{name:'Find in this conversation',exact:true}).fill('Welcome phrase');await expect(page.locator('[data-find-count]')).toContainText('0 / 0');
+});
