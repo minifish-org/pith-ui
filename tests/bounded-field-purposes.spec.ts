@@ -88,9 +88,36 @@ test('a catalog select owns six native rows while an ordinary list keeps five', 
   await expect(catalog).toHaveCSS('padding', '8px');
   await expect(catalog).toHaveCSS('font-size', '16px');
   await expect(catalog).toHaveCSS('line-height', '24px');
-  // Measure populated rows: Chromium applies the shared 32px option minimum;
-  // WebKit retains its native row sizing. An empty/loading list differs.
-  expect((await catalog.boundingBox())!.height).toBe(browserName === 'webkit' ? 131 : 210);
+  // Preserve the measured macOS values. Native WebKit metrics differ on Linux;
+  // compare every platform against an isolated native select with the accepted
+  // source CSS, never a tolerance or another library-controlled implementation.
+  const height = (await catalog.boundingBox())!.height;
+  if (process.platform === 'darwin') expect(height).toBe(browserName === 'webkit' ? 131 : 210);
+  const nativeHeight = await catalog.evaluate(node => {
+    const frame = document.createElement('iframe');
+    frame.setAttribute('title', 'Independent native catalog measurement');
+    frame.style.width = node.getBoundingClientRect().width + 'px';
+    frame.style.height = '400px';
+    frame.style.border = '0';
+    document.body.append(frame);
+    try {
+      const doc = frame.contentDocument!;
+      doc.body.style.margin = '0';
+      const select = doc.createElement('select');
+      select.size = 6;
+      select.style.cssText = "display:block;width:100%;min-width:0;min-height:40px;height:auto;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;font-weight:400;line-height:24px;padding:8px;border:1px solid #CDD3DD;border-radius:8px;";
+      for (let index = 0; index < 8; index++) {
+        const option = doc.createElement('option');
+        option.textContent = 'Model ' + index;
+        option.style.cssText = 'box-sizing:border-box;min-height:32px;padding:4px 8px;line-height:24px;border-radius:5px;';
+        select.append(option);
+      }
+      doc.body.append(select);
+      if (select.closest('.pui')) throw new Error('Native oracle must not inherit Pith UI styles');
+      return select.getBoundingClientRect().height;
+    } finally {frame.remove();}
+  });
+  expect(height).toBe(nativeHeight);
   await catalog.press('ArrowDown');
   await expect(catalog).toHaveValue('3');
   await page.evaluate(() => {const state = Reflect.get(window, 'catalogField'); state.catalog.update({label: 'Choose model', options: state.options});});

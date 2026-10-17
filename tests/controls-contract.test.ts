@@ -35,6 +35,25 @@ const host = document.getElementById('app'); if (!(host instanceof HTMLElement))
 const mounted = mount(host,view,{appearance:'system'}); mounted.setAppearance('dark'); name.focus(); name.reset('Next'); mounted.destroy();`), []);
 });
 
+test('notice selection has a notice-only construction and update contract', () => {
+  const imports = "import {createSurface,createText,type Control,type NoticeSurfaceState,type OrdinarySurfaceState} from './index.js';\n";
+  assert.deepEqual(diagnostics(imports + `
+const notice:Control<NoticeSurfaceState>=createSurface({purpose:'notice',selected:true,content:createText({text:'Notice'})});
+notice.update({selected:false});notice.update({label:'Retained selection'});
+const ordinary:Control<OrdinarySurfaceState>=createSurface({content:createText({text:'Input'})});
+ordinary.update({purpose:'panel'});`), []);
+  for (const source of [
+    "createSurface({content:createText({text:'Input'}),selected:true});",
+    "createSurface({purpose:'input',content:createText({text:'Input'}),selected:true});",
+    "createSurface({purpose:'panel',content:createText({text:'Panel'}),selected:false});",
+    "createSurface({content:createText({text:'Input'})}).update({selected:true});",
+    "createSurface({content:createText({text:'Input'})}).update({purpose:'notice'});",
+    "createSurface({purpose:'notice',content:createText({text:'Notice'})}).update({purpose:'input'});",
+    "createSurface({purpose:'notice',content:createText({text:'Notice'}),selected:'yes'});",
+    "createSurface({purpose:'notice',content:createText({text:'Notice'}),borderWidth:3});",
+  ]) assert.ok(diagnostics(imports + source).length, source);
+});
+
 test('constrained declarations reject visual options, raw nodes, invalid modes and internal handles', () => {
   const cases = [
     "createTable({label:'Data',columns:[{key:'item',label:'Item',width:220}],rows:[]});",
