@@ -247,6 +247,9 @@ test('an advanced inline fold inside a normal modal form retains the original so
   await expect(summary).toHaveCSS('line-height', '18px');
   await expect(summary).toHaveCSS('padding', '0px');
   await expect(summary).toHaveCSS('min-height', '0px');
+  await summary.press('Space');
+  const label = await box(page.locator('label').filter({hasText: /^Registered client ID$/})), header = await box(summary);
+  expect(label.y - header.y - header.height).toBe(16);
 });
 
 test('standalone destructive actions and generic form confirmations retain their ordinary danger surface', async ({page}) => {
