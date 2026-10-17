@@ -75,7 +75,8 @@ test('a bounded warning confirmation owns its body and retains the warning actio
       ui.createIcon({name: 'shield', context: 'notice'}),
       ui.createStack({children: [ui.createText({role: 'label', text: 'Access to your account and connected services.'}), ui.createText({role: 'caption', text: 'External tools can act on their connected services.'})]}),
     ]})})});
-    const confirmation = make({purpose: 'form', tone: 'warning', eyebrow: 'CONVERSATION PERMISSIONS', title: 'Enable access?', confirmLabel: 'Enable access', content: notice, hint: 'The permission remains until revoked.', onConfirm: () => ({ok: true})});
+    const content = ui.createStack({context: 'flow', children: [ui.createMarkdown({text: 'Give permission to run **all enabled tools** without asking in **this conversation**.'}), notice]});
+    const confirmation = make({purpose: 'form', tone: 'warning', eyebrow: 'CONVERSATION PERMISSIONS', title: 'Enable access?', confirmLabel: 'Enable access', content, hint: 'The permission remains until revoked.', onConfirm: () => ({ok: true})});
     const mounted = ui.mount(document.body, ui.createText({text: 'Host'}));
     mounted.attach(confirmation);
     confirmation.open();
@@ -84,6 +85,16 @@ test('a bounded warning confirmation owns its body and retains the warning actio
   const dialog = page.getByRole('dialog', {name: 'Enable access?', exact: true});
   expect((await dialog.boundingBox())!.width).toBe(500);
   await expect(dialog.getByText('CONVERSATION PERMISSIONS', {exact: true})).toBeVisible();
+  const intro = dialog.locator('.pui-markdown > p');
+  await expect(intro).toHaveCSS('font-size', '14px');
+  await expect(intro).toHaveCSS('line-height', '21px');
+  await expect(intro).toHaveCSS('margin', '16px 0px 24px');
+  await expect(intro).toHaveCSS('color', 'rgb(102, 112, 133)');
+  await expect(intro.locator('strong')).toHaveCount(2);
+  await expect(intro.locator('strong').first()).toHaveCSS('font-weight', '600');
+  const introColors = await intro.locator('strong').first().evaluate(node => ({actual: getComputedStyle(node).color, expected: getComputedStyle(node).getPropertyValue('--pui-text').trim()}));
+  expect(introColors.actual).toBe('rgb(31, 37, 48)');
+  expect(introColors.expected.toUpperCase()).toBe('#1F2530');
   await expect(dialog.locator('[data-icon="shield"] svg')).toHaveCount(1);
   const surface = dialog.locator('.pui-notice-surface');
   await expect(surface).toHaveCSS('border-radius', '9px');
