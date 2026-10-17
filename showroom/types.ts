@@ -16,6 +16,8 @@ export interface MountedDemo {
   replay?(): void;
 }
 export interface ShowcaseCase {
+  /** The exact formal factories demonstrated by the executable example. */
+  factories?: readonly string[];
   id: string;
   title: string;
   layer: ShowcaseLayer;

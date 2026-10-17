@@ -29,7 +29,8 @@ body { font-family:var(--pui-font-ui); font-size:var(--pui-text-medium); font-we
 .gallery-frame { width:100%; min-width:0; }
 .gallery-frame-label { font-size:var(--pui-text-small); color:var(--pui-muted); margin-bottom:var(--pui-space-sm); }
 .gallery-canvas { border:1px solid var(--pui-border); border-radius:10px; min-height:180px; overflow:hidden; position:relative; }
-.gallery-demo-host { padding:var(--pui-space-xl); min-height:180px; }
+.gallery-demo-host { padding:var(--pui-space-xl); min-height:180px; position:relative; }
+.gallery-demo-host > div:has(> .pui-viewport-frame) { height:620px; position:relative; }
 .gallery-demo-host:has(> .pui-app) { padding:0; }
 .gallery-demo-host > .pui-app { height:620px; min-height:520px; }
 .gallery-demo-host > .pui-dialog-surface { max-width:none; }

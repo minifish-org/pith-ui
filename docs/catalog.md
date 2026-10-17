@@ -1,99 +1,145 @@
-# Catalog and taxonomy
+# Formal constrained parts catalog
 
-There are two consumption contracts. Pith Desk's UI must use only `pith-ui/app` and `pith-ui/styles.css`; general component consumers use `pith-ui`. Their installed declarations define exact options and return types. Interactive links below use the same stable `item` IDs as the typed showroom catalog. Match the documentation and deployed showroom to the package version being reviewed.
+Choose a small part by its native responsibility. The library fixes presentation; callers supply literal content, finite semantic choices, state and data callbacks. There is one checked `mountParts` boundary and one inherited appearance owner.
 
-## Application entry
+Every linked exhibit has a strictly compiled example made from the formal API. Complete baseline regions are kept in [verified local assembly documentation](./assemblies/coverage.md), outside the public runtime API and showroom. See [API.md](../API.md) for exact legal options and opaque handle methods.
 
-Read the bundled [application contract](../APP.md) and installed `dist/app/index.d.ts`. `createApplication(mount, options)` owns one complete interface and returns four plain semantic scenes. The root factories cataloged below remain public for general composition; they must not be used to bypass an application scene's boundary.
-
-| Scene | Feature groups | Reference |
-|---|---|---|
-| `workspace` | Navigation/search/menus/welcome; messages/tools/commands/Markdown/reading; composer/attachments/drop/queue; permissions/approval/runtime/failure; owned edit/confirm/workspace/rename dialogs; branches, costs and completion notices | `Application.workspace`, `WorkspaceScene` |
-| `settings` | Appearance/provider credentials/test/update display; model/effort; independent connections/model definitions/prices; MCP and provider sign-in | `Application.settings`, `SettingsScene` |
-| `resources` | Instructions/skills/templates/diagnostics, inventory actions, read-only/source editing and editor loading | `Application.resources`, `ResourcesScene` |
-| `files` | Conversation artifacts/actions, text/Markdown/diff/image previews, UTF-8 paging, copy feedback and image zoom | `Application.files`, `FilesScene` |
-
-`customModelDefaults()` is a pure helper in both public entries. It supplies a fresh blank model with the existing 128000/8192 token starting limits, shared by an initial independent-connection model and Add model. It does not construct UI, inherit another row or replace values loaded from storage. The [custom-connection](https://minifish-org.github.io/pith-ui/?item=custom-connection) case demonstrates it; use only helpers exported by the installed package version.
-
-The complete [`application-reference`](https://minifish-org.github.io/pith-ui/?item=application-reference) case is classified as **pages / 应用集成**. It embeds the [compiled reference application](../examples/application/main.ts), with a full-page link. All business actions are explicitly simulated. It uses only the approved public entry and CSS; its harness and gallery measurement code stay outside the application package.
-
-The following four design/component layers document the general library. Their Node slots, DOM handles, compatibility markup and density options are not application-consumption permissions.
-
-## 1. Design foundations
-
-| Category | Showroom | Design contract |
-|---|---|---|
-| Color | [Palette](https://minifish-org.github.io/pith-ui/?item=foundation-colors) | Semantic light/dark/system palettes; `--pui-*` tokens |
-| Type | [Typography](https://minifish-org.github.io/pith-ui/?item=foundation-typography) | Two automatic font roles; 12/14/16 CSS px, 400/600 weight, 1.5 line height |
-| Spacing | [Spacing](https://minifish-org.github.io/pith-ui/?item=foundation-spacing) | Only 4/8/12/16/24 CSS px; blocks own padding, margins and grouping |
-| Dimensions | [Dimensions](https://minifish-org.github.io/pith-ui/?item=foundation-sizing) | Standard controls, fixed internal compact samples and native multiline differences |
-| Borders | [Borders](https://minifish-org.github.io/pith-ui/?item=foundation-borders) | Border widths, corners and validation states |
-| Layers | [Surfaces](https://minifish-org.github.io/pith-ui/?item=foundation-surfaces) | Surfaces, selection, overlay and shadow |
-| Focus | [Focus and keyboard interaction](https://minifish-org.github.io/pith-ui/?item=foundation-focus) | Native focus and traversal without focus outlines, glows or border highlights |
-| Motion | [Motion](https://minifish-org.github.io/pith-ui/?item=foundation-motion) | Existing transition/working feedback, replay and reduced motion |
-
-`setAppearance` establishes a `.pui` root and its selected appearance. CSS values are measured in CSS px; device pixel ratio is shown separately. The showroom distinguishes declared rules from current browser measurements and does not infer actual glyph fonts or browser zoom from device pixel ratio.
-
-The focus exhibit observes the actual focused control while exercising pointer, Tab and keyboard activation. Its observer is showroom-only. Focus adds no outlines, glows or border-color changes, and no replacement background cue. Existing navigation/menu focus backgrounds and focus-driven action visibility remain unchanged, along with hover, caret, selection, surface shadows, drag feedback and business states. A keyboard user no longer has a focus ring for locating the active control.
-
-The typography and spacing exhibits display the supported contract, not an open-ended design editor. UI and code fonts are selected by purpose; medium 14 CSS px is the default. Common showroom controls let a reviewer choose content state, theme and container width. Density is retained only in the fixed compatibility demonstration; old density URLs normalize to the standard view.
-
-## 2. Base components
-
-| Category | Public factories | Showroom item IDs |
-|---|---|---|
-| Actions | `createButton`, `createIconButton`, `createTextAction` | `button`, `icon-button`, `text-action` |
-| Text input | `createField`, `createTextInput`, `createSearchInput`, `createNumberInput`, `createTextArea`, `createSecretInput` | `text-input`, `search-input`, `number-input`, `text-area`, `secret-input` |
-| Choice | `createSelect`, `createCheckbox` | `select`, `checkbox` |
-| Information | `createIcon`, `createStatus`, `createListRow`, `createKeyValue`, `createDivider`, `createProgress` | `icons`, `status`, `list-row`, `key-value`, `divider`, `progress` |
-| Feedback | `createNotice`, `createCollectionState`, `createCopyFeedback` | `notice`, `collection-state`, `copy-feedback` |
-| Floating UI | `createDialog`, `createTextEditDialog`, `createConfirmDialog`, `createMenu`, `createPopover` | `dialog`, `text-edit-dialog`, `confirmation`, `menu`, `popover` |
-| Composition | `createFormSection`, `createActions`, `createToolbar`, `createDisclosure`, `createScrollArea` | `form-section`, `actions`, `toolbar`, `disclosure`, `scroll-area` |
-| File actions | `createFileActions` | `file-actions` |
-
-See [`showroom/primitive-cases.ts`](../showroom/primitive-cases.ts) and [`showroom/files-cases.ts`](../showroom/files-cases.ts). Use default presentation and semantic intent; the concrete state type defines content capabilities. Density remains a compatibility/internal presentation option. Functional size options, such as a Select's visible row count or a ScrollArea's viewport mode, retain their documented behavior and are separate from typography or spacing choices.
-
-`createSelect` uses the shared floating option surface for a single-choice dropdown, including selection, disabled items, keyboard navigation and focus. Permission, provider, theme and other product choices reuse this implementation. Use the block's `focus()` method to reach its visible control; `control` retains the native form value and validation adapter. Explicit `multiple: true` or `size > 1` produces a visible native listbox, preserving platform multi-selection and multiline navigation rather than squeezing a list into a dropdown. See [Select](https://minifish-org.github.io/pith-ui/?item=select) and [conversation permissions](https://minifish-org.github.io/pith-ui/?item=permission-control) together.
-
-Multi-select uses `values`, `getValues()`, `resetValues(values)` and `onValuesChange(values)` for complete selections. Scalar value methods remain compatible; `values` takes precedence at construction. Explicit resets do not emit change callbacks or replace native form-reset defaults. File actions expose `setDisabled(boolean)` and combine it with copy-pending restrictions.
-
-Ordinary buttons and visible Select triggers use the same disabled opacity (0.45) and not-allowed cursor; native input/listbox field treatment stays separate. Application artifact actions reuse shared pending and disabled state, including `aria-busy`, while preserving the same file targets and callback behavior.
-
-## 3. Product blocks
-
-| Product category | Public factories | Showroom item IDs |
-|---|---|---|
-| Workspace shell | `createWorkspaceShell`, `createWelcomeView` | `workspace-chat`, `welcome` |
-| Navigation | `createWorkspaceNavigation`, `createWorkspacePicker`, `createRenameConversation`, `createContextMenu` | `workspace-navigation`, `workspace-picker`, `rename-conversation`, `context-menu` |
-| Conversation | `createConversationView`, `installConversationReader` | `conversation-messages`, `conversation-reader` |
-| Composer/queue | `createComposerView`, `createAttachments`, `createPendingMessages`, `createDropFeedback` | `composer`, `attachments`, `pending-messages`, `drop-feedback` |
-| Models | `createModelPicker`, `createModelEditor` | `model-picker` |
-| Task policy presentation | `createPermissionControl`, `createFullAccessConfirmation`, `createApprovalPanel`, `createRuntimePanel`, `createTaskFailure` | `permission-control`, `full-access-confirmation`, `approval-panel`, `runtime-panel`, `task-failure` |
-| Settings/connections | `createSettingsPanel`, `createCustomConnectionEditor`, `createCustomModelRow`, `createProviderActions` | `settings-panel`, `custom-connection`, `provider-resource-actions` |
-| OAuth/MCP | `createProviderLoginPanel`, `createMCPConnectionsPanel`, `createMCPConnectionList` | `provider-login`, `mcp-connections` |
-| Workspace resources | `createResourcesPanel`, `createResourceEditor`, `createResourceActions` | `resources-panel`, `resource-editor`, `provider-resource-actions` |
-| Files/content | `createArtifactPanel`, `createFilePreview`, `createPagedPreview`, `createImageViewer` | `artifact-panel`, `file-preview`, `paged-preview`, `markdown-content`, `image-viewer` |
-| Branches | `createBranchHistory` | `branch-history` |
-| System information | `createCostLedger`, `createUpdatePanel`, `createCompletionNotices` | `cost-ledger`, `updates`, `completion-notices` |
-| Shared feature surface | `createFeatureDialogFrame`, `createFeatureStatus` | `feature-dialog` |
-
-The complete current set of page IDs is defined by the catalog itself, rather than a second copied implementation. The composed workspace case uses the same shell, message, composer, task and notification blocks.
-
-Provider/resource action factories expose typed `onProviderAction`/`onResourceAction` callbacks; MCP connection lists expose typed `onAction`. Navigation's `onAction` receives a `WorkspaceNavigationAction` with semantic IDs and its trigger. These callbacks consume their owned action event; legacy dataset routing remains available when callbacks are omitted. Code-copy callbacks consistently receive the text and actual button through conversation, paged and file previews; the host supplies clipboard access and feedback.
-
-Case implementations:
-
-- [`content-cases.ts`](../showroom/content-cases.ts): messages, tools, Markdown, reader, paging, images and welcome.
-- [`forms-cases.ts`](../showroom/forms-cases.ts): settings, model catalog, custom models, OAuth/MCP, editing and branches.
-- [`navigation-cases.ts`](../showroom/navigation-cases.ts): navigation, workspace dialogs, menus, permissions, approval and runtime.
-- [`files-cases.ts`](../showroom/files-cases.ts): resources, file actions/preview, costs, updates and notices.
-
-## 4. Helpers and adapter compatibility
-
-- Content: `renderMarkdown`, `renderDiff`, `findRanges`, `previewPageRanges`, `previewPageBytes`, `formatCost`, `thinkingLabel`, `historyStatusMarkup`.
-- Safe DOM: `element`, `setText`, `iconElement`, `uniqueId`, `focusableElements`, `escape`, `escapeHTML`.
-- Ownership/state: `UIBlock`, `ActionResult`, `UIAction`, `Generation`, `Lifetime`, `controlDisabled`, `setControlPending`.
-- Adapter factories: `createSDKDialogElements`, `installImageViewer`, `mountPagedPreview`. Prefer `createFeatureDialogFrame`, `createImageViewer` and `createPagedPreview` for new independently owned instances. `mountPagedPreview` replaces a prior mount; factory instances expose explicit cleanup.
-- Safe markup adapters: `icon`, `dialogHeading`, `modelEditorMarkup`, `providerActionsMarkup`, `resourceActionsMarkup`, `fileActionsMarkup`, `showDialogError`. These support general component compatibility routing while factories are the default composition API. They are not approved Pith Desk imports.
-
-Private message reconciliation is not a public HTML extension mechanism. Raw strings from users, files, models or providers must never be assigned to trusted markup sinks.
+| Factory | Specification and legal interaction |
+| --- | --- |
+| `createActionsPart` | [actions-part](https://minifish-org.github.io/pith-ui/?item=actions-part) |
+| `createActivityPart` | [activity-part](https://minifish-org.github.io/pith-ui/?item=activity-part) |
+| `createAnchoredGroupPart` | [anchored-group-part](https://minifish-org.github.io/pith-ui/?item=anchored-group-part) |
+| `createAnnouncementPart` | [announcement-part](https://minifish-org.github.io/pith-ui/?item=announcement-part) |
+| `createBadgePart` | [badge-part](https://minifish-org.github.io/pith-ui/?item=badge-part) |
+| `createBrandMarkPart` | [brand-mark-part](https://minifish-org.github.io/pith-ui/?item=brand-mark-part) |
+| `createBrandPart` | [brand-part](https://minifish-org.github.io/pith-ui/?item=brand-part) |
+| `createBrandTilePart` | [brand-tile-part](https://minifish-org.github.io/pith-ui/?item=brand-tile-part) |
+| `createBreadcrumbPart` | [breadcrumb-part](https://minifish-org.github.io/pith-ui/?item=breadcrumb-part) |
+| `createBubblePart` | [bubble-part](https://minifish-org.github.io/pith-ui/?item=bubble-part) |
+| `createButtonPart` | [button-parts](https://minifish-org.github.io/pith-ui/?item=button-parts) |
+| `createCalloutActionsPart` | [callout-actions-part](https://minifish-org.github.io/pith-ui/?item=callout-actions-part) |
+| `createCalloutHeadingPart` | [callout-heading-part](https://minifish-org.github.io/pith-ui/?item=callout-heading-part) |
+| `createCalloutPart` | [callout-part](https://minifish-org.github.io/pith-ui/?item=callout-part) |
+| `createCaptionPart` | [caption-part](https://minifish-org.github.io/pith-ui/?item=caption-part) |
+| `createCardBodyPart` | [card-body-part](https://minifish-org.github.io/pith-ui/?item=card-body-part) |
+| `createCardHeadingPart` | [card-heading-part](https://minifish-org.github.io/pith-ui/?item=card-heading-part) |
+| `createCardPart` | [card-part](https://minifish-org.github.io/pith-ui/?item=card-part) |
+| `createCenteredContentPart` | [centered-content-part](https://minifish-org.github.io/pith-ui/?item=centered-content-part) |
+| `createCheckboxPart` | [checkbox-part](https://minifish-org.github.io/pith-ui/?item=checkbox-part) |
+| `createChoiceListPart` | [choice-list-part](https://minifish-org.github.io/pith-ui/?item=choice-list-part) |
+| `createCodePropertyPart` | [code-property-part](https://minifish-org.github.io/pith-ui/?item=code-property-part) |
+| `createCompactActionsPart` | [compact-actions-part](https://minifish-org.github.io/pith-ui/?item=compact-actions-part) |
+| `createCompactRowActionsPart` | [compact-row-actions-part](https://minifish-org.github.io/pith-ui/?item=compact-row-actions-part) |
+| `createCompactRowBodyPart` | [compact-row-body-part](https://minifish-org.github.io/pith-ui/?item=compact-row-body-part) |
+| `createCompactRowPart` | [compact-row-part](https://minifish-org.github.io/pith-ui/?item=compact-row-part) |
+| `createCompactSelectPart` | [compact-select-part](https://minifish-org.github.io/pith-ui/?item=compact-select-part) |
+| `createComposerPanelsPart` | [composer-panels-part](https://minifish-org.github.io/pith-ui/?item=composer-panels-part) |
+| `createComposerRegionPart` | [composer-region-part](https://minifish-org.github.io/pith-ui/?item=composer-region-part) |
+| `createCompoundDisclosurePart` | [compound-disclosure-part](https://minifish-org.github.io/pith-ui/?item=compound-disclosure-part) |
+| `createConnectionIndicatorPart` | [connection-indicator-part](https://minifish-org.github.io/pith-ui/?item=connection-indicator-part) |
+| `createContentSectionPart` | [content-section-part](https://minifish-org.github.io/pith-ui/?item=content-section-part) |
+| `createContentViewportPart` | [content-viewport-part](https://minifish-org.github.io/pith-ui/?item=content-viewport-part) |
+| `createContextLinePart` | [context-line-part](https://minifish-org.github.io/pith-ui/?item=context-line-part) |
+| `createContextNotePart` | [context-note-part](https://minifish-org.github.io/pith-ui/?item=context-note-part) |
+| `createCopyButtonPart` | [copy-button-part](https://minifish-org.github.io/pith-ui/?item=copy-button-part) |
+| `createCopyGroupPart` | [copy-group-part](https://minifish-org.github.io/pith-ui/?item=copy-group-part) |
+| `createDescriptionListPart` | [description-list-part](https://minifish-org.github.io/pith-ui/?item=description-list-part) |
+| `createDialogPart` | [dialog-part](https://minifish-org.github.io/pith-ui/?item=dialog-part) |
+| `createDisclosureBodyPart` | [disclosure-body-part](https://minifish-org.github.io/pith-ui/?item=disclosure-body-part) |
+| `createDisclosurePart` | [disclosure-part](https://minifish-org.github.io/pith-ui/?item=disclosure-part) |
+| `createDownloadPart` | [download-part](https://minifish-org.github.io/pith-ui/?item=download-part) |
+| `createDrawerPart` | [drawer-part](https://minifish-org.github.io/pith-ui/?item=drawer-part) |
+| `createEmblemPart` | [emblem-part](https://minifish-org.github.io/pith-ui/?item=emblem-part) |
+| `createFeedbackPart` | [feedback-part](https://minifish-org.github.io/pith-ui/?item=feedback-part) |
+| `createFieldGridPart` | [field-grid-part](https://minifish-org.github.io/pith-ui/?item=field-grid-part) |
+| `createFieldGroupPart` | [field-group-part](https://minifish-org.github.io/pith-ui/?item=field-group-part) |
+| `createFieldLabelPart` | [field-label-part](https://minifish-org.github.io/pith-ui/?item=field-label-part) |
+| `createFieldStackPart` | [field-stack-part](https://minifish-org.github.io/pith-ui/?item=field-stack-part) |
+| `createFieldsetPart` | [fieldset-part](https://minifish-org.github.io/pith-ui/?item=fieldset-part) |
+| `createFilePickerPart` | [file-picker-part](https://minifish-org.github.io/pith-ui/?item=file-picker-part) |
+| `createFoldingPart` | [folding-part](https://minifish-org.github.io/pith-ui/?item=folding-part) |
+| `createFooterPart` | [footer-part](https://minifish-org.github.io/pith-ui/?item=footer-part) |
+| `createFormLayoutPart` | [form-layout-part](https://minifish-org.github.io/pith-ui/?item=form-layout-part) |
+| `createFormPart` | [form-part](https://minifish-org.github.io/pith-ui/?item=form-part) |
+| `createFramePart` | [frame-part](https://minifish-org.github.io/pith-ui/?item=frame-part) |
+| `createGroupedCardPart` | [grouped-card-part](https://minifish-org.github.io/pith-ui/?item=grouped-card-part) |
+| `createIconNotePart` | [icon-note-part](https://minifish-org.github.io/pith-ui/?item=icon-note-part) |
+| `createIconPart` | [icon-part](https://minifish-org.github.io/pith-ui/?item=icon-part) |
+| `createImageGroupPart` | [image-group-part](https://minifish-org.github.io/pith-ui/?item=image-group-part) |
+| `createImagePart` | [image-part](https://minifish-org.github.io/pith-ui/?item=image-part) |
+| `createInlineGroupPart` | [inline-group-part](https://minifish-org.github.io/pith-ui/?item=inline-group-part) |
+| `createInputActionsPart` | [input-actions-part](https://minifish-org.github.io/pith-ui/?item=input-actions-part) |
+| `createInputAdornmentPart` | [input-adornment-part](https://minifish-org.github.io/pith-ui/?item=input-adornment-part) |
+| `createInputContextPart` | [input-context-part](https://minifish-org.github.io/pith-ui/?item=input-context-part) |
+| `createInputPart` | [input-part](https://minifish-org.github.io/pith-ui/?item=input-part) |
+| `createInputToolbarPart` | [input-toolbar-part](https://minifish-org.github.io/pith-ui/?item=input-toolbar-part) |
+| `createInspectorHeadingPart` | [inspector-heading-part](https://minifish-org.github.io/pith-ui/?item=inspector-heading-part) |
+| `createInspectorPart` | [inspector-part](https://minifish-org.github.io/pith-ui/?item=inspector-part) |
+| `createLabelledDividerPart` | [labelled-divider-part](https://minifish-org.github.io/pith-ui/?item=labelled-divider-part) |
+| `createLabelledFieldPart` | [labelled-field-part](https://minifish-org.github.io/pith-ui/?item=labelled-field-part) |
+| `createLineBreakPart` | [line-break-part](https://minifish-org.github.io/pith-ui/?item=line-break-part) |
+| `createLinkPart` | [link-part](https://minifish-org.github.io/pith-ui/?item=link-part) |
+| `createListPart` | [list-part](https://minifish-org.github.io/pith-ui/?item=list-part) |
+| `createListRowPart` | [list-row-part](https://minifish-org.github.io/pith-ui/?item=list-row-part) |
+| `createMainPart` | [main-part](https://minifish-org.github.io/pith-ui/?item=main-part) |
+| `createMarkdownPart` | [markdown-part](https://minifish-org.github.io/pith-ui/?item=markdown-part) |
+| `createMediaToolbarPart` | [media-toolbar-part](https://minifish-org.github.io/pith-ui/?item=media-toolbar-part) |
+| `createMenuPart` | [menu-part](https://minifish-org.github.io/pith-ui/?item=menu-part) |
+| `createMessageActionsPart` | [message-actions-part](https://minifish-org.github.io/pith-ui/?item=message-actions-part) |
+| `createMessageFooterPart` | [message-footer-part](https://minifish-org.github.io/pith-ui/?item=message-footer-part) |
+| `createMessageInputPart` | [message-input-part](https://minifish-org.github.io/pith-ui/?item=message-input-part) |
+| `createMetadataPart` | [metadata-part](https://minifish-org.github.io/pith-ui/?item=metadata-part) |
+| `createOptionActionPart` | [option-action-part](https://minifish-org.github.io/pith-ui/?item=option-action-part) |
+| `createOptionGroupPart` | [option-group-part](https://minifish-org.github.io/pith-ui/?item=option-group-part) |
+| `createPaginationPart` | [pagination-part](https://minifish-org.github.io/pith-ui/?item=pagination-part) |
+| `createPopoverPart` | [popover-part](https://minifish-org.github.io/pith-ui/?item=popover-part) |
+| `createPreformattedPart` | [preformatted-part](https://minifish-org.github.io/pith-ui/?item=preformatted-part) |
+| `createProgressPart` | [progress-part](https://minifish-org.github.io/pith-ui/?item=progress-part) |
+| `createRailFooterPart` | [rail-footer-part](https://minifish-org.github.io/pith-ui/?item=rail-footer-part) |
+| `createRailHeadingPart` | [rail-heading-part](https://minifish-org.github.io/pith-ui/?item=rail-heading-part) |
+| `createReadingColumnPart` | [reading-column-part](https://minifish-org.github.io/pith-ui/?item=reading-column-part) |
+| `createReadingNotePart` | [reading-note-part](https://minifish-org.github.io/pith-ui/?item=reading-note-part) |
+| `createReadingRegionPart` | [reading-region-part](https://minifish-org.github.io/pith-ui/?item=reading-region-part) |
+| `createReadingViewportPart` | [reading-viewport-part](https://minifish-org.github.io/pith-ui/?item=reading-viewport-part) |
+| `createResponsiveLeadPart` | [responsive-lead-part](https://minifish-org.github.io/pith-ui/?item=responsive-lead-part) |
+| `createRowTextPart` | [row-text-part](https://minifish-org.github.io/pith-ui/?item=row-text-part) |
+| `createScrollAreaPart` | [scroll-area-part](https://minifish-org.github.io/pith-ui/?item=scroll-area-part) |
+| `createScrollListPart` | [scroll-list-part](https://minifish-org.github.io/pith-ui/?item=scroll-list-part) |
+| `createSearchFieldPart` | [search-field-part](https://minifish-org.github.io/pith-ui/?item=search-field-part) |
+| `createSearchToolbarPart` | [search-toolbar-part](https://minifish-org.github.io/pith-ui/?item=search-toolbar-part) |
+| `createSecretLabelPart` | [secret-label-part](https://minifish-org.github.io/pith-ui/?item=secret-label-part) |
+| `createSectionHeadingPart` | [section-heading-part](https://minifish-org.github.io/pith-ui/?item=section-heading-part) |
+| `createSectionPart` | [section-part](https://minifish-org.github.io/pith-ui/?item=section-part) |
+| `createSelectPart` | [select-part](https://minifish-org.github.io/pith-ui/?item=select-part) |
+| `createSelectableCardPart` | [selectable-card-part](https://minifish-org.github.io/pith-ui/?item=selectable-card-part) |
+| `createSeparatedGroupPart` | [separated-group-part](https://minifish-org.github.io/pith-ui/?item=separated-group-part) |
+| `createSeparatedSectionPart` | [separated-section-part](https://minifish-org.github.io/pith-ui/?item=separated-section-part) |
+| `createSideRailPart` | [side-rail-part](https://minifish-org.github.io/pith-ui/?item=side-rail-part) |
+| `createStackPart` | [stack-part](https://minifish-org.github.io/pith-ui/?item=stack-part) |
+| `createStatusActionsPart` | [status-actions-part](https://minifish-org.github.io/pith-ui/?item=status-actions-part) |
+| `createStatusPart` | [status-part](https://minifish-org.github.io/pith-ui/?item=status-part) |
+| `createStepActionPart` | [step-action-part](https://minifish-org.github.io/pith-ui/?item=step-action-part) |
+| `createStepGroupPart` | [step-group-part](https://minifish-org.github.io/pith-ui/?item=step-group-part) |
+| `createSuggestionGroupPart` | [suggestion-group-part](https://minifish-org.github.io/pith-ui/?item=suggestion-group-part) |
+| `createTablePart` | [table-part](https://minifish-org.github.io/pith-ui/?item=table-part) |
+| `createTableRowPart` | [table-row-part](https://minifish-org.github.io/pith-ui/?item=table-row-part) |
+| `createTextFlowPart` | [text-flow-part](https://minifish-org.github.io/pith-ui/?item=text-flow-part) |
+| `createTextPart` | [text-part](https://minifish-org.github.io/pith-ui/?item=text-part) |
+| `createTextareaPart` | [textarea-part](https://minifish-org.github.io/pith-ui/?item=textarea-part) |
+| `createThumbnailPart` | [thumbnail-part](https://minifish-org.github.io/pith-ui/?item=thumbnail-part) |
+| `createThumbnailStripPart` | [thumbnail-strip-part](https://minifish-org.github.io/pith-ui/?item=thumbnail-strip-part) |
+| `createTimestampPart` | [timestamp-part](https://minifish-org.github.io/pith-ui/?item=timestamp-part) |
+| `createToastBodyPart` | [toast-body-part](https://minifish-org.github.io/pith-ui/?item=toast-body-part) |
+| `createToastPart` | [toast-part](https://minifish-org.github.io/pith-ui/?item=toast-part) |
+| `createToastStackPart` | [toast-stack-part](https://minifish-org.github.io/pith-ui/?item=toast-stack-part) |
+| `createToolbarPart` | [toolbar-part](https://minifish-org.github.io/pith-ui/?item=toolbar-part) |
+| `createTopbarActionsPart` | [topbar-actions-part](https://minifish-org.github.io/pith-ui/?item=topbar-actions-part) |
+| `createTopbarPart` | [topbar-part](https://minifish-org.github.io/pith-ui/?item=topbar-part) |
+| `createTrailingActionsPart` | [trailing-actions-part](https://minifish-org.github.io/pith-ui/?item=trailing-actions-part) |
+| `createTreeBranchPart` | [tree-branch-part](https://minifish-org.github.io/pith-ui/?item=tree-branch-part) |
+| `createTreeItemPart` | [tree-item-part](https://minifish-org.github.io/pith-ui/?item=tree-item-part) |
+| `createTreePart` | [tree-part](https://minifish-org.github.io/pith-ui/?item=tree-part) |
+| `createWarningPart` | [warning-part](https://minifish-org.github.io/pith-ui/?item=warning-part) |
+| `createWorkingIndicatorPart` | [working-indicator-part](https://minifish-org.github.io/pith-ui/?item=working-indicator-part) |
+| `createZoomImagePart` | [zoom-image-part](https://minifish-org.github.io/pith-ui/?item=zoom-image-part) |
+| `mountParts` | [button-parts](https://minifish-org.github.io/pith-ui/?item=button-parts) |

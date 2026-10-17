@@ -1,52 +1,48 @@
-import { readFile, readdir } from 'node:fs/promises';
-import { resolve, dirname, join } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-// This file has no top-level DOM effects; importing it keeps public examples in the normal type-check graph.
-import '../docs/examples.ts';
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const config = ts.readConfigFile(join(root, 'tsconfig.json'), ts.sys.readFile);
-if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
-const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
-const program = ts.createProgram([join(root, 'src/index.ts'), join(root, 'docs/examples.ts')], parsed.options);
-const errors = ts.getPreEmitDiagnostics(program);
-if (errors.length) throw new Error(ts.formatDiagnosticsWithColorAndContext(errors, { getCurrentDirectory: () => root, getCanonicalFileName: name => name, getNewLine: () => '\n' }));
-const source = program.getSourceFile(join(root, 'src/index.ts'))!;
-const checker = program.getTypeChecker();
-const symbols = checker.getExportsOfModule(checker.getSymbolAtLocation(source)!);
-const factories = symbols.map(symbol => symbol.getName()).filter(name => /^(create|install|mount)/.test(name)).sort();
-const catalog = await readFile(join(root, 'docs/catalog.md'), 'utf8');
-const undocumented = factories.filter(name => !catalog.includes('`' + name + '`'));
-if (undocumented.length) throw new Error(`Public factories missing from docs/catalog.md: ${undocumented.join(', ')}`);
-if (symbols.some(symbol => ['reconcileViews', 'clearViews'].includes(symbol.getName()))) throw new Error('Internal HTML reconciliation must not be a public extension API');
-
-const cases = new Map<string, string>();
-let examples = 0;
-for (const filename of (await readdir(join(root, 'showroom'))).filter(name => name.endsWith('-cases.ts'))) {
-  const body = await readFile(join(root, 'showroom', filename), 'utf8');
-  const file = ts.createSourceFile(filename, body, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  const visit = (node: ts.Node): void => {
-    if (ts.isObjectLiteralExpression(node)) {
-      const named = (name: string) => node.properties.find(property => property.name && (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) && property.name.text === name);
-      const id = named('id');
-      if (named('mount') && id && ts.isPropertyAssignment(id) && ts.isStringLiteralLike(id.initializer)) {
-        const value = id.initializer.text;
-        if (cases.has(value)) throw new Error(`Duplicate showroom ID ${value}: ${cases.get(value)}, ${filename}`);
-        cases.set(value, filename);
-      }
-      const code = named('code');
-      if (code && ts.isPropertyAssignment(code) && ts.isStringLiteralLike(code.initializer)) {
-        const example = ts.createSourceFile(filename + ':example.ts', code.initializer.text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-        const diagnostics = (example as ts.SourceFile & { parseDiagnostics: readonly ts.Diagnostic[] }).parseDiagnostics;
-        if (diagnostics.length) throw new Error(`Invalid TypeScript example in ${filename}: ${ts.flattenDiagnosticMessageText(diagnostics[0]!.messageText, '\n')}`);
-        examples++;
-      }
-    }
-    ts.forEachChild(node, visit);
-  };
-  visit(file);
+import { generateShowroomExamples, showroomExampleSources, partId } from './showroom-examples.ts';
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..'), write = process.argv.includes('--write');
+if (process.argv.slice(2).some(value => value !== '--write'))
+    throw new Error('Usage: node scripts/catalog.ts [--write]');
+const examples = await showroomExampleSources(root), config = ts.readConfigFile(join(root, 'tsconfig.json'), ts.sys.readFile);
+if (config.error)
+    throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
+const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root), entryPath = join(root, 'src/parts/index.ts'), virtual = new Map([...examples].map(([name, code]) => [join(root, 'showroom/.checked-examples', name + '.ts'), code]));
+const host = ts.createCompilerHost(parsed.options), originalRead = host.readFile, originalExists = host.fileExists;
+host.readFile = name => virtual.get(name) ?? originalRead(name);
+host.fileExists = name => virtual.has(name) || originalExists(name);
+host.getSourceFile = (name, languageVersion, onError) => { const body = host.readFile(name); if (body === undefined) {
+    onError?.('Cannot read ' + name);
+    return undefined;
+} return ts.createSourceFile(name, body, languageVersion, true); };
+// Staging examples use the same constrained declarations until the final root
+// promotion. The installed-tarball verifier deliberately has no such mapping.
+host.resolveModuleNames = (names, containingFile) => names.map(name => name === 'pith-ui' && virtual.has(containingFile) ? { resolvedFileName: entryPath, extension: ts.Extension.Ts } : ts.resolveModuleName(name, containingFile, parsed.options, host).resolvedModule);
+const program = ts.createProgram([entryPath, ...virtual.keys()], { ...parsed.options, noEmit: true }, host), errors = ts.getPreEmitDiagnostics(program);
+if (errors.length)
+    throw new Error(ts.formatDiagnosticsWithColorAndContext(errors, { getCurrentDirectory: () => root, getCanonicalFileName: name => name, getNewLine: () => '\n' }));
+const checker = program.getTypeChecker(), entry = program.getSourceFile(entryPath)!, symbols = checker.getExportsOfModule(checker.getSymbolAtLocation(entry)!), factories = symbols.filter(symbol => { const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol; return !!(target.flags & ts.SymbolFlags.Value); }).map(symbol => symbol.name).sort();
+const covered = ['mountParts', ...examples.keys()].sort();
+if (JSON.stringify(factories) !== JSON.stringify(covered))
+    throw new Error('Formal showroom coverage differs from runtime exports. Missing: ' + factories.filter(name => !covered.includes(name)).join(', ') + '; extra: ' + covered.filter(name => !factories.includes(name)).join(', '));
+for (const [name, code] of examples) {
+    if (!code.includes(name))
+        throw new Error('Example does not demonstrate ' + name);
+    if (/pith-ui\/app|\.element\b|\.control\b|style\s*:|className\s*:/.test(code))
+        throw new Error('Example exposes an unrestricted UI port: ' + name);
 }
-const documentation = [await readFile(join(root, 'README.md'), 'utf8'), await readFile(join(root, 'AI.md'), 'utf8'), catalog, await readFile(join(root, 'docs/guide.md'), 'utf8')].join('\n');
-for (const link of documentation.matchAll(/[?&]item=([a-z0-9-]+)/g)) if (!cases.has(link[1]!)) throw new Error(`Documentation links to unknown showroom item: ${link[1]}`);
-console.log(`Validated ${factories.length} documented public factories, ${cases.size} showroom IDs, ${examples} TypeScript snippet syntaxes and compiled public examples.`);
+const catalog = ['# Formal constrained parts catalog', '', 'Choose a small part by its native responsibility. The library fixes presentation; callers supply literal content, finite semantic choices, state and data callbacks. There is one checked `mountParts` boundary and one inherited appearance owner.', '', 'Every linked exhibit has a strictly compiled example made from the formal API. Complete baseline regions are kept in [verified local assembly documentation](./assemblies/coverage.md), outside the public runtime API and showroom. See [API.md](../API.md) for exact legal options and opaque handle methods.', '', '| Factory | Specification and legal interaction |', '| --- | --- |', ...factories.map(name => `| \`${name}\` | [${partId(name)}](https://minifish-org.github.io/pith-ui/?item=${partId(name)}) |`), ''].join('\n');
+if (write) {
+    await generateShowroomExamples(root);
+    await writeFile(join(root, 'docs/catalog.md'), catalog);
+}
+else if (await readFile(join(root, 'docs/catalog.md'), 'utf8') !== catalog)
+    throw new Error('docs/catalog.md is stale. Run node scripts/catalog.ts --write.');
+const ids = new Set([...examples.keys()].map(partId));
+for (const name of ['README.md', 'AI.md', 'APP.md', 'docs/catalog.md', 'docs/guide.md'])
+    for (const match of (await readFile(join(root, name), 'utf8')).matchAll(/[?&]item=([a-z0-9-]+)/g))
+        if (!ids.has(match[1]!))
+            throw new Error(`${name} links to a removed showroom template: ${match[1]}`);
+console.log(`Validated ${factories.length} formal runtime factories, ${examples.size} parts-only exhibits and strictly compiled public TypeScript examples.`);

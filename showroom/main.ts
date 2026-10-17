@@ -10,7 +10,7 @@ import packageMetadata from '../package.json' with { type: 'json' };
 const params = new URLSearchParams(location.search);
 const choices = <T extends string>(name: string, values: readonly T[], fallback: T): T => values.includes(params.get(name) as T) ? params.get(name) as T : fallback;
 const state = {
-  item: catalog.find(item => item.id === params.get('item'))?.id ?? 'workspace-chat',
+  item: catalog.find(item => item.id === params.get('item'))?.id ?? 'button-parts',
   theme: choices('theme', ['light', 'dark', 'system'], 'system'),
   scene: params.get('state') ?? 'normal',
   width: Math.max(280, Math.min(1440, Number(params.get('width')) || 800)),
@@ -34,7 +34,7 @@ header.append(theme.element);
 const nav = element('nav', 'gallery-nav'); nav.setAttribute('aria-label', '积木分类');
 const search = createSearchInput({ label: '搜索积木', placeholder: '名称、用途、分类…', onInput: () => renderNavigation() });
 const navigation = element('div', 'gallery-navigation');
-nav.append(search.element, element('p', 'gallery-count', `${catalog.length} 项 · 从完整界面逐层查看`), navigation);
+nav.append(search.element, element('p', 'gallery-count', `${catalog.length} 项正式受限零件`), navigation);
 const heading = element('div', 'gallery-heading');
 const controls = element('div', 'gallery-controls');
 const preview = element('div', 'gallery-preview'); preview.setAttribute('aria-label', '真实交互体验');

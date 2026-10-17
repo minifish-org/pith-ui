@@ -1,9 +1,15 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { themeStyles } from './palette.ts';
+import {generateShowroomExamples} from './showroom-examples.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+await generateShowroomExamples(root);
+// A removed public entry must disappear from a subsequent package build.
+await rm(resolve(root, 'dist'), {recursive: true, force: true});
+execFileSync(process.execPath,[resolve(root,'node_modules/typescript/bin/tsc'),'-p',resolve(root,'tsconfig.build.json')],{cwd: root,stdio: 'inherit'});
 await mkdir(resolve(root, 'dist'), { recursive: true });
 const entry = (await readFile(resolve(root, 'src/styles.css'), 'utf8')).replace('/* PUI_THEME_PALETTE */', themeStyles());
 // Resolve local CSS imports so the package has one portable stylesheet.
