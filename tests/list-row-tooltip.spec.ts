@@ -17,7 +17,7 @@ test('row text tooltips are safe, update in place and can be explicitly cleared'
   await expect(text).toHaveAttribute('title','Full pending text');
   await page.evaluate(()=>Reflect.get(window,'tooltipRow').update({title:'Image attachment',tooltip:''}));
   await expect(page.getByText('Image attachment',{exact:true})).not.toHaveAttribute('title');
-  expect(await page.evaluate(async()=>{const u=await import('../src/index.js');try{Reflect.get(u,'createListRow')({title:'Rejected',tooltip:document.body});return false;}catch{return true;}})).toBe(true);
+  expect(await page.evaluate(async()=>{const u=await import('../src/index.js');try{Reflect.apply(u.createListRow,undefined,[{title:'Rejected',tooltip:document.body}]);return false;}catch{return true;}})).toBe(true);
   expect(await page.evaluate(()=>{try{Reflect.get(window,'tooltipRow').update({title:'Rejected',tooltip:document.body});return false;}catch{return true;}})).toBe(true);
   await expect(page.getByText('Image attachment',{exact:true})).toBeVisible();
 });
