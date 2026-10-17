@@ -13,9 +13,9 @@ declare global {interface Window {renamePartsHarness: {
 }}}
 const initial: RenameState = {id: 'conversation-a', title: 'Keep this conversation 中文'};
 
-async function openRename(page: Page, old: boolean, state = initial, appearance: 'light'|'dark' = 'light'): Promise<void> {
+async function openRename(page: Page, old: boolean, state = initial, appearance: 'light'|'dark' = 'light', applicationContext = true): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old,state,appearance}) => {
+  await page.evaluate(async ({old,state,appearance,applicationContext}) => {
     document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const opener = document.body.appendChild(document.createElement('button')); opener.id = 'rename-opener'; opener.textContent = 'Rename opener'; opener.focus();
     const mount = document.body.appendChild(document.createElement('div'));
@@ -24,14 +24,21 @@ async function openRename(page: Page, old: boolean, state = initial, appearance:
     // Both compared dialogs have the actual application's native flex parent.
     // Standalone ownership is covered separately; WebKit's CSSOM automatic
     // minimum serialization depends on this parent even in the top layer.
-    const path = '/src/app/index.ts'; const {createApplication} = await import(path); const app = createApplication(mount,{appearance});
-    if (old) h.editor = app.workspace.openRename(state,callbacks);
+    if (old) {
+      const path = '/src/app/index.ts'; const {createApplication} = await import(path);
+      h.editor = createApplication(mount,{appearance}).workspace.openRename(state,callbacks);
+    }
     else {
+      let target: HTMLElement = mount;
+      if (applicationContext) {
+        const path = '/src/app/index.ts'; const {createApplication} = await import(path); createApplication(mount,{appearance});
+        target = mount.querySelector<HTMLElement>('.pui-app')!;
+      }
       const path = '/examples/assemblies/rename.ts'; const {mountRename} = await import(path);
-      h.editor = mountRename(mount.querySelector<HTMLElement>('.pui-app')!,state,callbacks,{appearance});
+      h.editor = mountRename(target,state,callbacks,{appearance});
     }
     window.renamePartsHarness = h;
-  },{old,state,appearance});
+  },{old,state,appearance,applicationContext});
   await expect(page.getByRole('dialog',{name: 'Rename conversation',exact: true})).toBeVisible();
 }
 
@@ -81,7 +88,7 @@ for (const viewport of [{width: 390,height: 844},{width: 900,height: 568}]) test
 });
 
 test('rename keeps its original target and draft through metadata, pending and failed retry',async ({page}) => {
-  await openRename(page,false); const input = page.getByRole('textbox',{name: 'Title',exact: true}),save = page.getByRole('button',{name: 'Save title',exact: true});
+  await openRename(page,false,initial,'light',false); const input = page.getByRole('textbox',{name: 'Title',exact: true}),save = page.getByRole('button',{name: 'Save title',exact: true});
   await input.fill('  My unsaved title 中文  ');
   await input.evaluate(element => {const input = element as HTMLInputElement; input.setSelectionRange(3,8); window.renamePartsHarness.input = input;});
   await page.evaluate(() => window.renamePartsHarness.editor.update({id: 'other',title: 'Server title',error: 'Metadata error'}));
@@ -98,7 +105,7 @@ test('rename keeps its original target and draft through metadata, pending and f
 });
 
 test('rename explicit reset retires a prior write, changes target, selects the new draft and keeps external disabling',async ({page}) => {
-  await openRename(page,false); const save = page.getByRole('button',{name: 'Save title',exact: true}),input = page.getByRole('textbox',{name: 'Title',exact: true});
+  await openRename(page,false,initial,'light',false); const save = page.getByRole('button',{name: 'Save title',exact: true}),input = page.getByRole('textbox',{name: 'Title',exact: true});
   await save.click(); await page.evaluate(() => {window.renamePartsHarness.editor.reset({id: 'conversation-b',title: 'New target',disabled: true}); window.renamePartsHarness.editor.focus();});
   await expect(save).toBeDisabled(); await expect(input).toHaveValue('New target');
   expect(await input.evaluate(element => [(element as HTMLInputElement).selectionStart,(element as HTMLInputElement).selectionEnd])).toEqual([0,10]);
@@ -109,13 +116,13 @@ test('rename explicit reset retires a prior write, changes target, selects the n
 });
 
 test('rename native validation rejects empty and whitespace-only drafts without a write',async ({page}) => {
-  await openRename(page,false); const input = page.getByRole('textbox',{name: 'Title',exact: true}),save = page.getByRole('button',{name: 'Save title',exact: true});
+  await openRename(page,false,initial,'light',false); const input = page.getByRole('textbox',{name: 'Title',exact: true}),save = page.getByRole('button',{name: 'Save title',exact: true});
   await input.fill(''); await save.click(); await input.fill('   '); await save.click();
   expect(await page.evaluate(() => window.renamePartsHarness.calls)).toEqual([]); await expect(save).toBeEnabled();
 });
 
 test('closing and destroying rename discards late work and restores opener once',async ({page}) => {
-  await openRename(page,false); await page.getByRole('textbox',{name: 'Title',exact: true}).fill('Preserved unsaved draft');
+  await openRename(page,false,initial,'light',false); await page.getByRole('textbox',{name: 'Title',exact: true}).fill('Preserved unsaved draft');
   await page.getByRole('button',{name: 'Save title',exact: true}).click(); await page.keyboard.press('Escape');
   await expect(page.locator('dialog[open]')).toHaveCount(0); await expect(page.locator('#rename-opener')).toBeFocused();
   await page.evaluate(() => {const h = window.renamePartsHarness; h.releases[0]!({ok: false,error: 'Late failure'}); h.editor.update({id: 'late',title: 'Late'}); h.editor.destroy(); h.editor.destroy();});
