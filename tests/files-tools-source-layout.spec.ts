@@ -72,6 +72,8 @@ test('tool groups keep source flex summaries, bounded glyphs, card gaps and read
     await expect(header.locator('.pui-status')).toHaveCSS('color', 'rgb(93, 103, 122)');
   }
   const answer = page.getByRole('article', {name: 'Agent response'});
+  await expect(page.locator('.pui-reading-column')).toHaveCSS('gap', '0px');
+  await expect(answer).toHaveCSS('margin-bottom', '24px');
   expect((await answer.boundingBox())!.y - (await group.boundingBox())!.y - (await group.boundingBox())!.height).toBe(16);
 });
 
@@ -103,4 +105,20 @@ test('command fields and output retain source separators, typography and nested 
   await expect(fold).toHaveAttribute('open', '');
   await page.evaluate(() => Reflect.get(window, 'sourceTools').owner.destroy());
   await expect(page.locator('.pui-reading-area')).toHaveCount(0);
+});
+
+test('the source reading column keeps the narrow message rhythm without changing ordinary controls', async ({page}) => {
+  await page.setViewportSize({width: 640, height: 800});
+  await installTools(page);
+  await expect(page.locator('.pui-reading-column')).toHaveCSS('gap', '0px');
+  await expect(page.getByRole('article', {name: 'Agent response'})).toHaveCSS('margin-bottom', '16px');
+  await expect(page.locator('.pui-disclosure-inline > summary')).toHaveCSS('flex-wrap', 'wrap');
+  await page.evaluate(async () => {
+    const u = await import('../src/index.js');
+    const host = document.createElement('div'); document.body.append(host);
+    u.mount(host, u.createReadingArea({label: 'Ordinary reading', identity: 'ordinary', items: [{key: 'frame', content: u.createMessage({role: 'assistant', content: u.createText({text: 'Independent frame'})})}]}));
+  });
+  const ordinary = page.getByRole('region', {name: 'Ordinary reading'});
+  await expect(ordinary.locator('.pui-control-list')).toHaveCSS('gap', '12px');
+  await expect(ordinary.getByRole('article', {name: 'Agent response'})).toHaveCSS('margin-bottom', '0px');
 });
