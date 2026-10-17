@@ -1,4 +1,5 @@
 import {test, expect} from '@playwright/test';
+import {measureSourceTaskPieces} from './helpers/source-task-measure.js';
 
 // Source: published0.3.1 tasks/approval.ts, files/systems.ts, composer.ts and
 // styles.css:583–612/669–679/860–869. The host uses explicit document flow;
@@ -19,7 +20,9 @@ test('an input warning notice keeps the source flow, code preview and separate f
   });
   const card=page.locator('.pui-notice-surface'), heading=page.getByRole('toolbar',{name:'Notice heading'}), title=page.getByText('Pith needs your permission',{exact:true});
   await expect(title).toHaveCSS('color','rgb(119, 73, 5)');
-  expect((await heading.boundingBox())!.height).toBe(46);
+  const source=await measureSourceTaskPieces(page),height=(await heading.boundingBox())!.height;
+  expect(height).toBe(source.heading);if(process.platform==='darwin')expect(height).toBe(46);
+  const shield=(await heading.locator('.pui-icon-notice').boundingBox())!,titleBox=(await title.boundingBox())!;expect(titleBox.x-shield.x-shield.width).toBe(8);
   const badge=page.getByText('edit_file',{exact:true});expect(await badge.evaluate(n=>n.scrollWidth<=n.clientWidth)).toBe(true);
   const file=page.getByText('Modify file',{exact:true}).locator('xpath=ancestor::*[contains(@class,"pui-actions")][1]');
   await expect(file).toHaveCSS('margin','12px 0px 8px');await expect(file).toHaveCSS('align-items','baseline');
@@ -28,7 +31,7 @@ test('an input warning notice keeps the source flow, code preview and separate f
   const summary=page.locator('summary');await expect(summary).toHaveCSS('padding','0px');expect((await summary.boundingBox())!.height).toBe(18);
   const note=page.getByText(/^Workspace permission applies/).locator('xpath=ancestor::*[contains(@class,"pui-slot")][1]');await expect(note).toHaveCSS('margin','8px 0px 12px');
   const deny=page.getByRole('button',{name:'Deny',exact:true});await expect(deny).toHaveCSS('background-color','rgb(240, 242, 246)');await expect(deny).toHaveCSS('font-weight','600');await expect(deny).toHaveCSS('border-radius','7px');
-  expect((await card.boundingBox())!.height).toBe(320);
+  expect((await card.boundingBox())!.height).toBe(source.card);if(process.platform==='darwin')expect(source.card).toBe(320);
   await summary.click();const args=page.locator('.pui-disclosure-content pre');await expect(args).toHaveCSS('font-size','12px');await expect(args).toHaveCSS('padding','12px');await expect(args).toHaveCSS('max-height','160px');await expect(args).toHaveCSS('background-color','rgb(255, 236, 203)');
 });
 
@@ -48,5 +51,6 @@ for(const width of [1280,360])test(`notification pieces retain the source top al
   expect(a.y-box.y).toBe(17);expect(d.y-box.y).toBe(17);expect(d.height).toBe(22);expect(d.width).toBe(22);await expect(dismiss).toHaveCSS('border-top-width','0px');await expect(dismiss.locator('svg')).toHaveCSS('width','19px');
   const caption=card.getByText('Review workspace · Conversation b',{exact:true}).locator('xpath=parent::*');await expect(caption).toHaveCSS('margin','8px 0px');
   const open=page.getByRole('button',{name:'Open conversation',exact:true});await expect(open).toHaveCSS('padding','0px');await expect(open).toHaveCSS('text-decoration-line','none');expect((await open.boundingBox())!.height).toBe(18);
-  if(width===1280){expect((await card.boundingBox())!.height).toBe(110);expect((await open.boundingBox())!.x-a.x-a.width).toBe(12);}
+  const source=await measureSourceTaskPieces(page);expect((await card.boundingBox())!.height).toBe(source.toast);
+  if(width===1280){if(process.platform==='darwin')expect(source.toast).toBe(110);expect((await open.boundingBox())!.x-a.x-a.width).toBe(12);}
 });
