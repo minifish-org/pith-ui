@@ -1,15 +1,16 @@
+import type {Control} from '../src/index.js';
 import {test,expect} from '@playwright/test';
 
 // Geometry is measured against the accepted pre-migration control composition.
 // No consumer CSS, DOM slots or numeric presentation options participate.
 test('fixed content columns restore reading, editing and introduction measures without public pixels',async({page})=>{
   await page.setViewportSize({width:1280,height:800});await page.goto('/tests/fixture.html');
-  await page.evaluate(async()=>{const u=await import('../src/index.js');const make=Reflect.get(u,'createContentColumn') as (v:unknown)=>u.Control;u.mount(document.body,u.createStack({children:['reading','input','intro'].map(purpose=>make({purpose,content:u.createText({text:purpose})}))}));});
+  await page.evaluate(async()=>{const u=await import('../src/index.js');const make=Reflect.get(u,'createContentColumn') as (v:unknown)=>Control;u.mount(document.body,u.createStack({children:['reading','input','intro'].map(purpose=>make({purpose,content:u.createText({text:purpose})}))}));});
   for(const [purpose,width]of [['reading',774],['input',810],['intro',650]]as const){const box=await page.locator('.pui-column-'+purpose).boundingBox();expect(box!.width).toBe(width);expect(box!.x+box!.width/2).toBe(640);}
 });
 
 test('a surface owns one input shell and separates leading and trailing inline actions',async({page})=>{
-  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const make=Reflect.get(u,'createSurface') as(v:unknown)=>u.Control;const toolbar=u.createToolbar({label:'Editor actions',leading:u.createSelect({label:'Permission',context:'inline',icon:'shield',tone:'warning',options:[{value:'full',label:'Full access'}]}),trailing:u.createIconButton({label:'Send',icon:'up',context:'inline'})}as never);u.mount(document.body,make({content:u.createPromptInput({label:'Draft',value:'Retained text'}),footer:toolbar}));});
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const make=Reflect.get(u,'createSurface') as(v:unknown)=>Control;const toolbar=u.createToolbar({label:'Editor actions',leading:u.createSelect({label:'Permission',context:'inline',icon:'shield',tone:'warning',options:[{value:'full',label:'Full access'}]}),trailing:u.createIconButton({label:'Send',icon:'arrow',context:'inline'})}as never);u.mount(document.body,make({content:u.createPromptInput({label:'Draft',value:'Retained text'}),footer:toolbar}));});
   const input=page.getByRole('textbox',{name:'Draft'});await expect(input).toHaveCSS('border-top-width','0px');await expect(page.getByRole('combobox',{name:'Permission'})).toBeVisible();
   const select=(await page.getByRole('combobox',{name:'Permission'}).boundingBox())!,send=(await page.getByRole('button',{name:'Send'}).boundingBox())!;expect(send.x-select.x).toBeGreaterThan(500);expect(send.height).toBe(32);await expect(page.locator('.pui-inline-choice')).toHaveCSS('color','rgb(150, 94, 9)');
   await input.fill('Keep selection');await input.press('Home');await input.press('Shift+ArrowRight');await expect(input).toHaveValue('Keep selection');expect(await input.evaluate(n=>{const x=n as HTMLTextAreaElement;return x.selectionEnd-x.selectionStart;})).toBe(1);
@@ -39,4 +40,9 @@ test('small detail controls keep status indicators, paired fields and inline sub
 test('brand, introduction mark and numbered steps retain their small fixed geometry',async({page})=>{
  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const brand=Reflect.get(u,'createBrand'),step=Reflect.get(u,'createStep');u.mount(document.body,u.createStack({children:[brand({image:u.createImage({purpose:'brand',label:'Logo',source:''}),label:'Pith',qualifier:'Desk'}),u.createImage({purpose:'intro',label:'Introduction logo',source:''}as never),step({number:1,title:'Connect a model',description:'Choose a provider',onAction(){}})]}));});
  await expect(page.locator('.pui-brand-qualifier')).toHaveCSS('font-weight','400');expect((await page.locator('.pui-image-intro').boundingBox())!.width).toBe(64);expect((await page.locator('.pui-step-marker').boundingBox())!.width).toBe(28);await expect(page.getByRole('button',{name:'Connect a model Choose a provider'})).toBeVisible();
+});
+
+test('form dialogs, accessible short actions and warning surfaces retain bounded presentation',async({page})=>{
+ await page.setViewportSize({width:1280,height:800});await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const dialog=u.createDialog({purpose:'form',eyebrow:'MAKE IT YOURS',title:'Settings',content:u.createStack({children:[u.createTextAction({label:'Compact',accessibleLabel:'Compress context',context:'inline'}as never),Reflect.get(u,'createSurface')({purpose:'notice',tone:'warning',content:u.createText({text:'Approval required'})})]})}as never);const owner=u.mount(document.body,u.createText({text:'Host'}));owner.attach(dialog);dialog.open();});
+ const dialog=page.getByRole('dialog',{name:'Settings'});expect((await dialog.boundingBox())!.width).toBe(500);await expect(dialog.getByText('MAKE IT YOURS')).toBeVisible();await expect(page.getByRole('button',{name:'Compress context'})).toHaveText('Compact');await expect(page.locator('.pui-notice-surface')).toHaveCSS('border-radius','12px');
 });
