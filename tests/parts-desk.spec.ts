@@ -268,3 +268,50 @@ test('task recovery retains the old selected workspace availability and active f
     expect(value).toEqual({rows: expected,settings: [{label: 'Check model settings',disabled: false},{label: 'Save diagnostics',disabled: false}]});
   }
 });
+
+test('an open resource editor keeps the old workspace-scoped Save availability without changing Delete or the draft',async ({page}) => {
+  const expected = [
+    {name: 'resource workspace idle',saveDisabled: false},
+    {name: 'another workspace running',saveDisabled: false},
+    {name: 'resource workspace running',saveDisabled: true},
+    {name: 'resource workspace clears',saveDisabled: false},
+    {name: 'global and active scopes do not gate resource Save',saveDisabled: false},
+    {name: 'host busy gates resource Save',saveDisabled: true},
+    {name: 'host busy clears',saveDisabled: false},
+  ];
+  for (const old of [true,false]) {
+    await setup(page,old);
+    const value = await page.evaluate(() => {
+      const {app} = window.deskPartsHarness;
+      const editor = app.resources.openEditor({workspaceId: 'resource-workspace',workspacePath: '/resource-workspace',
+        path: '/resource-workspace/AGENTS.md',kind: 'instructions',name: 'AGENTS.md',content: 'Original Markdown',editable: true,workspaceBusy: false});
+      const dialog = document.querySelector<HTMLDialogElement>('dialog[open]')!,save = dialog.querySelector<HTMLButtonElement>('button[type="submit"]')!,
+        remove = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Delete resource')!,
+        cancel = [...dialog.querySelectorAll<HTMLButtonElement>('button')].find(button => button.textContent === 'Cancel')!,body = dialog.querySelector('textarea')!;
+      body.value = 'Unsaved Markdown 中文';body.focus();body.setSelectionRange(2,9);
+      const presentation = (node: HTMLElement) => {const style = getComputedStyle(node),box = node.getBoundingClientRect();return {
+        box: [box.x,box.y,box.width,box.height],styles: ['color','background-color','font-size','line-height','padding-top','padding-bottom','border-top-width'].map(property => style.getPropertyValue(property)),
+      };};
+      const before = {remove: presentation(remove),body: presentation(body)};
+      const cases = [
+        {name: 'resource workspace idle',availability: {}},
+        {name: 'another workspace running',availability: {workspaces: ['other-workspace'],active: true}},
+        {name: 'resource workspace running',availability: {workspaces: ['resource-workspace']}},
+        {name: 'resource workspace clears',availability: {workspaces: []}},
+        {name: 'global and active scopes do not gate resource Save',availability: {global: true,active: true,conversations: ['active']}},
+        {name: 'host busy gates resource Save',availability: {busy: true}},
+        {name: 'host busy clears',availability: {busy: false}},
+      ];
+      const rows = cases.map(entry => {
+        app.workspace.updateAvailability(entry.availability);
+        return {name: entry.name,saveDisabled: save.disabled,deleteDisabled: remove.disabled,cancelDisabled: cancel.disabled,
+          readOnly: body.readOnly,bodyDisabled: body.disabled,draft: editor.read().content,selection: [body.selectionStart,body.selectionEnd],
+          retained: save === dialog.querySelector('button[type="submit"]') && remove.isConnected && body === dialog.querySelector('textarea'),
+          presentation: {remove: presentation(remove),body: presentation(body)}};
+      });
+      app.destroy();return {before,rows};
+    });
+    expect(value.rows).toEqual(expected.map(entry => ({...entry,deleteDisabled: false,cancelDisabled: false,readOnly: false,bodyDisabled: false,
+      draft: 'Unsaved Markdown 中文',selection: [2,9],retained: true,presentation: value.before})));
+  }
+});
