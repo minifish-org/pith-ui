@@ -131,6 +131,30 @@ test('root teardown wins over close callback reopening and exceptions without re
   }
 });
 
+test('opening the assembled file preview retains its related artifact inspector through focus and native dismissal',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);await page.evaluate(() => {
+      const {app} = window.deskPartsHarness;
+      app.files.updateArtifacts({ownerId: 'active',files: [{name: 'Report.md',path: '/workspace/Report.md'}],loading: false,error: '',copyMode: 'path'},{onPreview(target) {app.files.openPreview({...target,capabilities: {open: true},content: {kind: 'text',text: 'A retained preview'}},{onFileAction() {}});},onFileAction() {}});
+    });await page.getByRole('button',{name: /^Conversation files/}).click();await page.getByRole('button',{name: 'Preview',exact: true}).click();
+    await expect(page.locator('dialog[open]')).toHaveCount(1);await expect.poll(() => page.evaluate(() => window.deskPartsHarness.app.files.areArtifactsOpen())).toBe(true);
+    await page.locator('dialog[open]').getByRole('button',{name: 'Open',exact: true}).click();expect(await page.evaluate(() => window.deskPartsHarness.app.files.areArtifactsOpen())).toBe(true);
+    await page.keyboard.press('Escape');await expect(page.locator('dialog[open]')).toHaveCount(0);expect(await page.evaluate(() => window.deskPartsHarness.app.files.areArtifactsOpen())).toBe(true);
+  }
+});
+
+test('related dialog updates preflight every borrowed handle without retiring the previous valid relationship',async ({page}) => {
+  await page.goto('/tests/fixture.html');const value = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),dialog = p.createDialogPart({title: 'Related preview',children: []}),trigger = p.createButtonPart({variant: 'counter',icon: 'file',label: 'Files',count: '1'});
+    const heading = p.createInspectorHeadingPart({title: 'Files',count: '1',action: p.createButtonPart({variant: 'quiet-icon',icon: 'close',label: 'Close files'})});
+    const inspector = p.createInspectorPart({heading,children: []}),group = p.createAnchoredGroupPart({trigger,surface: inspector}),free = p.createTextPart({text: 'Unchanged'});
+    inspector.setRelatedDialogs([dialog]);let rejected = false;try {inspector.setRelatedDialogs([dialog,free]);} catch {rejected = true;}
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createFramePart({children: [group,dialog]}));inspector.open(trigger);dialog.open();await Promise.resolve();
+    const retained = inspector.isOpen(),independent = document.body.appendChild(document.createElement('div')),freeTree = p.mountParts(independent,free),unowned = independent.textContent === 'Unchanged';
+    tree.destroy();freeTree.destroy();inspector.setRelatedDialogs([]);return {rejected,retained,unowned,closed: !inspector.isOpen()};
+  });expect(value).toEqual({rejected: true,retained: true,unowned: true,closed: true});
+});
+
 test('assembled scoped availability preserves unrelated navigation and allowed historical copies',async ({page}) => {
   for (const old of [true,false]) {
     await setup(page,old);await page.evaluate(() => {
