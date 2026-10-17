@@ -3,7 +3,7 @@
 import {
   createReadingColumnPart,createBubblePart,createTextPart,createReadingNotePart,createMarkdownPart,
   createTimestampPart,createMessageFooterPart,createMessageActionsPart,createButtonPart,createCopyButtonPart,createAnnouncementPart,createWorkingIndicatorPart,
-  type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,type AnnouncementPart,type ReadingColumnPart,type LocalContentLink,
+  type MarkdownPart,type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,type AnnouncementPart,type ReadingColumnPart,type LocalContentLink,
 } from 'pith-ui';
 import {composeToolGroup,type ToolGroupComposition} from './tool-disclosures.js';
 import {createConversationImageScope,type ImageReference,type GalleryCallbacks,type ImageGalleryComposition} from './conversation-images.js';
@@ -13,13 +13,15 @@ export interface ConversationBodyState {id: string;messages: readonly BodyMessag
 export interface MessageAction {action: 'copy'|'edit'|'branch';messageId: string;branchKey?: string}
 export type BodyResult = void|{ok: true}|{ok: false;error: string};
 export interface ConversationBodyCallbacks extends GalleryCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;resolveLocalLink?(href: string,conversationId: string): LocalContentLink|null;onLocalFile?(target: Readonly<LocalContentLink>): BodyResult|Promise<BodyResult>;onError?(message: string): void}
-export interface ConversationBodyComposition {readonly part: ReadingColumnPart;readonly announcement: AnnouncementPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;prune(ids: readonly string[]): void;destroy(): void}
+export interface ConversationHostAvailability {busy?: boolean;conversations?: readonly string[]}
+export interface ConversationBodyComposition {readonly part: ReadingColumnPart;readonly announcement: AnnouncementPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;updateHostAvailability(state: Readonly<ConversationHostAvailability>): void;prune(ids: readonly string[]): void;destroy(): void}
 interface Entry {part: Part;kind: string;update(message: BodyMessage): void;availability(): void}
 
 /** Reading column -> caller-keyed bubbles/notes and optional working indicator.
  * Each bubble explicitly composes its text, timestamp, footer and actions. */
 export function composeConversationBody(initial: Readonly<ConversationBodyState>,callbacks: ConversationBodyCallbacks = {},sharedAnnouncement?: AnnouncementPart): ConversationBodyComposition {
   let alive = true,id = initial.id,disabled: Readonly<Partial<Record<MessageAction['action'],boolean>>> = {},working: WorkingIndicatorPart|undefined;
+  let hostAvailability: Readonly<ConversationHostAvailability> = {};
   const entries = new Map<string,Entry>();
   let groups = new Map<string,Set<string>>();
   const toolGroups = new Map<string,ToolGroupComposition>(),savedFolds = new Map<string,Map<string,boolean>>();
@@ -48,7 +50,9 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
     const availability = () => {for (const [action,button] of buttons) {
       const label = action === 'copy' ? typeof current.actions?.copy === 'string' ? current.actions.copy : 'Copy message' : action === 'edit' ? 'Edit message' : current.actions?.branch?.label || 'Branch from this message';
       button.update({variant: 'quiet-icon',icon: action === 'copy' ? 'copy' : action === 'edit' ? 'edit' : 'branch',label,title: label,disabled: !!disabled[action]});
-    }};
+    }
+      if (kind !== 'user') (text as MarkdownPart).update({text: current.text,localFileDisabled: !!hostAvailability.busy || !!hostAvailability.conversations?.includes(id),copyBusy: !!hostAvailability.busy});
+    };
     const update = (next: BodyMessage) => {
       current = next;
       text.update({text: next.text,...(kind === 'user' ? {hidden: !next.text} : {})});
@@ -100,5 +104,5 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
     root.replace(children);root.update({hidden: !state.messages.length});
   };
   update(initial);
-  return {part: root,announcement,update,updateAvailability(state) {if (alive) {disabled = {...state};for (const entry of entries.values()) entry.availability();}},prune(ids) {if (alive) {const keep = new Set(ids);for (const key of savedFolds.keys()) if (!keep.has(key)) savedFolds.delete(key);}},destroy() {root.destroy();}};
+  return {part: root,announcement,update,updateAvailability(state) {if (alive) {disabled = {...state};for (const entry of entries.values()) entry.availability();}},updateHostAvailability(state) {if (alive) {hostAvailability = {...state};for (const entry of entries.values()) entry.availability();}},prune(ids) {if (alive) {const keep = new Set(ids);for (const key of savedFolds.keys()) if (!keep.has(key)) savedFolds.delete(key);}},destroy() {root.destroy();}};
 }

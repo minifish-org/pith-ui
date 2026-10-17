@@ -1,5 +1,5 @@
 export type ShowcaseLayer = 'foundations' | 'components' | 'blocks' | 'pages';
-export type DemoState = 'normal' | 'loading' | 'error' | 'disabled' | 'empty' | 'long' | 'pending';
+export type DemoState = 'normal' | 'loading' | 'error' | 'disabled' | 'empty' | 'long' | 'pending' | 'local-file-disabled' | 'copy-busy';
 export type Outcome = 'success' | 'failure' | 'late' | 'invalid';
 export interface DemoContext {
   host: HTMLElement;

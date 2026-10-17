@@ -3,12 +3,13 @@ import {
   createButtonPart,createInputPart,createMetadataPart,createReadingRegionPart,createReadingViewportPart,createSearchToolbarPart,
   type AnnouncementPart,type LayoutPart,type Part,type ReadingViewportPart,type SearchToolbarPart,
 } from 'pith-ui';
-import {composeConversationBody,type ConversationBodyCallbacks,type ConversationBodyState} from './conversation-body.js';
+import {composeConversationBody,type ConversationBodyCallbacks,type ConversationBodyState,type ConversationHostAvailability} from './conversation-body.js';
 
 export interface ConversationReaderComposition {
   readonly find: SearchToolbarPart;readonly region: LayoutPart;readonly announcement: AnnouncementPart;
   update(state: Readonly<ConversationBodyState>): void;openFind(): void;closeFind(): void;
   followLatest(): void;prune(ids: readonly string[]): void;destroy(): void;
+  updateHostAvailability(state: Readonly<ConversationHostAvailability>): void;
   updateAvailability(state: Readonly<Partial<Record<'copy'|'edit'|'branch',boolean>>>): void;
 }
 /** A search row and reading region are separate caller-assembled siblings. */
@@ -33,6 +34,6 @@ export function composeConversationReader(initial: Readonly<ConversationBodyStat
   const region = createReadingRegionPart({children: [viewport,latest]});
   const update = (state: Readonly<ConversationBodyState>) => {viewport.beforeUpdate(state.id);body.update(state);viewport.afterUpdate();};update(initial);
   return {find,region,announcement: body.announcement,update,openFind() {viewport.openSearch();},closeFind() {viewport.closeSearch();},followLatest() {viewport.followLatest();},prune(ids) {body.prune(ids);viewport.prune(ids);},
-    updateAvailability: body.updateAvailability,
+    updateAvailability: body.updateAvailability,updateHostAvailability: body.updateHostAvailability,
     destroy() {find.destroy();region.destroy();body.announcement.destroy();}};
 }

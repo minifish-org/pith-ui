@@ -43,7 +43,7 @@ export const specialExamples = {
  createFormPart:({disabled,notify}:ExampleControls)=>p.createFormPart({disabled,children:[p.createInputPart({label:'Required name',required:true}),p.createButtonPart({label:'Submit',type:'submit'})],onSubmit(){notify('Submit');}}),
  createDialogPart:({notify}:ExampleControls)=>{const dialog=p.createDialogPart({title:'Dialog',description:'Caller-owned text and actions',children:[p.createTextPart({text:'Content'})],onClose(){notify('Closed');}});return p.createStackPart({children:[p.createButtonPart({label:'Open dialog',onAction(){dialog.open();}}),dialog]});},
  createFeedbackPart:()=>p.createStackPart({children:(['inline','notice','paragraph','lead','plain','note','banner'] as const).map(presentation=>p.createFeedbackPart({presentation,message:presentation+' feedback',tone:'error'}))}),
- createMarkdownPart:()=>p.createMarkdownPart({text:'**Literal Markdown**\n\n- First\n- Second'}),
+ createMarkdownPart:({notify}:ExampleControls)=>p.createMarkdownPart({text:'**Literal Markdown**\n\n[Result](result.txt)\n\n```ts\nconst ready = true;\n```',localFileDisabled:false,copyBusy:false,resolveLocalLink(href){return {path:href,conversationId:'example'};},onLocalFile(){notify('Local file');},onCopyCode(){notify('Code copied');}}),
  createPreformattedPart:()=>p.createPreformattedPart({text:'const message = "Literal text";'}),
  createListRowPart:()=>p.createListRowPart({title:'Row title',description:'Description',meta:'Metadata',icon:'file'}),
  createListPart:()=>p.createListPart({label:'Items',entries:[{key:'one',content:p.createListRowPart({title:'First',description:'Description'})},{key:'two',content:p.createListRowPart({title:'Second'})}]}),

@@ -134,7 +134,9 @@ Settings and Diagnostics are not gated by that recovery scope. An open resource
 editor projects that same workspace/active fallback only onto Save and its
 submit guard; changing runtime availability preserves the existing Delete,
 Cancel, editable fields, native nodes and unsaved selection. Its opening owns
-the projection until replacement or disposal. Message action
+the projection until replacement or disposal. Markdown local file links use
+host busy or their own conversation’s running state through the reader/body
+projection. Message action
 availability remains the separate `updateMessageAvailability` snapshot;
 global/active running state does not invent a prohibition on historical copies.
 The old copy controller's busy option affects its pending/restoration state,

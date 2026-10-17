@@ -84,6 +84,12 @@ The local recipe connects the viewport's callbacks as follows:
 | Close search | Calls `viewport.closeSearch()`, which clears marks and restores viewport focus. |
 | Back to latest | Calls `viewport.followLatest()`. |
 
+The application forwards each host availability snapshot through
+`reader.updateHostAvailability({busy,conversations})`, independently of
+`reader.updateAvailability({copy,edit,branch})`. The body projects local-file
+links by their conversation scope and code-copy feedback only by host busy.
+Both flows retain the same Markdown and native link/code-button nodes.
+
 The keyboard handler recognizes the platform find shortcut and Escape within
 the owning application. An open modal in that frame blocks reader shortcuts.
 Search is literal, case-insensitive and Unicode-aware. A match may cross native

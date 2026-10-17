@@ -91,6 +91,15 @@ baseline; invalid or absent instants omit the timestamp. The caller controls
 empty visibility just as the old application did, including an empty working
 conversation.
 
+The complete application also calls `body.updateHostAvailability({busy,conversations})`.
+For assistant Markdown, the local composition supplies `localFileDisabled` when
+host work is pending or that message's conversation is running. Local links
+always carry an explicit `aria-disabled="true"` or `"false"`; unrelated running
+conversations do not disable them. `copyBusy` independently projects host busy
+into code-copy feedback while pending and on restoration. It retains the old
+first-copy activation and never treats a running conversation as a code-copy
+restriction. These are boolean semantic states, with no DOM or style port.
+
 Copy actions use the genuine CopyButton with the shared Announcement: pending,
 check glyph, accessible success text and its fixed restoration interval survive
 unrelated snapshots. Edit and branch dispatch their captured targets without

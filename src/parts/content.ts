@@ -8,7 +8,13 @@ import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownershi
 
 export type ContentActionResult = void | ActionResult | Promise<void | ActionResult>;
 export type {LocalContentLink};
-export interface MarkdownPartState {text: string; disabled?: boolean; hidden?: boolean}
+export interface MarkdownPartState {
+  text: string;disabled?: boolean;hidden?: boolean;
+  /** Local-file actions have an independent availability scope from code copy. */
+  localFileDisabled?: boolean;
+  /** Availability used by copy feedback while pending/restoring, without blocking its first activation. */
+  copyBusy?: boolean;
+}
 export interface MarkdownPartOptions extends MarkdownPartState {
   resolveLocalLink?(href: string): LocalContentLink | null;
   onLocalFile?(target: Readonly<LocalContentLink>): ContentActionResult;
@@ -16,10 +22,10 @@ export interface MarkdownPartOptions extends MarkdownPartState {
   onError?(message: string): void;
 }
 export interface MarkdownPart extends Part {update(state: Readonly<MarkdownPartState>): void}
-const markdownKeys = ['text', 'disabled', 'hidden'];
-function validateContent(state: {text: string; hidden?: boolean; disabled?: boolean}): void {
+const markdownKeys = ['text', 'disabled', 'hidden', 'localFileDisabled', 'copyBusy'];
+function validateContent(state: {text: string; hidden?: boolean; disabled?: boolean; localFileDisabled?: boolean; copyBusy?: boolean}): void {
   if (typeof state.text !== 'string') throw new TypeError('Content must be text.');
-  for (const key of ['hidden', 'disabled'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError(`Content ${key} must be boolean.`);
+  for (const key of ['hidden', 'disabled', 'localFileDisabled', 'copyBusy'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError(`Content ${key} must be boolean.`);
 }
 
 /** Sanitized content flow. Copy/link callbacks receive data, never rendered nodes. */
@@ -29,10 +35,10 @@ export function createMarkdownPart(options: MarkdownPartOptions): MarkdownPart {
   const node = document.createElement('div'); node.className = 'pui-markdown';
   const status = document.createElement('span'); status.className = 'pui-sr-only'; status.id = uniqueId('pui-copy-status'); status.setAttribute('role', 'status');
   node.append(status);
-  let text: string | undefined, disabled = !!options.disabled;
+  let text: string | undefined, disabled = !!options.disabled,localFileDisabled = !!options.localFileDisabled,copyBusy = !!options.copyBusy;
   const actions = new Map<HTMLButtonElement, ActionController>();
   const report = (error: unknown) => {if (isPartAlive(part)) options.onError?.(error instanceof Error ? error.message : String(error));};
-  const copy = createCopyFeedback({status, isDisabled: () => disabled, onError: report});
+  const copy = createCopyFeedback({status, isDisabled: () => disabled || copyBusy, onError: report});
   const syncActions = () => {
     for (const [button, action] of actions) if (!node.contains(button)) {action.destroy(); actions.delete(button);}
     for (const button of node.querySelectorAll<HTMLButtonElement>('[data-copy-code]')) {
@@ -41,13 +47,13 @@ export function createMarkdownPart(options: MarkdownPartOptions): MarkdownPart {
       action.update({disabled});
     }
     for (const link of node.querySelectorAll<HTMLAnchorElement>('[data-download-path]')) {
-      if (disabled) link.setAttribute('aria-disabled', 'true'); else link.removeAttribute('aria-disabled');
+      link.setAttribute('aria-disabled', String(disabled || localFileDisabled));
     }
   };
   const update = (state: Readonly<MarkdownPartState>) => {
     assertOptions(state, markdownKeys, 'Markdown state'); validateContent(state);
     if (!isPartAlive(part)) return;
-    disabled = !!state.disabled; node.hidden = !!state.hidden;
+    disabled = !!state.disabled;localFileDisabled = !!state.localFileDisabled;copyBusy = !!state.copyBusy;node.hidden = !!state.hidden;
     if (text !== state.text) {
       const next = document.createElement('div');
       next.innerHTML = renderMarkdown(state.text, {resolveLocalLink: options.resolveLocalLink});
@@ -73,7 +79,7 @@ export function createMarkdownPart(options: MarkdownPartOptions): MarkdownPart {
     const link = event.target.closest<HTMLAnchorElement>('[data-download-path]');
     if (!link || !node.contains(link)) return;
     event.preventDefault(); event.stopPropagation();
-    if (disabled || !options.onLocalFile) return;
+    if (disabled || localFileDisabled || !options.onLocalFile) return;
     const target = Object.freeze({path: link.dataset.downloadPath ?? '', conversationId: link.dataset.downloadConversation ?? ''});
     try {void Promise.resolve(options.onLocalFile(target)).then(result => {if (result && !result.ok) report(result.error);}, report);} catch (error) {report(error);}
   };
@@ -82,7 +88,7 @@ export function createMarkdownPart(options: MarkdownPartOptions): MarkdownPart {
     node.removeEventListener('click', click); copy.destroy();
     for (const action of actions.values()) action.destroy(); actions.clear();
   }});
-  try {update({text: options.text, disabled: options.disabled, hidden: options.hidden});}
+  try {update({text: options.text, disabled: options.disabled, hidden: options.hidden,localFileDisabled: options.localFileDisabled,copyBusy: options.copyBusy});}
   catch (error) {part.destroy(); throw error;}
   return part;
 }
