@@ -20,10 +20,8 @@ test.beforeEach(async ({page}) => {await page.goto('/tests/fixture.html');});
 
 test('opaque fields keep a live draft, composition, selection and native validation without field wrappers', async ({page}) => {
   await page.evaluate(async () => {
-    const path = '/src/parts/fields.ts';
-    const {createInputPart, createFieldLabelPart} = await import(path);
-    const ownership = '/src/parts/ownership.ts', layouts = '/src/parts/layout.ts';
-    const {mountParts} = await import(ownership), {createStackPart} = await import(layouts);
+    const path = '/src/parts/index.ts';
+    const {createInputPart, createFieldLabelPart, mountParts, createStackPart} = await import(path);
     const changes: string[] = [];
     const input = createInputPart({label: 'Endpoint', kind: 'url', name: 'endpoint', value: 'https://initial.example', required: true, onInput(value: string) {changes.push(value);}});
     const label = createFieldLabelPart({label: 'Endpoint', control: input});
@@ -61,8 +59,8 @@ test('opaque fields keep a live draft, composition, selection and native validat
 
 test('opaque textareas preserve selection and update read-only state without changing the draft', async ({page}) => {
   await page.evaluate(async () => {
-    const path = '/src/parts/fields.ts', ownership = '/src/parts/ownership.ts';
-    const {createTextareaPart} = await import(path), {mountParts} = await import(ownership);
+    const path = '/src/parts/index.ts';
+    const {createTextareaPart, mountParts} = await import(path);
     const input = createTextareaPart({label: 'Markdown', value: 'Original 中文 text'});
     window.partsFieldsFixture = {input, mounted: mountParts(document.body.appendChild(document.createElement('div')), input), changes: []} as unknown as FieldsFixture;
   });
@@ -79,8 +77,8 @@ test('opaque textareas preserve selection and update read-only state without cha
 
 test('opaque single choice uses the existing popup and explicit reset stays silent', async ({page}) => {
   await page.evaluate(async () => {
-    const path = '/src/parts/fields.ts', ownership = '/src/parts/ownership.ts';
-    const {createSelectPart} = await import(path), {mountParts} = await import(ownership);
+    const path = '/src/parts/index.ts';
+    const {createSelectPart, mountParts} = await import(path);
     const changes: string[] = [];
     const select = createSelectPart({label: 'Provider', value: 'one', options: [{value: 'one', label: 'First'}, {value: 'two', label: '<Second>'}], onChange(value: string) {changes.push(value);}});
     window.partsFieldsFixture = {select, mounted: mountParts(document.body.appendChild(document.createElement('div')), select), changes} as FieldsFixture;
@@ -102,12 +100,13 @@ test('opaque single choice uses the existing popup and explicit reset stays sile
   await page.evaluate(() => window.partsFieldsFixture.mounted.destroy());
   await expect(page.getByRole('listbox')).toHaveCount(0);
   await expect(choice).toHaveCount(0);
+  await expect(page.locator('select')).toHaveCount(0);
 });
 
 test('opaque choice list retains the native multirow interaction and owns its row count', async ({page}) => {
   await page.evaluate(async () => {
-    const path = '/src/parts/fields.ts', ownership = '/src/parts/ownership.ts';
-    const {createChoiceListPart} = await import(path), {mountParts} = await import(ownership);
+    const path = '/src/parts/index.ts';
+    const {createChoiceListPart, mountParts} = await import(path);
     const select = createChoiceListPart({label: 'Choose model', value: 'one', options: [{value: 'one', label: 'One'}, {value: 'two', label: 'Two'}]});
     window.partsFieldsFixture = {select, mounted: mountParts(document.body.appendChild(document.createElement('div')), select), changes: []} as unknown as FieldsFixture;
   });
@@ -126,8 +125,8 @@ test('opaque choice list retains the native multirow interaction and owns its ro
 
 test('opaque checkbox has a single native control and separates reset from user changes', async ({page}) => {
   await page.evaluate(async () => {
-    const path = '/src/parts/fields.ts', ownership = '/src/parts/ownership.ts';
-    const {createCheckboxPart} = await import(path), {mountParts} = await import(ownership);
+    const path = '/src/parts/index.ts';
+    const {createCheckboxPart, mountParts} = await import(path);
     const changes: string[] = [];
     const checkbox = createCheckboxPart({label: 'Images', checked: false, onChange(value: boolean) {changes.push(String(value));}});
     window.partsFieldsFixture = {checkbox, mounted: mountParts(document.body.appendChild(document.createElement('div')), checkbox), changes} as unknown as FieldsFixture;
@@ -145,7 +144,7 @@ test('opaque checkbox has a single native control and separates reset from user 
 
 test('field options reject CSS and native-size escape hatches at runtime', async ({page}) => {
   const rejected = await page.evaluate(async () => {
-    const path = '/src/parts/fields.ts';
+    const path = '/src/parts/index.ts';
     const {createInputPart, createSelectPart, createChoiceListPart} = await import(path);
     return [
       () => createInputPart({label: 'Bad', style: {width: '99px'}}),
@@ -155,4 +154,72 @@ test('field options reject CSS and native-size escape hatches at runtime', async
     ].map(create => {try {create(); return false;} catch {return true;}});
   });
   expect(rejected).toEqual([true, true, true, true]);
+});
+
+test('choice defaults select the first enabled option and native form reset restores construction state', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createSelectPart, createChoiceListPart, mountParts} = await import(path);
+    const values = [];
+    for (const factory of [createSelectPart, createChoiceListPart]) {
+      const mount = document.body.appendChild(document.createElement('div'));
+      const part = factory({label: 'Choice', options: [{value: 'blocked', label: 'Blocked', disabled: true}, {value: 'one', label: 'One'}, {value: 'two', label: 'Two'}]});
+      const mounted = mountParts(mount, part);
+      const form = document.createElement('form'); mount.before(form); form.append(mount);
+      const initial = part.read(); part.reset('two'); form.reset();
+      await Promise.resolve();
+      values.push({initial, reset: part.read()});
+      mounted.destroy(); form.remove();
+    }
+    return values;
+  });
+  expect(result).toEqual([{initial: 'one', reset: 'one'}, {initial: 'one', reset: 'one'}]);
+});
+
+test('separate field labels name the visible select immediately and update its accessible name', async ({page}) => {
+  await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createSelectPart, createFieldLabelPart, createStackPart, mountParts} = await import(path);
+    const select = createSelectPart({options: [{value: 'one', label: 'First'}], value: 'one'});
+    const label = createFieldLabelPart({label: 'Provider', control: select});
+    window.partsFieldsFixture = {select, mounted: mountParts(document.body.appendChild(document.createElement('div')), createStackPart({children: [label, select]})), changes: []} as unknown as FieldsFixture;
+    Object.assign(window.partsFieldsFixture, {label});
+  });
+  const choice = page.getByRole('combobox', {name: 'Provider', exact: true});
+  await expect(choice).toBeVisible();
+  await page.locator('label').click();
+  await expect(choice).toBeFocused();
+  await page.evaluate(() => (window.partsFieldsFixture as unknown as {label: {update(state: {label: string}): void}}).label.update({label: 'Endpoint provider'}));
+  await expect(page.getByRole('combobox', {name: 'Endpoint provider', exact: true})).toBeVisible();
+  await page.evaluate(() => window.partsFieldsFixture.mounted.destroy());
+});
+
+test('removing an enhanced choice leaves no unwrapped native control in its parent', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createSelectPart, createStackPart, mountParts} = await import(path);
+    const select = createSelectPart({label: 'Choice', options: [{value: 'one', label: 'One'}], value: 'one'});
+    const root = createStackPart({children: [select]});
+    const mount = document.body.appendChild(document.createElement('div'));
+    const mounted = mountParts(mount, root);
+    root.replace([]);
+    const remaining = mount.firstElementChild!.children.length;
+    mounted.destroy();
+    return {remaining, afterDestroy: mount.children.length};
+  });
+  expect(result).toEqual({remaining: 0, afterDestroy: 0});
+});
+
+test('destroy clears secret values and runtime reset rejects non-text values', async ({page}) => {
+  const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts';
+    const {createInputPart, createTextareaPart} = await import(path);
+    const secret = createTextareaPart({label: 'Environment', purpose: 'secret', value: 'PRIVATE_VALUE'});
+    const password = createInputPart({label: 'Key', kind: 'password', value: 'PRIVATE_KEY'});
+    let invalidReset = false;
+    try {password.reset(true);} catch {invalidReset = true;}
+    secret.destroy(); password.destroy();
+    return {secret: secret.read(), password: password.read(), invalidReset};
+  });
+  expect(result).toEqual({secret: '', password: '', invalidReset: true});
 });
