@@ -1,0 +1,124 @@
+import {test,expect,type Page} from '@playwright/test';
+import type {Application} from '../src/app/index.js';
+
+interface DeskHarness {app: Application;events: boolean[];calls: string[];old?: {isOpen(): boolean;close(): void;destroy(): void};nested?: {isOpen(): boolean;close(): void;destroy(): void}}
+declare global {interface Window {deskPartsHarness: DeskHarness}}
+const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==';
+
+async function setup(page: Page,old: boolean,appearance: 'light'|'dark' = 'light'): Promise<void> {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async ({old,appearance}) => {
+    const mount = document.body.appendChild(document.createElement('div')),events: boolean[] = [],calls: string[] = [];
+    const options = {appearance,onUIStateChange(state: {hasModal: boolean}) {events.push(state.hasModal);},workspace: {onBusyAction(key: string) {calls.push(key);}}};
+    const path = old ? '/src/app/index.ts' : '/examples/assemblies/desk.ts',module = await import(path);
+    const app = old ? module.createApplication(mount,options) : module.mountDesk(mount,options);
+    window.deskPartsHarness = {app,events,calls};
+  },{old,appearance});
+}
+
+async function banners(page: Page): Promise<unknown> {
+  return page.evaluate(() => {
+    const measure = (node: Element) => {const style = getComputedStyle(node);return {tag: node.localName,classes: [...node.classList].sort(),text: node.textContent?.trim(),hidden: (node as HTMLElement).hidden,role: node.getAttribute('role'),children: [...node.children].map(child => ({tag: child.localName,classes: [...child.classList].sort(),text: child.textContent})),
+      style: ['display','font-size','font-weight','line-height','color','background-color','border-top-width','border-top-style','border-top-color','border-radius','padding-top','padding-right','padding-bottom','padding-left','margin-bottom','gap','align-items','justify-content','white-space','overflow-wrap'].map(property => style.getPropertyValue(property))};};
+    return ['.pui-workspace-busy','.pui-workspace-busy > span','.pui-workspace-busy > button','.pui-inline-error'].map(selector => measure(document.querySelector(selector)!));
+  });
+}
+
+test('small status/action and banner parts preserve the native old row without content generation or style escapes',async ({page}) => {
+  await setup(page,true);await page.evaluate(() => window.deskPartsHarness.app.workspace.updateShell({busy: {key: 'running',message: 'A task is running 中文',actionLabel: 'Open running conversation'},error: {message: 'Failure\nDetails'}}));const before = await banners(page);
+  const value = await page.evaluate(async () => {
+    window.deskPartsHarness.app.destroy();const path = '/src/parts/index.ts',p = await import(path);
+    const label = p.createTextPart({text: 'A task is running 中文'}),action = p.createButtonPart({variant: 'text-action',label: 'Open running conversation'});
+    const row = p.createStatusActionsPart({children: [label,action]}),error = p.createFeedbackPart({presentation: 'banner',tone: 'error',message: 'Failure\nDetails'});
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [row,error]}));
+    let invalid = false;try {row.update({hidden: 'false'});} catch {invalid = true;}
+    const valid = p.createTextPart({text: 'Reusable'});let foreign = false;try {p.createStatusActionsPart({children: [valid,document.createElement('div')]});} catch {foreign = true;}
+    const reusable = document.body.appendChild(document.createElement('div')),childTree = p.mountParts(reusable,valid);const retained = reusable.textContent === 'Reusable';childTree.destroy();
+    return {invalid,foreign,retained,leaks: [row,error,action].some(part => Object.values(part).some(value => value instanceof Node)),tree: !!tree};
+  });expect(await banners(page)).toEqual(before);expect(value).toEqual({invalid: true,foreign: true,retained: true,leaks: false,tree: true});
+});
+
+test('a frame reports only changes to its own modal descendants and retires the final true state',async ({page}) => {
+  await page.goto('/tests/fixture.html');const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),states: boolean[] = [];
+    const dialog = p.createDialogPart({title: 'Owned',children: []}),frame = p.createFramePart({children: [dialog],onModalChange(open: boolean) {states.push(open);}});
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,frame);
+    const other = document.body.appendChild(document.createElement('dialog'));other.showModal();await Promise.resolve();const unrelated = frame.hasModal();other.close();other.remove();
+    dialog.open();const immediate = frame.hasModal();await Promise.resolve();dialog.update({title: 'Metadata'});await Promise.resolve();dialog.close();await Promise.resolve();dialog.open();await Promise.resolve();tree.destroy();tree.destroy();await Promise.resolve();
+    return {unrelated,immediate,states,closed: frame.hasModal(),remaining: mount.childElementCount};
+  });expect(result).toEqual({unrelated: false,immediate: true,states: [true,false,true,false],closed: false,remaining: 0});
+});
+
+test('topbar action layout retains its direct native children and the old fixed trailing alignment',async ({page}) => {
+  await setup(page,true);const before = await page.locator('.pui-conversation-actions').evaluate(node => {const style = getComputedStyle(node);return ['display','align-items','gap','margin-left','flex-shrink','flex-wrap','justify-content'].map(property => style.getPropertyValue(property));});
+  const after = await page.evaluate(async () => {
+    window.deskPartsHarness.app.destroy();const path = '/src/parts/index.ts',p = await import(path);
+    const action = p.createButtonPart({variant: 'toolbar-action',icon: 'compress',label: 'Compact'}),group = p.createTopbarActionsPart({children: [action]});
+    const mount = document.body.appendChild(document.createElement('div'));p.mountParts(mount,p.createTopbarPart({children: [group]}));
+    const node = mount.querySelector('.pui-conversation-actions')!,style = getComputedStyle(node);return {styles: ['display','align-items','gap','margin-left','flex-shrink','flex-wrap','justify-content'].map(property => style.getPropertyValue(property)),children: [...node.children].map(child => child.localName)};
+  });expect(after).toEqual({styles: before,children: ['button']});
+});
+
+for (const appearance of ['light','dark'] as const) test(`${appearance} desk wiring preserves busy/current target and inline error visibility`,async ({page}) => {
+  await setup(page,true,appearance);await page.evaluate(() => window.deskPartsHarness.app.workspace.updateShell({busy: {key: 'running',message: 'A task is running 中文',actionLabel: 'Open running conversation'},error: {message: 'Visible error 中文'}}));const before = await banners(page);
+  await setup(page,false,appearance);await page.evaluate(() => window.deskPartsHarness.app.workspace.updateShell({busy: {key: 'running',message: 'A task is running 中文',actionLabel: 'Open running conversation'},error: {message: 'Visible error 中文'}}));expect(await banners(page)).toEqual(before);
+  await page.getByRole('button',{name: 'Open running conversation',exact: true}).click();expect(await page.evaluate(() => window.deskPartsHarness.calls)).toEqual(['running']);
+  await page.evaluate(() => window.deskPartsHarness.app.workspace.updateShell({busy: {key: 'next',message: 'Next task',actionLabel: 'Open next'},error: {message: 'Suppressed duplicate',hidden: true}}));await page.getByRole('button',{name: 'Open next',exact: true}).click();expect(await page.evaluate(() => window.deskPartsHarness.calls)).toEqual(['running','next']);
+  await expect(page.locator('.pui-inline-error')).toBeHidden();await page.evaluate(() => window.deskPartsHarness.app.workspace.updateShell({busy: null,error: {message: ''}}));await expect(page.locator('.pui-workspace-busy')).toBeHidden();await expect(page.locator('.pui-workspace-busy > button')).toHaveText('Open next');
+});
+
+for (const kind of ['fixed','feature'] as const) test(`nested ${kind} openings win over the superseded outer replacement in the assembled tree`,async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);const result = await page.evaluate(kind => {
+      const {app} = window.deskPartsHarness,events: string[] = [];
+      const open = (label: string,onClose: () => void) => kind === 'fixed' ? app.settings.openSettings({baseUrl: `https://${label}.example/v1`,hasApiKey: true},{onClose}) : app.workspace.openHistory({nodes: [{id: label,role: 'assistant',text: `${label} branch`,active: true}]},{onClose});
+      let nested: ReturnType<typeof open>|undefined;
+      const previous = open('old',() => {events.push('old');nested = open('nested',() => events.push('nested'));});
+      const outer = open('outer',() => events.push('outer'));previous.fail('Stale error');previous.close();previous.destroy();
+      const before = {oldOpen: previous.isOpen(),outerOpen: outer.isOpen(),nestedOpen: nested!.isOpen(),events: [...events],openDialogs: document.querySelectorAll('dialog[open]').length,
+        current: kind === 'fixed' ? (nested as ReturnType<typeof app.settings.openSettings>).read().baseUrl : document.querySelector('.pui-branch-node p')?.textContent,staleError: document.body.textContent!.includes('Stale error')};
+      nested!.close();nested!.destroy();app.destroy();return {before,after: {events,openDialogs: document.querySelectorAll('dialog[open]').length}};
+    },kind);
+    expect(result).toEqual({before: {oldOpen: false,outerOpen: false,nestedOpen: true,events: ['old','outer'],openDialogs: 1,current: kind === 'fixed' ? 'https://nested.example/v1' : 'nested branch',staleError: false},after: {events: ['old','outer','nested'],openDialogs: 0}});
+  }
+});
+
+test('native dismissal retires the old feature before its close callback opens a replacement',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);await page.evaluate(() => {
+      const h = window.deskPartsHarness;h.old = h.app.workspace.openHistory({nodes: []},{onClose() {h.calls.push('closed');h.nested = h.app.workspace.openHistory({nodes: [{id: 'nested',role: 'assistant',text: 'After dismissal',active: true}]});}});
+    });await page.keyboard.press('Escape');await expect(page.locator('dialog[open]')).toHaveCount(1);await expect(page.locator('.pui-branch-node p')).toHaveText('After dismissal');
+    expect(await page.evaluate(() => ({old: window.deskPartsHarness.old!.isOpen(),nested: window.deskPartsHarness.nested!.isOpen(),calls: window.deskPartsHarness.calls}))).toEqual({old: false,nested: true,calls: ['closed']});
+  }
+});
+
+test('the feature loading slot is replaced across resources/history/custom while OAuth retains its own opening',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);const value = await page.evaluate(() => {
+      const {app} = window.deskPartsHarness;
+      const loading = app.resources.openEditorLoading({kind: 'skill'}),oauth = app.settings.openProviderLogin({phase: 'waiting',message: 'Waiting for sign-in'});
+      const history = app.workspace.openHistory({nodes: []}),custom = app.settings.openConnectionLoading({editing: false});loading.fail('Retired loading');history.fail('Retired history');
+      return {loading: loading.isOpen(),history: history.isOpen(),custom: custom.isOpen(),oauth: oauth.isOpen(),dialogs: document.querySelectorAll('dialog[open]').length,stale: document.body.textContent!.includes('Retired')};
+    });expect(value).toEqual({loading: false,history: false,custom: true,oauth: true,dialogs: 2,stale: false});
+  }
+});
+
+test('image modal state participates in the same frame and conversation changes close the viewer',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);await page.evaluate(png => {const {app} = window.deskPartsHarness;app.workspace.updateConversation({id: 'a',messages: [],working: false});app.files.openPreview({owner: {kind: 'artifact',id: 'a'},name: 'Diagram',path: '/diagram.png',capabilities: {},content: {kind: 'image',imageSrc: png,imageAlt: 'Diagram'}});},png);
+    await page.locator('.pui-file-preview-body img').click();await expect(page.locator('.pui-image-viewer[open]')).toHaveCount(1);expect(await page.evaluate(() => window.deskPartsHarness.app.read().hasModal)).toBe(true);
+    await page.evaluate(() => window.deskPartsHarness.app.workspace.updateConversation({id: 'b',messages: [],working: false}));await expect(page.locator('.pui-image-viewer[open]')).toHaveCount(0);
+    await page.keyboard.press('Escape');await expect.poll(() => page.evaluate(() => window.deskPartsHarness.app.read().hasModal)).toBe(false);expect(await page.evaluate(() => window.deskPartsHarness.events)).toContain(true);
+  }
+});
+
+test('root teardown wins over close callback reopening and exceptions without retaining owned dialogs',async ({page}) => {
+  for (const old of [true,false]) {
+    await setup(page,old);const value = await page.evaluate(() => {
+      const {app} = window.deskPartsHarness;let reopened: ReturnType<typeof app.workspace.openHistory>|undefined;
+      app.workspace.openHistory({nodes: []},{onClose() {reopened = app.workspace.openHistory({nodes: []});throw new Error('Cleanup failed');}});
+      app.settings.openSettings({baseUrl: '',hasApiKey: false},{onClose() {throw new Error('Settings cleanup failed');}});app.destroy();app.destroy();
+      return {open: app.read().hasModal,reopened: reopened?.isOpen(),dialogs: document.querySelectorAll('dialog[open]').length,frames: document.querySelectorAll('.pui-app').length};
+    });expect(value).toEqual({open: false,reopened: false,dialogs: 0,frames: 0});
+  }
+});
