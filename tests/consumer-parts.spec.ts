@@ -49,3 +49,20 @@ test('message frames compose content and controls without scene state or DOM slo
   await expect(page.getByText('response',{exact:true})).toBeVisible();await page.getByRole('button',{name:'Copy',exact:true}).click();
   await expect(page.getByRole('button',{name:'Copied.',exact:true})).toBeVisible();
 });
+
+test('document pagination retains complete UTF-8 content and fixed controls',async({page})=>{
+  await page.goto('/tests/fixture.html');const text='中文 🐟\n'.repeat(36000);
+  await page.evaluate(async text=>{const u=await import('../src/index.js');u.mount(document.body,u.createDocument({text,format:'text'}));},text);
+  const first=await page.locator('pre').textContent();await page.getByRole('button',{name:'Next',exact:true}).click();
+  const second=await page.locator('pre').textContent();expect(first!+second!).toBe(text);
+});
+
+test('safe Markdown has a data-only local link port',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const opened:string[]=[];u.mount(document.body,u.createMarkdown({text:'[Source](README.md)',resolveLink:url=>url==='README.md'?url:undefined,onLocalLink:key=>{opened.push(key);}}));Object.assign(window,{opened});});
+  await page.getByRole('link',{name:'Source',exact:true}).click();expect(await page.evaluate(()=>Reflect.get(window,'opened'))).toEqual(['README.md']);
+});
+
+test('the window mount supplies fixed viewport layout without consumer CSS',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createText({text:'Full window'}),{viewport:'window'});});
+  const viewport=page.viewportSize()!;const bounds=await page.locator('body').boundingBox();expect(bounds?.x).toBe(0);expect(bounds?.y).toBe(0);expect(bounds?.width).toBe(viewport.width);expect(bounds?.height).toBe(viewport.height);
+});
