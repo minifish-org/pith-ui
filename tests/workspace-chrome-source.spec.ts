@@ -1,8 +1,9 @@
 import {test, expect, type Page} from '@playwright/test';
+import {measureSourceEffort} from './helpers/source-effort-measure';
 
 // Source of truth: accepted0.3.1 styles471–487/659/664/818–826/833–834,
 // confirmed against archived52c0d4d production at1280 and560 in both engines.
-// Native select widths are compared with isolated source-styled native controls,
+// Native select dimensions are compared with isolated source-styled native controls,
 // so platform-specific font/select metrics remain native instead of tolerated.
 async function openParts(page: Page, appearance: 'light' | 'dark', width: number) {
   await page.setViewportSize({width, height: 800});
@@ -93,7 +94,9 @@ for (const appearance of ['light', 'dark'] as const) for (const width of [1280, 
     await page.evaluate(() => {const f = Reflect.get(window, 'chromeSource'); f.permission.update({label: 'Conversation permissions', options: f.options}); f.permission.reset('ask');});
     await expect(frame).toHaveCSS('color', appearance === 'light' ? 'rgb(93, 103, 122)' : 'rgb(158, 165, 175)');
     const effort = page.getByRole('combobox', {name: 'Thinking effort', exact: true});
-    await expect(effort).toHaveCSS('height', '34px');
+    // Archived0.3.1 styles.css:169–184/820–823 preserve a shared native/trigger
+    // row. Keep macOS34px and compare every OS with the literal old composition.
+    if (process.platform === 'darwin') await expect(effort).toHaveCSS('height', '34px');
     await expect(effort).toHaveCSS('padding', '8px 4px');
     await expect(effort).toHaveCSS('border-radius', '8px');
     await expect(effort).toHaveCSS('color', appearance === 'light' ? 'rgb(93, 103, 122)' : 'rgb(158, 165, 175)');
@@ -104,14 +107,18 @@ for (const appearance of ['light', 'dark'] as const) for (const width of [1280, 
           const node = doc.createElement('select');
           node.style.cssText = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;line-height:18px;font-weight:400;box-sizing:border-box;border:0;" + style;
           labels.forEach(text => {const option = doc.createElement('option'); option.textContent = text; node.append(option);});
-          doc.body.append(node); return node.getBoundingClientRect().width;
+          doc.body.append(node);
+          if (node.closest('.pui')) throw new Error('Native oracle must not inherit Pith UI styles');
+          return node.getBoundingClientRect().width;
         };
-        return {permission: make(['Ask before changes', 'Allow workspace changes', 'Full access'], `appearance:none;max-width:${width <= 720 ? 150 : 180}px;padding:0 16px 0 0;`), effort: make(['Thinking: off', 'Thinking: high', 'Thinking: max'], 'max-width:132px;padding:8px 4px;')};
+        return {permission: make(['Ask before changes', 'Allow workspace changes', 'Full access'], `appearance:none;max-width:${width <= 720 ? 150 : 180}px;padding:0 16px 0 0;`)};
       } finally {iframe.remove();}
     }, width);
     expect((await permission.boundingBox())!.width).toBe(native.permission);
     expect((await frame.boundingBox())!.width).toBe(native.permission + 40);
-    expect((await effort.boundingBox())!.width).toBe(native.effort);
+    const nativeEffort = await measureSourceEffort(page, ['Thinking: off', 'Thinking: high', 'Thinking: max']);
+    expect((await effort.boundingBox())!.width).toBe(nativeEffort.width);
+    expect((await effort.boundingBox())!.height).toBe(nativeEffort.height);
   });
 }
 

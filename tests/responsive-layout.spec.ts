@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test';
+import {measureSourceEffort} from './helpers/source-effort-measure';
 
 // Fixed geometry from the pre-migration desktop baseline, including its
 // medium window and mobile breakpoints. Consumers cannot provide pixels.
@@ -50,9 +51,16 @@ test('form contexts preserve measured label weight, native legend padding and fi
  for(const [label,gap]of [['Connection name',8],['API key',12],['Model ID',8]]as const){const field=page.locator('.pui-field').filter({has:page.getByRole('textbox',{name:label,exact:true})});const a=(await field.locator('label').boundingBox())!,b=(await field.getByRole('textbox').boundingBox())!;expect(b.y-a.y-a.height).toBe(gap);}
 });
 
-test('input footer text and effort controls retain the measured 34px row and separate eight pixel note',async({page})=>{
+test('input footer text retains its 34px action and effort retains source-native height with an eight pixel note',async({page})=>{
  await page.setViewportSize({width:1280,height:800});await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');u.mount(document.body,u.createContentColumn({purpose:'input',content:u.createStack({children:[u.createSurface({content:u.createPromptInput({label:'Message'}),footer:u.createToolbar({label:'Actions',trailing:u.createActions({children:[u.createTextAction({context:'inline',label:'Demo model'}),u.createSelect({context:'inline',label:'Effort',options:[{value:'high',label:'Thinking: high'}]}),u.createIconButton({context:'inline',label:'Send',icon:'arrow'})]})})}),u.createText({role:'caption',text:'Permission description'})]})}));});
- expect((await page.getByRole('button',{name:'Demo model'}).boundingBox())!.height).toBe(34);expect((await page.getByRole('combobox',{name:'Effort'}).boundingBox())!.height).toBe(34);const surface=(await page.locator('.pui-input-surface').boundingBox())!,caption=(await page.getByText('Permission description',{exact:true}).boundingBox())!;expect(caption.y-surface.y-surface.height).toBe(8);
+ expect((await page.getByRole('button',{name:'Demo model'}).boundingBox())!.height).toBe(34);
+ const effort=page.getByRole('combobox',{name:'Effort'}),effortHeight=(await effort.boundingBox())!.height;
+ // Archived0.3.1 styles.css:169–184/820–823 preserve a shared native/trigger
+ // row. macOS measures34px; Linux WebKit's native theme can enlarge that row.
+ if(process.platform==='darwin')expect(effortHeight).toBe(34);
+ const native=await measureSourceEffort(page,['Thinking: high']);
+ expect(effortHeight).toBe(native.height);await expect(effort).toHaveCSS('padding','8px 4px');
+ const surface=(await page.locator('.pui-input-surface').boundingBox())!,caption=(await page.getByText('Permission description',{exact:true}).boundingBox())!;expect(caption.y-surface.y-surface.height).toBe(8);
 });
 
 test('only a selected navigation primary action marks the current page',async({page})=>{
