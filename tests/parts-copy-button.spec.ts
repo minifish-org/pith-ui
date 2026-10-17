@@ -68,3 +68,33 @@ test('copy feedback rejects foreign announcement and presentation timing options
     const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,announcement);const retained = mount.textContent;tree.destroy();return {foreign,timing,retained};
   });expect(result).toEqual({foreign: true,timing: true,retained: 'Still owned by caller'});
 });
+
+test('copy message content provider captures once at activation across later metadata changes', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),h = {calls: 0,argumentCounts: [],errors: [],mode: 'file',messages: 0} as unknown as CopyHarness & {mode: string;messages: number};
+    h.announcement = p.createAnnouncementPart({message: ''});
+    h.button = p.createCopyButtonPart({label: 'Copy file',variant: 'secondary',announcement: h.announcement,
+      successMessage(...args: unknown[]) {h.argumentCounts.push(args.length);h.messages++;return h.mode === 'file' ? 'File copied.' : 'Path copied.';},
+      onCopy() {h.calls++;return new Promise(resolve => {h.resolve = resolve;});}});
+    const mount = document.body.appendChild(document.createElement('div'));h.tree = p.mountParts(mount,p.createStackPart({children: [h.announcement,h.button]}));window.copyPartsHarness = h;
+  });
+  await page.getByRole('button',{name: 'Copy file',exact: true}).click();
+  await page.evaluate(() => {const h = window.copyPartsHarness as CopyHarness & {mode: string};h.mode = 'path';h.button.update({label: 'Copy path',variant: 'secondary',disabled: false});h.resolve!({ok: true});});
+  await expect(page.getByRole('button',{name: 'File copied.',exact: true})).toHaveText('Copied');await expect(page.getByRole('status')).toHaveText('File copied.');
+  expect(await page.evaluate(() => {const h = window.copyPartsHarness as CopyHarness & {messages: number};return {messages: h.messages,calls: h.calls,args: h.argumentCounts};})).toEqual({messages: 1,calls: 1,args: [0]});
+});
+
+for (const failure of ['throw','number','promise'] as const) test(`copy message provider ${failure} reports without copying or retaining pending`, async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async failure => {
+    const path = '/src/parts/index.ts',p = await import(path),h = {calls: 0,argumentCounts: [],errors: []} as unknown as CopyHarness;
+    h.announcement = p.createAnnouncementPart({message: ''});
+    h.button = p.createCopyButtonPart({label: 'Copy',variant: 'secondary',announcement: h.announcement,
+      successMessage() {if (failure === 'throw') throw new Error('No message');return failure === 'promise' ? Promise.resolve('Copied') : 42;},
+      onCopy() {h.calls++;},onError(message: string) {h.errors.push(message);}});
+    const mount = document.body.appendChild(document.createElement('div'));h.tree = p.mountParts(mount,p.createStackPart({children: [h.announcement,h.button]}));window.copyPartsHarness = h;
+  },failure);
+  await page.getByRole('button',{name: 'Copy',exact: true}).click();await expect(page.getByRole('button',{name: 'Copy',exact: true})).toBeEnabled();await expect(page.getByRole('button',{name: 'Copy',exact: true})).toHaveAttribute('aria-busy','false');await expect(page.getByRole('status')).toBeEmpty();
+  expect(await page.evaluate(() => ({calls: window.copyPartsHarness.calls,errors: window.copyPartsHarness.errors}))).toEqual({calls: 0,errors: [failure === 'throw' ? 'No message' : 'Copy success message must be text.']});
+});
