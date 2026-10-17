@@ -1,6 +1,6 @@
 {
   "name": "pith-ui",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Constrained native TypeScript parts with fixed presentation and executable application assembly documentation.",
   "type": "module",
   "license": "AGPL-3.0-only",
