@@ -1,7 +1,7 @@
 import {adoptNativeControl, reconcileSelectOptions, type NativeControl} from '../foundations.js';
 import {refreshSelect} from '../select.js';
 import {uniqueId} from '../dom.js';
-import {assertOptions, createOwnedPart, isPartAlive, nodeOf, type Part} from './ownership.js';
+import {assertOptions, createOwnedPart, isPartAlive, nodeOf, retargetPart, type Part} from './ownership.js';
 import {isTextPart, type TextPart} from './text.js';
 
 export interface FieldState {
@@ -94,7 +94,7 @@ export function createInputPart(options: InputOptions): ValuePart {
   const kind = options.kind ?? 'text';
   if (!['text', 'search', 'password', 'url', 'number'].includes(kind)) throw new TypeError('Unsupported input kind.');
   const control = document.createElement('input'); control.type = kind;
-  control.className = 'pui-part-control';
+  control.className = 'pui-control';
   if (options.min !== undefined) control.min = String(options.min);
   if (options.max !== undefined) control.max = String(options.max);
   if (options.step !== undefined) control.step = String(options.step);
@@ -103,24 +103,30 @@ export function createInputPart(options: InputOptions): ValuePart {
 }
 
 export interface TextareaOptions extends Omit<InputOptions, 'kind' | 'min' | 'max' | 'step' | 'pattern'> {
-  purpose?: 'text' | 'markdown' | 'secret';
+  purpose?: 'text' | 'markdown' | 'secret' | 'message' | 'queue-message';
 }
 export function createTextareaPart(options: TextareaOptions): ValuePart {
   assertOptions(options, [...stateKeys, 'value', 'name', 'autocomplete', 'onInput', 'onChange', 'purpose'], 'textarea'); validateTextOptions(options);
-  if (options.purpose !== undefined && !['text', 'markdown', 'secret'].includes(options.purpose)) throw new TypeError('Unsupported textarea purpose.');
+  if (options.purpose !== undefined && !['text', 'markdown', 'secret', 'message', 'queue-message'].includes(options.purpose)) throw new TypeError('Unsupported textarea purpose.');
   const control = document.createElement('textarea');
-  control.className = 'pui-part-control';
+  control.className = 'pui-control';
   if (options.purpose === 'markdown') control.classList.add('pui-resource-editor');
   if (options.purpose === 'secret') control.classList.add('pui-secret-field');
+  if (options.purpose === 'message' || options.purpose === 'queue-message') {
+    control.className = 'pui-control'; control.rows = options.purpose === 'message' ? 8 : 5;
+  }
   const part = valuePart(control, options, options.purpose === 'secret');
   return part;
 }
 
 export interface ChoiceOption {value: string; label: string; disabled?: boolean}
-export interface ChoiceState extends Omit<FieldState, 'readOnly' | 'placeholder'> {options?: readonly ChoiceOption[]}
+export interface ChoiceState extends Omit<FieldState, 'readOnly' | 'placeholder'> {
+  options?: readonly ChoiceOption[];
+  catalog?: 'loading' | 'ready';
+}
 export interface ChoiceOptions extends ChoiceState {options: readonly ChoiceOption[]; value?: string; name?: string; onChange?(value: string): void}
 export interface ChoicePart extends Part {read(): string; reset(value: string): void; update(state: Readonly<ChoiceState>): void; focus(): void}
-const choiceStateKeys = ['label', 'disabled', 'required', 'hidden', 'describedBy', 'options'];
+const choiceStateKeys = ['label', 'disabled', 'required', 'hidden', 'describedBy', 'options', 'catalog'];
 function validateChoices(options: readonly ChoiceOption[]): void {
   if (!Array.isArray(options)) throw new TypeError('Choices must be an array.');
   const values = new Set<string>();
@@ -135,9 +141,10 @@ function choicePart(options: ChoiceOptions, list: boolean): ChoicePart {
   assertOptions(options, [...choiceStateKeys, 'value', 'name', 'onChange'], 'choice field'); validateState(options); validateChoices(options.options);
   if (options.value !== undefined && typeof options.value !== 'string' || options.name !== undefined && typeof options.name !== 'string') throw new TypeError('Choice value and name must be text.');
   if (options.onChange !== undefined && typeof options.onChange !== 'function') throw new TypeError('Choice onChange must be a callback.');
+  if (options.catalog !== undefined && !['loading', 'ready'].includes(options.catalog)) throw new TypeError('Unsupported choice catalog state.');
+  let catalog = options.catalog ?? 'ready', disabled = !!options.disabled;
   const control = document.createElement('select');
-  control.id = uniqueId('pui-choice'); control.className = list ? 'pui-model-list' : 'pui-feature-select';
-  if (!list) control.classList.add('pui-part-control');
+  control.id = uniqueId('pui-choice'); control.className = list ? 'pui-model-list pui-control' : 'pui-feature-select pui-control';
   if (list) control.size = 6;
   if (options.name !== undefined) control.name = options.name;
   if (options.label !== undefined) control.setAttribute('aria-label', options.label);
@@ -146,22 +153,30 @@ function choicePart(options: ChoiceOptions, list: boolean): ChoicePart {
   // The shared select controller adds exactly its existing popup wrapper. A
   // temporary fragment supplies a parent while constructing an unmounted part.
   const fragment = document.createDocumentFragment(); fragment.append(control);
-  const native = adoptNativeControl(control, {onChange: options.onChange ? value => options.onChange!(value) : undefined});
-  const root = list ? control : control.parentElement!;
+  const onChange = options.onChange ? (value: string) => {if (catalog === 'ready' && !disabled) options.onChange!(value);} : undefined;
+  let native = adoptNativeControl(control, {onChange, enhanceSelect: catalog === 'ready'});
+  const root = list || catalog === 'loading' ? control : control.parentElement!;
   let part: ChoicePart;
   const update = (state: Readonly<ChoiceState>): void => {
     assertOptions(state, choiceStateKeys, 'choice state'); validateState(state);
     if (state.options !== undefined) validateChoices(state.options);
+    if (state.catalog !== undefined && !['loading', 'ready'].includes(state.catalog)) throw new TypeError('Unsupported choice catalog state.');
     if (!isPartAlive(part)) return;
+    if (state.catalog !== undefined && state.catalog !== catalog) {
+      native.destroy(); catalog = state.catalog;
+      native = adoptNativeControl(control, {onChange, enhanceSelect: catalog === 'ready'});
+      retargetPart(part, list || catalog === 'loading' ? control : control.parentElement!);
+    }
+    if (state.disabled !== undefined) disabled = state.disabled;
     if (state.label !== undefined) control.setAttribute('aria-label', state.label);
     applyReferences(control, state);
     if (state.options !== undefined) reconcileSelectOptions(control, state.options);
-    native.update(state);
+    native.update({...state, disabled});
   };
-  part = createOwnedPart<Omit<ChoicePart, keyof Part>>(root, {read: native.getValue, reset(value: string) {
+  part = createOwnedPart<Omit<ChoicePart, keyof Part>>(root, {read: () => native.getValue(), reset(value: string) {
     if (typeof value !== 'string') throw new TypeError('Choice reset must be text.');
     native.reset(value);
-  }, update, focus: native.focus}, {dispose() {
+  }, update, focus() {native.focus();}}, {dispose() {
     // The shared controller restores its borrowed native control by unwrapping
     // it. This part owns that control too, so remove the restored node as well.
     native.destroy(); control.remove();

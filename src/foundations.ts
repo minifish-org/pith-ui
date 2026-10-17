@@ -129,6 +129,8 @@ export function adoptNativeControl(control: NativeControl, options: {
   error?: HTMLElement;
   onInput?: (value: string, event: Event) => void;
   onChange?: (value: string, event: Event) => void;
+  /** A cold catalog keeps native loading controls until its first usable data. */
+  enhanceSelect?: boolean;
 } = {}): NativeControlController {
   const life = options.onInput || options.onChange ? new Lifetime() : undefined; let disposed = false;
   const originalDescriptions = new Set((control.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean));
@@ -142,7 +144,7 @@ export function adoptNativeControl(control: NativeControl, options: {
     ownedDescriptions.add(node.id);
   }
   if (options.error) options.error.setAttribute('role', 'alert');
-  const select = control instanceof HTMLSelectElement ? adoptSelect(control) : undefined;
+  const select = control instanceof HTMLSelectElement && options.enhanceSelect !== false ? adoptSelect(control) : undefined;
   const update = (state: Readonly<NativeControlState>): void => {
     if (disposed) return;
     if (state.label != null && options.label) setText(options.label, state.label);

@@ -1,9 +1,11 @@
 import {Lifetime} from '../core.js';
+import {setAppearance, type Appearance} from '../theme.js';
 
 declare const partBrand: unique symbol;
 /** An opaque, library-owned part. Composition transfers its lifetime to its parent. */
 export interface Part {readonly [partBrand]: true; destroy(): void}
-export interface MountedParts {destroy(): void}
+export interface MountPartsOptions {appearance?: Appearance}
+export interface MountedParts {setAppearance(appearance: Appearance): void; readAppearance(): Appearance; destroy(): void}
 
 interface OwnedPart {
   node: Element;
@@ -11,6 +13,8 @@ interface OwnedPart {
   owner?: Part | MountedParts;
   life: Lifetime;
   disposed: boolean;
+  releaseMount?: () => void;
+  destroyListeners?: Set<() => void>;
 }
 const parts = new WeakMap<Part, OwnedPart>();
 const mounts = new WeakMap<HTMLElement, MountedParts>();
@@ -27,7 +31,17 @@ function live(part: Part): OwnedPart {
 }
 /** Internal implementation port, intentionally absent from the parts entry. */
 export function nodeOf(part: Part): Element {return live(part).node;}
+/** Internal only: a native control may acquire its shared presentation wrapper.
+ * The presenter has already performed the move; ownership follows that same
+ * root without adding another wrapper or changing the public part identity. */
+export function retargetPart(part: Part, node: Element): void {live(part).node = node;}
 export function isPartAlive(part: Part): boolean {return !!parts.get(part) && !parts.get(part)!.disposed;}
+/** Internal borrowed-part lifecycle; consumers receive no DOM or event port. */
+export function onPartDestroy(part: Part, callback: () => void): () => void {
+  const record = live(part);
+  const listeners = record.destroyListeners ??= new Set(); listeners.add(callback);
+  return () => {listeners.delete(callback);};
+}
 
 /** Reject presentation escapes even for callers using plain JavaScript. */
 export function assertOptions(value: unknown, allowed: readonly string[], name: string): void {
@@ -42,6 +56,10 @@ function destroyPart(part: Part): void {
   if (record.disposed) return;
   record.disposed = true;
   const failures: unknown[] = [];
+  for (const callback of [...record.destroyListeners ?? []]) {
+    try {callback();} catch (error) {failures.push(error);}
+  }
+  record.destroyListeners?.clear();
   for (const child of [...record.children]) {
     try {destroyPart(child);} catch (error) {failures.push(error);}
   }
@@ -53,6 +71,8 @@ function destroyPart(part: Part): void {
     parent.children = parent.children.filter(child => child !== part);
   }
   record.owner = undefined;
+  try {record.releaseMount?.();} catch (error) {failures.push(error);}
+  record.releaseMount = undefined;
   if (failures.length) throw failures[0];
 }
 
@@ -115,7 +135,12 @@ export function replacePartChildren(parent: Part, children: readonly Part[]): vo
 }
 
 /** The only public DOM input. One live tree owns a checked, ordinary container. */
-export function mountParts(mount: HTMLElement, root: Part): MountedParts {
+export function mountParts(mount: HTMLElement, root: Part, options: MountPartsOptions = {}): MountedParts {
+  assertOptions(options, ['appearance'], 'mount');
+  const validateAppearance = (value: unknown): void => {
+    if (!['light', 'dark', 'system'].includes(value as string)) throw new TypeError('Unknown appearance.');
+  };
+  let appearance = options.appearance ?? 'system'; validateAppearance(appearance);
   if (!(mount instanceof HTMLElement) || !['DIV', 'MAIN', 'SECTION', 'ARTICLE'].includes(mount.tagName)) {
     throw new TypeError('A parts mount must be an ordinary HTML container.');
   }
@@ -123,14 +148,23 @@ export function mountParts(mount: HTMLElement, root: Part): MountedParts {
   const record = live(root);
   if (record.owner) throw new Error('A part already belongs to another parent or mount.');
   if (record.node === mount || record.node.contains(mount)) throw new Error('A part cannot be mounted inside itself.');
-  let disposed = false;
-  const mounted = Object.freeze({destroy() {
-    if (disposed) return;
-    disposed = true;
-    try {destroyPart(root);} finally {mounts.delete(mount);}
-  }});
+  const originalScope = mount.classList.contains('pui'), originalAppearance = mount.getAttribute('data-appearance');
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true; mounts.delete(mount);
+    if (!originalScope) mount.classList.remove('pui');
+    if (originalAppearance === null) mount.removeAttribute('data-appearance'); else mount.setAttribute('data-appearance', originalAppearance);
+  };
+  const mounted = Object.freeze({
+    setAppearance(next: Appearance) {validateAppearance(next); if (!released) {appearance = next; setAppearance(mount, next);}},
+    readAppearance: () => appearance,
+    destroy() {if (!released) {try {destroyPart(root);} finally {release();}}},
+  });
   record.owner = mounted;
+  record.releaseMount = release;
   mounts.set(mount, mounted);
+  setAppearance(mount, appearance);
   mount.replaceChildren(record.node);
   return mounted;
 }
