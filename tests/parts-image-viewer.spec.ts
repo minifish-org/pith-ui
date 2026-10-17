@@ -62,11 +62,15 @@ for (const appearance of ['light','dark'] as const) for (const tiny of [false,tr
   await openViewer(page,true,appearance,tiny);const fit = await presentation(page);
   await page.getByRole('button',{name: 'Original size',exact: true}).click();const original = await presentation(page);
   await page.getByRole('button',{name: 'Zoom in',exact: true}).click();const zoomed = await presentation(page);
+  // Match each old pointer/hover state as well as image scale. Returning to
+  // original scale with Zoom out leaves a different button hovered.
+  await page.getByRole('button',{name: 'Zoom out',exact: true}).click();const returned = await presentation(page);
+  await page.getByRole('button',{name: 'Fit',exact: true}).click();const refitted = await presentation(page);
   await openViewer(page,false,appearance,tiny);expect(await presentation(page)).toEqual(fit);
   await page.getByRole('button',{name: 'Original size',exact: true}).click();expect(await presentation(page)).toEqual(original);
   await page.getByRole('button',{name: 'Zoom in',exact: true}).click();expect(await presentation(page)).toEqual(zoomed);
-  await page.getByRole('button',{name: 'Zoom out',exact: true}).click();expect(await presentation(page)).toEqual(original);
-  await page.getByRole('button',{name: 'Fit',exact: true}).click();expect(await presentation(page)).toEqual(fit);
+  await page.getByRole('button',{name: 'Zoom out',exact: true}).click();expect(await presentation(page)).toEqual(returned);
+  await page.getByRole('button',{name: 'Fit',exact: true}).click();expect(await presentation(page)).toEqual(refitted);
 });
 
 for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`image viewer ${viewport.width} preserves bounded viewport and responsive controls`, async ({page}) => {
