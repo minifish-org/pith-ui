@@ -12,6 +12,8 @@ interface AnchoredSurfaceOptions {
   getAnchor?: () => Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom' | 'width' | 'height'>;
   anchorElement?: HTMLElement;
   dismissOnMove?: boolean;
+  /** Retained inspector content may open a dialog owned by the same mount. */
+  retainDuringModal?: boolean;
 }
 interface AnchoredSurface {
   open(): void;
@@ -38,8 +40,14 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
   floatingStacks.set(doc, stack);
   panel.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
-  const contains = (target: EventTarget | null) => target instanceof Node &&
-    (trigger.contains(target) || panel.contains(target) || options.exclusions?.some(node => node.contains(target)));
+  const contains = (target: EventTarget | null) => {
+    if (!(target instanceof Node)) return false;
+    if (trigger.contains(target) || panel.contains(target) || options.exclusions?.some(node => node.contains(target))) return true;
+    if (!options.retainDuringModal) return false;
+    const scope = trigger.closest('.pui');
+    return !!scope && [...scope.querySelectorAll<HTMLDialogElement>('dialog[open]')].some(dialog =>
+      dialog.closest('.pui') === scope && dialog.contains(target));
+  };
   const style = (name: string, value: string) => { if (panel.style.getPropertyValue(name) !== value) panel.style.setProperty(name, value); };
   const place = () => {
     if (!opened || !position) return;
