@@ -21,7 +21,9 @@ async function setup(page: Page,old: boolean,messages: Message[] = scenarios.mix
     const app = createApplication(mount,{appearance}),state: State = {id: 'tools',messages,working: false};app.workspace.updateConversation(state);
     let body: Handle;
     if (old) body = {update: app.workspace.updateConversation,destroy: app.destroy};
-    else {const recipePath = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts',{composeConversationBody} = await import(recipePath),p = await import(partsPath);const composition = composeConversationBody(state);p.mountParts(mount.querySelector('.pui-chat-scroll'),composition.part,{appearance});body = composition;}
+    else {const recipePath = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts',{composeConversationBody} = await import(recipePath),p = await import(partsPath);
+      const context = mount.querySelector('.pui-app')!.cloneNode(true);app.destroy();mount.append(context);
+      const composition = composeConversationBody(state);p.mountParts(mount.querySelector('.pui-chat-scroll'),composition.part,{appearance});body = composition;}
     if (expanded) for (const details of mount.querySelectorAll<HTMLDetailsElement>('.pui-messages details')) details.open = true;
     window.toolPartsHarness = {body,state};
   },{old,messages,appearance,expanded});

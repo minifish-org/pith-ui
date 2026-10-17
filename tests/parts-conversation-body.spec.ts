@@ -22,6 +22,9 @@ async function openBody(page: Page,old: boolean,state = mixed,appearance: 'light
     const app = createApplication(mount,{appearance,workspace: callbacks}); app.workspace.updateConversation(state);
     if (old) h.body = {update: app.workspace.updateConversation,updateAvailability: app.workspace.updateMessageAvailability,destroy: app.destroy};
     else {const path = '/examples/assemblies/conversation-body.ts',partsPath = '/src/parts/index.ts'; const {composeConversationBody} = await import(path),parts = await import(partsPath);
+      // Preserve the actual native layout context while retiring every old
+      // controller. A surviving old delegate must never help the new parts.
+      const context = mount.querySelector('.pui-app')!.cloneNode(true);app.destroy();mount.append(context);
       h.body = composeConversationBody(state,callbacks); parts.mountParts(mount.querySelector<HTMLElement>('.pui-chat-scroll')!,h.body.part,{appearance});}
     window.bodyPartsHarness = h;
   },{old,state,appearance});
