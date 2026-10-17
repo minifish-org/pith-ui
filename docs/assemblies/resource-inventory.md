@@ -124,13 +124,42 @@ The close icon, native Escape/backdrop dismissal, `close()` and `destroy()` end
 the owned opening, dispose its parts and operation guards, restore focus and
 notify `onClose` once. Repeated disposal and later snapshots are harmless.
 The shared application owner still coordinates this fixed resource surface with
-other dialogs and live appearance updates. Current parity tests use the actual
+other dialogs and live appearance updates. `mountResourcesInventory` is the
+standalone validation/demo adapter. In the application, build the unopened
+dialog and transfer its genuine part directly into the shared tree:
+
+```ts
+import {createStackPart, mountParts} from '../../src/parts/index.js';
+import {
+  composeResourcesInventory, type InventoryCallbacks, type InventoryState,
+} from '../../examples/assemblies/resource-inventory.js';
+
+export function attachInventoryLayer(
+  mount: HTMLElement,
+  initial: Readonly<InventoryState>,
+  callbacks: InventoryCallbacks,
+  appearance: 'light' | 'dark' | 'system',
+) {
+  const inventory = composeResourcesInventory(initial, callbacks);
+  const owner = mountParts(mount, createStackPart({children: [inventory.part]}), {appearance});
+  inventory.open();
+  return {inventory, setAppearance: owner.setAppearance, destroy: owner.destroy};
+}
+```
+
+Add other composed dialog parts as siblings in that same parent before mounting.
+The builder takes no mount container and creates no nested theme scope. Parent
+appearance changes update retained parts; parent disposal retires refresh,
+creation and row operations and notifies an opened inventory once. A constructed
+layer that was never opened is disposed without an `onClose` callback.
+Current parity tests use the actual
 baseline application parent; the complete shell assembly remains a separate
 required proof. Independent behavior tests mount an ordinary container.
 
 ```sh
 node scripts/verify-assemblies.ts
 npx playwright test tests/parts-resource-inventory.spec.ts
+npx playwright test tests/parts-resource-composition.spec.ts
 ```
 
 The regression checks actual application geometry, typography, colors, SVG file

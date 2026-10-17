@@ -4,7 +4,7 @@ import {
   createContentSectionPart, createDialogPart, createDisclosurePart, createFeedbackPart,
   createGroupedCardPart, createIconPart, createPreformattedPart, createStackPart,
   createTextPart, createToolbarPart, mountParts,
-  type ButtonPart, type LayoutPart, type MountedParts, type MountPartsOptions, type Part,
+  type ButtonPart, type DialogPart, type LayoutPart, type MountPartsOptions, type Part,
 } from '../../src/parts/index.js';
 
 export type ResourceKind = 'instructions' | 'skill' | 'template';
@@ -38,6 +38,7 @@ export interface ResourceInventoryAssembly {
   isOpen(): boolean;
   destroy(): void;
 }
+export interface ResourceInventoryComposition extends ResourceInventoryAssembly {readonly part: DialogPart; open(): void}
 
 /** Application operation ownership, independent from a button's presentation. */
 function task(available: () => boolean, onError: (message: string) => void, onPending: () => void = () => {}) {
@@ -62,8 +63,8 @@ function task(available: () => boolean, onError: (message: string) => void, onPe
 }
 
 /** Feature dialog -> description, feature toolbar, keyed sections/cards, feedback. */
-export function mountResourcesInventory(mount: HTMLElement, initial: Readonly<InventoryState>, callbacks: InventoryCallbacks = {}, appearance: MountPartsOptions = {}): ResourceInventoryAssembly {
-  let state = initial, alive = true, rendered = false, mounted: MountedParts;
+export function composeResourcesInventory(initial: Readonly<InventoryState>, callbacks: InventoryCallbacks = {}): ResourceInventoryComposition {
+  let state = initial, alive = true, opened = false, rendered = false;
   const owner = initial.workspace.id;
   const description = createTextPart({role: 'description',text: 'Instructions, skills and prompt templates are loaded by Pith for each task. Edit them here or open their Markdown files.'});
   const feedback = createFeedbackPart({message: initial.error ?? '',tone: 'error'});
@@ -164,11 +165,18 @@ export function mountResourcesInventory(mount: HTMLElement, initial: Readonly<In
   }
   function release(): void {
     if (!alive) return;
-    alive = false;refresh.destroy();creation.destroy();for (const section of sections.values()) for (const row of section.rows.values()) row.fileTask.destroy();
-    sections.clear();try {mounted.destroy();} finally {callbacks.onClose?.();}
+    const notify = opened;alive = false;opened = false;refresh.destroy();creation.destroy();for (const section of sections.values()) for (const row of section.rows.values()) row.fileTask.destroy();
+    sections.clear();try {dialog.destroy();} finally {if (notify) callbacks.onClose?.();}
   }
   function close(): void {if (alive) {dialog.close();release();}}
-  const dialog = createDialogPart({purpose: 'feature',title: 'Workspace resources',eyebrow: initial.workspace.name,children: [description,toolbar,list,feedback],onClose: release});
-  mounted = mountParts(mount,dialog,appearance);dialog.open();render(initial);
-  return {read: () => state,update: render,fail,close,isOpen: current,destroy: close};
+  const dialog = createDialogPart({purpose: 'feature',title: 'Workspace resources',eyebrow: initial.workspace.name,children: [description,toolbar,list,feedback],onClose: release,onDispose: release});
+  return {part: dialog,read: () => state,update: render,fail,close,isOpen: current,destroy: close,
+    open() {if (alive && !dialog.isOpen()) {dialog.open();opened = dialog.isOpen();if (opened) render(state);}},
+  };
+}
+
+/** Standalone validation adapter. Shared application owners mount composed parts. */
+export function mountResourcesInventory(mount: HTMLElement, initial: Readonly<InventoryState>, callbacks: InventoryCallbacks = {}, appearance: MountPartsOptions = {}): ResourceInventoryAssembly {
+  const inventory = composeResourcesInventory(initial,callbacks);
+  mountParts(mount,inventory.part,appearance);inventory.open();return inventory;
 }

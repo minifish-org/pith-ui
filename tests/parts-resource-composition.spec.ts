@@ -18,6 +18,9 @@ async function setup(page: Page): Promise<void> {
   await page.goto('/tests/fixture.html');
   await page.emulateMedia({colorScheme: 'light'});
   await page.evaluate(async () => {
+    // Desk has one application scope on HTML. Remove the generic fixture's
+    // extra BODY scope, whose own light fallback would mask the old app theme.
+    document.body.classList.remove('pui');
     const partsPath = '/src/parts/index.ts',editorPath = '/examples/assemblies/resource-editor.ts',inventoryPath = '/examples/assemblies/resource-inventory.ts',appPath = '/src/app/index.ts';
     const p = await import(partsPath),edit = await import(editorPath),resources = await import(inventoryPath),{createApplication} = await import(appPath);
     const state = {workspaceId: 'w1',workspacePath: '/demo/project',path: '/demo/project/.pi/skills/inspect/SKILL.md',kind: 'skill',name: 'inspect',content: '# Original content 中文',editable: true,workspaceBusy: false};
@@ -52,6 +55,7 @@ test('dialog disposal is reported once through destruction by its opaque parent'
 
 test('resource compositions share one theme owner and live appearance without resetting the owned draft', async ({page}) => {
   await setup(page);await page.evaluate(() => window.resourceCompositionHarness.editor.open());
+  expect(await page.getByRole('dialog').evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe(await page.evaluate(() => window.resourceCompositionHarness.expectedDark.dialog));
   const field = page.getByRole('textbox',{name: 'Markdown',exact: true});await field.fill('# Unsaved shared draft 中文');
   await field.evaluate(node => {const field = node as HTMLTextAreaElement;field.focus();field.setSelectionRange(2,14);window.resourceCompositionHarness.field = field;});
   await page.evaluate(() => window.resourceCompositionHarness.mounted.setAppearance('dark'));

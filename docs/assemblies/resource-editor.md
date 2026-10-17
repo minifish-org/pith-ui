@@ -117,8 +117,40 @@ or replacing loading makes late reads ineligible to open an editor.
 The application owns the shared feature-dialog slot: close/destroy the previous
 opening before mounting its replacement. This same owner coordinates history,
 connection-loading and other feature openings; a recipe is not a second public
-scene manager. Forward the current finite appearance choice through the final
-mount argument and forward later appearance changes through that shared owner.
+scene manager. The `mountResourceEditor` and `mountResourceLoading` functions are
+standalone validation/demo adapters. A shared application uses the composable
+builders below, then mounts their genuine dialog parts through one theme owner.
+
+```ts
+import {createStackPart, mountParts} from '../../src/parts/index.js';
+import {
+  composeResourceEditor, composeResourceLoading,
+  type ResourceCallbacks, type ResourceState,
+} from '../../examples/assemblies/resource-editor.js';
+
+export function attachResourceLayers(
+  mount: HTMLElement,
+  initial: Readonly<ResourceState>,
+  callbacks: ResourceCallbacks,
+  appearance: 'light' | 'dark' | 'system',
+) {
+  const editor = composeResourceEditor(initial, callbacks);
+  const loading = composeResourceLoading({kind: initial.kind, path: initial.path});
+  const owner = mountParts(mount, createStackPart({children: [editor.part, loading.part]}), {appearance});
+  // The caller chooses loading.open() or editor.open() after mounting, and
+  // checks its own request-generation token before changing the active layer.
+  return {editor, loading, setAppearance: owner.setAppearance, destroy: owner.destroy};
+}
+```
+
+`composeResourceEditor` and `composeResourceLoading` construct unopened parts.
+They receive no DOM container and create no theme scope. Their explicit `open()`
+works after the shared tree is mounted. Changing the owner's appearance updates
+every retained layer immediately without changing field values or selection.
+Destroying that parent calls the dialog disposal hook before child controls are
+cleared, saves the draft and retires outstanding outcomes. Unopened layers are
+disposed silently; an opened layer notifies `onClose` once.
+
 The current parity fixture supplies the actual baseline application's parent
 for the modal comparison; the complete shell assembly and shared owner remain
 a separate required proof. Independent part and behavior tests use ordinary
@@ -135,6 +167,7 @@ are harmless.
 ```sh
 npx tsc --noEmit
 npx playwright test tests/parts-resource-editor.spec.ts
+npx playwright test tests/parts-resource-composition.spec.ts
 ```
 
 The regression compares the actual old `createApplication().resources` editor

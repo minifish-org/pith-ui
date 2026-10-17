@@ -3,7 +3,7 @@ import {
   createButtonPart, createDialogPart, createFeedbackPart, createFieldLabelPart,
   createFooterPart, createFormPart, createInputPart, createLabelledFieldPart,
   createStackPart, createTextareaPart, createTextPart, mountParts,
-  type DialogPart, type FormPart, type MountedParts, type MountPartsOptions,
+  type DialogPart, type FormPart, type MountPartsOptions,
 } from '../../src/parts/index.js';
 
 export type ResourceKind = 'instructions' | 'skill' | 'template';
@@ -35,13 +35,14 @@ export interface ResourceEditorAssembly {
   isOpen(): boolean;
   destroy(): void;
 }
+export interface ResourceEditorComposition extends ResourceEditorAssembly {readonly part: DialogPart; open(): void}
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
 
 /** Feature dialog -> natural body -> path, optional notice, form fields and footer. */
-export function mountResourceEditor(mount: HTMLElement, initial: Readonly<ResourceState>, callbacks: ResourceCallbacks = {}, appearance: MountPartsOptions = {}): ResourceEditorAssembly {
-  let state = initial, alive = true, deletePending = false, deletion = 0;
+export function composeResourceEditor(initial: Readonly<ResourceState>, callbacks: ResourceCallbacks = {}): ResourceEditorComposition {
+  let state = initial, alive = true, opened = false, deletePending = false, deletion = 0;
   let saved: ResourceDraft = {name: initial.name ?? '', content: initial.content};
-  let dialog: DialogPart, form: FormPart, mounted: MountedParts;
+  let dialog: DialogPart, form: FormPart;
   const identity = JSON.stringify([initial.workspaceId, initial.workspacePath, initial.kind, initial.path]);
   const current = () => alive && dialog.isOpen();
   const path = createTextPart({role: 'path-paragraph', text: initial.path || initial.workspacePath});
@@ -91,8 +92,9 @@ export function mountResourceEditor(mount: HTMLElement, initial: Readonly<Resour
   }
   function release(): void {
     if (!alive) return;
-    saved = read(); alive = false; deletion++;
-    try {mounted.destroy();} finally {callbacks.onClose?.();}
+    const notify = opened;
+    saved = read(); alive = false; opened = false; deletion++;
+    try {dialog.destroy();} finally {if (notify) callbacks.onClose?.();}
   }
   function close(): void {if (alive) {dialog.close(); release();}}
   form = createFormPart({children: [namedField, contentLabel, content, feedback, footer].filter((part): part is NonNullable<typeof part> => !!part),
@@ -107,15 +109,21 @@ export function mountResourceEditor(mount: HTMLElement, initial: Readonly<Resour
   });
   const body = createStackPart({children: [path, notice, form].filter((part): part is NonNullable<typeof part> => !!part)});
   const title = !initial.editable ? 'Workspace resource' : initial.path ? 'Edit workspace resource' : `Create ${initial.kind}`;
-  dialog = createDialogPart({purpose: 'feature', title, children: [body, frameFeedback], onClose: release});
-  mounted = mountParts(mount, dialog, appearance);
-  render(initial); dialog.open();
+  dialog = createDialogPart({purpose: 'feature', title, children: [body, frameFeedback], onClose: release, onDispose: release});
+  render(initial);
   return {
-    read, fail, close, isOpen: current, destroy: close,
+    part: dialog, read, fail, close, isOpen: current, destroy: close,
+    open() {if (alive && !dialog.isOpen()) {dialog.open();opened = dialog.isOpen();}},
     update(next) {
       if (current() && JSON.stringify([next.workspaceId, next.workspacePath, next.kind, next.path]) === identity) render(next);
     },
   };
+}
+
+/** Standalone validation adapter. A real application mounts the composed part once. */
+export function mountResourceEditor(mount: HTMLElement, initial: Readonly<ResourceState>, callbacks: ResourceCallbacks = {}, appearance: MountPartsOptions = {}): ResourceEditorAssembly {
+  const editor = composeResourceEditor(initial,callbacks);
+  mountParts(mount,editor.part,appearance);editor.open();return editor;
 }
 
 export interface ResourceLoadingState {readonly error?: string}
@@ -126,26 +134,34 @@ export interface ResourceLoadingAssembly {
   isOpen(): boolean;
   destroy(): void;
 }
+export interface ResourceLoadingComposition extends ResourceLoadingAssembly {readonly part: DialogPart; open(): void}
 
 /** The two paragraph parts deliberately keep body status and frame errors apart. */
-export function mountResourceLoading(mount: HTMLElement, initial: Readonly<ResourceLoadingState> & {readonly kind: ResourceKind; readonly path?: string}, callbacks: {onClose?(): void} = {}, appearance: MountPartsOptions = {}): ResourceLoadingAssembly {
-  let alive = true;
-  let dialog: DialogPart, mounted: MountedParts;
+export function composeResourceLoading(initial: Readonly<ResourceLoadingState> & {readonly kind: ResourceKind; readonly path?: string}, callbacks: {onClose?(): void} = {}): ResourceLoadingComposition {
+  let alive = true, opened = false;
+  let dialog: DialogPart;
   const status = createFeedbackPart({presentation: 'paragraph', message: initial.error || 'Loading…', tone: initial.error ? 'error' : 'info'});
   const frameFeedback = createFeedbackPart({presentation: 'paragraph', message: '', tone: 'error'});
   const current = () => alive && dialog.isOpen();
   function release(): void {
     if (!alive) return;
-    alive = false;
-    try {mounted.destroy();} finally {callbacks.onClose?.();}
+    const notify = opened;alive = false;opened = false;
+    try {dialog.destroy();} finally {if (notify) callbacks.onClose?.();}
   }
   function close(): void {if (alive) {dialog.close(); release();}}
   dialog = createDialogPart({purpose: 'feature', title: initial.path ? 'Edit workspace resource' : `Create ${initial.kind}`,
-    children: [status, frameFeedback], onClose: release});
-  mounted = mountParts(mount, dialog, appearance); dialog.open();
+    children: [status, frameFeedback], onClose: release, onDispose: release});
   return {
+    part: dialog,
+    open() {if (alive && !dialog.isOpen()) {dialog.open();opened = dialog.isOpen();}},
     update(next) {if (current()) status.update({message: next.error || 'Loading…', tone: next.error ? 'error' : 'info'});},
     fail(message) {if (current()) frameFeedback.update({message, tone: 'error'});},
     close, isOpen: current, destroy: close,
   };
+}
+
+/** Standalone validation adapter; shared application owners use the builder. */
+export function mountResourceLoading(mount: HTMLElement, initial: Readonly<ResourceLoadingState> & {readonly kind: ResourceKind; readonly path?: string}, callbacks: {onClose?(): void} = {}, appearance: MountPartsOptions = {}): ResourceLoadingAssembly {
+  const loading = composeResourceLoading(initial,callbacks);
+  mountParts(mount,loading.part,appearance);loading.open();return loading;
 }
