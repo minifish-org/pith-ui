@@ -1,5 +1,31 @@
 import {test, expect} from '@playwright/test';
 
+test('inline and readout folds retain native triangles while navigation and output keep their icons', async ({page, browserName}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const ui = await import('../src/index.js');
+    ui.mount(document.body, ui.createStack({context: 'flow', children: ['inline', 'readout', 'navigation', 'output'].map(context => ui.createDisclosure({context: context as 'inline' | 'readout' | 'navigation' | 'output', title: context, content: ui.createText({text: context + ' content'})}))}));
+  });
+  for (const context of ['inline', 'readout']) {
+    const fold = page.locator('.pui-disclosure-' + context), summary = fold.locator(':scope > summary');
+    await expect(summary).toHaveCSS('display', 'list-item');
+    await expect(summary).toHaveCSS('list-style-position', 'inside');
+    await expect(summary).toHaveCSS('list-style-type', 'disclosure-closed');
+    await expect(summary.locator('.pui-disclosure-chevron')).toBeHidden();
+    const closedTextOffset = await summary.evaluate(node => {const title = node.querySelector('span:not([class])')!, range = document.createRange(); range.selectNodeContents(title); return range.getBoundingClientRect().x - node.getBoundingClientRect().x;});
+    expect(closedTextOffset).toBe(browserName === 'webkit' ? 14.8544921875 : 14.828125);
+    await summary.press('Space');
+    await expect(summary).toHaveCSS('list-style-type', 'disclosure-open');
+    const openTextOffset = await summary.evaluate(node => {const title = node.querySelector('span:not([class])')!, range = document.createRange(); range.selectNodeContents(title); return range.getBoundingClientRect().x - node.getBoundingClientRect().x;});
+    expect(openTextOffset).toBe(browserName === 'webkit' ? 14.3828125 : 14.828125);
+  }
+  for (const context of ['navigation', 'output']) {
+    const summary = page.locator('.pui-disclosure-' + context + ' > summary');
+    await expect(summary).toHaveCSS('display', 'flex');
+    await expect(summary.locator('.pui-disclosure-chevron')).toBeVisible();
+  }
+});
+
 // Source contracts: accepted 0.3.1 styles.css run-status and cost-requests,
 // tasks/runtime.ts dl + paragraph in natural flow. Ordinary KeyValue is separate.
 test('a readout owns right-aligned runtime values, natural paragraphs and nested request details', async ({page}) => {
