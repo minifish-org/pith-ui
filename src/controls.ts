@@ -998,7 +998,7 @@ export function createPopover(options: PopoverState & {
 }): Popover {
     check(options, ['label', 'disabled', 'triggerLabel', 'icon', 'context', 'purpose', 'content', 'onToggle']);
     finite(options.purpose, ['inspector'], 'popover purpose');
-    const [node] = nodes([options.content]), block = primitive.createPopover({ ...options, content: node, position: options.purpose === 'inspector' ? false : undefined });
+    const [node] = nodes([options.content]), block = primitive.createPopover({ ...options, content: node, position: options.purpose === 'inspector' ? false : undefined,retainDuringModal:options.purpose==='inspector' });
     let control: Popover;
     if (options.purpose === 'inspector')
         block.element.classList.add('pui-popover-inspector');
