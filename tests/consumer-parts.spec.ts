@@ -70,7 +70,7 @@ test('the window mount supplies fixed viewport layout without consumer CSS',asyn
 test('URL constraints block submission and secret reset restores masking',async({page})=>{
   await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const submitted:string[]=[];const url=u.createURLInput({label:'Endpoint',value:'not-a-url',required:true});const secret=u.createSecretTextArea({label:'Private JSON',value:'{"KEY":"private"}'});const password=u.createSecretInput({label:'Password',value:'old'});u.mount(document.body,u.createStack({children:[u.createForm({children:[url],onSubmit:async()=>{submitted.push(url.read());return{ok:true};}}),secret,password]}));Object.assign(window,{consumer:{url,secret,password,submitted}});});
   await page.getByRole('button',{name:'Save',exact:true}).click();expect(await page.evaluate(()=>Reflect.get(window,'consumer').submitted)).toEqual([]);
-  await page.getByRole('textbox',{name:'Endpoint',exact:true}).fill('https://example.test');await page.getByRole('button',{name:'Save',exact:true}).click();
+  await page.getByRole('textbox',{name:/^Endpoint/}).fill('https://example.test');await page.getByRole('button',{name:'Save',exact:true}).click();
   expect(await page.evaluate(()=>Reflect.get(window,'consumer').submitted)).toEqual(['https://example.test']);
   const json=page.getByRole('textbox',{name:'Private JSON',exact:true});await page.getByRole('button',{name:'Show',exact:true}).first().click();
   await page.evaluate(()=>{const c=Reflect.get(window,'consumer');c.secret.reset('');c.password.reset('');});await expect(json).toHaveValue('');
@@ -85,9 +85,21 @@ test('explicit prompt reset clears an earlier submission error',async({page})=>{
 
 test('form validation and submission reset are semantic ports without replacing a draft',async({page})=>{
   await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const input=u.createTextInput({label:'Name',value:'Draft',required:true});let finish!:(value:{ok:false;error:string})=>void;const form=u.createForm({children:[input],onSubmit:()=>new Promise(resolve=>{finish=resolve;})});u.mount(document.body,form);Object.assign(window,{consumer:{input,form,finish:()=>finish({ok:false,error:'Old submission'})}});});
-  const input=page.getByRole('textbox',{name:'Name',exact:true});await input.focus();await input.evaluate((node:HTMLInputElement)=>node.setSelectionRange(1,3));
+  const input=page.getByRole('textbox',{name:/^Name/});await input.focus();await input.evaluate((node:HTMLInputElement)=>node.setSelectionRange(1,3));
   expect(await page.evaluate(()=>Reflect.get(window,'consumer').form.validate())).toBe(true);
   await page.getByRole('button',{name:'Save',exact:true}).click();await expect(input).toBeDisabled();
   await page.evaluate(()=>{const c=Reflect.get(window,'consumer');c.form.resetSubmission();c.finish();});
   await expect(input).toBeEnabled();await expect(input).toHaveValue('Draft');await expect(page.getByText('Old submission',{exact:true})).toHaveCount(0);
+});
+
+test('image zoom allocates its surface only when opened',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const images=Array.from({length:12},(_,i)=>u.createImage({label:'Image '+i,source:'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"/>')}));const owner=u.mount(document.body,u.createStack({children:images}));Object.assign(window,{owner});});
+  await expect(page.locator('dialog')).toHaveCount(0);await page.getByRole('button',{name:'Open Image 0',exact:true}).click();await expect(page.locator('dialog')).toHaveCount(1);
+  await page.evaluate(()=>Reflect.get(window,'owner').destroy());await expect(page.locator('dialog')).toHaveCount(0);
+});
+
+test('resetting a revealed secret input restores its masked presentation',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const secret=u.createSecretInput({label:'Password',value:'private'});u.mount(document.body,secret);Object.assign(window,{secret});});
+  await page.getByRole('button',{name:'Show',exact:true}).click();await expect(page.getByLabel('Password',{exact:true})).toHaveAttribute('type','text');
+  await page.evaluate(()=>Reflect.get(window,'secret').reset('replacement'));await expect(page.getByLabel('Password',{exact:true})).toHaveAttribute('type','password');
 });
