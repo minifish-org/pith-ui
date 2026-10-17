@@ -195,7 +195,7 @@
 .pui .pui-image .pui-image-remove { position:absolute;top:-4px;right:-4px;min-height:24px;width:24px;height:24px;padding:0;border-radius:50%; }
 .pui .pui-image-remove .pui-icon { width:14px;height:14px; }
 .pui .pui-message-frame { min-width:0;overflow-wrap:anywhere;padding:var(--pui-space-lg);border-radius:10px; }
-.pui .pui-message-frame[data-role="user"] { background:var(--pui-surface-code); }
+.pui .pui-message-frame[data-role="user"] { background:var(--pui-user-message-bg);border:1px solid var(--pui-user-message-border); }
 .pui .pui-message-frame-meta { font-size:var(--pui-text-small);color:var(--pui-muted);margin-top:var(--pui-space-sm); }
 .pui .pui-message-frame-actions { margin-top:var(--pui-space-sm); }
 @media (hover:hover) { .pui .pui-message-frame-actions { opacity:0; } .pui .pui-message-frame:hover .pui-message-frame-actions,.pui .pui-message-frame:focus-within .pui-message-frame-actions { opacity:1; } }
@@ -209,3 +209,15 @@
 .pui.pui-window-host { position:fixed;inset:0;margin:0;height:100dvh;overflow:hidden; }
 .pui .pui-document { min-width:0; }
 .pui .pui-secret-area:not(.pui-revealed) textarea { -webkit-text-security:disc; }
+
+/* A pane keeps fixed input content reachable while its optional bounded region yields. */
+.pui .pui-pane-footer { min-height:0;max-height:calc(100% - 64px);display:flex;flex-direction:column; }
+.pui .pui-pane-footer > .pui-control-stack { flex:1;min-height:0; }
+.pui .pui-pane-footer > .pui-control-stack > * { flex-shrink:0; }
+.pui .pui-pane-footer > .pui-control-stack > .pui-slot:has(> .pui-scroll-area) { display:flex;min-height:0;flex:0 1 auto;overflow:hidden; }
+.pui .pui-pane-footer > .pui-control-stack > .pui-slot > .pui-scroll-area { min-height:0;flex:1; }
+.pui .pui-control-list:has(> .pui-image-attachment) { flex-direction:row;flex-wrap:wrap;align-items:flex-start; }
+.pui .pui-control-stack,.pui .pui-control-form-fields { grid-template-columns:minmax(0,1fr); }
+.pui .pui-pane-footer > .pui-control-stack { display:flex;flex-direction:column; }
+.pui .pui-list-row-select { width:100%;justify-content:flex-start;text-align:start;min-height:28px;padding:0;border:0;background:transparent;font-weight:var(--pui-weight-strong); }
+.pui .pui-list-row-select:hover:not(:disabled) { background:var(--pui-surface-hover); }

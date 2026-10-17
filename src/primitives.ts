@@ -340,14 +340,15 @@ export function createDisclosure(options: DisclosureState & { content: Node; ope
   return { element: root, update, setOpen(open) { root.open = open; }, isOpen: () => root.open, destroy() { life.destroy(); } };
 }
 export interface ListRowState { title: string; description?: string; meta?: string; selected?: boolean; icon?: string; }
-export function createListRow(options: ListRowState & { actions?: Node }): UIBlock<ListRowState> {
+export function createListRow(options: ListRowState & { actions?: Node;titleContent?:Node }): UIBlock<ListRowState> {
   const title = element('div', 'pui-list-row-title'); const description = element('div', 'pui-muted'); const meta = element('small', 'pui-muted');
+  if(options.titleContent)title.append(options.titleContent);
   const glyph = element('span', 'pui-list-row-icon');
   const root = element('div', 'pui-list-row', glyph, element('div', 'pui-list-row-body', title, description), meta);
   if (options.actions) root.append(options.actions);
   let iconName = '';
   const update = (state: Readonly<ListRowState>): void => {
-    setText(title, state.title); setText(description, state.description); description.hidden = !state.description;
+    if(!options.titleContent)setText(title, state.title); setText(description, state.description); description.hidden = !state.description;
     setText(meta, state.meta); meta.hidden = !state.meta; root.classList.toggle('pui-selected', !!state.selected);
     if (iconName !== (state.icon ?? '')) { iconName = state.icon ?? ''; glyph.replaceChildren(...(state.icon ? [iconElement(state.icon)] : [])); }
     glyph.hidden = !state.icon;

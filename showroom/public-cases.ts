@@ -37,11 +37,11 @@ mount(host,createPane({header:createText({role:'heading',text:'Title'}),content:
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 mount(host,createSplitPane({navigation:createText({text:'Navigation'}),content:createText({text:'Content'})}));`,
         mount() { return show([createSplitPane({ navigation: createText({ text: 'Navigation' }), content: createText({ text: 'Content supplied by the application' }) })]); } },
-    { id: 'markdown', title: 'Markdown 内容', layer: 'components', category: '展示', description: '安全清洗、代码样式、流式原位更新和复制；不接受任意 HTML 扩展。', related: ['text', 'copy-feedback'],
+    { id: 'markdown', title: 'Markdown 内容', layer: 'components', category: '展示', description: '安全清洗、代码样式、原位更新和复制；禁用与局部待处理状态合并，旧内容的结果不会覆盖新内容。',states:['normal','disabled'],controls:['outcome'], related: ['text', 'copy-feedback'],
         code: `import {mount,createMarkdown} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 mount(host,createMarkdown({text:'# Title\\n\\n**Markdown** and code.'}));`,
-        mount(c) { return show([createMarkdown({ text: '# Markdown 中文\n\nText with **emphasis** and `inline code`.\n\n```ts\nconst value = 1;\n```', onCopy: () => c.action(), onLink: url => { c.log(url); } })]); } },
+        mount(c) { return show([createMarkdown({disabled:c.state==='disabled',onError:message=>c.log(message), text: '# Markdown 中文\n\nText with **emphasis** and `inline code`.\n\n```ts\nconst value = 1;\n```', onCopy: () => c.action(), onLink: url => { c.log(url); } })]); } },
     { id: 'diff', title: '差异内容 Diff', layer: 'components', category: '展示', description: '按固定增删语义显示纯文本差异，文件内容安全输出。', related: ['markdown', 'text'],
         code: `import {mount,createDiff} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');

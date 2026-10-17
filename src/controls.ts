@@ -9,6 +9,7 @@ import { renderMarkdown } from './content/markdown.js';
 import { renderDiff } from './content/markdown.js';
 import { patchChildren } from './content/views.js';
 import type { ActionResult, UIAction, UIBlock } from './core.js';
+import { controlDisabled } from './core.js';
 export type { ActionResult } from './core.js';
 export type { Appearance } from './theme.js';
 export type Action = UIAction;
@@ -275,7 +276,9 @@ export interface InputOptions extends InputState {
     readonly onInput?: (value: string) => void;
     readonly onChange?: (value: string) => void;
 }
-export interface TextInputOptions extends InputOptions { readonly pattern?:string; }
+export interface TextInputOptions extends InputOptions {
+    readonly pattern?: string;
+}
 export interface NumberInputOptions extends InputOptions {
     readonly min?: number;
     readonly max?: number;
@@ -289,11 +292,18 @@ export interface Input extends Control<InputState> {
 const fieldKeys = ['label', 'description', 'error', 'required', 'disabled'];
 const inputKeys = [...fieldKeys, 'placeholder', 'readOnly'];
 const inputOptionKeys = [...inputKeys, 'value', 'autocomplete', 'onInput', 'onChange'];
-function inputControl(options: NumberInputOptions & {readonly pattern?:string}, kind: 'text' | 'url' | 'search' | 'secret' | 'number' | 'textarea'): Input {
-    check(options, [...inputOptionKeys, ...(kind === 'number' ? ['min', 'max', 'step'] : []),...(kind==='text'?['pattern']:[])]);
-    const factories = { text: primitive.createTextInput, url:primitive.createTextInput, search: primitive.createSearchInput, secret: primitive.createSecretInput, number: primitive.createNumberInput, textarea: primitive.createTextArea };
+function inputControl(options: NumberInputOptions & {
+    readonly pattern?: string;
+}, kind: 'text' | 'url' | 'search' | 'secret' | 'number' | 'textarea'): Input {
+    check(options, [...inputOptionKeys, ...(kind === 'number' ? ['min', 'max', 'step'] : []), ...(kind === 'text' ? ['pattern'] : [])]);
+    const factories = { text: primitive.createTextInput, url: primitive.createTextInput, search: primitive.createSearchInput, secret: primitive.createSecretInput, number: primitive.createNumberInput, textarea: primitive.createTextArea };
     const block = factories[kind](options);
-    if(block.control instanceof HTMLInputElement){if(kind==='url')block.control.type='url';if(kind==='text'&&options.pattern!==undefined)block.control.pattern=options.pattern;}
+    if (block.control instanceof HTMLInputElement) {
+        if (kind === 'url')
+            block.control.type = 'url';
+        if (kind === 'text' && options.pattern !== undefined)
+            block.control.pattern = options.pattern;
+    }
     return own({ ...block, update(state: Readonly<InputState>) { check(state, inputKeys); block.update(state); } }, [], { read: block.getValue, reset: block.reset, focus: block.focus });
 }
 export function createTextInput(options: TextInputOptions): Input { return inputControl(options, 'text'); }
@@ -456,15 +466,22 @@ export interface ListRowState {
     readonly meta?: string;
     readonly selected?: boolean;
     readonly icon?: IconName;
+    readonly disabled?: boolean;
 }
 export function createListRow(options: ListRowState & {
     readonly actions?: Control;
+    readonly onAction?: Action;
+    readonly onError?: (message: string) => void;
 }): Control<ListRowState> {
-    check(options, ['title', 'description', 'meta', 'selected', 'icon', 'actions']);
+    check(options, ['title', 'description', 'meta', 'selected', 'icon', 'disabled', 'actions', 'onAction', 'onError']);
     icon(options.icon);
-    const children = options.actions ? [options.actions] : [], [node] = nodes(children);
-    const block = primitive.createListRow({ ...options, actions: node });
-    return own({ ...block, update(state: Readonly<ListRowState>) { check(state, ['title', 'description', 'meta', 'selected', 'icon']); icon(state.icon); block.update(state); } }, children);
+    const primary = options.onAction ? createButton({ label: options.title, disabled: options.disabled, onAction: options.onAction, onError: options.onError }) : undefined;
+    const children = [...(primary ? [primary] : []), ...(options.actions ? [options.actions] : [])];
+    nodes(children);
+    if (primary)
+        entry(primary).node.classList.add('pui-list-row-select');
+    const block = primitive.createListRow({ ...options, titleContent: primary ? entry(primary).node : undefined, actions: options.actions ? entry(options.actions).node : undefined });
+    return own({ ...block, update(state: Readonly<ListRowState>) { check(state, ['title', 'description', 'meta', 'selected', 'icon', 'disabled']); icon(state.icon); block.update(state); primary?.update({ label: state.title, disabled: state.disabled }); } }, children);
 }
 export interface CollectionState {
     readonly status: 'ready' | 'loading' | 'empty' | 'error';
@@ -534,7 +551,7 @@ export function createForm(options: FormOptions): Form {
     const form = element('form', 'pui-control-stack', fields, error.element, actions.element);
     let state: FormState = { submitLabel: options.submitLabel, submitDisabled: options.submitDisabled, disabled: options.disabled, pending: options.pending, error: options.error };
     let pending = false, destroyed = false;
-    const update = (next: Readonly<FormState>) => { check(next, ['submitLabel', 'submitDisabled', 'disabled', 'pending', 'error']); state = next; fields.disabled = !!(next.disabled || next.pending || pending); error.update({ message: next.error ?? '', tone: 'error' }); submit.update({ label: next.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled || next.submitDisabled, pending: !!(next.pending || pending) }); };
+    const update = (next: Readonly<FormState>) => { check(next, ['submitLabel', 'submitDisabled', 'disabled', 'pending', 'error']); state = next; fields.disabled = !!next.disabled; error.update({ message: next.error ?? '', tone: 'error' }); submit.update({ label: next.submitLabel ?? 'Save', intent: 'primary', disabled: next.disabled || next.submitDisabled, pending: !!(next.pending || pending) }); };
     const operation = createOperation({ unavailable: () => destroyed || !!(state.disabled || state.submitDisabled || state.pending), onPending(value) { pending = value; update(state); }, onError(message) { update({ ...state, error: message }); } });
     const onSubmit = (event: SubmitEvent) => {
         event.preventDefault();
@@ -543,11 +560,18 @@ export function createForm(options: FormOptions): Form {
                 update({ ...state, error: result.error });
         });
     };
-    const revealInvalid=(event:Event)=>{let parent=event.target instanceof HTMLElement?event.target.parentElement:null;while(parent&&parent!==form){if(parent instanceof HTMLDetailsElement)parent.open=true;parent=parent.parentElement;}};
-    form.addEventListener('invalid',revealInvalid,true);
+    const revealInvalid = (event: Event) => { let parent = event.target instanceof HTMLElement ? event.target.parentElement : null; while (parent && parent !== form) {
+        if (parent instanceof HTMLDetailsElement)
+            parent.open = true;
+        parent = parent.parentElement;
+    } };
+    form.addEventListener('invalid', revealInvalid, true);
     form.addEventListener('submit', onSubmit);
     update(state);
-    return own<FormState, Pick<Form, 'submit'|'validate'|'resetSubmission'>>({ element: form, update, destroy() { destroyed = true; operation.destroy(); form.removeEventListener('submit', onSubmit);form.removeEventListener('invalid',revealInvalid,true); error.destroy(); submit.destroy(); cancel?.destroy(); actions.destroy(); } }, options.children, {validate(){return !destroyed&&!state.disabled&&!state.pending&&!pending&&form.reportValidity();},resetSubmission(){if(!destroyed){operation.invalidate();update({...state,error:''});}}, submit() {
+    return own<FormState, Pick<Form, 'submit' | 'validate' | 'resetSubmission'>>({ element: form, update, destroy() { destroyed = true; operation.destroy(); form.removeEventListener('submit', onSubmit); form.removeEventListener('invalid', revealInvalid, true); error.destroy(); submit.destroy(); cancel?.destroy(); actions.destroy(); } }, options.children, { validate() { return !destroyed && !state.disabled && !state.pending && !pending && form.reportValidity(); }, resetSubmission() { if (!destroyed) {
+            operation.invalidate();
+            update({ ...state, error: '' });
+        } }, submit() {
             if (!destroyed)
                 form.requestSubmit();
         } }, () => operation.invalidate());
@@ -572,7 +596,8 @@ export function createDialog(options: DialogState & {
     nodes(children);
     let control: Dialog;
     const block = primitive.createDialog({ title: options.title, description: options.description, closeDisabled: options.closeDisabled, content: options.content ? entry(options.content).node : undefined, actions: options.actions ? entry(options.actions).node : undefined, onClose() { children.forEach(invalidate); options.onClose?.(); } });
-    control = own<DialogState, Pick<Dialog, 'open' | 'close' | 'isOpen'>>({ ...block, update(state: Readonly<DialogState>) { check(state, ['title', 'description', 'closeDisabled']); block.update(state); } }, children, { open() { mounted(control); block.open(); }, close() { if(block.element.open) children.forEach(invalidate); block.close(); }, isOpen: () => block.element.open });
+    control = own<DialogState, Pick<Dialog, 'open' | 'close' | 'isOpen'>>({ ...block, update(state: Readonly<DialogState>) { check(state, ['title', 'description', 'closeDisabled']); block.update(state); } }, children, { open() { mounted(control); block.open(); }, close() { if (block.element.open)
+            children.forEach(invalidate); block.close(); }, isOpen: () => block.element.open });
     return control;
 }
 export interface TextEditState extends DialogState {
@@ -983,6 +1008,7 @@ export function createList(options: ListState): Control<ListState> {
 }
 export interface MarkdownState {
     readonly text: string;
+    readonly disabled?: boolean;
 }
 export type MarkdownLinkOptions = {
     readonly resolveLink?: never;
@@ -997,56 +1023,60 @@ export type MarkdownOptions = MarkdownState & MarkdownLinkOptions & {
     readonly onError?: (message: string) => void;
 };
 export function createMarkdown(options: MarkdownOptions): Control<MarkdownState> {
-    check(options, ['text', 'onLink', 'resolveLink', 'onLocalLink', 'onCopy', 'onError']);
+    check(options, ['text', 'disabled', 'onLink', 'resolveLink', 'onLocalLink', 'onCopy', 'onError']);
     if (options.resolveLink && !options.onLocalLink)
         throw new Error('Local link resolution requires a handler.');
-    const node = element('div', 'pui-markdown');
-    let text: string | undefined;
-    let destroyed = false;
-    const status = element('span', 'pui-sr-only');
+    const node = element('div', 'pui-markdown'), status = element('span', 'pui-sr-only');
     status.setAttribute('role', 'status');
-    const feedback = createCopyFeedback({ status, isDisabled: () => destroyed, onError: error => options.onError?.(error instanceof Error ? error.message : String(error)) });
+    let text: string | undefined, disabled = !!options.disabled, destroyed = false;
+    const makeFeedback = () => createCopyFeedback({ status, isDisabled: () => destroyed || disabled, onError: error => { if (!destroyed)
+            options.onError?.(error instanceof Error ? error.message : String(error)); } });
+    let feedback = makeFeedback();
+    const sync = () => { for (const button of node.querySelectorAll<HTMLButtonElement>('[data-copy-code]')) {
+        button.hidden = !options.onCopy;
+        button.disabled = controlDisabled(button, disabled);
+    } for (const link of node.querySelectorAll('a[href]')) {
+        link.setAttribute('aria-disabled', String(disabled || linkOperation.pending));
+        link.setAttribute('aria-busy', String(linkOperation.pending));
+    } };
+    const linkOperation = createOperation({ unavailable: () => destroyed || disabled, onPending: sync, onError: message => options.onError?.(message) });
+    const retire = () => { linkOperation.invalidate(); feedback.destroy(); feedback = makeFeedback(); sync(); };
     const update = (state: Readonly<MarkdownState>) => {
-        check(state, ['text']);
-        if (text === state.text)
-            return;
-        text = state.text;
-        const source = element('template');
-        source.innerHTML = renderMarkdown(text, options.resolveLink ? { resolveLocalLink: href => { const key = options.resolveLink!(href); return key === undefined ? null : { path: key, conversationId: '' }; } } : {});
-        if (!options.onCopy)
-            source.content.querySelectorAll<HTMLButtonElement>('[data-copy-code]').forEach(button => { button.hidden = true; });
-        patchChildren(node, source.content);
-        node.append(status);
+        check(state, ['text', 'disabled']);
+        disabled = !!state.disabled;
+        if (text !== state.text) {
+            retire();
+            text = state.text;
+            const source = element('template');
+            source.innerHTML = renderMarkdown(text, options.resolveLink ? { resolveLocalLink: href => { const key = options.resolveLink!(href); return key === undefined ? null : { path: key, conversationId: '' }; } } : {});
+            patchChildren(node, source.content);
+            node.append(status);
+        }
+        sync();
     };
     const click = (event: MouseEvent) => {
-        const target = event.target instanceof Element ? event.target : null;
-        const copy = target?.closest<HTMLButtonElement>('[data-copy-code]');
+        const target = event.target instanceof Element ? event.target : null, copy = target?.closest<HTMLButtonElement>('[data-copy-code]'), link = target?.closest<HTMLAnchorElement>('a[href]');
+        if (disabled && (copy || link)) {
+            event.preventDefault();
+            return;
+        }
         if (copy && options.onCopy) {
             event.preventDefault();
             const code = copy.closest('.pui-code-block')?.querySelector('code')?.textContent ?? '';
-            void feedback.copy(copy, async () => {
-                const result = await options.onCopy!(code);
-                if (!result.ok)
-                    throw new Error(result.error);
-            }, 'Copied.');
+            void feedback.copy(copy, async () => { const result = await options.onCopy!(code); if (!result.ok)
+                throw new Error(result.error); }, 'Copied.');
             return;
         }
-        const link = target?.closest<HTMLAnchorElement>('a[href]');
         if (link && (options.onLink || options.onLocalLink && link.dataset.downloadPath !== undefined)) {
             event.preventDefault();
             const key = link.dataset.downloadPath;
-            Promise.resolve().then(() => key !== undefined && options.onLocalLink ? options.onLocalLink(key) : options.onLink!(link.getAttribute('href') ?? '')).then(result => {
-                if (!destroyed && result && !result.ok)
-                    options.onError?.(result.error);
-            }).catch(error => {
-                if (!destroyed)
-                    options.onError?.(error instanceof Error ? error.message : String(error));
-            });
+            linkOperation.run(() => key !== undefined && options.onLocalLink ? options.onLocalLink(key) : options.onLink!(link.getAttribute('href') ?? ''), result => { if (result && !result.ok)
+                options.onError?.(result.error); });
         }
     };
     node.addEventListener('click', click);
-    update({ text: options.text });
-    return own({ element: node, update, destroy() { destroyed = true; feedback.destroy(); node.removeEventListener('click', click); } });
+    update({ text: options.text, disabled: options.disabled });
+    return own({ element: node, update, destroy() { destroyed = true; linkOperation.destroy(); feedback.destroy(); node.removeEventListener('click', click); } }, [], undefined, retire);
 }
 export interface DiffState {
     readonly text: string;
@@ -1069,5 +1099,4 @@ export function createDiff(options: DiffState): Control<DiffState> {
 }
 // Private composition helpers. These are deliberately absent from index.ts.
 export { own as ownControl, entry as controlEntry, nodes as controlNodes, check as checkOptions };
-
-export function createURLInput(options:InputOptions):Input{return inputControl(options,'url');}
+export function createURLInput(options: InputOptions): Input { return inputControl(options, 'url'); }

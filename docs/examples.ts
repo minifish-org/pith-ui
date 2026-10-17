@@ -63,3 +63,12 @@ export function validatedSecrets(ui:PithUI,host:HTMLElement,save:(draft:{url:str
   const form=ui.createForm({children:[url,environment],onSubmit:()=>save({url:url.read(),environment:environment.read()})});
   return {mounted:ui.mount(host,form),reset(){environment.reset('');form.resetSubmission();},validate:form.validate};
 }
+
+export function selectableItems(ui:PithUI,host:HTMLElement,select:()=>Promise<ActionResult>){
+  return ui.mount(host,ui.createListRow({title:'Saved item',description:'A retained item',onAction:select,actions:ui.createButton({label:'Details',onAction:()=>console.log('Details')})}));
+}
+
+export function retainedMarkdown(ui:PithUI,host:HTMLElement,copy:(text:string)=>Promise<ActionResult>){
+  const content=ui.createMarkdown({text:'[Documentation](https://example.com)',onCopy:copy,onLink:url=>{console.log(url);return{ok:true};}});
+  const mounted=ui.mount(host,content);return{mounted,disable(){content.update({text:'[Documentation](https://example.com)',disabled:true});}};
+}
