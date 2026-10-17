@@ -825,11 +825,18 @@ export function createListRow(options: ListRowState & {
     if (options.context === 'resource' || options.context === 'queue') { const meta = block.element.querySelector(':scope > small'); if (meta) { meta.classList.add(options.context === 'resource' ? 'pui-resource-path' : 'pui-queue-image-count'); body.append(meta); } }
     if (options.marker)
         block.element.prepend(element('span', 'pui-list-row-marker', entry(options.marker).node));
-    if (options.status)
-        block.element.append(element('span', 'pui-list-row-status', entry(options.status).node));
+    const status = options.status ? element('span', 'pui-list-row-status', entry(options.status).node) : undefined;
+    if (status) block.element.append(status);
     const update = (state: Readonly<ListRowState>) => { check(state, ['title', 'tooltip', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']); if(state.tooltip!==undefined&&typeof state.tooltip!=='string')throw new Error('A row tooltip must be text.'); icon(state.icon); const context = state.context ?? options.context; finite(context, ['navigation', 'resource', 'queue', 'choice'], 'row context'); if(options.details&&context!=='resource')throw new Error('Owned row details require the resource context.'); block.element.classList.toggle('pui-list-row-navigation', context === 'navigation'); root.classList.toggle('pui-list-row-resource', context === 'resource'); block.element.classList.toggle('pui-list-row-queue', context === 'queue'); block.element.classList.toggle('pui-list-row-choice', context === 'choice'); block.update(state); const title=body.querySelector<HTMLElement>('.pui-list-row-title')!;if(state.tooltip)title.title=state.tooltip;else title.removeAttribute('title');primary?.update({ label: state.title, disabled: state.disabled });if(primary){const action=entry(primary).node;if(context==='navigation'&&state.selected)action.setAttribute('aria-current','page');else action.removeAttribute('aria-current');} };
-    update(stateOnly(options, ['title', 'tooltip', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']));
-    return own({ ...block, element: root, update }, children);
+    const updateWithStatus = (state: Readonly<ListRowState>) => {
+        update(state);
+        if (status) {
+            const target = (state.context ?? options.context) === 'navigation' && primary ? entry(primary).node : block.element;
+            if (status.parentElement !== target) target.append(status);
+        }
+    };
+    updateWithStatus(stateOnly(options, ['title', 'tooltip', 'description', 'meta', 'selected', 'icon', 'disabled', 'context']));
+    return own({ ...block, element: root, update: updateWithStatus }, children);
 }
 export interface CollectionState {
     readonly status: 'ready' | 'loading' | 'empty' | 'error';
