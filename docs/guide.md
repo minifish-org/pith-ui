@@ -26,6 +26,8 @@ Call update on the existing control to preserve live input and selection. Input 
 
 A form owns native validation, primary submit action, pending, errors and optional cancel. Inputs remain in place, failure keeps content, duplicate submits are blocked, and external disabled/pending state cannot re-enable an in-flight action. A dialog owns its content; closing invalidates descendant form responses, reopening preserves the draft, and destroy releases the entire tree. Business identities and completed writes remain the controller's responsibility.
 
+For an ordinary button action, use one pending owner. Return a stable action's promise for library-managed feedback. If a controller already owns a resettable or retargetable action, invoke it synchronously, merge its pending state into the control, and handle failures and stale results in that controller. Returning that same promise would add a second pending owner and can lock a new target or a cancellation action. Forms and editors retain their required ActionResult submission contract and explicit submission reset methods.
+
 Compose application pages locally from `createPane`, `createSplitPane`, `createStack`, `createList` and `createSlot`. A list uses stable keys and retains the corresponding controls; removed children are destroyed. Replacing a slot destroys its old content. Own independent dialogs through `mounted.attach(dialog)`, without accessing any generated DOM. `mounted.read().hasModal` describes local modal state.
 
 There is no app or whole-scene export, and the showroom does not expose internal implementations. Version 0.4 intentionally removes the previous app entry rather than preserving an alternate consumption route.
