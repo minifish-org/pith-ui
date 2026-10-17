@@ -54,15 +54,23 @@ catalog, credentials protocol, update installer or business operation.
 
 ## Connect the existing controller
 
-The host supplies business callbacks and metadata, then retains the returned
-local handle for subsequent snapshots and explicit provider resets:
+`composeSettings` builds an opaque dialog part and local lifecycle handle without
+accepting or inspecting DOM. Attach `settings.part` to the application's existing
+part tree, then call `settings.open()`. This preserves one mount and theme owner
+for the entire application. `mountSettings` is the standalone internal example
+adapter; it calls compose, mount and open in that order.
+
+The host supplies business callbacks and metadata, then retains the local handle
+for subsequent snapshots and explicit provider resets. This executable example
+shows the initial shared mount with an already composed application body:
 
 ```ts
 import {
-  mountSettings, type Appearance, type Result, type SettingsState,
+  composeSettings, type Appearance, type Result, type SettingsState,
   type SettingsDraft, type SettingsProvider, type SettingsCredential,
   type UpdateState, type ProviderAction,
 } from '../../examples/assemblies/settings.js';
+import {createStackPart, mountParts, type Part} from '../../src/parts/index.js';
 
 interface SettingsController {
   save(draft: SettingsDraft): Promise<Result>;
@@ -84,11 +92,12 @@ interface SettingsController {
 
 export function attachSettings(
   mount: HTMLElement,
+  applicationBody: Part,
   initial: SettingsState,
   controller: SettingsController,
   currentAppearance: Appearance,
 ) {
-  const settings = mountSettings(mount, initial, {
+  const settings = composeSettings(initial, {
     onSubmit: draft => controller.save(draft),
     onRemoveKey: draft => controller.removeKey(draft),
     onTest: draft => controller.test(draft),
@@ -101,11 +110,15 @@ export function attachSettings(
     onCreateConnection: () => controller.createConnection(),
     onDiagnostics: () => controller.saveDiagnostics(),
     onClose: () => controller.closed(),
-  }, {appearance: currentAppearance}, 'Pith Desk');
+  }, 'Pith Desk');
+  const owner = mountParts(mount,
+    createStackPart({children: [applicationBody, settings.part]}),
+    {appearance: currentAppearance});
   settings.setProviders(controller.providers());
   settings.setCredential(controller.credential());
   settings.updateUpdates(controller.updates());
-  return settings;
+  settings.open();
+  return {settings, owner};
 }
 ```
 
@@ -167,20 +180,31 @@ visible. Before providers arrive, the ordinary shared selector is already
 installed around the disabled Loading providers choice; this differs from the
 model picker's deliberately native cold selector.
 
-The finite mount appearance option controls this opening independently of the
-operating system. Appearance preference changes are controller intents. The
-controller owns persistence and the application's theme; the preference select
-uses the library's bounded preference presentation. Neither the callback nor
-state accepts a palette, style override or animation parameter.
+The shared owner's finite appearance option controls every child independently
+of the operating system. Forward live theme changes through
+`owner.setAppearance(mode)` at the same point the existing theme controller
+changes appearance. The settings part acquires no separate theme scope; input
+identity, key draft, focus and caret survive light/dark changes. For later
+openings, add a new composition's opaque part to the existing parent instead of
+mounting another application tree.
+
+Appearance preference changes remain controller intents. The controller owns
+persistence and theme-change timing; the preference select uses the library's
+bounded preference presentation. Neither callback nor state accepts a palette,
+style override or animation parameter.
 
 ## Close, disposal and evidence
 
-Close, Escape, backdrop dismissal and destruction release the mounted tree and
+Close, Escape, backdrop dismissal and destruction release the dialog subtree and
 notify `onClose` once. The last provider/URL remain readable, with key always
 empty after disposal. Form operations, auxiliary results, update operations,
 keyed action controllers, input/select listeners, disclosure and dialog lifecycle
 are retired together. Late snapshots and outcomes cannot recreate the opening.
-The library returns focus through the native dialog lifecycle.
+The library returns focus through the native dialog lifecycle. Closing settings
+leaves siblings and the shared mount intact. Destroying the parent owner also
+retires the local composition before child disposal, clears secrets and notifies
+`onClose` once. That callback should remove the controller's local reference.
+An unmounted composition cannot open and must be destroyed if never attached.
 
 ```sh
 npm run check
@@ -188,7 +212,7 @@ node scripts/verify-assemblies.ts
 npx playwright test tests/parts-settings.spec.ts
 ```
 
-The maintained suite passed 68 checks across Chromium and WebKit. It compares
+The maintained suite passed 72 checks across Chromium and WebKit. It compares
 the actual old application scene with
 the parts composition, including opposite operating-system theme, readiness,
 disabled, testing, form/appearance/test errors, OAuth, empty providers, installing
@@ -203,3 +227,5 @@ draft reset, required validation, preserved drafts/caret, hidden credentials,
 cancel during a pending test, stale save/removal, shared availability, keyed
 provider pending, update retry and secret-clearing destruction. The frozen
 rc.27 oracle and existing correct assertions remain separate and unchanged.
+Shared-parent checks cover live theme propagation, preserving siblings on close,
+and parent destruction while save is pending.

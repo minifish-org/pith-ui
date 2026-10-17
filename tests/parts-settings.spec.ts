@@ -320,7 +320,7 @@ test('a local settings part shares one mount theme and retains its credential dr
   await key.evaluate(node => {const input = node as HTMLInputElement;input.focus();input.setSelectionRange(3,12);window.settingsPartsHarness.control = input;});
   await page.evaluate(() => window.settingsPartsHarness.shared!.setAppearance('dark'));
   await expect(page.getByRole('dialog')).toHaveCSS('background-color','rgb(34, 37, 42)');
-  expect(await page.getByRole('button',{name: 'Sibling action',exact: true}).evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe(siblingColor);
+  await expect.poll(() => page.getByRole('button',{name: 'Sibling action',exact: true}).evaluate(node => getComputedStyle(node).backgroundColor)).not.toBe(siblingColor);
   await page.evaluate(() => window.settingsPartsHarness.shared!.setAppearance('light'));
   await expect(page.getByRole('dialog')).toHaveCSS('background-color','rgb(255, 255, 255)');await expect(page.getByRole('button',{name: 'Sibling action',exact: true})).toHaveCSS('background-color',siblingColor);await expect(key).toHaveValue('Shared-tree private draft');
   expect(await key.evaluate(node => ({same: node === window.settingsPartsHarness.control,focus: node === document.activeElement,selection: [(node as HTMLInputElement).selectionStart,(node as HTMLInputElement).selectionEnd]}))).toEqual({same: true,focus: true,selection: [3,12]});

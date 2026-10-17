@@ -4,7 +4,7 @@ import {
   createFeedbackPart,createFieldLabelPart,createFieldStackPart,createFooterPart,createFormLayoutPart,
   createFormPart,createInputAdornmentPart,createInputPart,createProgressPart,createSectionPart,
   createSelectPart,createStatusPart,createTextPart,createToolbarPart,mountParts,
-  type ButtonPart,type ButtonPartState,type DialogPart,type DisclosurePart,type FormPart,type MountedParts,type MountPartsOptions,
+  type ButtonPart,type ButtonPartState,type DialogPart,type DisclosurePart,type FormPart,type MountPartsOptions,
 } from '../../src/parts/index.js';
 
 export type Appearance = 'light' | 'dark' | 'system';
@@ -39,16 +39,25 @@ export interface SettingsAssembly {
   setUpdateError(message: string,options?: {allowCheckRetry?: boolean}): void;
   fail(message: string): void;close(): void;isOpen(): boolean;destroy(): void;
 }
+export interface SettingsComposition extends SettingsAssembly {readonly part: DialogPart;open(): void}
+
+/** Standalone internal demo adapter. Applications can use composeSettings under
+ * their existing shared part tree and keep one mount/theme owner instead. */
+export function mountSettings(mount: HTMLElement,initial: Readonly<SettingsState>,callbacks: SettingsCallbacks = {},appearance: MountPartsOptions = {},productName = 'Application'): SettingsAssembly {
+  const settings = composeSettings(initial,callbacks,productName);
+  try {mountParts(mount,settings.part,appearance);settings.open();return settings;}
+  catch (error) {settings.destroy();throw error;}
+}
 
 /**
  * The native form starts after appearance and updates. The library owns all
  * markup, styling and shared controls; this local recipe owns controller state,
  * provider targets, callback wiring and retirement of obsolete UI outcomes.
  */
-export function mountSettings(mount: HTMLElement,initial: Readonly<SettingsState>,callbacks: SettingsCallbacks = {},appearance: MountPartsOptions = {},productName = 'Application'): SettingsAssembly {
+export function composeSettings(initial: Readonly<SettingsState>,callbacks: SettingsCallbacks = {},productName = 'Application'): SettingsComposition {
   let alive = true,state = initial,revision = 0,removing = false;
   let saved: SettingsDraft = {provider: '',baseUrl: initial.baseUrl,apiKey: ''};
-  let form: FormPart,dialog: DialogPart,mounted: MountedParts,advanced: DisclosurePart;
+  let form: FormPart,dialog: DialogPart,advanced: DisclosurePart;
   let credential: Readonly<SettingsCredential> | undefined,updateState: Readonly<UpdateState> | undefined;
   let externalUpdatePending = false,localUpdatePending = false,updateError = '',retryCheck = false;
   const operations = new Map<string,{pending: boolean}>(),providerButtons = new Map<string,ButtonPart>();
@@ -71,7 +80,8 @@ export function mountSettings(mount: HTMLElement,initial: Readonly<SettingsState
   };
   const release = () => {
     if (!alive) return;
-    saved = {...read(),apiKey: ''};alive = false;revision++;operations.clear();providerButtons.clear();mounted.destroy();
+    saved = {...read(),apiKey: ''};alive = false;revision++;operations.clear();providerButtons.clear();
+    form.invalidate();remove.invalidate();dialog.destroy();
     try {callbacks.onClose?.();} catch {}
   };
   const close = () => {if (alive) {dialog.close();release();}};
@@ -144,8 +154,7 @@ export function mountSettings(mount: HTMLElement,initial: Readonly<SettingsState
       if (alive && target === revision && result.ok) close();return result;
     }});
   const layout = createFormLayoutPart({children: [appearanceSection,updatesSection,form]});
-  dialog = createDialogPart({title: 'Settings',eyebrow: 'MAKE IT YOURS',children: [layout],onClose: release});
-  mounted = mountParts(mount,dialog,appearance);
+  dialog = createDialogPart({title: 'Settings',eyebrow: 'MAKE IT YOURS',children: [layout],onClose: release,onDispose: release});
 
   function syncProviderButtons(): void {
     if (!alive) return;
@@ -194,9 +203,9 @@ export function mountSettings(mount: HTMLElement,initial: Readonly<SettingsState
     if (next.testResult) testResult.update({message: next.testResult.message,tone: next.testResult.ok === undefined ? 'neutral' : next.testResult.ok ? 'success' : 'error'});
     syncAvailability();
   }
-  update(initial);dialog.open();
+  update(initial);
   return {
-    read,update,
+    part: dialog,open() {if (alive) dialog.open();},read,update,
     setProviders(items,selected) {if (!alive) return;const previous = selected ?? provider.read();provider.update({options: items.map(item => ({value: item.id,label: `${item.name}${item.signedIn ? ' · Signed in' : item.configured ? ' · Configured' : ''}`})),disabled: !items.length});provider.reset(items.some(item => item.id === previous) ? previous : items[0]?.id ?? '');},
     resetProvider(value) {
       if (!alive) return;
