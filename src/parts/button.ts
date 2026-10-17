@@ -79,11 +79,17 @@ export function createButtonPart(options: ButtonPartOptions): ButtonPart {
     if (!isPartAlive(part)) return;
     const variant = state.variant ?? 'standard';
     availability.set(part, {disabled: !!state.disabled, pending: !!state.pending, hidden: !!state.hidden});
+    node.hidden = !!state.hidden;
+    // The private copy presenter temporarily owns caption, glyph and accessible
+    // feedback. Availability snapshots must not erase that fixed-lived state.
+    if (node.dataset.copyPending === 'true') {
+      action.update({disabled: !!state.disabled, pending: !!state.pending, title: undefined});
+      return;
+    }
     if (purpose === 'prompt') {
       const intent = variant === 'primary' || variant === 'warning' ? 'primary' : variant === 'danger' ? 'danger' : 'neutral';
       node.className = `pui-button pui-${intent} pui-normal${variant === 'quiet-icon' ? ' pui-icon-button' : variant === 'secondary' ? ' pui-secondary-button' : variant === 'warning' ? ' pui-warning-button' : ''}`;
     } else node.className = variants[variant];
-    node.hidden = !!state.hidden;
     if (icon !== state.icon) {
       icon = state.icon; glyph?.remove();
       glyph = icon ? iconElement(icon) : undefined;

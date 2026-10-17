@@ -154,7 +154,7 @@ export function createCompletionNotices(options: { container?: HTMLElement; onOp
   };
 }
 
-export function createCopyFeedback(options: { status: HTMLElement; isDisabled: (button: HTMLButtonElement) => boolean; onError: (error: unknown) => void }) {
+export function createCopyFeedback(options: { status: HTMLElement; isDisabled: (button: HTMLButtonElement) => boolean; onError: (error: unknown) => void; iconOnly?: (button: HTMLButtonElement) => boolean }) {
   let destroyed = false;
   const notice = adoptFeedback(options.status, {presentation:'inline',autoHide:false});
   type CopyEntry = { controller: ActionController; original: ChildNode[]; label: string | null; title: string; displayed: boolean; timer?: ReturnType<typeof setTimeout> };
@@ -182,7 +182,7 @@ export function createCopyFeedback(options: { status: HTMLElement; isDisabled: (
         if (destroyed) return;
         notice.update({message:announcement,tone:'info'});
         if (!button.isConnected) { release(button, entry); return; }
-        button.innerHTML = button.classList.contains('pui-message-action') ? icon('check') : 'Copied';
+        button.innerHTML = (options.iconOnly?.(button) ?? button.classList.contains('pui-message-action')) ? icon('check') : 'Copied';
         button.setAttribute('aria-label', announcement); button.title = announcement;
         entry.displayed = true;
         entry.timer = setTimeout(() => { if (!destroyed && entries.get(button) === entry) release(button, entry); }, 1500);

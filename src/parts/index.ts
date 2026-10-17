@@ -40,3 +40,5 @@ export {createTreePart, type TreePart, type TreePartState, createTreeBranchPart,
 export {createImagePart, createZoomImagePart, type ImageStatus, type ImageData, type ImagePartState, type ImagePartOptions, type ImagePart,
   type ZoomImageState, type ZoomImageStatus, type ZoomImageOptions, type ZoomImagePart} from './image.js';
 export {createMediaToolbarPart, type MediaToolbarPart} from './media-toolbar.js';
+export {createAnnouncementPart, type AnnouncementPart, type AnnouncementPartState} from './announcement.js';
+export {createCopyButtonPart, type CopyButtonPartOptions} from './copy-button.js';
