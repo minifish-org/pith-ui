@@ -32,6 +32,19 @@ function permitted(property: string, value: string): boolean {
   }
   return true;
 }
+function permittedBoxSpacing(property: string, input: string): boolean {
+  const value=input.trim().replace(/var\(\s*(--[\w-]+)\s*\)/g,'var($1)');
+  return value.split(/\s+/).every(part=>part==='0'||(property.startsWith('margin')&&part==='auto')||token(part,spaceTokens));
+}
+
+test('source margin overlap only negates an approved spacing token', () => {
+  for (const property of ['margin','margin-top','margin-inline-start']) {
+    assert.equal(permittedBoxSpacing(property,'var(--pui-space-sm) 0 var(--pui-space-lg)'),true);
+    assert.equal(permittedBoxSpacing(property,'calc(-1 * var(--pui-space-sm)) 0 var(--pui-space-lg)'),true);
+  }
+  for (const property of ['padding','padding-top','gap','row-gap']) assert.equal(permittedBoxSpacing(property,'calc(-1 * var(--pui-space-sm))'),false);
+  for (const value of ['-8px','calc(-8px)','calc(-2 * var(--pui-space-sm))','calc(-1 * var(--pui-space-sm) + 1px)','calc(-1 * var(--pui-space-sm) * var(--pui-space-lg))','calc(-1 * var(--pui-space-unknown))','calc(-1 * var(--pui-text-small))','calc(-1 * var(--pui-field-gap))']) assert.equal(permittedBoxSpacing('margin',value),false,value);
+});
 
 test('the design contract has three text roles, two font stacks and five spacing choices', () => {
   const file = join(root,'src/design.css'); assert.ok(existsSync(file),'Shared design foundations must exist');
@@ -112,8 +125,8 @@ test('small-control padding and margins use the fixed spacing scale', () => {
   const violations:string[]=[];
   for(const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g))for(const declaration of rule[2].matchAll(/((?:padding|margin)(?:-[\w-]+)?)\s*:\s*([^;{}]+)(?:;|$)/g)){
     if(rule[1].includes('.pui-sr-only')&&declaration[2].trim()==='-1px')continue;
-    const value=declaration[2].trim().replace(/var\(\s*(--[\w-]+)\s*\)/g,'var($1)');
-    if(!value.split(/\s+/).every(part=>part==='0'||(declaration[1].startsWith('margin')&&part==='auto')||token(part,spaceTokens)))violations.push(`${rule[1].trim()}: ${declaration[1]}: ${value}`);
+    const value=declaration[2].trim();
+    if(!permittedBoxSpacing(declaration[1],value))violations.push(`${rule[1].trim()}: ${declaration[1]}: ${value}`);
   }
   assert.deepEqual(violations,[]);
 });
