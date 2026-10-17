@@ -23,6 +23,7 @@ export function createBadgePart(options: BadgePartState): BadgePart {
 }
 
 export interface StatusPartState {message: string; tone?: 'neutral' | 'success' | 'error'; hidden?: boolean}
+export interface StatusPartOptions extends StatusPartState {presentation?: 'inline' | 'paragraph'}
 export interface StatusPart extends Part {update(state: Readonly<StatusPartState>): void}
 function validateStatus(state: Readonly<StatusPartState>): void {
   assertOptions(state, ['message', 'tone', 'hidden'], 'status state');
@@ -31,14 +32,18 @@ function validateStatus(state: Readonly<StatusPartState>): void {
   if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Status hidden must be boolean.');
 }
 /** A live inline result. Empty content takes no space; typography and tones are library-owned. */
-export function createStatusPart(options: StatusPartState): StatusPart {
-  validateStatus(options);
-  const node = document.createElement('div'); node.setAttribute('role', 'status'); node.setAttribute('aria-live', 'polite');
+export function createStatusPart(options: StatusPartOptions): StatusPart {
+  assertOptions(options,['message','tone','hidden','presentation'],'status');
+  const {presentation = 'inline',...initial} = options;validateStatus(initial);
+  if (!['inline','paragraph'].includes(presentation)) throw new TypeError('Unknown status presentation.');
+  const node = document.createElement(presentation === 'paragraph' ? 'p' : 'div'); node.setAttribute('role', 'status'); node.setAttribute('aria-live', 'polite');
   let part: StatusPart;
   const update = (state: Readonly<StatusPartState>) => {
     validateStatus(state); if (!isPartAlive(part)) return;
-    node.className = `pui-status-message${state.tone === 'success' ? ' pui-test-success' : state.tone === 'error' ? ' pui-form-error' : ''}`;
+    node.className = presentation === 'paragraph'
+      ? `pui-connection-status${state.tone === 'success' ? ' pui-test-success' : state.tone === 'error' ? ' pui-is-error' : ''}`
+      : `pui-status-message${state.tone === 'success' ? ' pui-test-success' : state.tone === 'error' ? ' pui-form-error' : ''}`;
     if (node.textContent !== state.message) node.textContent = state.message; node.hidden = !!state.hidden;
   };
-  part = createOwnedPart<Omit<StatusPart, keyof Part>>(node, {update}); update(options); return part;
+  part = createOwnedPart<Omit<StatusPart, keyof Part>>(node, {update}); update(initial); return part;
 }

@@ -18,6 +18,19 @@ export function createCopyGroupPart(options: {children: readonly Part[]}): Layou
   return part;
 }
 
+/** A ruled editor section with the library's fixed separation from prior content. */
+export function createSeparatedSectionPart(options: {children: readonly Part[]}): LayoutPart {
+  assertOptions(options,['children'],'separated section');
+  const node = document.createElement('section');node.className = 'pui-connection-editor';
+  const part = createOwnedPart(node,{replace(children: readonly Part[]) {replacePartChildren(part,children);}},{children: options.children});return part;
+}
+/** A compact heading row; title content and optional actions remain explicit. */
+export function createSectionHeadingPart(options: {children: readonly Part[]}): LayoutPart {
+  assertOptions(options,['children'],'section heading');
+  const node = document.createElement('div');node.className = 'pui-section-heading';
+  const part = createOwnedPart(node,{replace(children: readonly Part[]) {replacePartChildren(part,children);}},{children: options.children});return part;
+}
+
 export interface SectionPartState {title?: string; hidden?: boolean}
 export interface SectionPart extends LayoutPart {update(state: Readonly<SectionPartState>): void}
 function validateSection(state: Readonly<SectionPartState>): void {

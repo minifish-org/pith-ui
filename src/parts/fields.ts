@@ -41,6 +41,13 @@ export interface InputOptions extends FieldState {
 const stateKeys = ['label', 'disabled', 'required', 'readOnly', 'placeholder', 'hidden', 'describedBy'] as const;
 const inputKeys = [...stateKeys, 'kind', 'value', 'name', 'autocomplete', 'min', 'max', 'step', 'pattern', 'onInput', 'onChange', 'onInvalid'];
 const controls = new WeakMap<Part, NativeControl>();
+const secretTextareas = new WeakSet<Part>();
+/** Internal capability for the library's borrowed secret-label control. */
+export function isSecretValuePart(part: Part): part is ValuePart {return secretTextareas.has(part) && isPartAlive(part);}
+export function setSecretRevealed(part: ValuePart, revealed: boolean): void {
+  if (!isSecretValuePart(part) || typeof revealed !== 'boolean') throw new TypeError('Secret visibility requires a live secret textarea and boolean state.');
+  controls.get(part)!.classList.toggle('pui-revealed', revealed);
+}
 
 function validateState(state: Readonly<FieldState>): void {
   for (const key of ['label', 'placeholder'] as const) if (state[key] !== undefined && typeof state[key] !== 'string') throw new TypeError(`Field ${key} must be text.`);
@@ -110,19 +117,21 @@ export function createInputPart(options: InputOptions): ValuePart {
 }
 
 export interface TextareaOptions extends Omit<InputOptions, 'kind' | 'min' | 'max' | 'step' | 'pattern'> {
-  purpose?: 'text' | 'markdown' | 'secret' | 'message' | 'queue-message';
+  purpose?: 'text' | 'markdown' | 'secret' | 'json' | 'message' | 'queue-message';
 }
 export function createTextareaPart(options: TextareaOptions): ValuePart {
   assertOptions(options, [...stateKeys, 'value', 'name', 'autocomplete', 'onInput', 'onChange', 'onInvalid', 'purpose'], 'textarea'); validateTextOptions(options);
-  if (options.purpose !== undefined && !['text', 'markdown', 'secret', 'message', 'queue-message'].includes(options.purpose)) throw new TypeError('Unsupported textarea purpose.');
+  if (options.purpose !== undefined && !['text', 'markdown', 'secret', 'json', 'message', 'queue-message'].includes(options.purpose)) throw new TypeError('Unsupported textarea purpose.');
   const control = document.createElement('textarea');
   control.className = 'pui-control';
   if (options.purpose === 'markdown') control.classList.add('pui-resource-editor');
   if (options.purpose === 'secret') control.classList.add('pui-secret-field');
+  if (options.purpose === 'json' || options.purpose === 'secret') {control.rows = 3; control.spellcheck = false;}
   if (options.purpose === 'message' || options.purpose === 'queue-message') {
     control.className = 'pui-control'; control.rows = options.purpose === 'message' ? 8 : 5;
   }
   const part = valuePart(control, options, options.purpose === 'secret');
+  if (options.purpose === 'secret') secretTextareas.add(part);
   return part;
 }
 
@@ -277,14 +286,15 @@ export function createLabelledFieldPart(options: FieldLabelState & {control: Val
   return part;
 }
 
-export interface CheckboxOptions {label: string; checked?: boolean; disabled?: boolean; name?: string; onChange?(value: boolean): void}
-export interface CheckboxPart extends Part {read(): boolean; reset(value: boolean): void; update(state: {disabled?: boolean; label?: string}): void; focus(): void}
+export interface CheckboxOptions {label: string; checked?: boolean; disabled?: boolean; hidden?: boolean; name?: string; onChange?(value: boolean): void}
+export interface CheckboxPart extends Part {read(): boolean; reset(value: boolean): void; update(state: {disabled?: boolean; label?: string; hidden?: boolean}): void; focus(): void}
 export function createCheckboxPart(options: CheckboxOptions): CheckboxPart {
-  assertOptions(options, ['label', 'checked', 'disabled', 'name', 'onChange'], 'checkbox');
+  assertOptions(options, ['label', 'checked', 'disabled', 'hidden', 'name', 'onChange'], 'checkbox'); validateState(options);
   if (typeof options.label !== 'string' || options.name !== undefined && typeof options.name !== 'string') throw new TypeError('Checkbox label and name must be text.');
   if (options.checked !== undefined && typeof options.checked !== 'boolean' || options.disabled !== undefined && typeof options.disabled !== 'boolean') throw new TypeError('Checkbox states must be boolean.');
   if (options.onChange !== undefined && typeof options.onChange !== 'function') throw new TypeError('Checkbox onChange must be a callback.');
   const label = document.createElement('label'); label.className = 'pui-checkbox-field';
+  label.hidden = !!options.hidden;
   const control = document.createElement('input'); control.type = 'checkbox';
   control.defaultChecked = !!options.checked; control.checked = !!options.checked; control.disabled = !!options.disabled;
   if (options.name !== undefined) control.name = options.name;
@@ -293,11 +303,12 @@ export function createCheckboxPart(options: CheckboxOptions): CheckboxPart {
   control.addEventListener('change', change);
   const part = createOwnedPart(label, {read: () => control.checked,
     reset(value: boolean) {if (typeof value !== 'boolean') throw new TypeError('Checkbox reset must be boolean.'); if (isPartAlive(part)) control.checked = value;},
-    update(state: {disabled?: boolean; label?: string}) {
-      assertOptions(state, ['disabled', 'label'], 'checkbox state'); validateState(state);
+    update(state: {disabled?: boolean; label?: string; hidden?: boolean}) {
+      assertOptions(state, ['disabled', 'label', 'hidden'], 'checkbox state'); validateState(state);
       if (!isPartAlive(part)) return;
       if (state.disabled !== undefined) control.disabled = state.disabled;
       if (state.label !== undefined) text.textContent = state.label;
+      if (state.hidden !== undefined) label.hidden = state.hidden;
     }, focus() {if (isPartAlive(part)) control.focus();}}, {dispose() {control.removeEventListener('change', change);}});
   return part;
 }

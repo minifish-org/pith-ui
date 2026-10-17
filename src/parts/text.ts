@@ -1,4 +1,5 @@
 import {iconElement} from '../dom.js';
+import {patchChildren} from '../content/views.js';
 import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownership.js';
 
 export const iconNames = ['steer', 'edit', 'trash', 'branch', 'compress', 'image', 'plus', 'chat', 'folder', 'settings', 'arrow', 'stop', 'chevron', 'down', 'close', 'check', 'shield', 'file', 'terminal', 'copy', 'menu', 'globe', 'search', 'more', 'compose', 'plug'] as const;
@@ -8,14 +9,14 @@ export function assertIconName(name: unknown): asserts name is IconName {
 }
 
 export interface TextPartState {text: string; hidden?: boolean; announce?: 'none' | 'polite'}
-export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'note' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader';
+export type TextRole = 'text' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted';
 export interface TextPart extends Part {update(state: Readonly<TextPartState>): void}
 const textParts = new WeakSet<Part>();
 /** Internal capability check for text-only semantic references. */
 export function isTextPart(part: Part): part is TextPart {return textParts.has(part) && isPartAlive(part);}
 const textRoles = {
   text: ['span', ''], paragraph: ['p', ''], muted: ['span', 'pui-muted'], 'muted-paragraph': ['p', 'pui-muted'], path: ['span', 'pui-file-path'], 'path-paragraph': ['p', 'pui-file-path'], note: ['p', 'pui-note'], hint: ['p', 'pui-field-hint'],
-  description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], heading: ['h3', ''], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'],
+  caption: ['p', 'pui-feature-hint'], description: ['p', 'pui-modal-description'], eyebrow: ['span', 'pui-eyebrow'], heading: ['h3', ''], strong: ['strong', ''], screenreader: ['span', 'pui-sr-only'], bubble: ['div', 'pui-user-text'], interrupted: ['span', 'pui-message-error-label'],
 } as const;
 function validateText(state: Readonly<TextPartState>): void {
   assertOptions(state, ['text', 'hidden', 'announce'], 'text state');
@@ -35,7 +36,7 @@ export function createTextPart(options: TextPartState & {role?: TextRole}): Text
   const update = (state: Readonly<TextPartState>) => {
     validateText(state);
     if (!isPartAlive(part)) return;
-    if (node.textContent !== state.text) node.textContent = state.text;
+    if (node.textContent !== state.text) {const source = document.createDocumentFragment(); source.append(document.createTextNode(state.text)); patchChildren(node, source);}
     node.hidden = !!state.hidden;
     if (state.announce === 'polite') node.setAttribute('aria-live', 'polite'); else node.removeAttribute('aria-live');
   };

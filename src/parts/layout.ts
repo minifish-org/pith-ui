@@ -51,10 +51,18 @@ export function createToolbarPart(options: ToolbarPartState & {children: readonl
   return part;
 }
 
+export interface StackPartState {hidden?: boolean}
+export interface StackPart extends LayoutPart {update(state: Readonly<StackPartState>): void}
+function validateStack(state: Readonly<StackPartState>): void {
+  if (state.hidden !== undefined && typeof state.hidden !== 'boolean') throw new TypeError('Stack hidden must be boolean.');
+}
 /** Natural block flow. No spacing, dimensions, CSS classes or layout DSL. */
-export function createStackPart(options: {children: readonly Part[]}): LayoutPart {
-  assertOptions(options, ['children'], 'stack');
+export function createStackPart(options: StackPartState & {children: readonly Part[]}): StackPart {
+  assertOptions(options, ['children','hidden'], 'stack');validateStack(options);
   const node = document.createElement('div');
-  const part = createOwnedPart(node, {replace(children: readonly Part[]) {replacePartChildren(part, children);}}, {children: options.children});
+  let part: StackPart;
+  const update = (state: Readonly<StackPartState>) => {assertOptions(state,['hidden'],'stack state');validateStack(state);if (isPartAlive(part)) node.hidden = !!state.hidden;};
+  part = createOwnedPart<Omit<StackPart,keyof Part>>(node, {update,replace(children: readonly Part[]) {replacePartChildren(part, children);}}, {children: options.children});
+  update({hidden: options.hidden});
   return part;
 }

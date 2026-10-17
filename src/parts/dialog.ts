@@ -4,7 +4,7 @@ import {assertOptions, createOwnedPart, isPartAlive, onPartDestroy, replacePartC
 
 export interface DialogPartState {title: string; description?: string; eyebrow?: string; closeLabel?: string; closeDisabled?: boolean}
 export interface DialogPartOptions extends DialogPartState {
-  purpose?: 'form' | 'prompt' | 'feature' | 'warning';
+  purpose?: 'form' | 'prompt' | 'feature' | 'warning' | 'image';
   children: readonly Part[];
   closeOnBackdrop?: boolean;
   onClose?(): void;
@@ -22,7 +22,7 @@ export interface DialogPart extends Part {
 /** A standard native modal. Content and actions are independently composed parts. */
 export function createDialogPart(options: DialogPartOptions): DialogPart {
   assertOptions(options, ['purpose', 'title', 'description', 'eyebrow', 'closeLabel', 'closeDisabled', 'children', 'closeOnBackdrop', 'onClose', 'onDispose'], 'dialog');
-  if (options.purpose !== undefined && !['form', 'prompt', 'feature', 'warning'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
+  if (options.purpose !== undefined && !['form', 'prompt', 'feature', 'warning', 'image'].includes(options.purpose)) throw new TypeError('Unsupported dialog purpose.');
   const validate = (state: Readonly<DialogPartState>) => {
     if (typeof state.title !== 'string' || state.eyebrow !== undefined && typeof state.eyebrow !== 'string' || state.description !== undefined && typeof state.description !== 'string') throw new TypeError('Dialog heading must be text.');
     if (state.closeLabel !== undefined && typeof state.closeLabel !== 'string') throw new TypeError('Dialog close label must be text.');
@@ -34,18 +34,19 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
   if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Dialog onDispose must be a callback.');
   const prompt = options.purpose === 'prompt';
   const feature = options.purpose === 'feature';
-  const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : feature ? 'pui-modal pui-feature-modal' : 'pui-modal'; node.id = uniqueId('pui-dialog');
-  const heading = document.createElement(prompt ? 'header' : 'div'); heading.className = prompt ? 'pui-dialog-heading' : 'pui-dialog-heading pui-modal-heading';
+  const image = options.purpose === 'image';
+  const node = document.createElement('dialog'); node.className = prompt ? 'pui-dialog' : feature ? 'pui-modal pui-feature-modal' : image ? 'pui-modal pui-image-viewer' : 'pui-modal'; node.id = uniqueId('pui-dialog');
+  const heading = document.createElement(prompt ? 'header' : 'div'); heading.className = prompt ? 'pui-dialog-heading' : image ? 'pui-modal-heading' : 'pui-dialog-heading pui-modal-heading';
   const content = document.createElement('div');
   const eyebrow = document.createElement('span'); eyebrow.className = 'pui-eyebrow';
   const title = document.createElement('h2'); title.id = uniqueId('pui-dialog-title');
   const description = document.createElement('p'); description.className = 'pui-muted'; description.id = uniqueId('pui-dialog-description');
-  const close = document.createElement('button'); close.type = 'button'; close.className = prompt ? 'pui-button pui-neutral pui-normal pui-icon-button' : options.purpose === 'warning' ? 'pui-quiet-icon' : 'pui-icon-button pui-quiet-icon';
+  const close = document.createElement('button'); close.type = 'button'; close.className = prompt ? 'pui-button pui-neutral pui-normal pui-icon-button' : options.purpose === 'warning' || image ? 'pui-quiet-icon' : 'pui-icon-button pui-quiet-icon';
   close.dataset.close = node.id; close.append(iconElement('close'));
   const closeCaption = document.createElement('span'); closeCaption.className = 'pui-sr-only';
   if (prompt) close.append(closeCaption);
   content.append(eyebrow, title); if (prompt || options.description !== undefined) content.append(description);
-  heading.append(content, close); node.setAttribute('aria-labelledby', title.id);
+  heading.append(image && !options.eyebrow && !options.description ? title : content, close); node.setAttribute('aria-labelledby', title.id);
   const headingPart = createOwnedPart(heading, {});
   let bodyPart: Part | undefined;
   if (prompt) {const body = document.createElement('div'); body.className = 'pui-dialog-body'; bodyPart = createOwnedPart(body, {}, {children: options.children});}
@@ -63,6 +64,10 @@ export function createDialogPart(options: DialogPartOptions): DialogPart {
     if (description.textContent !== (next.description ?? '')) description.textContent = next.description ?? '';
     description.hidden = !next.description;
     if (next.description) {if (!description.parentNode) content.append(description); node.setAttribute('aria-describedby', description.id);} else node.removeAttribute('aria-describedby');
+    if (image) {
+      if (next.eyebrow || next.description) {if (title.parentNode !== content) content.insertBefore(title,description.parentNode === content ? description : null);if (content.parentNode !== heading) heading.replaceChildren(content,close);}
+      else if (title.parentNode !== heading) heading.replaceChildren(title,close);
+    }
     const label = next.closeLabel ?? `Close ${prompt ? next.title : next.title.toLowerCase()}`;
     close.setAttribute('aria-label', label); closeCaption.textContent = label; close.disabled = !!next.closeDisabled;
   };

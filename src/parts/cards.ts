@@ -48,7 +48,13 @@ function container(options: {children: readonly Part[]}, tag: 'article' | 'div',
   return part;
 }
 /** One native card. Icons, text, and actions are composed as direct children. */
-export function createCardPart(options: {children: readonly Part[]}): CardPart {return container(options, 'article', 'pui-file-card');}
+export function createCardPart(options: {children: readonly Part[];purpose?: 'row' | 'stacked'}): CardPart {
+  assertOptions(options,['children','purpose'],'card');
+  if (options.purpose !== undefined && !['row','stacked'].includes(options.purpose)) throw new TypeError('Unknown card purpose.');
+  return container({children: options.children}, 'article', options.purpose === 'stacked' ? 'pui-connection-card' : 'pui-file-card');
+}
+/** A wrapping summary row. Callers compose their own text, status and actions. */
+export function createCardHeadingPart(options: {children: readonly Part[]}): LayoutPart {return container(options,'div','pui-connection-card-heading');}
 /** Flexible card information. It supplies no implicit text, icon or action. */
 export function createCardBodyPart(options: {children: readonly Part[]}): CardBodyPart {return container(options, 'div', 'pui-file-info');}
 /** A compact action row with fixed button sizes and natural wrapping. */

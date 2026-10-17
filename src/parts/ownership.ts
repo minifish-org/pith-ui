@@ -15,6 +15,7 @@ interface OwnedPart {
   disposed: boolean;
   releaseMount?: () => void;
   destroyListeners?: Set<() => void>;
+  appearanceListeners?: Set<(appearance: Appearance) => void>;
 }
 const parts = new WeakMap<Part, OwnedPart>();
 const mounts = new WeakMap<HTMLElement, MountedParts>();
@@ -48,6 +49,28 @@ export function assertUnownedParts(children: readonly Part[]): void {
     unique.add(child);
   }
 }
+/** Internal inherited theme context. Assets observe the same mount that owns
+ * their palette; no second theme root or public DOM subscription is needed. */
+export function readPartAppearance(part: Part): Appearance {
+  let current: Part = part;
+  for (;;) {
+    const owner = live(current).owner;
+    if (!owner) return 'system';
+    if (!parts.has(owner as Part)) return (owner as MountedParts).readAppearance();
+    current = owner as Part;
+  }
+}
+function notifyAppearance(part: Part): void {
+  const record = live(part), appearance = readPartAppearance(part);
+  for (const callback of [...record.appearanceListeners ?? []]) callback(appearance);
+  for (const child of record.children) notifyAppearance(child);
+}
+export function onPartAppearance(part: Part, callback: (appearance: Appearance) => void): () => void {
+  const record = live(part), listeners = record.appearanceListeners ??= new Set();
+  listeners.add(callback);
+  try {callback(readPartAppearance(part));} catch (error) {listeners.delete(callback); throw error;}
+  return () => {listeners.delete(callback);};
+}
 /** Internal borrowed-part lifecycle; consumers receive no DOM or event port. */
 export function onPartDestroy(part: Part, callback: () => void): () => void {
   const record = live(part);
@@ -72,6 +95,7 @@ function destroyPart(part: Part): void {
     try {callback();} catch (error) {failures.push(error);}
   }
   record.destroyListeners?.clear();
+  record.appearanceListeners?.clear();
   for (const child of [...record.children]) {
     try {destroyPart(child);} catch (error) {failures.push(error);}
   }
@@ -144,6 +168,7 @@ export function replacePartChildren(parent: Part, children: readonly Part[]): vo
       if (record.node.children[index] !== node) record.node.insertBefore(node, record.node.children[index] ?? null);
     });
   }
+  for (const child of children) notifyAppearance(child);
 }
 
 /** The only public DOM input. One live tree owns a checked, ordinary container. */
@@ -169,7 +194,7 @@ export function mountParts(mount: HTMLElement, root: Part, options: MountPartsOp
     if (originalAppearance === null) mount.removeAttribute('data-appearance'); else mount.setAttribute('data-appearance', originalAppearance);
   };
   const mounted = Object.freeze({
-    setAppearance(next: Appearance) {validateAppearance(next); if (!released) {appearance = next; setAppearance(mount, next);}},
+    setAppearance(next: Appearance) {validateAppearance(next); if (!released) {appearance = next; setAppearance(mount, next); notifyAppearance(root);}},
     readAppearance: () => appearance,
     destroy() {if (!released) {try {destroyPart(root);} finally {release();}}},
   });
@@ -178,5 +203,6 @@ export function mountParts(mount: HTMLElement, root: Part, options: MountPartsOp
   mounts.set(mount, mounted);
   setAppearance(mount, appearance);
   mount.replaceChildren(record.node);
+  notifyAppearance(root);
   return mounted;
 }
