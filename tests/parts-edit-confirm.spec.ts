@@ -30,9 +30,10 @@ declare global {interface Window {editConfirmHarness: EditConfirmHarness}}
 const editorState: EditorState = {title: 'Edit message', description: 'Revise the original request.', note: 'Send again to replace this message and its following replies.', submitLabel: 'Send again'};
 const confirmState: ConfirmState = {title: 'Delete conversation?', message: {before: 'Permanently delete ', subject: 'Project 中文', after: ', including its saved history?'}, hint: 'Deleted conversation data cannot be recovered.', confirmLabel: 'Delete conversation'};
 
-async function openEditor(page: Page, old = false, purpose: 'message' | 'queue-message' = 'message'): Promise<void> {
+async function openEditor(page: Page, old = false, purpose: 'message' | 'queue-message' = 'message', appearance: 'light' | 'dark' = 'light'): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({initial, old, purpose}) => {
+  await page.evaluate(async ({initial, old, purpose, appearance}) => {
+    document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const h: EditConfirmHarness = {state: initial, confirmation: {title: ''}, values: [], confirms: 0, inputs: [], closed: 0, releases: []};
     const source = document.createElement('button'); source.textContent = 'Original opener'; source.id = 'original-opener'; document.body.append(source); source.focus();
     const mount = document.createElement('div'); document.body.append(mount);
@@ -46,16 +47,17 @@ async function openEditor(page: Page, old = false, purpose: 'message' | 'queue-m
       block.open({value: 'Original message 中文\nSecond paragraph.'});
     } else {
       const path = '/examples/assemblies/text-edit.ts'; const {mountTextEditor} = await import(path);
-      h.editor = mountTextEditor(mount, {...initial, value: 'Original message 中文\nSecond paragraph.'}, {...callbacks, purpose});
+      h.editor = mountTextEditor(mount, {...initial, value: 'Original message 中文\nSecond paragraph.'}, {...callbacks, purpose}, {appearance});
     }
     window.editConfirmHarness = h;
-  }, {initial: editorState, old, purpose});
+  }, {initial: editorState, old, purpose, appearance});
   await expect(page.getByRole('dialog', {name: 'Edit message', exact: true})).toBeVisible();
 }
 
-async function openConfirmation(page: Page, old = false): Promise<void> {
+async function openConfirmation(page: Page, old = false, appearance: 'light' | 'dark' = 'light'): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({initial, old}) => {
+  await page.evaluate(async ({initial, old, appearance}) => {
+    document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const h: EditConfirmHarness = {state: {title: ''}, confirmation: initial, values: [], confirms: 0, inputs: [], closed: 0, releases: []};
     const source = document.createElement('button'); source.textContent = 'Original opener'; source.id = 'original-opener'; document.body.append(source); source.focus();
     const mount = document.createElement('div'); document.body.append(mount);
@@ -67,22 +69,23 @@ async function openConfirmation(page: Page, old = false): Promise<void> {
       h.confirm = {update: next => block.update({...next, message: next.message ? `${next.message.before}${next.message.subject ?? ''}${next.message.after ?? ''}` : undefined}), open: next => block.open(next ? {...next, message: next.message?.before} : undefined), close: block.close, isOpen: () => block.element.open, destroy: block.destroy};
     } else {
       const path = '/examples/assemblies/confirmation.ts'; const {mountConfirmation} = await import(path);
-      h.confirm = mountConfirmation(mount, initial, callbacks);
+      h.confirm = mountConfirmation(mount, initial, callbacks, {appearance});
     }
     window.editConfirmHarness = h;
-  }, {initial: confirmState, old});
+  }, {initial: confirmState, old, appearance});
   await expect(page.getByRole('dialog', {name: 'Delete conversation?', exact: true})).toBeVisible();
 }
 
-async function openDeskScene(page: Page, kind: 'message' | 'queue-message' | 'confirmation'): Promise<void> {
+async function openDeskScene(page: Page, kind: 'message' | 'queue-message' | 'confirmation', appearance: 'light' | 'dark' = 'light'): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({kind, editor, confirmation}) => {
+  await page.evaluate(async ({kind, editor, confirmation, appearance}) => {
+    document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const path = '/src/app/index.ts'; const {createApplication} = await import(path);
     const mount = document.body.appendChild(document.createElement('div'));
-    const app = createApplication(mount, {appearance: 'light'});
+    const app = createApplication(mount, {appearance});
     if (kind === 'confirmation') app.workspace.openConfirmation({title: confirmation.title, action: confirmation.confirmLabel!, description: confirmation.message!, hint: confirmation.hint}, {onConfirm: () => ({ok: true})});
     else app.workspace[kind === 'message' ? 'openMessageEditor' : 'openQueueEditor']({...editor, value: 'Original message 中文\nSecond paragraph.'}, {onSubmit: () => ({ok: true})});
-  }, {kind, editor: editorState, confirmation: confirmState});
+  }, {kind, editor: editorState, confirmation: confirmState, appearance});
   await expect(page.locator('dialog[open]')).toBeVisible();
 }
 
@@ -165,6 +168,15 @@ for (const kind of ['message', 'queue-message', 'confirmation'] as const) test(`
   expect(await page.locator('dialog[open]').evaluate(element => element.getBoundingClientRect().width)).toBe(600);
   const baseline = await presentation(page);
   if (kind === 'confirmation') await openConfirmation(page); else await openEditor(page, false, kind);
+  expect(await presentation(page)).toEqual(baseline);
+});
+
+for (const kind of ['message', 'queue-message', 'confirmation'] as const) test(`explicit dark ${kind} assembly preserves Desk colors even when the operating system is light`, async ({page}) => {
+  await page.emulateMedia({colorScheme: 'light'});
+  await openDeskScene(page, kind, 'dark'); const baseline = await presentation(page);
+  const background = await page.locator('dialog[open]').evaluate(element => getComputedStyle(element).backgroundColor);
+  if (kind === 'confirmation') await openConfirmation(page, false, 'dark'); else await openEditor(page, false, kind, 'dark');
+  expect(await page.locator('dialog[open]').evaluate(element => getComputedStyle(element).backgroundColor)).toBe(background);
   expect(await presentation(page)).toEqual(baseline);
 });
 
