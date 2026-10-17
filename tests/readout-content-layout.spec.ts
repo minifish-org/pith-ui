@@ -26,6 +26,20 @@ test('inline and readout folds retain native triangles while navigation and outp
   }
 });
 
+test('a warning explanation keeps its native argument fold at the compact source size', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const ui = await import('../src/index.js');
+    ui.mount(document.body, ui.createSurface({purpose: 'notice', tone: 'warning', content: ui.createDisclosure({context: 'readout', title: 'Tool arguments', content: ui.createDocument({format: 'text', text: '{"path":"README.md"}'})})}));
+  });
+  const fold = page.locator('.pui-disclosure-readout');
+  await expect(fold).toHaveCSS('margin', '8px 0px 0px');
+  await expect(fold.locator(':scope > summary')).toHaveCSS('font-size', '12px');
+  await expect(fold.locator(':scope > summary')).toHaveCSS('line-height', '18px');
+  await expect(fold.locator(':scope > summary')).toHaveCSS('display', 'list-item');
+  await expect(fold.locator('.pui-disclosure-chevron')).toBeHidden();
+});
+
 // Source contracts: accepted 0.3.1 styles.css run-status and cost-requests,
 // tasks/runtime.ts dl + paragraph in natural flow. Ordinary KeyValue is separate.
 test('a readout owns right-aligned runtime values, natural paragraphs and nested request details', async ({page}) => {
