@@ -2,7 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 
 interface Message {id: string;role: string;text: string;timestamp?: number;status?: string;actions?: {copy?: boolean|string;edit?: boolean;branch?: {key: string;label?: string}}}
 interface State {id: string;messages: Message[];working: boolean}
-interface BodyHandle {update(state: State): void;updateAvailability(state: {copy?: boolean;edit?: boolean;branch?: boolean}): void;destroy(): void}
+interface BodyHandle {readonly part?: unknown;update(state: State): void;updateAvailability(state: {copy?: boolean;edit?: boolean;branch?: boolean}): void;destroy(): void}
 declare global {interface Window {bodyPartsHarness: {body: BodyHandle;initial: State;actions: unknown[];copy: string[];selected?: Element;button?: Element}}}
 const mixed: State = {id: 'chat',working: false,messages: [
   {id: 'user',role: 'user',text: 'Preserved literal 中文 <b>text</b>\nSecond line.',timestamp: 1792200000000,actions: {copy: true,edit: true,branch: {key: 'branch-user'}}},
@@ -12,6 +12,9 @@ const mixed: State = {id: 'chat',working: false,messages: [
 async function openBody(page: Page,old: boolean,state = mixed,appearance: 'light'|'dark' = 'light'): Promise<void> {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async ({old,state,appearance}) => {
+    // Desk has one HTML appearance scope. The generic fixture's BODY scope
+    // would otherwise follow OS appearance and mask createApplication's mode.
+    document.body.classList.remove('pui');
     const path = '/src/app/index.ts'; const {createApplication} = await import(path);
     const mount = document.body.appendChild(document.createElement('div'));
     const h = {initial: state,actions: [],copy: []} as unknown as Window['bodyPartsHarness'];
@@ -63,6 +66,7 @@ test('reading column and bubbles compose content independently from timestamps a
 const scenarios: Record<string,State> = {mixed,empty: {id: 'empty',messages: [],working: false},interrupted: {...mixed,messages: [{id: 'agent',role: 'assistant',text: 'Partial response',status: 'error'}]},working: {...mixed,working: true},unsafe: {...mixed,messages: [{id: 'u',role: 'user',text: '<img onerror=alert(1)>\n<script>bad()</script>'},{id: 'a',role: 'assistant',text: '<script>bad()</script>\n\n[unsafe](javascript:alert(1))\n\n**Literal response**'}]}};
 for (const appearance of ['light','dark'] as const) for (const [name,state] of Object.entries(scenarios)) test(`${appearance} conversation body ${name} preserves the actual message presentation`,async ({page}) => {
   await page.emulateMedia({colorScheme: appearance === 'light' ? 'dark' : 'light'}); await openBody(page,true,state,appearance); const old = await presentation(page);
+  expect(await page.locator('.pui-messages').evaluate(node => getComputedStyle(node).color)).toBe(appearance === 'light' ? 'rgb(31, 37, 48)' : 'rgb(240, 241, 243)');
   await openBody(page,false,state,appearance); expect(await presentation(page)).toEqual(old);
 });
 for (const viewport of [{width: 390,height: 844},{width: 900,height: 568}]) test(`conversation body ${viewport.width} preserves reading width and wrapping`,async ({page}) => {
@@ -70,13 +74,18 @@ for (const viewport of [{width: 390,height: 844},{width: 900,height: 568}]) test
 });
 test('streaming updates retain selected text, code scroll, keyed message and action focus',async ({page}) => {
   for (const old of [true,false]) {
-    await openBody(page,old); const value = await page.evaluate(() => {
+    const streaming = {...mixed,messages: mixed.messages.map(message => message.id === 'agent' ? {...message,text: message.text.replace('const answer = 42;','const answer = 42;'.repeat(160))} : message)};
+    await openBody(page,old,streaming); const value = await page.evaluate(() => {
       const h = window.bodyPartsHarness,root = document.querySelector('.pui-messages')!,body = root.querySelector('.pui-user-text')!,text = body.firstChild!,selection = getSelection()!,range = document.createRange(); range.setStart(text,0);range.setEnd(text,9);selection.removeAllRanges();selection.addRange(range);
-      const action = root.querySelector<HTMLButtonElement>('[aria-label="Edit message"]')!; action.focus(); const code = root.querySelector('pre')!;code.scrollLeft = 17;
-      h.body.update({...h.initial,messages: h.initial.messages.map(message => message.id === 'user' ? {...message,text: message.text+'\nAdded suffix'} : message.id === 'agent' ? {...message,text: message.text+'\nStreaming addition'} : message)});
-      return {selection: selection.toString(),same: body === root.querySelector('.pui-user-text'),focus: action === document.activeElement,code: code === root.querySelector('pre'),scroll: code.scrollLeft};
+      const action = root.querySelector<HTMLButtonElement>('[aria-label="Edit message"]')!; const code = root.querySelector('pre')!;code.scrollLeft = 17;
+      const next = {...h.initial,messages: h.initial.messages.map(message => message.id === 'user' ? {...message,text: message.text+'\nAdded suffix'} : message.id === 'agent' ? {...message,text: message.text+'\nStreaming addition'} : message)};
+      h.body.update(next); const preserved = selection.toString();
+      // Native WebKit button.focus() clears a content selection before any
+      // render. Verify selection and focused-action retention independently.
+      action.focus(); h.body.update({...next,messages: next.messages.map(message => message.id === 'system' ? {...message,text: 'Updated context note'} : message)});
+      return {selection: preserved,same: body === root.querySelector('.pui-user-text'),focus: action === document.activeElement,code: code === root.querySelector('pre'),scroll: code.scrollLeft};
     });
-    expect(value).toMatchObject({selection: 'Preserved',same: true,focus: true,code: true});
+    expect(value).toEqual({selection: 'Preserved',same: true,focus: true,code: true,scroll: 17});
   }
 });
 test('message actions keep stable frozen targets and independent availability',async ({page}) => {

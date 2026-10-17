@@ -121,16 +121,19 @@ test('switching transport preserves both drafts while only native active control
 test('environment reveal and ordinary snapshots preserve native field, private draft, caret and focus',async ({page}) => {
   await openMCP(page,false,{editor: stdioEditor});const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});await env.fill('{"TOKEN":"Unsaved 中文"}');
   await page.getByRole('button',{name: 'Show',exact: true}).click();await expect(page.getByRole('button',{name: 'Hide',exact: true})).toHaveAttribute('aria-pressed','true');
+  await expect(env).toHaveCSS('-webkit-text-security','none');
   await env.evaluate(node => {const control = node as HTMLTextAreaElement;control.focus();control.setSelectionRange(3,12);window.mcpPartsHarness.control = control;});
   await page.evaluate(() => {const h = window.mcpPartsHarness;h.session.update({formError: 'Keep this draft'});h.session.setConnections([...h.entries].reverse());});
   await expect(env).toHaveValue('{"TOKEN":"Unsaved 中文"}');expect(await env.evaluate(node => ({same: node === window.mcpPartsHarness.control,focus: node === document.activeElement,selection: [(node as HTMLTextAreaElement).selectionStart,(node as HTMLTextAreaElement).selectionEnd]}))).toEqual({same: true,focus: true,selection: [3,12]});
   await expect(page.getByRole('button',{name: 'Hide',exact: true})).toHaveAttribute('aria-pressed','true');
+  await expect(env).toHaveCSS('-webkit-text-security','none');
 });
 
 test('explicit edit resets secrets, clear flags, reveal, pending and the immutable editing name; obsolete save errors stay retired',async ({page}) => {
   await openMCP(page,false,{editor: stdioEditor,pending: ['save']});const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});
   await env.fill('{"TOKEN":"first secret"}');await page.getByRole('button',{name: 'Show',exact: true}).click();await page.getByRole('checkbox',{name: 'Clear saved environment overrides',exact: true}).check();await page.getByRole('button',{name: 'Save connection',exact: true}).click();
   await page.evaluate(editor => window.mcpPartsHarness.session.edit(editor),httpEditor);
+  await expect(page.locator('textarea[name=env]')).toHaveCSS('-webkit-text-security','disc');
   await expect(page.getByRole('textbox',{name: 'Name',exact: true})).toHaveAttribute('readonly','');await expect(page.getByRole('textbox',{name: 'Server URL',exact: true})).toBeFocused();await expect(page.getByRole('button',{name: 'Save connection',exact: true})).toBeEnabled();
   await page.evaluate(() => window.mcpPartsHarness.releases[0]!.resolve({ok: false,error: 'Retired failure'}));
   expect(await page.evaluate(() => window.mcpPartsHarness.session.read())).toEqual({name: httpEditor.name,type: 'http',url: httpEditor.url,oauth: true,oauthClientId: 'registered-client',oauthScope: 'read write',command: '',args: '[]',enabled: true,bearerToken: '',clearBearerToken: false,env: '',clearEnv: false});
