@@ -16,7 +16,7 @@ test('a bounded section in a pane footer yields space to multiline input in shor
     await page.getByRole('button', { name: 'Review action' }).scrollIntoViewIfNeeded();
     expect((await page.getByRole('button', { name: 'Review action' }).boundingBox())!.y).toBeGreaterThanOrEqual(0);
 });
-test('retained attachment images form a wrapping collection without a styling option', async ({ page }) => {
+test('retained attachment images form a horizontal collection without a styling option', async ({ page }) => {
     await page.goto('/tests/fixture.html');
     await page.evaluate(async () => { const u = await import('../src/index.js'); const images = [0, 1].map(index => u.createImage({ label: 'Attachment ' + index, source: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==', purpose: 'attachment', onRemove() { } })); u.mount(document.body, u.createList({ items: images.map((content, index) => ({ key: String(index), content })) })); });
     const images = page.locator('.pui-image-attachment');
