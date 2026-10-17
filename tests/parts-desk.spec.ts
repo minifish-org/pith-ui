@@ -34,7 +34,7 @@ test('small status/action and banner parts preserve the native old row without c
     window.deskPartsHarness.app.destroy();const path = '/src/parts/index.ts',p = await import(path);
     const label = p.createTextPart({text: 'A task is running 中文'}),action = p.createButtonPart({variant: 'text-action',label: 'Open running conversation'});
     const row = p.createStatusActionsPart({children: [label,action]}),error = p.createFeedbackPart({presentation: 'banner',tone: 'error',message: 'Failure\nDetails'});
-    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [row,error]}));
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [row,error]}),{appearance: 'light'});
     let invalid = false;try {row.update({hidden: 'false'});} catch {invalid = true;}
     const valid = p.createTextPart({text: 'Reusable'});let foreign = false;try {p.createStatusActionsPart({children: [valid,document.createElement('div')]});} catch {foreign = true;}
     const reusable = document.body.appendChild(document.createElement('div')),childTree = p.mountParts(reusable,valid);const retained = reusable.textContent === 'Reusable';childTree.destroy();
