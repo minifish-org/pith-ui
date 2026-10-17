@@ -51,9 +51,11 @@ test('copy errors restore the original button and notify only the live owner', a
 test('announcement is a genuine borrowed part and its disposal retires copy feedback', async ({page}) => {
   await setup(page);expect(await page.getByRole('status').evaluate(node => ({tag: node.localName,classes: node.className,live: node.getAttribute('aria-live')}))).toEqual({tag: 'span',classes: 'pui-sr-only',live: 'polite'});
   await page.getByRole('button',{name: 'Copy path',exact: true}).click();await page.evaluate(() => {const h = window.copyPartsHarness;h.announcement.destroy();h.resolve!({ok: true});});await page.clock.fastForward(2000);
-  await expect(page.getByRole('status')).toHaveCount(0);await expect(page.getByRole('button',{name: 'Copy path',exact: true})).toHaveText('Copy path');
-  await page.getByRole('button',{name: 'Copy path',exact: true}).click();expect(await page.evaluate(() => window.copyPartsHarness.calls)).toBe(1);
-  await page.evaluate(() => window.copyPartsHarness.tree.destroy());await expect(page.locator('button')).toHaveCount(0);
+  // A copy control requires its borrowed live region. Losing that dependency
+  // retires the control rather than leaving an enabled, inert action behind.
+  await expect(page.getByRole('status')).toHaveCount(0);await expect(page.getByRole('button')).toHaveCount(0);
+  expect(await page.evaluate(() => window.copyPartsHarness.calls)).toBe(1);
+  await page.evaluate(() => {const h = window.copyPartsHarness;h.tree.destroy();h.tree.destroy();h.button.destroy();});await expect(page.locator('button')).toHaveCount(0);
 });
 
 test('copy feedback rejects foreign announcement and presentation timing options without taking the announcer', async ({page}) => {
