@@ -26,3 +26,6 @@ export type {BreadcrumbState} from './controls.js';
 
 export {createTable} from './table.js';
 export type {TableColumn,TableRow,TableState,TableOptions} from './table.js';
+
+export {createTimestamp} from './controls.js';
+export type {TimestampState,SecretInputOptions} from './controls.js';

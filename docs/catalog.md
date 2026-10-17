@@ -18,7 +18,7 @@ Every base exhibit uses the default public entry. No font, pixel size, density, 
 | Copy | `createCopyButton` | `copy-feedback` |
 | Text input | `createTextInput`, `createSearchInput`, `createSecretInput`, `createTextArea`, `createNumberInput`, `createURLInput`, `createSecretTextArea` | `text-input`, `search-input`, `secret-input`, `text-area`, `number-input`, `url-input`, `secret-text-area` |
 | Choice | `createSelect`, `createListSelect`, `createCheckbox` | `select`, `checkbox` |
-| Display | `createText`, `createIcon`, `createListRow`, `createKeyValue`, `createDivider`, `createProgress` | `text`, `icons`, `list-row`, `key-value`, `divider`, `progress` |
+| Display | `createText`, `createTimestamp`, `createIcon`, `createListRow`, `createKeyValue`, `createDivider`, `createProgress` | `text`, `timestamp`, `icons`, `list-row`, `key-value`, `divider`, `progress` |
 | Feedback | `createNotice`, `createStatus`, `createCollectionState` | `notice`, `status`, `collection-state` |
 | Surfaces | `createDialog`, `createTextEditDialog`, `createConfirmDialog`, `createMenu`, `createContextMenu`, `createPopover` | `dialog`, `text-edit-dialog`, `confirmation`, `menu`, `context-menu`, `popover` |
 | Layout and forms | `createForm`, `createFormSection`, `createActions`, `createToolbar`, `createDisclosure`, `createScrollArea` | `form`, `form-section`, `actions`, `toolbar`, `disclosure`, `scroll-area` |

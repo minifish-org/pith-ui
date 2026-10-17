@@ -69,16 +69,18 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
     if (['element','icon','createField','createApplication','createWorkspaceShell','createConversationView','Generation','setAppearance','createCopyFeedback'].some(name=>name in ui)) throw new Error('Internal DOM/product factories must not be public');
     console.log(JSON.stringify(Object.keys(ui)));
   `], consumer)) as string[];
-  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff','createPromptInput','createImage','createMessage','createReadingArea','createDropArea','createDocument','createURLInput','createSecretTextArea','createContentColumn','createSurface','createGrid','createBrand','createStep','createNotificationRegion','createBreadcrumb','createTable']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
-  const generic = `import {mount,createButton,createTextInput,createListSelect,createTextEditDialog,createForm,createStack,type ActionResult} from 'pith-ui';
+  for (const name of ['mount','createButton','createForm','createStack','createTextEditDialog','createConfirmDialog','createSelect','createListSelect','createContextMenu','createCopyButton','createPane','createSplitPane','createSlot','createList','createMarkdown','createDiff','createPromptInput','createImage','createMessage','createReadingArea','createDropArea','createDocument','createURLInput','createSecretTextArea','createContentColumn','createSurface','createGrid','createBrand','createStep','createNotificationRegion','createBreadcrumb','createTable','createTimestamp']) assert(runtime.includes(name), `Expected public export is missing: ${name}`);
+  const generic = `import {mount,createButton,createTextInput,createSecretInput,createTimestamp,createListSelect,createTextEditDialog,createForm,createStack,type ActionResult} from 'pith-ui';
 import 'pith-ui/styles.css';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 const name=createTextInput({label:'Name',value:'中文 draft'});
+const secret=createSecretInput({label:'Answer',revealable:false});
+const time=createTimestamp({value:Date.parse('2026-10-13T13:53:00Z')});
 const models=createListSelect({label:'Models',multiple:true,values:['a'],options:[{value:'a',label:'Model A'}],onChange:values=>{values.forEach(String);}});
-const form=createForm({children:[name,models],onSubmit:async():Promise<ActionResult>=>({ok:true})});
+const form=createForm({children:[name,models,secret],onSubmit:async():Promise<ActionResult>=>({ok:true})});
 const editor=createTextEditDialog({title:'Edit',purpose:'pending-message',onSubmit:async text=>text.trim()?{ok:true}:{ok:false,error:'Enter text'}});
 const open=createButton({label:'Edit',onAction:()=>editor.open({value:name.read()})});
-mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
+mount(host,createStack({children:[time,form,open,editor]}),{appearance:'light'});
 `;
   const reference = generic;
   await writeFile(join(consumer, 'main.ts'), reference);
@@ -105,6 +107,12 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createButton({label:'Save',style:{padding:8}});",'style'],
     ["createButton({label:'Save'}).element;",'element'],
     ["createTextInput({label:'Name'}).control;",'control'],
+    ["createSecretInput({label:'Answer',revealable:'false'});","not assignable to type 'boolean | undefined'"],
+    ["createSecretInput({label:'Answer'}).update({label:'Answer',revealable:false});",'revealable'],
+    ["createTimestamp({value:'2026-10-13'});","not assignable to type 'number'"],
+    ["createTimestamp({value:Date.now(),format:'full'});",'format'],
+    ["createTimestamp({value:Date.now(),title:'Custom title'});",'title'],
+    ["createTimestamp({value:Date.now()}).element;",'element'],
     ["createStack({children:[document.body]});",'HTMLElement'],
     ["createSelect({label:'Provider',options:[],multiple:true});",'multiple'],
     ["createListSelect({label:'Models',options:[],size:10});",'size'],
@@ -123,7 +131,7 @@ mount(host,createStack({children:[form,open,editor]}),{appearance:'light'});
     ["createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",'compactSource'],
   ];
   for (const [source, diagnostic] of forbiddenControls) {
-    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable,createListRow,createDocument} from 'pith-ui';\n${source}\n`);
+    await writeFile(join(consumer,'rejected-control.ts'), `import {createButton,createTextInput,createSecretInput,createTimestamp,createStack,createSelect,createListSelect,createTextEditDialog,createPane,createSlot,createSplitPane,createText,createContentColumn,createSurface,createGrid,createBreadcrumb,createImage,createTextArea,createSecretTextArea,createConfirmDialog,createTable,createListRow,createDocument} from 'pith-ui';\n${source}\n`);
     await writeFile(join(consumer,'rejected-control-tsconfig.json'),JSON.stringify({compilerOptions,include:['rejected-control.ts']}));
     let rejected=false;
     try {await execute(process.execPath,[compiler,'--project','rejected-control-tsconfig.json'],{cwd:consumer,maxBuffer:8*1024*1024});}

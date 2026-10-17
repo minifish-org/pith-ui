@@ -70,3 +70,7 @@ Use `createTable` for information whose columns must remain related. Columns are
 The existing queue context preserves its named polite region, text/count grouping and action state. A bounded navigation toggle gets its expanded/control relationship from the owning split pane; applications do not supply IDs. Inline choices may use their existing description data for assistive text while keeping a visible note in the surrounding composition.
 
 Row `tooltip` accepts plain text; an empty or omitted tooltip clears it. `Document.error` displays safe plain text inside the existing document surface, without stale content or code-copy controls. Clearing it restores the supplied document format and text.
+
+Choose `createSecretInput({revealable:false,...})` when a password field must not add a Show/Hide action. The default retains the reveal action; this choice is construction-only. Keep native validation, reset and destruction cleanup in the control.
+
+Use `createTimestamp({value:epochMilliseconds})` for saved dates, or pass the number to `createMessage.time`. The library fixes short local time text, full local tooltip and ISO `datetime`; do not preformat saved timestamps or add formatting options. Zero and invalid dates hide and clear the time. `createMessage` owns its role-derived accessible name.

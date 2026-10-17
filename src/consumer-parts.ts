@@ -6,7 +6,7 @@ import { controlDisabled } from './core.js';
 import { createOperation } from './operation.js';
 import { createImageViewer } from './content/image-viewer.js';
 import { installConversationReader } from './content/conversation-reader.js';
-import { ownControl, controlEntry, controlNodes, checkOptions, createList,applyFieldPresentation } from './controls.js';
+import { ownControl, controlEntry, controlNodes, checkOptions, createList, createTimestamp, applyFieldPresentation } from './controls.js';
 import type { Control, ActionResult, InputState, Input } from './controls.js';
 export interface PromptState {
     readonly label: string;
@@ -185,7 +185,7 @@ export function createImage(options: ImageOptions): ImageControl {
 }
 export interface MessageState {
     readonly role: 'user' | 'assistant' | 'system' | 'tool';
-    readonly time?: string;
+    readonly time?: string | number;
     readonly status?: string;
 }
 export function createMessage(options: MessageState & {
@@ -194,16 +194,29 @@ export function createMessage(options: MessageState & {
     readonly actions?: Control;
 }): Control<MessageState> {
     checkOptions(options, ['role', 'time', 'status', 'content', 'media', 'actions']);
-    const children = [options.content,...(options.media?[options.media]:[]), ...(options.actions ? [options.actions] : [])];
-    controlNodes(children);
-    const meta = element('div', 'pui-message-frame-meta'), body = element('div', 'pui-message-frame-body', controlEntry(options.content).node), footer=element('div','pui-message-frame-footer',meta),node = element('article', 'pui-message-frame',...(options.media?[element('div','pui-message-frame-media',controlEntry(options.media).node)]:[]), body, footer);
-    if (options.actions)footer.append(element('div', 'pui-message-frame-actions', controlEntry(options.actions).node));
-    const update = (state: Readonly<MessageState>) => {
+    const validate = (state: MessageState) => {
         checkOptions(state, ['role', 'time', 'status']);
         if (!['user', 'assistant', 'system', 'tool'].includes(state.role))
             throw new Error('Unknown message role.');
+        if (state.time !== undefined && typeof state.time !== 'string' && typeof state.time !== 'number')
+            throw new Error('Expected message time text or an epoch-millisecond timestamp number.');
+    };
+    validate({role: options.role, time: options.time, status: options.status});
+    const timestamp = createTimestamp({value: typeof options.time === 'number' ? options.time : 0});
+    const children = [options.content,...(options.media?[options.media]:[]), ...(options.actions ? [options.actions] : []), timestamp];
+    controlNodes(children);
+    const text = document.createTextNode(''), timestampNode = controlEntry(timestamp).node;
+    const meta = element('div', 'pui-message-frame-meta', timestampNode, text), body = element('div', 'pui-message-frame-body', controlEntry(options.content).node), footer=element('div','pui-message-frame-footer',meta),node = element('article', 'pui-message-frame',...(options.media?[element('div','pui-message-frame-media',controlEntry(options.media).node)]:[]), body, footer);
+    if (options.actions)footer.append(element('div', 'pui-message-frame-actions', controlEntry(options.actions).node));
+    const update = (state: Readonly<MessageState>) => {
+        validate(state);
         node.dataset.role = state.role;
-        meta.textContent = [state.time, state.status].filter(Boolean).join(' · ');
+        const name = state.role === 'user' ? 'Your message' : state.role === 'assistant' ? 'Agent response' : undefined;
+        if (name) node.setAttribute('aria-label', name); else node.removeAttribute('aria-label');
+        timestamp.update({value: typeof state.time === 'number' ? state.time : 0});
+        const numeric = !timestampNode.hidden;
+        const value = typeof state.time === 'string' ? [state.time, state.status].filter(Boolean).join(' · ') : (numeric && state.status ? ' · ' : '') + (state.status || '');
+        if (text.textContent !== value) text.textContent = value;
         meta.hidden = !meta.textContent;footer.hidden=!meta.textContent&&!options.actions;
     };
     update({ role: options.role, time: options.time, status: options.status });

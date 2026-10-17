@@ -187,24 +187,26 @@ export const createSearchInput = (options: InputOptions): InputBlock => textCont
 export const createNumberInput = (options: InputOptions): InputBlock => textControl(options, 'number');
 export const createTextArea = (options: InputOptions): InputBlock => textControl(options, 'textarea');
 
-export function createSecretInput(options: InputOptions): InputBlock {
+export function createSecretInput(options: InputOptions & {revealable?: boolean}): InputBlock {
   const block = textControl({ ...options, autocomplete: options.autocomplete ?? 'off' }, 'password');
   const control = block.control as HTMLInputElement;
-  const toggle = createTextAction({ label: 'Show', onAction() {
+  const toggle = options.revealable === false ? undefined : createTextAction({ label: 'Show', onAction() {
     const show = control.type === 'password';
     control.type = show ? 'text' : 'password';
-    toggle.update({ label: show ? 'Hide' : 'Show', disabled: control.disabled });
-    toggle.element.setAttribute('aria-pressed', String(show));
+    toggle?.update({ label: show ? 'Hide' : 'Show', disabled: control.disabled });
+    toggle?.element.setAttribute('aria-pressed', String(show));
   } });
-  toggle.element.setAttribute('aria-controls', control.id);
-  toggle.element.setAttribute('aria-pressed', 'false');
-  block.element.append(toggle.element);
+  if (toggle) {
+    toggle.element.setAttribute('aria-controls', control.id);
+    toggle.element.setAttribute('aria-pressed', 'false');
+    block.element.append(toggle.element);
+  }
   const update = block.update;
-  block.update = state => { update(state); toggle.update({ label: control.type === 'password' ? 'Show' : 'Hide', disabled: state.disabled }); };
+  block.update = state => { update(state); toggle?.update({ label: control.type === 'password' ? 'Show' : 'Hide', disabled: state.disabled }); };
   const reset=block.reset;
-  block.reset=value=>{reset(value);control.type='password';toggle.update({label:'Show',disabled:control.disabled});toggle.element.setAttribute('aria-pressed','false');};
+  block.reset=value=>{reset(value);control.type='password';toggle?.update({label:'Show',disabled:control.disabled});toggle?.element.setAttribute('aria-pressed','false');};
   const destroy = block.destroy;
-  block.destroy = () => { block.reset('');destroy(); toggle.destroy(); };
+  block.destroy = () => { block.reset('');destroy(); toggle?.destroy(); };
   block.update(options);
   return block;
 }

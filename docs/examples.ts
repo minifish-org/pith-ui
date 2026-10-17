@@ -143,3 +143,11 @@ export function tabularData(ui:PithUI,host:HTMLElement){
  const table=ui.createTable({label:'Usage',columns:[{key:'request',label:'Request'},{key:'count',label:'Count'}],rows:[first],empty:'No records.'});
  const mounted=ui.mount(host,table);return{mounted,clear(){table.update({rows:[]});}};
 }
+/** Saved data chooses behavior, while the library fixes masking and time display. */
+export function savedTimeAndSecret(ui:PithUI,host:HTMLElement){
+ const secret=ui.createSecretInput({label:'Sign-in answer',revealable:false,required:true});
+ const time=ui.createTimestamp({value:Date.parse('2026-10-13T13:53:00Z')});
+ const form=ui.createForm({context:'inline',children:[secret],submitLabel:'Continue',onSubmit:()=>({ok:true})});
+ const mounted=ui.mount(host,ui.createStack({children:[time,form]}));
+ return{mounted,clearSavedTime(){time.update({value:0});},resetAnswer(){secret.reset('');}};
+}

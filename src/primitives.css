@@ -757,3 +757,4 @@
  .pui .pui-pane-conversation>.pui-pane-header .pui-navigation-toggle { width:27px;min-width:27px;height:27px;min-height:27px;border:0;border-radius:6px; }
  .pui .pui-pane-conversation>.pui-pane-header .pui-navigation-toggle .pui-icon { width:19px;height:19px; }
 }
+.pui .pui-timestamp { color:var(--pui-muted);font-size:var(--pui-text-small);line-height:var(--pui-line-height);white-space:nowrap; }

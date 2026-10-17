@@ -54,6 +54,13 @@ ordinary.update({purpose:'panel'});`), []);
   ]) assert.ok(diagnostics(imports + source).length, source);
 });
 
+test('secret reveal policy and timestamps expose only their bounded data contracts', () => {
+  const imports="import {createTimestamp,createSecretInput,createTextInput,createMessage,createText,type TimestampState,type SecretInputOptions} from './index.js';\n";
+  assert.deepEqual(diagnostics(imports+`const options:SecretInputOptions={label:'Answer',revealable:false};const secret=createSecretInput(options);secret.update({label:'Answer',readOnly:true});const state:TimestampState={value:Date.now()};const time=createTimestamp(state);time.update({value:0});createMessage({role:'assistant',time:state.value,content:createText({text:'Reply'})});`),[]);
+  for(const source of ["createSecretInput({label:'Answer',revealable:'false'});","createTextInput({label:'Plain',revealable:false});","createSecretInput({label:'Answer'}).update({label:'Answer',revealable:false});","createTimestamp({value:'2026-10-13'});","createTimestamp({value:Date.now(),format:'full'});","createTimestamp({value:Date.now(),title:'Custom title'});","createTimestamp({value:Date.now(),fontSize:14});","createTimestamp({value:Date.now()}).element;"])
+    assert.ok(diagnostics(imports+source).length,source);
+});
+
 test('constrained declarations reject visual options, raw nodes, invalid modes and internal handles', () => {
   const cases = [
     "createTable({label:'Data',columns:[{key:'item',label:'Item',width:220}],rows:[]});",

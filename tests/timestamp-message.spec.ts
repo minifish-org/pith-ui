@@ -46,7 +46,7 @@ test('timestamps reject invalid types and presentation escapes before mutating s
   const result = await page.evaluate(async value => {
     const ui = await import('../src/index.js'), make = Reflect.get(ui, 'createTimestamp'), errors: string[] = [];
     for (const invalid of ['2026-10-13', null, document.body, new Date(value)]) {
-      try {make({value: invalid});} catch (error) {errors.push(String(error));}
+      try {Reflect.apply(make, undefined, [{value: invalid}]);} catch (error) {errors.push(String(error));}
     }
     const time = make({value}), mounted = ui.mount(document.body, time), node = document.querySelector('time')!, original = node.outerHTML;
     for (const state of [{value: 'Retarget'}, {value, format: 'full'}, {value, title: '<img src=x>'}, {value, style: {fontSize: 20}}]) {
@@ -90,4 +90,36 @@ test('message numeric times reuse timestamp semantics while plain metadata remai
   await expect(page.locator('.pui-message-frame-meta')).toHaveText('12:34 · Saved');
   await page.evaluate(() => Reflect.get(window, 'timedMessage').update({role: 'assistant', time: 0}));
   await expect(page.locator('.pui-message-frame-footer')).toBeHidden();
+});
+
+test('message time rejects non-text data before changing the current identity or footer', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  const result = await page.evaluate(async () => {
+    const ui = await import('../src/index.js'), message = ui.createMessage({role: 'assistant', time: 'Saved metadata', content: ui.createText({text: 'Response'})});
+    const mounted = ui.mount(document.body, message), node = document.querySelector('article')!, before = node.outerHTML, errors: string[] = [];
+    for (const time of [null, document.body, new Date()]) {
+      try {Reflect.apply(message.update, message, [{role: 'user', time}]);}
+      catch (error) {errors.push(String(error));}
+    }
+    const retained = node.outerHTML === before;
+    message.update({role: 'assistant', time: '<img src=x onerror=alert(1)>'});
+    const safe = !node.querySelector('img') && node.querySelector('.pui-message-frame-meta')!.textContent === '<img src=x onerror=alert(1)>';
+    mounted.destroy(); return {retained, safe, errors};
+  });
+  expect(result.errors).toHaveLength(3);
+  expect(result.retained).toBe(true);
+  expect(result.safe).toBe(true);
+});
+
+test('the public timestamp exhibit demonstrates update, clear and recovery', async ({page}) => {
+  await page.goto('/?item=timestamp&theme=light&state=normal');
+  const time = page.locator('.gallery-preview time');
+  await expect(time).toHaveAttribute('datetime', new Date(saved).toISOString());
+  await page.getByRole('button', {name: 'Advance one minute', exact: true}).click();
+  await expect(time).toHaveAttribute('datetime', new Date(saved + 60000).toISOString());
+  await page.getByRole('button', {name: 'Clear time', exact: true}).click();
+  await expect(time).toBeHidden();
+  await page.getByRole('button', {name: 'Show saved time', exact: true}).click();
+  await expect(time).toBeVisible();
+  await expect(time).toHaveAttribute('datetime', new Date(saved).toISOString());
 });

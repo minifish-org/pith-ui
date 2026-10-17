@@ -4,7 +4,7 @@ import {
   createIconButton, createKeyValue, createListRow, createMenu, createNotice,
   createNumberInput, createPopover, createProgress, createScrollArea, createSearchInput,
   createSecretInput, createSelect, createListSelect, createStatus, createTextAction, createTextArea, createStack, createText, createForm, mount,
-  createTextEditDialog, createTextInput, createToolbar,
+  createTextEditDialog, createTextInput, createTimestamp, createToolbar,
 } from '../src/index.js';
 import type {Control, IconName} from '../src/index.js';
 import { element } from '../src/dom.js';
@@ -33,6 +33,12 @@ export const primitiveCases: ShowcaseCase[] = [
     description:'正文、说明、标题和代码按用途选用既定排版；不开放字体、字号、字重、行距和颜色。',states:['normal','long'],related:['foundation-typography','form-section'],
     code:`import {mount,createText,createStack} from 'pith-ui';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nmount(host,createStack({children:[createText({role:'heading',text:'Connection'}),createText({text:'Body text'}),createText({role:'description',text:'Supporting information'})]}));`,
     mount(context){return group([createText({role:'heading',text:'Connection'}),createText({text:sample(context,'正文 Body text 012345，标点与 emoji 🐟')}),createText({role:'description',text:'说明文字 Supporting information'}),createText({role:'code',text:'/workspace/src/index.ts'})]);},
+  },
+  {
+    id:'timestamp',title:'保存时间 Timestamp',layer:'components',category:'展示',
+    description:'输入保存的毫秒时间戳，固定显示本地小时和分钟；原生提示展示完整本地日期，time.datetime 保留 ISO 日期。0 或无效日期隐藏。无格式、字体和样式参数。',states:['normal','empty'],related:['text','message'],
+    code:`import {mount,createTimestamp} from 'pith-ui';\nconst host=document.getElementById('app');\nif(!(host instanceof HTMLElement))throw new Error('Missing mount');\nconst time=createTimestamp({value:Date.parse('2026-10-13T13:53:00Z')});\nmount(host,time);\ntime.update({value:0}); // Clear an absent timestamp.`,
+    mount(context){const saved=Date.parse('2026-10-13T13:53:00Z');let current=saved;const time=createTimestamp({value:context.state==='empty'?0:saved});return group([createText({role:'description',text:'模拟保存时间；显示取决于当前浏览器的本地语言和时区。悬停查看完整日期。'}),time,createActions({children:[createButton({label:'Show saved time',onAction:()=>{current=saved;time.update({value:current});}}),createButton({label:'Advance one minute',onAction:()=>{current+=60000;time.update({value:current});}}),createButton({label:'Clear time',onAction:()=>time.update({value:0})})]})]);},
   },
   {
     id:'stack',title:'纵向组合 Stack',layer:'components',category:'布局',
@@ -97,9 +103,9 @@ export const primitiveCases: ShowcaseCase[] = [
   },
   {
     id: 'secret-input', title: '密钥输入 Secret input', layer: 'components', category: '输入',
-    description: 'Show/Hide 是 type=button，切换不提交表单、不清空内容，禁用时同步不可操作。', states: inputStates, related: ['text-action', 'form-section'],
+    description: '默认提供 Show/Hide，切换不提交表单、不清空内容。revealable:false 固定为密码输入，不添加显示按钮；该行为只在构造时选择。', states: inputStates, related: ['text-action', 'form-section'],
     code: `import {mount, createSecretInput} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst host = document.getElementById('app');\nif (!(host instanceof HTMLElement)) throw new Error('Missing mount');\nconst block = createSecretInput({label:'API key',description:'Only use demonstration credentials here.'});\nconst mounted = mount(host,block);\n// mounted.destroy() releases the complete owned tree.`,
-    mount(context) { return group([createSecretInput({ ...field(context, 'API key'), value: 'sk-example-for-demonstration-only', description: 'Demonstration value. Empty retains a saved key only when the application implements that policy.' })]); },
+    mount(context) { return group([createSecretInput({ ...field(context, 'API key'), value: 'sk-example-for-demonstration-only', description: 'Demonstration value. Empty retains a saved key only when the application implements that policy.' }),createSecretInput({...field(context,'Secret sign-in answer'),revealable:false,value:'demonstration-only',description:'Password only: no Show/Hide action is added.'})]); },
   },
   {
     id: 'text-area', title: '多行输入 Text area', layer: 'components', category: '输入',

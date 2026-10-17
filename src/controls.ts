@@ -288,6 +288,33 @@ export function createText(state: TextState): Control<TextState> {
     update(state);
     return own({ element: node, update, destroy() { } });
 }
+export interface TimestampState {
+    readonly value: number;
+}
+/** A saved epoch-millisecond time, with one native local presentation. */
+export function createTimestamp(state: TimestampState): Control<TimestampState> {
+    const node = element('time', 'pui-timestamp');
+    const update = (next: Readonly<TimestampState>) => {
+        check(next, ['value']);
+        if (typeof next.value !== 'number')
+            throw new Error('Expected an epoch-millisecond timestamp number.');
+        // The accepted message contract treats zero as a missing timestamp.
+        const date = new Date(next.value || NaN), valid = Number.isFinite(date.getTime());
+        node.hidden = !valid;
+        if (valid) {
+            const iso = date.toISOString(), title = date.toLocaleString();
+            if (node.dateTime !== iso) node.dateTime = iso;
+            if (node.title !== title) node.title = title;
+            setText(node, date.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}));
+        } else {
+            node.removeAttribute('datetime');
+            node.removeAttribute('title');
+            setText(node, '');
+        }
+    };
+    update(state);
+    return own({element: node, update, destroy() {}});
+}
 export interface IconState {
     readonly context?: 'notice';
     readonly tone?: 'success';
@@ -322,6 +349,9 @@ export interface InputOptions extends InputState {
     readonly onInput?: (value: string) => void;
     readonly onChange?: (value: string) => void;
 }
+export interface SecretInputOptions extends InputOptions {
+    readonly revealable?: boolean;
+}
 export interface SearchInputOptions extends InputOptions {
     readonly context?: 'navigation';
 }
@@ -353,8 +383,11 @@ const inputKeys = [...fieldKeys, 'placeholder', 'readOnly'];
 const inputOptionKeys = [...inputKeys, 'value', 'autocomplete', 'onInput', 'onChange'];
 function inputControl(options: NumberInputOptions & {
     readonly pattern?: string;
+    readonly revealable?: boolean;
 }, kind: 'text' | 'url' | 'search' | 'secret' | 'number' | 'textarea'): Input {
-    check(options, [...inputOptionKeys, ...(kind === 'number' ? ['min', 'max', 'step'] : []), ...(kind === 'text' ? ['pattern'] : [])]);
+    check(options, [...inputOptionKeys, ...(kind === 'number' ? ['min', 'max', 'step'] : []), ...(kind === 'text' ? ['pattern'] : []), ...(kind === 'secret' ? ['revealable'] : [])]);
+    if (kind === 'secret' && options.revealable !== undefined && typeof options.revealable !== 'boolean')
+        throw new Error('Expected a boolean secret reveal policy.');
     const factories = { text: primitive.createTextInput, url: primitive.createTextInput, search: primitive.createSearchInput, secret: primitive.createSecretInput, number: primitive.createNumberInput, textarea: primitive.createTextArea };
     const block = factories[kind](options);
     if (block.control instanceof HTMLInputElement) {
@@ -373,7 +406,7 @@ export function createSearchInput(options: SearchInputOptions): Input { check(op
     node.classList.add('pui-search-navigation');
     node.append(iconElement('search'));
 } return control; }
-export function createSecretInput(options: InputOptions): Input { return inputControl(options, 'secret'); }
+export function createSecretInput(options: SecretInputOptions): Input { return inputControl(options, 'secret'); }
 export interface TextAreaOptions extends InputOptions { readonly purpose?: 'form' | 'document'; }
 export function createTextArea(options: TextAreaOptions): Input {
     check(options, [...inputOptionKeys, 'purpose']); finite(options.purpose, ['form', 'document'], 'text area purpose');

@@ -12,7 +12,7 @@ test('a non-revealable secret preserves the native field and short-form rhythm',
     const mounted = ui.mount(document.body, form);
     Reflect.set(window, 'secretPolicy', {field, mounted});
   });
-  const input = page.getByLabel('Login answer', {exact: true});
+  const input = page.getByLabel(/^Login answer/);
   await expect(input).toHaveAttribute('type', 'password');
   await expect(page.getByRole('button', {name: /^(Show|Hide)$/})).toHaveCount(0);
   const a = (await input.boundingBox())!, b = (await page.getByRole('button', {name: 'Continue', exact: true}).boundingBox())!;
@@ -27,6 +27,7 @@ test('a non-revealable secret preserves the native field and short-form rhythm',
   await page.evaluate(() => Reflect.get(window, 'secretPolicy').field.reset(''));
   await expect(input).toHaveAttribute('type', 'password');
   await expect(input).toHaveValue('');
+  expect(await input.evaluate(node => (node as HTMLInputElement).required)).toBe(true);
   await page.evaluate(() => {const f = Reflect.get(window, 'secretPolicy'); f.field.reset('Secret to scrub'); f.mounted.destroy();});
   expect(await retained!.evaluate(node => (node as HTMLInputElement).value)).toBe('');
 });
@@ -56,13 +57,13 @@ test('secret reveal policy accepts only a construction boolean and has no update
   const result = await page.evaluate(async () => {
     const ui = await import('../src/index.js'), errors: string[] = [];
     for (const value of ['false', 0, null, document.body]) {
-      try {Reflect.get(ui, 'createSecretInput')({label: 'Invalid', revealable: value});}
+      try {Reflect.apply(ui.createSecretInput, undefined, [{label: 'Invalid', revealable: value}]);}
       catch (error) {errors.push(String(error));}
     }
     const field = Reflect.get(ui, 'createSecretInput')({label: 'Locked policy', revealable: false});
     try {Reflect.apply(field.update, field, [{label: 'Locked policy', revealable: true}]);}
     catch (error) {errors.push(String(error));}
-    try {Reflect.get(ui, 'createTextInput')({label: 'Plain input', revealable: false});}
+    try {Reflect.apply(ui.createTextInput, undefined, [{label: 'Plain input', revealable: false}]);}
     catch (error) {errors.push(String(error));}
     field.destroy();
     return errors;
@@ -70,4 +71,17 @@ test('secret reveal policy accepts only a construction boolean and has no update
   expect(result).toHaveLength(6);
   for (const error of result.slice(0, 4)) expect(error).toMatch(/boolean/);
   for (const error of result.slice(4)) expect(error).toContain('revealable');
+});
+
+test('the public secret exhibit exposes both supported construction policies', async ({page}) => {
+  await page.goto('/?item=secret-input&theme=light&state=normal');
+  const preview = page.locator('.gallery-preview');
+  await expect(preview.getByRole('button', {name: 'Show', exact: true})).toHaveCount(1);
+  const answer = preview.getByLabel('Secret sign-in answer', {exact: true});
+  await expect(answer).toHaveAttribute('type', 'password');
+  await answer.fill('An editable demonstration answer');
+  await expect(answer).toHaveValue('An editable demonstration answer');
+  await preview.getByRole('button', {name: 'Show', exact: true}).click();
+  await expect(preview.getByLabel('API key', {exact: true})).toHaveAttribute('type', 'text');
+  await expect(answer).toHaveAttribute('type', 'password');
 });
