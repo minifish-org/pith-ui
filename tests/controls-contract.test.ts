@@ -37,6 +37,8 @@ const mounted = mount(host,view,{appearance:'system'}); mounted.setAppearance('d
 
 test('constrained declarations reject visual options, raw nodes, invalid modes and internal handles', () => {
   const cases = [
+    "createButton({label:'Save',context:'link'});",
+    "createConfirmDialog({title:'Confirm',content:createText({text:'Body'}),message:'Second body',onConfirm:()=>({ok:true})});",
     "createButton({label:'Save',density:'compact'});",
     "createButton({label:'Save',appearance:'secondary'});",
     "createButton({label:'Save',style:{padding:4}});",
@@ -46,6 +48,9 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
     "createSelect({label:'Provider',options:[],multiple:true});",
     "createSelect({label:'Provider',options:[],values:[]});",
     "createListSelect({label:'Models',options:[],size:7});",
+    "createSelect({label:'Models',options:[],purpose:'catalog'});",
+    "createTextArea({label:'Notes',rows:3});",
+    "createSecretTextArea({label:'Environment',purpose:'document'});",
     "createListSelect({label:'Models',multiple:true,options:[],value:'a'});",
     "createIcon({name:'invented-icon'});",
     "createIcon({name:'file',size:'small'});",
@@ -61,13 +66,15 @@ test('constrained declarations reject visual options, raw nodes, invalid modes a
     "createBreadcrumb({label:'Location',items:[],fontSize:12});",
     "createStep({number:1,title:'Connect',description:'Provider',fontWeight:600});",
     "createIconButton({label:'Send',icon:'arrow',context:'tiny'});",
+    "createImage({purpose:'intro',label:'Logo',source:'/logo.svg',width:48});",
+    "createImage({purpose:'brand',label:'Logo',source:'/logo.svg',compactSource:'/small.svg'});",
     "createButton({label:'Save'}).element;",
     "createTextInput({label:'Name'}).control;",
     "createDialog({title:'Details'}).body;",
     "createPopover({label:'Details',content:createText({text:'Safe'})}).panel;",
     "createListSelect({label:'Models',multiple:true,options:[]}).reset('a');",
   ];
-  const imports = "import {createButton,createTextInput,createSelect,createListSelect,createIcon,createStack,createDialog,createPopover,createConfirmDialog,createMenu,createText,createContentColumn,createSurface,createToolbar,createGrid,createBreadcrumb,createStep,createIconButton} from './index.js';\n";
+  const imports = "import {createButton,createTextInput,createSelect,createListSelect,createIcon,createStack,createDialog,createPopover,createConfirmDialog,createMenu,createText,createContentColumn,createSurface,createToolbar,createGrid,createBreadcrumb,createStep,createIconButton,createImage,createTextArea,createSecretTextArea} from './index.js';\n";
   // Each case is independently checked, so an unrelated missing import cannot
   // accidentally satisfy an expected declaration rejection.
   assert.deepEqual(diagnostics(imports), []);
