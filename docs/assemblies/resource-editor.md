@@ -96,6 +96,7 @@ does not change the original button presentation or disable Cancel.
 | Initial `content` / `name` | Initializes the draft once. Existing resources and new instructions have no Name input, so `read().name` is empty. |
 | `update(next)` | Accepts only the same workspace ID/path, resource kind and resource path; never replaces draft values or field nodes. |
 | `editable` / `workspaceBusy` | Makes native fields read-only and disables Save/Delete. `disabled` blocks actions independently. |
+| `saveDisabled` | Projects the current host/workspace availability onto Save and submission only. It leaves Delete, Cancel, the native field's editing mode and the draft unchanged. |
 | Local save pending | Survives availability snapshots, blocks a second submission and disables Delete. Cancel remains available. |
 | `error` omitted from a snapshot | Leaves the current write feedback intact. An explicit empty string clears it. |
 | `fail(message)` | Reports a resource editor write error; in a loading opening, it reports the separate frame error. |
@@ -107,6 +108,18 @@ the same controls, input composition, focus and selection. A failed callback or
 rejected promise retains the draft and displays its error. A successful callback
 closes only the still-current opening. A close invalidates the presentation of
 late outcomes; it never cancels, retries or replays the business write.
+
+The complete Desk assembly retains the editor's original workspace ID and its
+latest metadata. On every `workspace.updateAvailability(...)`, it updates
+`saveDisabled` from host `busy` or membership of that original workspace in
+`workspaces`; a missing workspace ID uses the original active-scope fallback.
+Unrelated workspace runs, global model availability and the currently selected
+conversation do not disable this resource's Save. Clearing the matching run or
+host busy state restores Save. Keep this projection separate from
+`editable` / `workspaceBusy`: those fields describe the editor opening and
+must not turn an already open draft read-only or disable Delete on a later
+availability snapshot. Reapply the projection when the editor metadata or an
+asynchronous write error changes, and retire it with that editor's opening.
 
 For asynchronous reads, create `mountResourceLoading(...)` first. Retain an
 application generation token and check both that token and `loading.isOpen()`
@@ -168,6 +181,7 @@ are harmless.
 npx tsc --noEmit
 npx playwright test tests/parts-resource-editor.spec.ts
 npx playwright test tests/parts-resource-composition.spec.ts
+npx playwright test tests/parts-desk.spec.ts
 ```
 
 The regression compares the actual old `createApplication().resources` editor

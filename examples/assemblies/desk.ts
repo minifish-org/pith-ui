@@ -111,6 +111,7 @@ export function mountDesk(mount: HTMLElement,options: DeskOptions = {}) {
   const compactDisabled = () => !!availability.busy || !!availability.active || working || !activeId || !currentMessages.length;
   const syncFrame = () => {frameState = {...frameState,availability,compactDisabled: compactDisabled()};frame.update(frameState);};
   const syncFailure = () => failure.update({...failureState,disabled: !!availability.busy || (failureState.workspaceId ? !!availability.workspaces?.includes(failureState.workspaceId) : !!availability.active)});
+  let syncResourceEditor = () => {};
   const syncComposer = () => composer.updateComposer({...composerState,model: {...composerModel,disabled: composerModel.disabled || !!availability.global || !!availability.busy}});
   function openEditor(slot: 'message'|'queue',initial: TextEditorState & {value: string},actions: Parameters<typeof composeTextEditor>[1] = {}) {
     let state = initial;
@@ -130,7 +131,7 @@ export function mountDesk(mount: HTMLElement,options: DeskOptions = {}) {
     updateConversation(state: Readonly<ConversationBodyState>) {if (disposed) return;if (state.id !== activeId) {viewer.close();runtime.resetCosts();ledger.clear();}activeId = state.id;currentMessages = state.messages;working = state.working;reader.update(state);welcome.update({...welcomeState,hidden: !!state.messages.length});syncFrame();},
     updateWelcome(state: Readonly<WelcomeState>) {if (!disposed) {welcomeState = state;welcome.update({...state,hidden: !!currentMessages.length});}},
     updateMessageAvailability(state: typeof messageAvailability) {if (!disposed) {messageAvailability = {...state};reader.updateAvailability(state);}},
-    updateAvailability(state: Readonly<DeskAvailability>) {if (!disposed) {availability = state;composer.updateAvailability(state);syncComposer();syncFailure();syncFrame();artifacts.update({...artifactsState,disabled: !!artifactsState.disabled || !!state.busy || state.conversations?.includes(artifactsState.ownerId)},artifactsCallbacks);}},
+    updateAvailability(state: Readonly<DeskAvailability>) {if (!disposed) {availability = state;composer.updateAvailability(state);syncComposer();syncFailure();syncResourceEditor();syncFrame();artifacts.update({...artifactsState,disabled: !!artifactsState.disabled || !!state.busy || state.conversations?.includes(artifactsState.ownerId)},artifactsCallbacks);}},
     updatePending: pending.update,updateApproval: approval.update,updateFailure(state: Readonly<Parameters<typeof composeTaskFailure>[0]>) {if (!disposed) {failureState = state;syncFailure();}},updateRuntime: runtime.update,updateTiming: runtime.updateTiming,
     updateNotices: notices.update,
     readCosts: runtime.readCosts,resetCosts() {if (!disposed) {runtime.resetCosts();ledger.clear();}},
@@ -160,7 +161,14 @@ export function mountDesk(mount: HTMLElement,options: DeskOptions = {}) {
   const resources = {
     open(state: Parameters<typeof composeResourcesInventory>[0],actions: Parameters<typeof composeResourcesInventory>[1] = {}) {return opening('resources',onClose => composeResourcesInventory(state,{...actions,onClose}),local => local.open(),actions.onClose);},
     openEditorLoading(state: Parameters<typeof composeResourceLoading>[0],actions: Parameters<typeof composeResourceLoading>[1] = {}) {return opening('feature',onClose => composeResourceLoading(state,{...actions,onClose}),local => local.open(),actions.onClose);},
-    openEditor(state: Parameters<typeof composeResourceEditor>[0],actions: Parameters<typeof composeResourceEditor>[1] = {}) {return opening('feature',onClose => composeResourceEditor(state,{...actions,onClose}),local => local.open(),actions.onClose);},
+    openEditor(state: Parameters<typeof composeResourceEditor>[0],actions: Parameters<typeof composeResourceEditor>[1] = {}) {
+      let current = state,local: ReturnType<typeof composeResourceEditor>;
+      const project = (value: typeof state) => ({...value,saveDisabled: !!availability.busy || (value.workspaceId ? !!availability.workspaces?.includes(value.workspaceId) : !!availability.active)});
+      const sync = () => {if (local?.isOpen()) local.update(project(current));};
+      local = opening('feature',onClose => composeResourceEditor(project(state),{...actions,onClose() {if (syncResourceEditor === sync) syncResourceEditor = () => {};onClose();}}),value => value.open(),actions.onClose);
+      if (local.isOpen()) syncResourceEditor = sync;
+      return {...local,update(next: typeof state) {if (local.isOpen()) {current = next;sync();}},fail(message: string) {if (local.isOpen()) {current = {...current,error: message};local.fail(message);}}};
+    },
   };
   const files = {
     updateArtifacts(state: ArtifactsState,actions: ArtifactsCallbacks) {if (!disposed) {artifactsState = state;artifactsCallbacks = actions;artifacts.update({...state,disabled: !!state.disabled || !!availability.busy || availability.conversations?.includes(state.ownerId)},actions);}},

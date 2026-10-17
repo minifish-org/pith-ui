@@ -130,7 +130,11 @@ idle conversation remains editable while another conversation runs. Global
 model selection and Compact retain their original constraints. Task recovery
 uses its current workspace ID against running workspaces, falling back to the
 active scope when that ID is absent; host busy also disables Continue.
-Settings and Diagnostics are not gated by that recovery scope. Message action
+Settings and Diagnostics are not gated by that recovery scope. An open resource
+editor projects that same workspace/active fallback only onto Save and its
+submit guard; changing runtime availability preserves the existing Delete,
+Cancel, editable fields, native nodes and unsaved selection. Its opening owns
+the projection until replacement or disposal. Message action
 availability remains the separate `updateMessageAvailability` snapshot;
 global/active running state does not invent a prohibition on historical copies.
 The old copy controller's busy option affects its pending/restoration state,

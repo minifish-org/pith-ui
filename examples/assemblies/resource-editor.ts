@@ -19,6 +19,8 @@ export interface ResourceState {
   readonly workspaceBusy: boolean;
   readonly error?: string;
   readonly disabled?: boolean;
+  /** Current host/workspace availability gates saving without changing the draft's editing mode or Delete. */
+  readonly saveDisabled?: boolean;
 }
 export interface ResourceDraft {name: string; content: string}
 export interface ResourceTarget {readonly workspaceId: string; readonly kind: ResourceKind; readonly name: string; readonly path: string}
@@ -84,11 +86,12 @@ export function composeResourceEditor(initial: Readonly<ResourceState>, callback
     state = next;
     const readOnly = !next.editable || next.workspaceBusy;
     const disabled = !!next.disabled || readOnly;
+    const saveDisabled = disabled || !!next.saveDisabled;
     content.update({readOnly}); name?.update({readOnly});
     if (next.error !== undefined) feedback.update({message: next.error, tone: 'error'});
-    save?.update({label: 'Save', variant: 'primary', disabled, pending: form.isPending()});
+    save?.update({label: 'Save', variant: 'primary', disabled: saveDisabled, pending: form.isPending()});
     remove?.update({label: 'Delete resource', variant: 'danger', disabled, pending: form.isPending()});
-    form.update({disabled});
+    form.update({disabled: saveDisabled});
   }
   function release(): void {
     if (!alive) return;
