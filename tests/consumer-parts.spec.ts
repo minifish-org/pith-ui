@@ -78,9 +78,9 @@ test('URL constraints block submission and secret reset restores masking',async(
 });
 
 test('explicit prompt reset clears an earlier submission error',async({page})=>{
-  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const prompt=u.createPromptInput({label:'Message',value:'Draft',onSubmit:async()=>({ok:false,error:'Could not send'})});u.mount(document.body,prompt);Object.assign(window,{prompt});});
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const prompt=u.createPromptInput({label:'Message',value:'Draft',onSubmit:async()=>({ok:false,error:'Could not send'})});u.mount(document.body,prompt);Object.assign(window,{promptControl:prompt});});
   await page.getByRole('textbox',{name:'Message',exact:true}).press('Enter');await expect(page.getByText('Could not send',{exact:true})).toBeVisible();
-  await page.evaluate(()=>Reflect.get(window,'prompt').reset('Other draft'));await expect(page.getByText('Could not send',{exact:true})).not.toBeVisible();
+  await page.evaluate(()=>Reflect.get(window,'promptControl').reset('Other draft'));await expect(page.getByText('Could not send',{exact:true})).not.toBeVisible();
 });
 
 test('form validation and submission reset are semantic ports without replacing a draft',async({page})=>{
@@ -112,5 +112,10 @@ test('submit availability can leave a read-only draft selectable',async({page})=
 
 test('reading empty content stays separate from searchable reading items',async({page})=>{
   await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const reader=u.createReadingArea({label:'Reading',identity:'empty',items:[],empty:createEmpty(u)});function createEmpty(u:typeof import('../src/index.js')){return u.createText({text:'Welcome phrase'});}u.mount(document.body,reader);reader.find();});
-  await page.getByRole('searchbox',{name:'Find in this conversation',exact:true}).fill('Welcome phrase');await expect(page.locator('[data-find-count]')).toContainText('0 / 0');
+  await page.getByRole('searchbox',{name:'Find in this conversation',exact:true}).fill('Welcome phrase');await expect(page.locator('[data-find-count]')).toContainText('No matches');
+});
+
+test('prompt insertion can separate a reference at the current selection',async({page})=>{
+  await page.goto('/tests/fixture.html');await page.evaluate(async()=>{const u=await import('../src/index.js');const input=u.createPromptInput({label:'Message',value:'beforeafter'});u.mount(document.body,input);Object.assign(window,{promptControl:input});const node=document.querySelector('textarea')!;node.setSelectionRange(6,6);});
+  await page.evaluate(()=>Reflect.get(window,'promptControl').insert('`/path with spaces`',{separate:true}));await expect(page.getByRole('textbox',{name:'Message'})).toHaveValue('before `/path with spaces` after');
 });
