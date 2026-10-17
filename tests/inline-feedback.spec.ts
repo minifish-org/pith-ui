@@ -55,3 +55,23 @@ test('ordinary feedback retains its notice surface when no presentation is selec
   await expect(notice).toHaveCSS('padding', '12px');
   await expect(notice).toHaveCSS('border-top-width', '1px');
 });
+
+test('form dialog status keeps the source body color while a failed phase remains an error', async ({page}) => {
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async () => {
+    const ui = await import('../src/index.js');
+    const status = ui.createNotice({presentation: 'inline', message: 'Simulated provider verification.', tone: 'info'});
+    const owner = ui.mount(document.body, ui.createText({text: 'Host'}));
+    const dialog = ui.createDialog({purpose: 'form', title: 'Provider sign-in', content: ui.createStack({context: 'flow', children: [status]})});
+    owner.attach(dialog); dialog.open();
+    Reflect.set(window, 'formStatus', status);
+  });
+  const dialog = page.getByRole('dialog', {name: 'Provider sign-in', exact: true});
+  const status = dialog.getByRole('status');
+  await expect(status).toHaveCSS('font-size', '14px');
+  await expect(status).toHaveCSS('line-height', '21px');
+  await expect(status).toHaveCSS('color', 'rgb(31, 37, 48)');
+  await page.evaluate(() => Reflect.get(window, 'formStatus').update({message: 'Provider sign-in failed.', tone: 'error'}));
+  await expect(dialog.getByRole('alert')).toHaveCSS('font-size', '14px');
+  await expect(dialog.getByRole('alert')).toHaveCSS('color', 'rgb(180, 35, 24)');
+});
