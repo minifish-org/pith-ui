@@ -7,7 +7,7 @@ interface CopyHarness {
 declare global {interface Window {copyPartsHarness: CopyHarness}}
 
 async function setup(page: Page, icon = false): Promise<void> {
-  await page.goto('/tests/fixture.html');await page.clock.install();
+  await page.goto('/tests/fixture.html');await page.clock.install({time: new Date('2026-01-01T00:00:00Z')});await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z'));
   await page.evaluate(async icon => {
     const path = '/src/parts/index.ts',p = await import(path),h = {calls: 0,argumentCounts: [],errors: []} as unknown as CopyHarness;
     h.announcement = p.createAnnouncementPart({message: ''});
@@ -34,7 +34,8 @@ test('icon-only copy keeps the existing check glyph and restores its original ic
   await setup(page,true);const button = page.getByRole('button',{name: 'Copy message',exact: true}),before = await button.locator('svg').evaluate(svg => svg.outerHTML);
   await button.click();await page.evaluate(() => window.copyPartsHarness.resolve!({ok: true}));
   const copied = page.getByRole('button',{name: 'Message copied',exact: true});
-  expect(await copied.locator('svg').evaluate(svg => svg.outerHTML)).toBe(await page.evaluate(async () => {const path = '/src/dom.ts',{icon} = await import(path);return icon('check');}));
+  // Compare the parsed old glyph, including the browser's SVG serialization.
+  expect(await copied.locator('svg').evaluate(svg => svg.outerHTML)).toBe(await page.evaluate(async () => {const path = '/src/dom.ts',{iconElement} = await import(path);return iconElement('check').outerHTML;}));
   await page.evaluate(() => window.copyPartsHarness.button.update({label: 'Copy message',variant: 'quiet-icon',icon: 'copy',title: 'Copy message',disabled: true}));
   await expect(copied.locator('svg')).toHaveCount(1);await expect(copied).toHaveAttribute('title','Message copied');await page.clock.fastForward(1500);
   const restored = page.getByRole('button',{name: 'Copy message',exact: true});expect(await restored.locator('svg').evaluate(svg => svg.outerHTML)).toBe(before);await expect(restored).toBeDisabled();

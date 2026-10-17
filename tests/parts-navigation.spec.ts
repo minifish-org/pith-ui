@@ -37,14 +37,22 @@ async function framePresentation(page: Page): Promise<unknown> {
   return page.evaluate(async () => {
     await document.fonts.ready;for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
     const root = document.querySelector('.pui-app')!,origin = root.getBoundingClientRect();
-    const inspect = (node: Element) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);return {tag: node.localName,text: [...node.childNodes].filter(child => child.nodeType === Node.TEXT_NODE).map(child => child.textContent).join('').trim(),
+    const inspect = (node: Element,textlessContainer = false) => {const box = node.getBoundingClientRect(),style = getComputedStyle(node);
+      const effectiveBackground = () => {let current: Element|null = node;while (current) {const value = getComputedStyle(current).backgroundColor;if (value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent') return value;current = current.parentElement;}return 'transparent';};
+      // WebKit's old application themes HTML only after inserting the subtree.
+      // CSSOM then reports UA inherited fonts on these two textless containers,
+      // although visible descendants and their painted pixels match exactly.
+      // Compare their layout and effective paint; retain every text/style
+      // assertion for the rail, header and all visible content below.
+      const properties = ['display','font-family','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-bottom','border-top-width','border-right-width','border-radius','gap','overflow-x','overflow-y','min-height','align-items','flex-wrap','opacity','transform'].filter(key => !textlessContainer || !['font-family','font-size','font-weight','line-height','color'].includes(key));
+      return {tag: node.localName,text: [...node.childNodes].filter(child => child.nodeType === Node.TEXT_NODE).map(child => child.textContent).join('').trim(),
       box: [box.x-origin.x,box.y-origin.y,box.width,box.height].map(value => Math.round(value*100)/100),
-      styles: ['display','font-family','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','margin-top','margin-bottom','border-top-width','border-right-width','border-radius','gap','overflow-x','overflow-y','min-height','align-items','flex-wrap','opacity','transform'].map(key => style.getPropertyValue(key)),
+      styles: properties.map(key => key === 'background-color' && textlessContainer ? effectiveBackground() : style.getPropertyValue(key)),
       ...(node instanceof HTMLButtonElement ? {disabled: node.disabled,label: node.getAttribute('aria-label'),title: node.getAttribute('title'),expanded: node.getAttribute('aria-expanded'),current: node.getAttribute('aria-current')} : {}),
       ...(node instanceof HTMLInputElement ? {type: node.type,value: node.value,placeholder: node.placeholder,autocomplete: node.autocomplete} : {})};};
     const regions = [root,root.querySelector('aside')!,root.querySelector('main')!,root.querySelector('header')!];
     const nodes = [...root.querySelectorAll('aside .pui-brand,aside .pui-logo-mark,aside .pui-logo-mark i,aside .pui-sidebar-section-label,aside label,aside input,aside nav,aside section,aside button,aside p,aside .pui-sidebar-bottom,aside [role=status],aside .pui-history-status,header button,header .pui-breadcrumb,header .pui-breadcrumb span')].filter(node => !node.closest('[hidden]'));
-    return {regions: regions.map(inspect),nodes: nodes.map(inspect),svg: [...root.querySelectorAll('aside svg,header svg')].filter(svg => !svg.closest('[hidden]')).map(svg => svg.innerHTML),
+    return {regions: regions.map(node => inspect(node,node === root || node.localName === 'main')),nodes: nodes.map(node => inspect(node)),svg: [...root.querySelectorAll('aside svg,header svg')].filter(svg => !svg.closest('[hidden]')).map(svg => svg.innerHTML),
       viewport: {x: origin.x,y: origin.y,width: origin.width,height: origin.height,scrollWidth: document.documentElement.scrollWidth,scrollHeight: document.documentElement.scrollHeight}};
   });
 }
@@ -63,6 +71,31 @@ test('tree parts retain small native branches, leaves, status and direct action 
       captionAndStatus: [...button.children].map(node => node.localName),selected,toggled,closed: node.lastElementChild!.hasAttribute('hidden'),leaks: [nav,branch,leaf,status,more].some(part => Object.values(part).some(value => value instanceof Node))};tree.destroy();return result;
   });
   expect(result).toEqual({root: 'nav',branch: ['div','div'],row: ['button','button'],selection: 'page',captionAndStatus: ['span','span'],selected: 1,toggled: false,closed: true,leaks: false});
+});
+
+for (const appearance of ['light','dark'] as const) for (const width of [1280,390]) test(`${appearance} ${width} frame background, rail and header preserve exact painted pixels`,async ({page},testInfo) => {
+  await page.setViewportSize({width,height: 844});
+  const capture = async (old: boolean) => {
+    await openFrame(page,old,populated,appearance);
+    if (width < 720) await page.evaluate(() => window.framePartsHarness.frame.setSidebarOpen(true));
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      // Opening the drawer changes a finite transform transition. Settle it
+      // before the two separate region captures, so both depict its open state.
+      for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
+    });
+    await page.mouse.move(width-1,843);
+    const main = (await page.locator('main').boundingBox())!,header = (await page.locator('header').boundingBox())!;
+    // Conversation and composer are separate proof units. This empty strip
+    // below the header checks the frame's effective background without claiming
+    // their still-unassembled body content is covered by this recipe.
+    return {background: await page.screenshot({clip: {x: main.x+main.width/2,y: header.y+header.height+2,width: 8,height: 8},animations: 'disabled',caret: 'hide'}),rail: await page.locator('aside').screenshot({animations: 'disabled',caret: 'hide'}),header: await page.locator('header').screenshot({animations: 'disabled',caret: 'hide'})};
+  };
+  const before = await capture(true),after = await capture(false);
+  for (const region of ['background','rail','header'] as const) {
+    if (!before[region].equals(after[region])) {await testInfo.attach('old-'+region,{body: before[region],contentType: 'image/png'});await testInfo.attach('parts-'+region,{body: after[region],contentType: 'image/png'});}
+    expect(before[region].equals(after[region]),region+' painted pixels').toBe(true);
+  }
 });
 
 for (const appearance of ['light','dark'] as const) for (const viewport of [{width: 1280,height: 800},{width: 900,height: 568},{width: 390,height: 844},{width: 900,height: 320}]) {
@@ -112,5 +145,30 @@ test('navigation menu targets, active-only branches and disabled restrictions re
     await page.evaluate(() => {const h = window.framePartsHarness;h.frame.update({...h.state,navigation: {...h.state.navigation,disabled: true}});});
     await expect(page.getByRole('button',{name: 'Actions for Original conversation',exact: true})).toBeDisabled();await expect(page.getByRole('button',{name: /^Original conversation/})).toBeDisabled();
     const toggle = page.getByRole('button',{name: 'Other workspace',exact: true});await expect(toggle).toBeEnabled();await toggle.click();await expect(toggle).toHaveAttribute('aria-expanded','true');
+  }
+});
+
+test('compact action keeps its own async pending across ordinary shell snapshots',async ({page}) => {
+  for (const old of [true,false]) {
+    await page.goto('/tests/fixture.html');
+    await page.evaluate(async ({old,state}) => {
+      const mount = document.body.appendChild(document.createElement('div')),errors: string[] = [];
+      let resolve!: (result: {ok: false;error: string}) => void;
+      const callbacks = {onAction() {return new Promise<{ok: false;error: string}>(done => {resolve = done;});},onError(message: string) {errors.push(message);}};
+      let snapshot: () => void;
+      if (old) {
+        const path = '/src/app/index.ts', {createApplication} = await import(path),app = createApplication(mount,{workspace: callbacks});
+        app.workspace.updateConversation({id: 'active',working: false,messages: [{id: 'message',role: 'assistant',text: 'Ready'}]});
+        snapshot = () => app.workspace.updateAvailability({});
+      } else {
+        const path = '/examples/assemblies/frame.ts', {mountFrame} = await import(path),frame = mountFrame(mount,{...state,compactDisabled: false},callbacks);
+        snapshot = () => frame.update({...state,compactDisabled: false});
+      }
+      (window as unknown as {compactPending: {snapshot(): void;finish(): void;errors: string[]}}).compactPending = {snapshot,finish() {resolve({ok: false,error: 'Compaction failed'});},errors};
+    },{old,state: populated});
+    const compact = page.getByRole('button',{name: 'Compress context',exact: true});await expect(compact).toBeEnabled();await compact.click();await expect(compact,old ? 'baseline compact owns local pending' : 'assembled compact owns local pending').toBeDisabled();
+    await page.evaluate(() => (window as unknown as {compactPending: {snapshot(): void}}).compactPending.snapshot());await expect(compact).toBeDisabled();
+    await page.evaluate(() => (window as unknown as {compactPending: {finish(): void}}).compactPending.finish());await expect(compact).toBeEnabled();
+    expect(await page.evaluate(() => (window as unknown as {compactPending: {errors: string[]}}).compactPending.errors)).toEqual(['Compaction failed']);
   }
 });

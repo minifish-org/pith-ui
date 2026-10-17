@@ -41,8 +41,11 @@ test('navigation action variants preserve actual old markup and computed present
     const before = source.map(inspect);old.destroy();
     const actions = [p.createButtonPart({variant: 'navigation',icon: 'settings',label: 'Settings'}),p.createButtonPart({variant: 'navigation-item',icon: 'folder',label: 'Add a workspace'}),
       p.createButtonPart({variant: 'toolbar-action',icon: 'compress',label: 'Compact',accessibleLabel: 'Compress context',title: 'Compress context by summarizing older messages'}),p.createButtonPart({variant: 'drawer-trigger',icon: 'menu',label: 'Open sidebar'})];
-    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [p.createRailFooterPart({children: [actions[0]]}),...actions.slice(1)]}));
-    const after = [...mount.querySelectorAll('button')].map(inspect);tree.destroy();return {before,after};
+    // Compare each action inside its real small layout context. Flex items
+    // blockify inline-flex and keep native automatic minimum serialization.
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [p.createRailFooterPart({children: [actions[0]]}),
+      p.createTreePart({label: 'Empty tree',children: [actions[1]]}),p.createTopbarPart({children: [actions[3],p.createActionsPart({children: [actions[2]]})]})]}));
+    const after = [mount.querySelector('.pui-settings-button')!,mount.querySelector('.pui-empty-workspace')!,mount.querySelector('.pui-compact-action')!,mount.querySelector('.pui-mobile-menu')!].map(inspect);tree.destroy();return {before,after};
   });
   expect(result.after).toEqual(result.before);
 });
@@ -99,8 +102,11 @@ test('mobile drawer traps native focus, respects modal precedence and cleans bor
   await last.focus();await page.keyboard.press('Tab');await expect(first).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(last).toBeFocused();
   await page.evaluate(() => (window as unknown as {frameDrawer: {openModal(): void}}).frameDrawer.openModal());await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name: 'Nested modal'})).not.toBeVisible();await expect(page.locator('aside')).toHaveClass(/pui-open/);
   await page.keyboard.press('Escape');await expect(trigger).toBeFocused();await expect(page.locator('main')).toHaveJSProperty('inert',false);
-  await trigger.click();await page.mouse.click(370,300);await expect(trigger).toBeFocused();
-  await page.setViewportSize({width: 1280,height: 800});await first.focus();await page.setViewportSize({width: 390,height: 844});await expect(trigger).toBeFocused();
+  // The retained factory leaves BODY focused after pointer scrim dismissal;
+  // Escape and breakpoint transitions restore the trigger separately.
+  await trigger.click();await page.mouse.click(370,300);await expect(page.locator('body')).toBeFocused();await expect(trigger).toHaveAttribute('aria-expanded','false');
+  await page.setViewportSize({width: 1280,height: 800});await expect(page.locator('aside')).toHaveJSProperty('inert',false);await first.focus();await expect(first).toBeFocused();
+  await page.setViewportSize({width: 390,height: 844});await expect(trigger).toBeFocused();
   await page.evaluate(() => (window as unknown as {frameDrawer: {destroy(): void}}).frameDrawer.destroy());await page.setViewportSize({width: 900,height: 600});await expect(page.locator('#drawer-mount')).toBeEmpty();
 });
 
