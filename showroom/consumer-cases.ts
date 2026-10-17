@@ -29,11 +29,13 @@ const reader=createReadingArea({label:'Reading',identity:'document-1',items:[{ke
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 mount(host,createDropArea({content:createText({text:'Drop here'}),onDrop:input=>console.log(input.files.length)}));`,
         mount(c) { return show([createDropArea({ disabled: c.state === 'disabled', content: createText({ text: 'Drop files here · 只显示演示日志，不上传文件。' }), onDrop: input => c.log('演示拖放：' + input.files.map(file => file.name).join(', ')) })]); } },
-    { id: 'document', title: '文本文档与分页 Document', layer: 'components', category: '展示', description: '安全显示普通文本、Markdown 或差异。大内容按 UTF-8 边界分页，不改变文件接受上限；不包含下载、文件身份或原生动作。', related: ['markdown', 'diff', 'reading-area'],
+    { id: 'document', title: '文本文档与分页 Document', layer: 'components', category: '展示', description: '安全显示普通文本、Markdown 或差异。错误只在原文档表面显示纯文本；清除错误后恢复内容并从第一页开始。大内容按 UTF-8 边界分页，不改变文件接受上限；不包含下载、文件身份或原生动作。', states: ['normal', 'error'], related: ['markdown', 'diff', 'reading-area'],
         code: `import {mount,createDocument} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
-mount(host,createDocument({text:'A large document',format:'text'}));`,
-        mount() { return show([createDocument({ text: '中文 English 🐟 /workspace/file.ts\n'.repeat(16000), format: 'text' })]); } },
+const preview=createDocument({text:'A large document',format:'text'});mount(host,preview);
+preview.update({text:'A large document',format:'text',error:'Could not read the file.'});
+preview.update({text:'A large document',format:'text'}); // Restore without the error.`,
+        mount(c) { return show([createDocument({ text: '中文 English 🐟 /workspace/file.ts\n'.repeat(16000), format: 'text', error: c.state === 'error' ? 'Simulated failure: could not read the file. Switch to normal to restore its content.' : undefined })]); } },
     { id: 'url-input', title: '网址输入 URL input', layer: 'components', category: '输入', description: '固定网址语义，使用浏览器原生 URL 校验；不开放任意输入类型或样式。', states: ['normal', 'disabled', 'error'], related: ['text-input', 'form'], code: `import {mount,createURLInput,createForm} from 'pith-ui';
 const host=document.getElementById('app');if(!(host instanceof HTMLElement))throw new Error('Missing mount');
 const endpoint=createURLInput({label:'Endpoint',required:true,value:'https://example.com'});mount(host,createForm({children:[endpoint],onSubmit:async()=>({ok:true})}));`, mount(c) { return show([createURLInput({ label: 'Endpoint', value: 'https://example.com/v1', disabled: c.state === 'disabled', error: c.state === 'error' ? 'Simulated invalid endpoint.' : '' })]); } },

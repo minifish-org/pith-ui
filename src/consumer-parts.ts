@@ -348,13 +348,16 @@ export interface DocumentState {
     readonly text: string;
     readonly format: 'text' | 'markdown' | 'diff';
     readonly disabled?: boolean;
+    readonly error?: string;
 }
 export interface DocumentOptions extends DocumentState {
     readonly onCopy?: (text: string) => ActionResult | Promise<ActionResult>;
     readonly onError?: (message: string) => void;
 }
 export function createDocument(options: DocumentOptions): Control<DocumentState> {
-    checkOptions(options, ['text', 'format', 'disabled', 'onCopy', 'onError']);
+    checkOptions(options, ['text', 'format', 'disabled', 'error', 'onCopy', 'onError']);
+    if (options.error !== undefined && typeof options.error !== 'string')
+        throw new Error('Expected a document error string.');
     let state: DocumentState = options, destroyed = false;
     const node = element('div', 'pui-document'), status = element('span', 'pui-sr-only');
     status.setAttribute('role', 'status');
@@ -363,11 +366,12 @@ export function createDocument(options: DocumentOptions): Control<DocumentState>
             options.onError?.(value instanceof Error ? value.message : String(value));
     };
     const makeFeedback = () => createCopyFeedback({ status, isDisabled: () => !!state.disabled || destroyed, onError: error });
-    let feedback = makeFeedback();
-    const page = createPagedPreview({ container: node, text: options.text, kind: options.format, onCopyCode: (text, button) => {
-            if (!options.onCopy || state.disabled)
+    let feedback: ReturnType<typeof createCopyFeedback> | undefined;
+    let page: ReturnType<typeof createPagedPreview> | undefined, errorText: Text | undefined;
+    const makePage = () => createPagedPreview({ container: node, text: state.text, kind: state.format, onCopyCode: (text, button) => {
+            if (!options.onCopy || state.disabled || state.error || destroyed)
                 return;
-            void feedback.copy(button, async () => {
+            void (feedback ??= makeFeedback()).copy(button, async () => {
                 const result = await options.onCopy!(text);
                 if (!result.ok)
                     throw new Error(result.error);
@@ -379,23 +383,41 @@ export function createDocument(options: DocumentOptions): Control<DocumentState>
             button.disabled = controlDisabled(button, !!state.disabled);
         }
     };
+    const retire = () => { feedback?.destroy(); feedback = undefined; status.textContent = ''; sync(); };
     const clicked = () => sync();
     node.addEventListener('click', clicked);
     const update = (next: Readonly<DocumentState>) => {
-        checkOptions(next, ['text', 'format', 'disabled']);
+        checkOptions(next, ['text', 'format', 'disabled', 'error']);
         if (!['text', 'markdown', 'diff'].includes(next.format))
             throw new Error('Unknown document format.');
-        if (next.text !== state.text || next.format !== state.format) {
-            feedback.destroy();
-            feedback = makeFeedback();
-        }
+        if (next.error !== undefined && typeof next.error !== 'string')
+            throw new Error('Expected a document error string.');
+        if (next.text !== state.text || next.format !== state.format || (next.error ?? '') !== (state.error ?? ''))
+            retire();
         state = next;
-        page.update({ text: next.text, kind: next.format });
-        node.append(status);
+        if (next.error) {
+            page?.destroy();
+            page = undefined;
+            if (!errorText) {
+                errorText = document.createTextNode(next.error);
+                node.replaceChildren(errorText);
+            }
+            else if (errorText.data !== next.error)
+                errorText.data = next.error;
+        }
+        else {
+            errorText = undefined;
+            if (page)
+                page.update({ text: next.text, kind: next.format });
+            else
+                page = makePage();
+        }
+        if (status.parentNode !== node)
+            node.append(status);
         sync();
     };
-    update({ text: options.text, format: options.format, disabled: options.disabled });
-    return ownControl({ element: node, update, destroy() { destroyed = true; feedback.destroy(); page.destroy(); node.removeEventListener('click', clicked); } });
+    update({ text: options.text, format: options.format, disabled: options.disabled, error: options.error });
+    return ownControl({ element: node, update, destroy() { destroyed = true; retire(); page?.destroy(); node.removeEventListener('click', clicked); } }, [], undefined, retire);
 }
 export type SecretTextAreaOptions = import('./controls.js').InputOptions & { readonly purpose?:'form'; };
 export function createSecretTextArea(options: SecretTextAreaOptions): import('./controls.js').Input {
