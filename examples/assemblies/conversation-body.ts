@@ -3,7 +3,7 @@
 import {
   createReadingColumnPart,createBubblePart,createTextPart,createReadingNotePart,createMarkdownPart,
   createTimestampPart,createMessageFooterPart,createMessageActionsPart,createButtonPart,createCopyButtonPart,createAnnouncementPart,createWorkingIndicatorPart,
-  type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,type AnnouncementPart,type ReadingColumnPart,
+  type Part,type ButtonPart,type LayoutPart,type TimestampPart,type WorkingIndicatorPart,type AnnouncementPart,type ReadingColumnPart,type LocalContentLink,
 } from '../../src/parts/index.js';
 import {composeToolGroup,type ToolGroupComposition} from './tool-disclosures.js';
 import {createConversationImageScope,type ImageReference,type GalleryCallbacks,type ImageGalleryComposition} from './conversation-images.js';
@@ -12,8 +12,8 @@ export interface BodyMessage {id: string;role: string;text: string;timestamp?: n
 export interface ConversationBodyState {id: string;messages: readonly BodyMessage[];working: boolean;folds?: ReadonlyMap<string,boolean>}
 export interface MessageAction {action: 'copy'|'edit'|'branch';messageId: string;branchKey?: string}
 export type BodyResult = void|{ok: true}|{ok: false;error: string};
-export interface ConversationBodyCallbacks extends GalleryCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;onError?(message: string): void}
-export interface ConversationBodyComposition {readonly part: ReadingColumnPart;readonly announcement: AnnouncementPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;destroy(): void}
+export interface ConversationBodyCallbacks extends GalleryCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;resolveLocalLink?(href: string,conversationId: string): LocalContentLink|null;onLocalFile?(target: Readonly<LocalContentLink>): BodyResult|Promise<BodyResult>;onError?(message: string): void}
+export interface ConversationBodyComposition {readonly part: ReadingColumnPart;readonly announcement: AnnouncementPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;prune(ids: readonly string[]): void;destroy(): void}
 interface Entry {part: Part;kind: string;update(message: BodyMessage): void;availability(): void}
 
 /** Reading column -> caller-keyed bubbles/notes and optional working indicator.
@@ -42,7 +42,7 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
       try {void Promise.resolve(invoke(action)).then(result => {if (result && !result.ok) fail(result.error);},error => fail(error instanceof Error ? error.message : String(error)));}
       catch (error) {fail(error instanceof Error ? error.message : String(error));}
     };
-    const text = kind === 'user' ? createTextPart({role: 'bubble',text: message.text,hidden: !message.text}) : createMarkdownPart({text: message.text,onCopyCode: callbacks.onCopyCode,onError: fail});
+    const text = kind === 'user' ? createTextPart({role: 'bubble',text: message.text,hidden: !message.text}) : createMarkdownPart({text: message.text,onCopyCode: callbacks.onCopyCode,resolveLocalLink: href => callbacks.resolveLocalLink?.(href,id) ?? null,onLocalFile: callbacks.onLocalFile,onError: fail});
     let interrupted: ReturnType<typeof createTextPart>|undefined;
     const bubble = createBubblePart({key: message.id,speaker: kind === 'user' ? 'self' : 'agent',children: []});
     const availability = () => {for (const [action,button] of buttons) {
@@ -100,5 +100,5 @@ export function composeConversationBody(initial: Readonly<ConversationBodyState>
     root.replace(children);root.update({hidden: !state.messages.length});
   };
   update(initial);
-  return {part: root,announcement,update,updateAvailability(state) {if (alive) {disabled = {...state};for (const entry of entries.values()) entry.availability();}},destroy() {root.destroy();}};
+  return {part: root,announcement,update,updateAvailability(state) {if (alive) {disabled = {...state};for (const entry of entries.values()) entry.availability();}},prune(ids) {if (alive) {const keep = new Set(ids);for (const key of savedFolds.keys()) if (!keep.has(key)) savedFolds.delete(key);}},destroy() {root.destroy();}};
 }
