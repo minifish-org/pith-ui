@@ -71,8 +71,8 @@ test('artifacts visibility, Escape, outside focus and related dialog exclusions 
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,error: 'Unavailable'};h.session.update(h.state);});await expect(page.locator('.pui-artifacts-toggle')).toHaveAttribute('aria-label','Conversation files unavailable');await expect(page.locator('.pui-artifacts-count')).toHaveText('!');
 });
 
-test('keyed artifact metadata preserves native rows, text selection, scroll and busy action ownership', async ({page,browserName}) => {
-  const pendingVisibility: boolean[] = [];
+test('keyed artifact metadata preserves native rows, text selection, scroll and busy action ownership', async ({page}) => {
+  const pendingVisibility: Array<{open: boolean;focusInside: boolean}> = [];
 
     await setup(page,'light','many');await open(page);
     await page.evaluate(() => {const h = window.artifactsHarness,row = document.querySelector('.pui-file-card')!,path = row.querySelector('.pui-file-path')!,range = document.createRange();range.setStart(path.firstChild!,0);range.setEnd(path.firstChild!,10);getSelection()!.removeAllRanges();getSelection()!.addRange(range);h.selection = getSelection()!.toString();h.row = row;document.querySelector('.pui-artifacts-content')!.scrollTop = 140;h.state = {...h.state,loading: true,files: h.state.files.map((file,index) => index ? file : {...file,name: 'Updated result.md'}),disabled: true};h.session.update(h.state);});
@@ -80,26 +80,25 @@ test('keyed artifact metadata preserves native rows, text selection, scroll and 
     for (const button of await page.locator('.pui-file-card').first().getByRole('button').all()) await expect(button).toBeDisabled();await expect(page.locator('.pui-artifacts-toggle')).toBeEnabled();
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,disabled: false};h.session.update(h.state);document.querySelector('.pui-artifacts-content')!.scrollTop = 0;});
     const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Open',exact: true}).click();
-    // Chromium blurs a focused button when it becomes disabled; the existing
-    // focus-out surface then closes. WebKit retains panel focus. Availability
-    // is still a native control state, even while the section is hidden.
-    await expect(row.locator('button').nth(1)).toBeDisabled();await expect(row.locator('button').nth(2)).toBeEnabled();await settleNativeFocus(page);pendingVisibility.push(await page.evaluate(() => window.artifactsHarness.session.isOpen()));
+    // Native focus after disabling a button varies by platform. The inspector
+    // follows the actual focus boundary; its controls retain their state while hidden.
+    await expect(row.locator('button').nth(1)).toBeDisabled();await expect(row.locator('button').nth(2)).toBeEnabled();await settleNativeFocus(page);pendingVisibility.push(await page.evaluate(() => ({open: window.artifactsHarness.session.isOpen(),focusInside: !!document.querySelector('.pui-artifacts-control')?.contains(document.activeElement)})));
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,disabled: false};h.session.update(h.state);});await expect(row.locator('button').nth(1)).toBeDisabled();
     await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));await expect(row.locator('button').nth(1)).toBeEnabled();
     expect(await page.evaluate(() => window.artifactsHarness.calls)).toEqual([{action: 'open',target: {owner: {kind: 'artifact',id: 'original-owner'},name: 'Updated result.md',path: '/workspace/reports/result-0.md'},frozen: true,argc: 2}]);
-  expect(pendingVisibility).toEqual([browserName === 'webkit']);
+  expect(pendingVisibility[0]!.open).toBe(pendingVisibility[0]!.focusInside);
 });
 
-test('copy mode snapshots keep a pending native button and capture the original action and announcement', async ({page,browserName}) => {
-  const pendingVisibility: boolean[] = [];
+test('copy mode snapshots keep a pending native button and capture the original action and announcement', async ({page}) => {
+  const pendingVisibility: Array<{open: boolean;focusInside: boolean}> = [];
 
-    await setup(page);await open(page);const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Copy file',exact: true}).click();await expect(row.locator('button').nth(2)).toBeEnabled();await settleNativeFocus(page);pendingVisibility.push(await page.evaluate(() => window.artifactsHarness.session.isOpen()));
+    await setup(page);await open(page);const row = page.locator('.pui-file-card').first();await row.getByRole('button',{name: 'Copy file',exact: true}).click();await expect(row.locator('button').nth(2)).toBeEnabled();await settleNativeFocus(page);pendingVisibility.push(await page.evaluate(() => ({open: window.artifactsHarness.session.isOpen(),focusInside: !!document.querySelector('.pui-artifacts-control')?.contains(document.activeElement)})));
     await page.evaluate(() => {const h = window.artifactsHarness;h.button = document.querySelector('.pui-file-card')!.querySelectorAll('button')[3];h.state = {...h.state,copyMode: 'path'};h.session.update(h.state);});
     expect(await page.evaluate(() => window.artifactsHarness.button === document.querySelector('.pui-file-card')!.querySelectorAll('button')[3])).toBe(true);
     await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));await expect(row.locator('button').nth(3)).toHaveText('Copied');await expect(row.locator('button').nth(3)).toHaveAttribute('aria-label','File copied.');
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,loading: true};h.session.update(h.state);});await expect(row.locator('button').nth(3)).toHaveText('Copied');await expect(row.locator('button').nth(3)).toHaveAttribute('aria-label','File copied.');
     expect(await page.evaluate(() => window.artifactsHarness.calls.map(call => call.action))).toEqual(['copy']);
-  expect(pendingVisibility).toEqual([browserName === 'webkit']);
+  expect(pendingVisibility[0]!.open).toBe(pendingVisibility[0]!.focusInside);
 });
 
 test('owner switches, row removal and parent disposal retire pending artifact outcomes', async ({page}) => {
@@ -111,7 +110,7 @@ test('owner switches, row removal and parent disposal retire pending artifact ou
     await page.evaluate(() => {const h = window.artifactsHarness;h.tree.destroy();h.tree.destroy();h.resolve!({ok: false,error: 'Disposed error'});h.session.update({...h.state,files: [{name: 'Late.md',path: '/late.md'}]});h.session.close();h.session.destroy();});await expect(page.locator('.pui-artifacts-panel')).toHaveCount(0);expect(await page.evaluate(() => window.artifactsHarness.session.isOpen())).toBe(false);
 });
 
-test('the frozen old removed-copy defect is recorded while genuine part disposal prevents stale control revival', async ({page}) => {
+test('removed copy results cannot revive the artifact control after row disposal', async ({page}) => {
 
     await setup(page);await open(page);await page.locator('.pui-file-card').first().getByRole('button',{name: 'Copy file',exact: true}).click();
     await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,files: []};h.session.update(h.state);});await expect(page.locator('.pui-artifacts-control')).toBeHidden();
