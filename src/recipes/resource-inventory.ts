@@ -99,11 +99,11 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
     if (signature === row.signature) return;
     const use = row.target.kind !== 'instructions' ? createButtonPart({variant: 'secondary',label: 'Use',onAction: () => current() ? callbacks.onUse?.(row.target) : undefined,onError: fail}) : undefined;
     const edit = createButtonPart({variant: 'secondary',label: 'View / edit',onAction: () => current() ? callbacks.onEdit?.(row.target) : undefined,onError: fail});
-    row.actions.replace(use ? [use,edit] : [edit]); row.signature = signature;
+    row.actions.replace([...row.fileButtons,...(use ? [use,edit] : [edit])]); row.signature = signature;
   }
   function createRow(kind: ResourceKind,entry: ResourceEntry): Row {
     const name = createTextPart({role: 'strong',text: entry.name}),path = createTextPart({role: 'path',text: entry.path});
-    const detail = kind !== 'instructions' ? createTextPart({role: 'paragraph',text: entry.description ?? ''}) : undefined;
+    const detail = kind === 'template' ? createTextPart({role: 'paragraph',text: entry.description ?? ''}) : undefined;
     const info = createCardBodyPart({children: detail ? [name,detail,path] : [name,path]});
     const actions = createCompactActionsPart({children: []});
     const fileButtons: ButtonPart[] = [];
@@ -112,8 +112,7 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
     if (kind !== 'template') for (const [action,label] of [['open','Open'],['reveal','Reveal']] as const) fileButtons.push(createButtonPart({variant: 'secondary',label,onAction() {
       if (callbacks.onFileAction) fileTask.run(() => callbacks.onFileAction!(action,row.target));
     }}));
-    const files = fileButtons.length ? createCompactActionsPart({children: fileButtons}) : undefined;
-    const summary = [kind !== 'template' ? createIconPart({name: 'file'}) : undefined,info,files,actions].filter((part): part is NonNullable<typeof part> => !!part);
+    const summary = [kind !== 'template' ? createIconPart({name: 'file'}) : undefined,info,actions].filter((part): part is NonNullable<typeof part> => !!part);
     const content = kind === 'instructions' ? createPreformattedPart({text: entry.content ?? ''}) : undefined;
     const preview = content ? createDisclosurePart({purpose: 'preview',title: 'View instructions',children: [content]}) : undefined;
     const part = preview ? createGroupedCardPart({summary,children: [preview]}) : createCardPart({children: summary});

@@ -6,6 +6,8 @@ handles are indexed in [API.md](../../API.md).
 
 The composer owns the draft, caret, IME and drop/paste interaction. The host owns sending, stopping, queue decisions and resolving native reference paths. Availability snapshots do not reset drafts.
 
+Permission descriptions remain available to assistive technology without a persistent footer. Permission selection, confirmations and actionable attachment feedback stay visible.
+
 ```ts
 import {mountParts} from 'pith-ui';
 import {composeComposer} from 'pith-ui/recipes';

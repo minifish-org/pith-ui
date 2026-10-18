@@ -98,7 +98,7 @@ export function createBreadcrumbPart(options: BreadcrumbPartState): BreadcrumbPa
   const ancestor = document.createElement('span'), current = document.createElement('span'); current.className = 'pui-breadcrumb-current';
   const chevron = iconElement('chevron'); chevron.classList.add('pui-breadcrumb-chevron'); node.append(iconElement('folder'), ancestor, chevron, current);
   let part: BreadcrumbPart;
-  const update = (state: Readonly<BreadcrumbPartState>) => {assertOptions(state, ['ancestor', 'current'], 'breadcrumb state'); if (typeof state.ancestor !== 'string' || typeof state.current !== 'string') throw new TypeError('Breadcrumbs must be text.'); if (!isPartAlive(part)) return; if (ancestor.textContent !== state.ancestor) ancestor.textContent = state.ancestor; if (current.textContent !== state.current) current.textContent = state.current;};
+  const update = (state: Readonly<BreadcrumbPartState>) => {assertOptions(state, ['ancestor', 'current'], 'breadcrumb state'); if (typeof state.ancestor !== 'string' || typeof state.current !== 'string') throw new TypeError('Breadcrumbs must be text.'); if (!isPartAlive(part)) return; if (ancestor.textContent !== state.ancestor) ancestor.textContent = state.ancestor; if (current.textContent !== state.current) current.textContent = state.current;ancestor.title = state.ancestor;current.title = state.current;};
   assertOptions(options, ['ancestor', 'current'], 'breadcrumb'); if (typeof options.ancestor !== 'string' || typeof options.current !== 'string') throw new TypeError('Breadcrumbs must be text.');
   part = createOwnedPart<Omit<BreadcrumbPart, keyof Part>>(node, {update}); update(options); return part;
 }

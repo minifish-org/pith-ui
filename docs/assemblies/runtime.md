@@ -6,6 +6,8 @@ handles are indexed in [API.md](../../API.md).
 
 Supply display state and data callbacks from the host. Ordinary snapshots retain local interaction state. Explicit reset/target changes and parent disposal retire pending UI outcomes; business requests and write validity remain host responsibilities.
 
+The host supplies the compact summary, including any directly visible speed. Optional provider, model and thinking effort appear in the expanded details alongside usage and cost.
+
 ```ts
 import {composeRuntime, type RuntimeState} from 'pith-ui/recipes';
 import {createStackPart, mountParts, type Part} from 'pith-ui';

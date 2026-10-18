@@ -1,6 +1,6 @@
 {
   "name": "pith-ui",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Native TypeScript parts and shared region recipes with fixed presentation.",
   "type": "module",
   "license": "AGPL-3.0-only",

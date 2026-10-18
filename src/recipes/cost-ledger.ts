@@ -5,11 +5,15 @@ export interface CostRequestDisplay {id: string;purpose: string;status: string;p
 export interface CostLedgerState {unknownRequests: number;requests: readonly CostRequestDisplay[]|null}
 export interface CostSummaryDisplay {unavailable?: boolean;requestCount: number;unknownRequests: number;runRequests: number;runUnknownRequests: number;total: number;runTotal: number}
 export interface CostLedgerComposition {readonly part: ContentViewportPart;update(report: Readonly<CostLedgerState>): void;loading(): void;setError(message: string): void;clear(): void;destroy(): void}
-const currency = new Intl.NumberFormat('en-US',{style: 'currency',currency: 'USD',minimumFractionDigits: 2,maximumFractionDigits: 6}),numbers = new Intl.NumberFormat(),n = (value: number) => numbers.format(value || 0);
+const currency = new Intl.NumberFormat('en-US',{style: 'currency',currency: 'USD',minimumFractionDigits: 2,maximumFractionDigits: 2});
+const smallCurrency = new Intl.NumberFormat('en-US',{style: 'currency',currency: 'USD',maximumSignificantDigits: 3});
+const numbers = new Intl.NumberFormat('en-US',{notation: 'compact',maximumSignificantDigits: 3});
+const n = (value: number) => numbers.format(value || 0).replace('K','k');
+const money = (value: number) => (value !== 0 && Math.abs(value) < 0.01 ? smallCurrency : currency).format(value);
 /** Local business formatter retained beside the Desk assembly, not a UI export. */
 export function formatCost(cost: CostSummaryDisplay|undefined,latestTask = false): string {
   if (cost?.unavailable) return 'Unavailable';const count = latestTask ? cost?.runRequests : cost?.requestCount,unknown = (latestTask ? cost?.runUnknownRequests : cost?.unknownRequests) || 0;
-  if (!count) return 'Not recorded';if (count === unknown) return 'Unknown';return `~${currency.format((latestTask ? cost?.runTotal : cost?.total) || 0)}${unknown ? ' (partial)' : ''}`;
+  if (!count) return 'Not recorded';if (count === unknown) return 'Unknown';return `~${money((latestTask ? cost?.runTotal : cost?.total) || 0)}${unknown ? ' (partial)' : ''}`;
 }
 interface Row {part: TableRowPart;purpose: TextPart;identity: TextPart;time: TextPart;details: DisclosurePart;source: TextPart;price: PreformattedPart;reasoning: TextPart}
 export function composeCostLedger(): CostLedgerComposition {
@@ -28,7 +32,7 @@ export function composeCostLedger(): CostLedgerComposition {
     for (const request of requests) {
       let row = rows.get(request.id);if (!row) {row = createRow();rows.set(request.id,row);}
       row.purpose.update({text: `${request.purpose} · ${request.status}`});row.identity.update({text: `${request.providerName || request.provider} / ${request.modelName || request.model}`});row.time.update({text: request.time});row.source.update({text: request.source});row.price.update({text: JSON.stringify(request.price,null,2) ?? ''});row.reasoning.update({text: request.usage.reasoning == null ? '' : `Reasoning tokens: ${n(request.usage.reasoning)} (included in output)`,hidden: request.usage.reasoning == null});
-      row.part.update({cells: [undefined,n(request.usage.input),n(request.usage.output),`${n(request.usage.cacheRead)} / ${n(request.usage.cacheWrite)}`,request.known ? currency.format(request.usage.cost.total) : 'Unknown']});ordered.push(row.part);
+      row.part.update({cells: [undefined,n(request.usage.input),n(request.usage.output),`${n(request.usage.cacheRead)} / ${n(request.usage.cacheWrite)}`,request.known ? money(request.usage.cost.total) : 'Unknown']});ordered.push(row.part);
     }
     table.replaceRows(ordered);for (const key of rows.keys()) if (!current.has(key)) rows.delete(key);
   };

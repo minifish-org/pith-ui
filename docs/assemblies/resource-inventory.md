@@ -6,6 +6,8 @@ handles are indexed in [API.md](../../API.md).
 
 Callbacks retain the displayed workspace and resource target. The host owns fetching and decides whether creation and writes are available. Keyed snapshots preserve rows, selection and disclosure state.
 
+Skill rows display the name, path and actions without the description. The supplied description remains in inventory state. Narrow layouts place actions below the metadata so names retain readable width.
+
 ```ts
 import {mountParts} from 'pith-ui';
 import {
