@@ -21,14 +21,10 @@ async function setup(page: Page): Promise<void> {
     // Desk has one application scope on HTML. Remove the generic fixture's
     // extra BODY scope, whose own light fallback would mask the old app theme.
     document.body.classList.remove('pui');
-    const partsPath = '/src/parts/index.ts',editorPath = '/examples/assemblies/resource-editor.ts',inventoryPath = '/examples/assemblies/resource-inventory.ts',appPath = '/src/app/index.ts';
-    const p = await import(partsPath),edit = await import(editorPath),resources = await import(inventoryPath),{createApplication} = await import(appPath);
+    const partsPath = '/src/parts/index.ts',editorPath = '/examples/assemblies/resource-editor.ts',inventoryPath = '/examples/assemblies/resource-inventory.ts';
+    const p = await import(partsPath),edit = await import(editorPath),resources = await import(inventoryPath);
     const state = {workspaceId: 'w1',workspacePath: '/demo/project',path: '/demo/project/.pi/skills/inspect/SKILL.md',kind: 'skill',name: 'inspect',content: '# Original content 中文',editable: true,workspaceBusy: false};
-    const baselineMount = document.body.appendChild(document.createElement('div')),baseline = createApplication(baselineMount,{appearance: 'dark'});
-    baseline.resources.openEditor(state);
-    const oldDialog = baselineMount.querySelector('dialog[open]')!,oldField = oldDialog.querySelector('textarea')!;
-    const expectedDark = {dialog: getComputedStyle(oldDialog).backgroundColor,field: getComputedStyle(oldField).backgroundColor,text: getComputedStyle(oldField).color};
-    baseline.destroy();baselineMount.remove();
+    const expectedDark = {dialog: 'rgb(34, 37, 42)',field: 'rgb(23, 25, 28)',text: 'rgb(240, 241, 243)'};
     const h = {closed: {editor: 0,inventory: 0,loading: 0},saves: 0,refreshes: 0,creates: 0,releases: [],expectedDark} as unknown as CompositionHarness;
     h.editor = edit.composeResourceEditor(state,{onSubmit() {h.saves++;return new Promise<Result>(resolve => h.releases.push(resolve));},onClose() {h.closed.editor++;}});
     h.inventory = resources.composeResourcesInventory({workspace: {id: 'w1',name: 'Original workspace',path: '/demo/project'},instructions: [],skills: [],templates: [],diagnostics: [],canCreateInstructions: true},
@@ -60,7 +56,7 @@ test('resource compositions share one theme owner and live appearance without re
   await field.evaluate(node => {const field = node as HTMLTextAreaElement;field.focus();field.setSelectionRange(2,14);window.resourceCompositionHarness.field = field;});
   await page.evaluate(() => window.resourceCompositionHarness.mounted.setAppearance('dark'));
   expect(await page.evaluate(() => {const h = window.resourceCompositionHarness,root = document.querySelector('#resource-composition-root')!,dialog = root.querySelector('dialog[open]')!,field = dialog.querySelector('textarea')!;return {colors: {dialog: getComputedStyle(dialog).backgroundColor,field: getComputedStyle(field).backgroundColor,text: getComputedStyle(field).color},expected: h.expectedDark,sameField: field === h.field,draft: field.value,selection: [field.selectionStart,field.selectionEnd],focus: document.activeElement === field,themeOwners: root.querySelectorAll('[data-appearance]').length + Number(root.hasAttribute('data-appearance')),directDialogs: [...root.firstElementChild!.children].every(node => node.localName === 'dialog')};})).toMatchObject({sameField: true,draft: '# Unsaved shared draft 中文',selection: [2,14],focus: true,themeOwners: 1,directDialogs: true});
-  expect(await page.evaluate(() => {const h = window.resourceCompositionHarness,dialog = document.querySelector('dialog[open]')!,field = dialog.querySelector('textarea')!;return {dialog: getComputedStyle(dialog).backgroundColor,field: getComputedStyle(field).backgroundColor,text: getComputedStyle(field).color};})).toEqual(await page.evaluate(() => window.resourceCompositionHarness.expectedDark));
+  expect(await page.evaluate(() => {const dialog = document.querySelector('dialog[open]')!,field = dialog.querySelector('textarea')!;return {dialog: getComputedStyle(dialog).backgroundColor,field: getComputedStyle(field).backgroundColor,text: getComputedStyle(field).color};})).toEqual(await page.evaluate(() => window.resourceCompositionHarness.expectedDark));
   await page.evaluate(() => {const h = window.resourceCompositionHarness;h.editor.close();h.inventory.open();});
   await expect(page.getByRole('dialog',{name: 'Workspace resources',exact: true})).toBeVisible();
   expect(await page.getByRole('dialog').evaluate(node => getComputedStyle(node).backgroundColor)).toBe(await page.evaluate(() => window.resourceCompositionHarness.expectedDark.dialog));

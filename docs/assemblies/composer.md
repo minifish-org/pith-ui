@@ -1,12 +1,14 @@
 # Composer and file drop (08, 10b)
 
-Executable source: [`composer.ts`](../../examples/assemblies/composer.ts). This is a consumer blueprint copied into Desk, not a package scene API. Attachments use the separate [thumbnail recipe](attachments.md); permission control and description use [their recipe](permission-control.md).
+Import this region from `pith-ui/recipes`. Its single implementation is
+[`src/recipes/composer.ts`](../../src/recipes/composer.ts); public state, callbacks and
+handles are indexed in [API.md](../../API.md).
 
-The native part tree is `ComposerRegion(ComposerPanels(caller panels), Form(composer: Feedback(error), ThumbnailStrip, FilePicker(images), MessageInput, InputToolbar(InputContext(attach Button, permission CompactSelect), InputActions(model Button, inline CompactSelect, send/stop Button))), ContextNote(attachment-guidance), ContextNote(permission))`. Empty layout parts add only the original DIVs; controls retain native TEXTAREA, INPUT, SELECT, LABEL and BUTTON roots. The library fixes fonts, spacing, colors, growth, icons, image formats and drag feedback.
+The composer owns the draft, caret, IME and drop/paste interaction. The host owns sending, stopping, queue decisions and resolving native reference paths. Availability snapshots do not reset drafts.
 
 ```ts
 import {mountParts} from 'pith-ui';
-import {composeComposer} from '../../examples/assemblies/composer.js';
+import {composeComposer} from 'pith-ui/recipes';
 const composer = composeComposer({action: 'send'}, {
   onSubmit: async text => ({ok: true}),
   onStop: async () => ({ok: true}),
@@ -22,10 +24,7 @@ composer.insertReferences(['README.md']);
 owner.destroy();
 ```
 
-Ordinary `updateComposer` projections never replace the field or draft/selection. Action remains send/queue/stop until explicitly changed. Model and thinking projections only change when supplied. The native form owns the send/stop operation; only its action button becomes pending. A successful submit keeps the draft until Desk explicitly resets it. Reset invalidates earlier operation results, clears errors and resizes the same native field. Enter submits only send/queue, Shift+Enter inserts a newline, composition Enter stays native, and Enter never activates Stop.
-
-`readDraft`, `resetDraft`, `focusComposer`, `pickImages`, `updateAttachments`, `updatePermission`, `updateImageGuidance`, `updateAvailability`, `setDropPending` and `receiveNativeDrop` are local orchestration functions. Image chooser and paste callbacks carry files. The local recipe filters drop files using the old four MIME formats and extension fallback, routes unresolved files/URI lists separately, and owns CommonMark reference formatting. `receiveNativeDrop` passes incoming native pointer coordinates to the Form part for hit testing; coordinates are event data, not configurable geometry. Pending reference resolution suppresses references while still allowing dropped image files. Disabled/read-only/busy states suppress drag highlighting and drop work; attachment availability separately controls image admission and chooser activation.
-
-The parent region's disposal marks the recipe terminal before children retire pending operations and native listeners. Destroy the one shared Frame owner in Desk; standalone consumers destroy the returned mount owner. Repeated destruction and late state/results stay inert.
-
-Validated by `tests/parts-composer.spec.ts` and `tests/parts-composer-drop.spec.ts` against actual baseline application calls in Chromium and WebKit, including both themes, 390/900 widths, single thinking choice, caret/draft retention, successful single submission, pending reset, file re-selection, paste, mixed drop routing, native hit testing and disposal.
+Attach the region to the existing ownership tree before opening it. See
+[APP.md](../../APP.md) for shared mounting and dialog slots. The current
+interaction assertions run in Chromium and WebKit in
+[`parts-composer.spec.ts`](../../tests/parts-composer.spec.ts).

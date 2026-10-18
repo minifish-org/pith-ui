@@ -12,26 +12,19 @@ const labels = ['Add skill', 'Save settings', 'Save connection', 'Theme choice']
 async function mountActions(page: Page, theme: 'light' | 'dark'): Promise<void> {
   await page.goto('/tests/fixture.html');
   await page.evaluate(async theme => {
-    const {setAppearance} = await import('../src/theme.js');
-    const {createResourcesPanel} = await import('../src/files/panels.js');
-    const {createSettingsPanel, createMCPConnectionsPanel} = await import('../src/forms/panels.js');
-    const {createSelect} = await import('../src/primitives.js');
-    setAppearance(document.body, theme);
-    const start = document.createElement('button'); start.textContent = 'Keyboard start';
+    const path = '/src/parts/index.ts', p = await import(path);
+    const start = document.createElement('button'); start.textContent = 'Keyboard start';document.body.append(start);
     const calls = () => {window.actionStyleFixture.calls++; return {ok: true as const};};
-    const resources = createResourcesPanel({onCreate: calls});
-    resources.open('Style regression project');
-    resources.update({instructions: [], skills: [], templates: [], diagnostics: []});
-    const settingsState = {baseUrl: 'https://example.com/v1', hasApiKey: true, ready: true};
-    const settings = createSettingsPanel(settingsState, {onSubmit: calls});
-    const mcp = createMCPConnectionsPanel({}, {onSubmit: calls});
-    const choiceState = {label: 'Theme choice', options: [{value: 'system', label: 'System'}, {value: 'light', label: 'Light'}]};
-    const choice = createSelect(choiceState);
-    document.body.append(start, resources.element, settings.element, mcp.element, choice.element);
+    const resources = p.createButtonPart({label: 'Add skill',variant: 'secondary',onAction: calls});
+    const settings = p.createButtonPart({label: 'Save settings',variant: 'primary',onAction: calls});
+    const mcp = p.createButtonPart({label: 'Save connection',variant: 'primary',onAction: calls});
+    const choiceState = {label: 'Theme choice',options: [{value: 'system',label: 'System'},{value: 'light',label: 'Light'}]};
+    const choice = p.createSelectPart({...choiceState,purpose: 'preference'}),mount = document.body.appendChild(document.createElement('div'));
+    const tree = p.mountParts(mount,p.createStackPart({children: [resources,settings,mcp,choice]}),{appearance: theme});
     window.actionStyleFixture = {
       calls: 0,
-      setDisabled(disabled) {resources.setCreateDisabled(disabled); settings.update({...settingsState, disabled}); mcp.update({disabled}); choice.update({...choiceState, disabled});},
-      destroy() {resources.destroy(); settings.destroy(); mcp.destroy(); choice.destroy();},
+      setDisabled(disabled) {resources.update({label:'Add skill',variant:'secondary',disabled});settings.update({label:'Save settings',variant:'primary',disabled});mcp.update({label:'Save connection',variant:'primary',disabled}); choice.update({...choiceState, disabled});},
+      destroy() {tree.destroy();},
     };
   }, theme);
 }
@@ -48,12 +41,10 @@ for (const theme of ['light', 'dark'] as const) {
   test(`${theme}: native text, multiline and list fields retain their accepted disabled feedback`, async ({page}) => {
     await mountActions(page, theme);
     const opacity = await page.evaluate(async () => {
-      const {createTextInput, createTextArea, createSelect} = await import('../src/primitives.js');
-      const fields = [createTextInput({label: 'Native text', disabled: true}), createTextArea({label: 'Native multiline', disabled: true}),
-        createSelect({label: 'Native list', multiple: true, size: 3, disabled: true, options: [{value: 'one', label: 'One'}]})];
-      document.body.append(...fields.map(field => field.element));
-      const values = fields.map(field => ({disabled: field.control.disabled, opacity: getComputedStyle(field.control).opacity}));
-      fields.forEach(field => field.destroy());
+      const path = '/src/parts/index.ts', p = await import(path);
+      const fields=[p.createInputPart({label:'Native text',disabled:true}),p.createTextareaPart({label:'Native multiline',disabled:true}),p.createChoiceListPart({label:'Native list',disabled:true,options:[{value:'one',label:'One'}]})];
+      const mount=document.body.appendChild(document.createElement('div')),tree=p.mountParts(mount,p.createStackPart({children:fields}));
+      const values=[...mount.querySelectorAll<HTMLInputElement>('input,textarea,select')].map(field=>({disabled:field.disabled,opacity:getComputedStyle(field).opacity}));tree.destroy();
       return values;
     });
     expect(opacity).toEqual(Array.from({length: 3}, () => ({disabled: true, opacity: '0.5'})));

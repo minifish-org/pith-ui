@@ -21,9 +21,9 @@ const full: InventoryState = {...empty,canCreateInstructions: false,
   skills: [{name: 'inspect',path: '/demo/project/.pi/skills/inspect/SKILL.md',description: 'Inspect this workspace.'},{name: 'review',path: '/demo/project/.pi/skills/review/SKILL.md',description: 'Review the original changes.'}],
   templates: [{name: 'summarize',path: '/demo/project/.pi/prompts/summarize.md',description: 'Summarize the project.'}],diagnostics: ['One optional resource could not be loaded.','Preserve instructions inherited from the parent directory.']};
 
-async function openInventory(page: Page, old: boolean, state: InventoryState = full, appearance: 'light' | 'dark' = 'light', applicationContext = false): Promise<void> {
+async function openInventory(page: Page, state: InventoryState = full, appearance: 'light' | 'dark' = 'light', applicationContext = false): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old,state,appearance,applicationContext}) => {
+  await page.evaluate(async ({state,appearance,applicationContext}) => {
     document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const opener = document.body.appendChild(document.createElement('button')); opener.id = 'inventory-opener'; opener.textContent = 'Resources'; opener.focus();
     const mount = document.body.appendChild(document.createElement('div'));
@@ -34,48 +34,15 @@ async function openInventory(page: Page, old: boolean, state: InventoryState = f
     };
     const callbacks = {onRefresh: () => pending('refresh'),onCreate: (kind: Kind) => pending('create',kind),onUse: (target: Target) => pending('use',target),
       onEdit: (target: Target) => pending('edit',target),onFileAction: (action: 'open' | 'reveal',target: Target) => pending(action,target),onClose() {h.closed++;}};
-    if (old) {
-      const path = '/src/app/index.ts'; const {createApplication} = await import(path);
-      h.session = createApplication(mount,{appearance}).resources.open(state,callbacks);
-    } else {
+
       let recipeMount: HTMLElement = mount;
-      if (applicationContext) {
-        // Preserve the actual application parent, including WebKit's native
-        // automatic minimum serialization for fixed dialogs in a flex root.
-        const path = '/src/app/index.ts'; const {createApplication} = await import(path);
-        createApplication(mount,{appearance}); recipeMount = mount.querySelector<HTMLElement>('.pui-app')!;
-      }
       const path = '/examples/assemblies/resource-inventory.ts'; const {mountResourcesInventory} = await import(path);
       h.session = mountResourcesInventory(recipeMount,state,callbacks,{appearance});
-    }
     window.inventoryPartsHarness = h;
-  }, {old,state,appearance,applicationContext});
+  }, {state,appearance,applicationContext});
   await expect(page.getByRole('dialog',{name: 'Workspace resources',exact: true})).toBeVisible();
 }
 
-async function presentation(page: Page): Promise<unknown> {
-  return page.evaluate(async () => {
-    await document.fonts.ready;
-    for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
-    const dialog = document.querySelector('dialog[open]')!, origin = dialog.getBoundingClientRect();
-    const inspect = (node: Element) => {
-      const rect = node.getBoundingClientRect(),style = getComputedStyle(node);
-      return {tag: node.localName,text: [...node.childNodes].filter(child => child.nodeType === Node.TEXT_NODE).map(child => child.textContent).join('').trim(),
-        box: [rect.x - origin.x,rect.y - origin.y,rect.width,rect.height].map(value => Math.round(value * 100) / 100),
-        styles: ['display','font-family','font-size','font-weight','line-height','color','background-color','margin-top','margin-bottom','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-top-color','border-radius','gap','overflow-x','overflow-y','min-height','max-height','white-space','overflow-wrap','flex-wrap','flex','align-items'].map(key => style.getPropertyValue(key)),
-        ...(node instanceof HTMLButtonElement ? {disabled: node.disabled,label: node.getAttribute('aria-label'),type: node.type} : {}),
-        ...(node instanceof HTMLDetailsElement ? {open: node.open} : {})};
-    };
-    const selector = 'h2,h3,.pui-eyebrow,p,strong,.pui-file-path,button,section,article,details,summary,pre,.pui-file-info,.pui-file-card,.pui-file-actions,.pui-feature-toolbar';
-    const nodes = [...dialog.querySelectorAll(selector)].filter(node => !node.hasAttribute('hidden'));
-    return {dialog: inspect(dialog),classes: [...dialog.classList].sort(),nodes: nodes.map(inspect),svg: [...dialog.querySelectorAll('svg')].map(svg => svg.innerHTML),
-      sections: [...dialog.querySelectorAll('section')].map(section => [...section.children].map(child => child.localName)),
-      // The old action adapter's display:contents DIV adds no box or semantic
-      // grouping. A formal compact row can omit that neutral adapter wrapper.
-      cards: [...dialog.querySelectorAll('article')].map(card => [...card.children].flatMap(child => getComputedStyle(child).display === 'contents' ? [...child.children] : [child]).map(child => ({tag: child.localName,classes: [...child.classList].sort()}))),
-      overflow: [dialog.clientWidth,dialog.scrollWidth,dialog.clientHeight,dialog.scrollHeight]};
-  });
-}
 
 test('small collection containers retain native cards, literal text, intrinsic grouped header and opaque ownership', async ({page}) => {
   await page.goto('/tests/fixture.html');
@@ -122,20 +89,9 @@ test('rejected grouped-card composition leaves supplied free summary handles ali
   expect(result).toEqual({results: ['foreign','duplicate','owned','presentation'].map(invalid => ({invalid,rejected: true,reusable: true})),invalidTone: true,sectionReusable: true});
 });
 
-const cases = {full,empty,loading: {...empty,loading: true},busy: {...full,busy: true},error: {...empty,loading: true,error: 'Inventory read rejected'}};
-for (const appearance of ['light','dark'] as const) for (const [name,state] of Object.entries(cases)) test(`${appearance} resource inventory ${name} preserves actual application geometry and styles`, async ({page}) => {
-  await page.emulateMedia({colorScheme: appearance === 'light' ? 'dark' : 'light'});
-  await openInventory(page,true,state,appearance); await page.locator('details').evaluateAll(nodes => nodes.forEach(node => (node as HTMLDetailsElement).open = true)); const old = await presentation(page);
-  await openInventory(page,false,state,appearance,true); await page.locator('details').evaluateAll(nodes => nodes.forEach(node => (node as HTMLDetailsElement).open = true)); expect(await presentation(page)).toEqual(old);
-});
-
-for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`resource inventory ${viewport.width} preserves responsive cards and scrolling`, async ({page}) => {
-  await page.setViewportSize(viewport);await openInventory(page,true);await page.locator('details').evaluateAll(nodes => nodes.forEach(node => (node as HTMLDetailsElement).open = true));const old = await presentation(page);
-  await openInventory(page,false,full,'light',true);await page.locator('details').evaluateAll(nodes => nodes.forEach(node => (node as HTMLDetailsElement).open = true));expect(await presentation(page)).toEqual(old);
-});
 
 test('inventory metadata retains keyed instruction disclosure, native selection, scroll and unaffected row focus', async ({page}) => {
-  await openInventory(page,false);
+  await openInventory(page);
   await page.evaluate(() => {
     const dialog = document.querySelector<HTMLDialogElement>('dialog[open]')!,row = dialog.querySelector('.pui-resource-card')!,details = row.querySelector('details')!,pre = details.querySelector('pre')!;
     details.open = true;const focus = row.querySelector('button')!;focus.focus();pre.scrollTop = 120;dialog.scrollTop = 100;
@@ -147,14 +103,14 @@ test('inventory metadata retains keyed instruction disclosure, native selection,
 });
 
 test('inventory loading snapshots preserve rendered rows and original workspace ownership', async ({page}) => {
-  await openInventory(page,false);await page.evaluate(() => {const h = window.inventoryPartsHarness;h.session.update({...h.initial,workspace: {id: 'other',name: 'Other',path: '/other'},instructions: [],skills: [],templates: [],error: 'Wrong owner'});});
+  await openInventory(page);await page.evaluate(() => {const h = window.inventoryPartsHarness;h.session.update({...h.initial,workspace: {id: 'other',name: 'Other',path: '/other'},instructions: [],skills: [],templates: [],error: 'Wrong owner'});});
   await expect(page.getByText('inspect',{exact: true})).toBeVisible();await expect(page.locator('dialog [role=alert]')).not.toHaveText('Wrong owner');
   await page.evaluate(() => {const h = window.inventoryPartsHarness;h.session.update({...h.initial,loading: true});});await expect(page.getByText('inspect',{exact: true})).toBeVisible();
   expect(await page.evaluate(() => window.inventoryPartsHarness.session.read().workspace.id)).toBe('w1');
 });
 
 test('create and refresh callbacks preserve separate pending guards and error feedback', async ({page}) => {
-  await openInventory(page,false,empty);const refresh = page.getByRole('button',{name: 'Refresh',exact: true}),addSkill = page.getByRole('button',{name: 'Add skill',exact: true});
+  await openInventory(page,empty);const refresh = page.getByRole('button',{name: 'Refresh',exact: true}),addSkill = page.getByRole('button',{name: 'Add skill',exact: true});
   await refresh.click();await refresh.click();await expect(refresh).toBeEnabled();expect(await page.evaluate(() => window.inventoryPartsHarness.actions)).toEqual([{action: 'refresh'}]);
   await addSkill.click();await expect(addSkill).toBeDisabled();await expect(page.getByRole('button',{name: 'Add prompt template',exact: true})).toBeDisabled();await expect(page.getByRole('button',{name: 'Create AGENTS.md in this workspace',exact: true})).toBeDisabled();
   await page.evaluate(() => {const h = window.inventoryPartsHarness;h.session.update({...h.initial,busy: true});h.session.update({...h.initial,busy: false});});await expect(addSkill).toBeDisabled();
@@ -163,7 +119,7 @@ test('create and refresh callbacks preserve separate pending guards and error fe
 });
 
 test('resource row callbacks use current frozen targets while busy availability preserves view and use', async ({page}) => {
-  await openInventory(page,false);const row = page.locator('article.pui-file-card').filter({has: page.getByText('inspect',{exact: true})});
+  await openInventory(page);const row = page.locator('article.pui-file-card').filter({has: page.getByText('inspect',{exact: true})});
   await row.getByRole('button',{name: 'Open',exact: true}).click();await expect(row.getByRole('button',{name: 'Reveal',exact: true})).toBeDisabled();
   expect(await page.evaluate(() => window.inventoryPartsHarness.actions)).toEqual([{action: 'open',target: {workspaceId: 'w1',kind: 'skill',name: 'inspect',path: full.skills[0]!.path},frozen: true}]);
   await page.evaluate(() => window.inventoryPartsHarness.releases[0]!({ok: true}));
@@ -175,20 +131,19 @@ test('resource row callbacks use current frozen targets while busy availability 
 });
 
 test('every create action connects its original finite resource kind', async ({page}) => {
-  for (const old of [true,false]) {
-    await openInventory(page,old,empty);
+
+    await openInventory(page,empty);
     for (const [index,label] of ['Create AGENTS.md in this workspace','Add skill','Add prompt template'].entries()) {
       await page.getByRole('button',{name: label,exact: true}).click();
       await page.evaluate(index => window.inventoryPartsHarness.releases[index]!({ok: true}),index);
       await expect(page.getByRole('button',{name: label,exact: true})).toBeEnabled();
     }
     expect(await page.evaluate(() => window.inventoryPartsHarness.actions)).toEqual([{action: 'create',target: 'instructions'},{action: 'create',target: 'skill'},{action: 'create',target: 'template'}]);
-  }
 });
 
 test('inherited view, native reveal and template use connect the original row targets', async ({page}) => {
-  for (const old of [true,false]) {
-    await openInventory(page,old);
+
+    await openInventory(page);
     await page.locator('article.pui-resource-card').getByRole('button',{name: 'View / edit',exact: true}).click();
     await page.evaluate(() => window.inventoryPartsHarness.releases[0]!({ok: true}));
     await page.locator('article.pui-file-card').filter({has: page.getByText('inspect',{exact: true})}).getByRole('button',{name: 'Reveal',exact: true}).click();
@@ -199,11 +154,10 @@ test('inherited view, native reveal and template use connect the original row ta
       {action: 'reveal',target: {workspaceId: 'w1',kind: 'skill',name: 'inspect',path: full.skills[0]!.path},frozen: true},
       {action: 'use',target: {workspaceId: 'w1',kind: 'template',name: 'summarize',path: full.templates[0]!.path},frozen: true},
     ]);
-  }
 });
 
 test('removed rows and closed inventory discard late outcomes without replay and release once', async ({page}) => {
-  await openInventory(page,false);const row = page.locator('article.pui-file-card').filter({has: page.getByText('inspect',{exact: true})});await row.getByRole('button',{name: 'Use',exact: true}).click();
+  await openInventory(page);const row = page.locator('article.pui-file-card').filter({has: page.getByText('inspect',{exact: true})});await row.getByRole('button',{name: 'Use',exact: true}).click();
   await page.evaluate(() => {const h = window.inventoryPartsHarness;h.session.update({...h.initial,skills: h.initial.skills.slice(1)});h.releases[0]!({ok: false,error: 'Retired row error'});});await expect(page.locator('dialog [role=alert]')).not.toHaveText('Retired row error');
   await page.getByRole('button',{name: 'Refresh',exact: true}).click();await page.keyboard.press('Escape');await expect(page.locator('dialog')).toHaveCount(0);await expect(page.locator('#inventory-opener')).toBeFocused();
   await page.evaluate(() => {const h = window.inventoryPartsHarness;h.releases[1]!({ok: false,error: 'Retired refresh error'});h.session.fail('Late failure');h.session.update(h.initial);h.session.destroy();h.session.destroy();});

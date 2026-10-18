@@ -28,9 +28,11 @@ jobs:
           package-manager-cache: false
       - run: npm install --global npm@11.12.1
       - run: npm ci
-      - run: npm run check
       - run: npm run build
+      - run: npm run check
       - run: npm test
+      - run: npm run test:tools
+      - run: node scripts/verify-assemblies.ts
       - run: node scripts/catalog.ts
       - run: node scripts/api-docs.ts --check
       - run: npx --no-install playwright install --with-deps chromium webkit

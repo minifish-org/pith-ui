@@ -2,7 +2,7 @@
 
 Choose a small part by its native responsibility. The library fixes presentation; callers supply literal content, finite semantic choices, state and data callbacks. There is one checked `mountParts` boundary and one inherited appearance owner.
 
-Every linked exhibit has a strictly compiled example made from the formal API. Complete baseline regions are kept in [verified local assembly documentation](./assemblies/coverage.md), outside the public runtime API and showroom. See [API.md](../API.md) for exact legal options and opaque handle methods.
+Every linked exhibit has a strictly compiled example made from the formal API. Shared regions are imported from `pith-ui/recipes` and demonstrated alongside the parts. See [region usage](./assemblies/coverage.md). See [API.md](../API.md) for exact legal options and opaque handle methods.
 
 | Factory | Specification and legal interaction |
 | --- | --- |

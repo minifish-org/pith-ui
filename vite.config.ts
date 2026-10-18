@@ -6,6 +6,7 @@ export default defineConfig({
   // Source-only validation uses the same opaque-part identity as recipes.
   // Independently installed consumers have no aliases or source access.
   resolve: {alias: [
+    {find: /^pith-ui\/recipes$/, replacement: fileURLToPath(new URL('./src/recipes/index.ts', import.meta.url))},
     {find: /^pith-ui$/, replacement: fileURLToPath(new URL('./src/index.ts', import.meta.url))},
     {find: /^pith-ui\/styles\.css$/, replacement: fileURLToPath(new URL('./src/styles.css', import.meta.url))},
   ]},

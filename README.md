@@ -5,7 +5,7 @@ Native TypeScript parts for AI-assisted application development. Compose buttons
 The package exports `pith-ui` and `pith-ui/styles.css`. Parts expose no generated element, HTML, selector, class, style, pixel or animation options. A checked mount is the only DOM input. There is no public application, page or scene factory.
 
 ```sh
-npm install --save-exact pith-ui@0.6.3
+npm install --save-exact pith-ui@0.7.0
 ```
 
 ```ts
@@ -22,9 +22,9 @@ Mount into an ordinary DIV, MAIN, SECTION or ARTICLE. Composition transfers each
 
 The [showroom](https://minifish-org.github.io/pith-ui/) contains formal parts, specifications, legal states and interaction examples. Read the [API reference](API.md), [AI instructions](AI.md) and [assembly guide](APP.md).
 
-Executable assembly blueprints reconstruct the retained Pi Desk rc.27 regions. They belong in the application and have no package export. Each recipe composes formal parts, projects application state and connects callbacks. Internal regressions compare them to the frozen Pith UI 0.2.2 templates, including actual styles and native behavior.
+Import full regions from `pith-ui/recipes`; examples and showroom call the same implementation. Pith UI owns presentation, controls, drafts, focus, scrolling and dialog lifetime. The application owns data, requests, persistence, permissions, credentials, native actions and cross-feature coordination.
 
-Pith UI owns presentation, native controls, focus and popup mechanics, sanitization, reading position and local feedback. The application owns region assembly, business data, protocols, persistence, permissions, credentials, file acquisition, native actions and feature coordination. System/light/dark appearance is the visual theme choice. Focus retains native keyboard operation without outlines, glows or border highlights; hover, caret, selection, errors and semantic selections retain their presentation.
+System/light/dark appearance is the visual theme choice. Focus retains native keyboard operation without outlines, glows or border highlights; hover, caret, selection, errors and semantic selections retain their presentation.
 
 Development requires Node 22.18 or newer:
 

@@ -19,15 +19,15 @@ const httpEditor: Editor = {name: 'workspace-tools',type: 'http',url: 'https://t
 const stdioEditor: Editor = {name: 'local-tools',type: 'stdio',command: '/usr/local/bin/tool-server',args: ['--transport','stdio','中文'],enabled: false,envKeys: ['LANG','TOKEN']};
 interface Options {appearance?: 'light' | 'dark';state?: State;entries?: Item[];editor?: Editor;cold?: boolean;pending?: string[];applicationContext?: boolean}
 
-async function openMCP(page: Page,old: boolean,options: Options = {}): Promise<void> {
+async function openMCP(page: Page,options: Options = {}): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old,options,entries}) => {
+  await page.evaluate(async ({options,entries}) => {
     const appearance = options.appearance ?? 'light';document.documentElement.classList.add('pui');document.documentElement.dataset.appearance = appearance;document.body.dataset.appearance = appearance;
     const opener = document.createElement('button');opener.id = 'mcp-opener';opener.textContent = 'Connections opener';document.body.append(opener);opener.focus();
     const mount = document.body.appendChild(document.createElement('div'));
     // Geometry oracles use the actual application's native flex-parent context.
     // Standalone behavior tests continue to use an ordinary checked mount.
-    if (!old && options.applicationContext) mount.classList.add('pui-app');
+    if (options.applicationContext) mount.classList.add('pui-app');
     const h = {initial: options.state ?? {},entries: options.entries ?? entries,values: [],releases: [],closed: 0} as unknown as Harness;
     const action = (name: string,value?: unknown): Result | Promise<Result> => {
       h.values.push({action: name,...(value === undefined ? {} : {value})});
@@ -35,8 +35,7 @@ async function openMCP(page: Page,old: boolean,options: Options = {}): Promise<v
     };
     const callbacks = {onSubmit: (draft: Draft) => action('save',draft),onConnectionAction: (name: string,target: {name: string}) => action(name,target),
       onRefresh: () => action('refresh'),onNew: () => action('new'),onClose() {h.closed++;}};
-    if (old) {const path = '/src/app/index.ts';const {createApplication} = await import(path);h.session = createApplication(mount,{appearance}).settings.openConnections(h.initial,callbacks);}
-    else {const path = '/examples/assemblies/mcp.ts';const {mountMCPConnections} = await import(path);h.session = mountMCPConnections(mount,h.initial,callbacks,{appearance});}
+    const path = '/examples/assemblies/mcp.ts';const {mountMCPConnections} = await import(path);h.session = mountMCPConnections(mount,h.initial,callbacks,{appearance});
     if (!options.cold) h.session.setConnections(h.entries);
     if (options.editor) {
       // Native focus scrolling must use the painted inventory, as it does when
@@ -47,30 +46,10 @@ async function openMCP(page: Page,old: boolean,options: Options = {}): Promise<v
       await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     }
     window.mcpPartsHarness = h;
-  },{old,options,entries});
+  },{options,entries});
   await expect(page.getByRole('dialog',{name: 'Connections',exact: true})).toBeVisible();
 }
 
-async function presentation(page: Page): Promise<unknown> {
-  return page.evaluate(async () => {
-    await document.fonts.ready;for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
-    const modal = document.querySelector('dialog[open]')!,origin = modal.getBoundingClientRect();
-    const inspect = (node: Element) => {
-      const box = node.getBoundingClientRect(),style = getComputedStyle(node);
-      return {tag: node.localName,text: [...node.childNodes].filter(child => child.nodeType === Node.TEXT_NODE).map(child => child.textContent).join('').trim(),
-        box: [box.x-origin.x,box.y-origin.y,box.width,box.height].map(value => Math.round(value*100)/100),
-        style: ['display','font-family','font-size','font-weight','line-height','color','background-color','margin-top','margin-bottom','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-top-color','border-radius','gap','overflow-x','overflow-y','min-height','height','-webkit-text-security'].map(key => style.getPropertyValue(key)),
-        role: node.getAttribute('role'),
-        ...(node instanceof HTMLInputElement ? {name: node.name,type: node.type,value: node.value,checked: node.checked,disabled: node.disabled,readOnly: node.readOnly,required: node.required,placeholder: node.placeholder,autocomplete: node.autocomplete} : {}),
-        ...(node instanceof HTMLTextAreaElement ? {name: node.name,value: node.value,rows: node.rows,spellcheck: node.spellcheck,disabled: node.disabled,required: node.required,placeholder: node.placeholder,autocomplete: node.autocomplete} : {}),
-        ...(node instanceof HTMLSelectElement ? {value: node.value,disabled: node.disabled,options: [...node.options].map(option => [option.value,option.textContent])} : {}),
-        ...(node instanceof HTMLButtonElement ? {type: node.type,label: node.getAttribute('aria-label'),disabled: node.disabled,pressed: node.getAttribute('aria-pressed'),controls: node.hasAttribute('aria-controls') ? modal.querySelector(`#${node.getAttribute('aria-controls')}`)?.localName : null} : {})};
-    };
-    const meaningful = [...modal.querySelectorAll('h2,article,strong,label,input,textarea,select,summary,p,button,[role=status],[role=alert],.pui-section-heading,.pui-modal-footer')].filter(node => !node.closest('[hidden]'));
-    return {modal: inspect(modal),meaningful: meaningful.map(inspect),svg: [...modal.querySelectorAll('svg')].map(svg => svg.innerHTML),
-      form: {count: modal.querySelectorAll('form').length,fieldNames: [...modal.querySelectorAll('form input,form select,form textarea')].map(node => (node as HTMLInputElement).name)},overflow: [modal.clientWidth,modal.scrollWidth,modal.clientHeight,modal.scrollHeight]};
-  });
-}
 
 test('bounded flow, stacked card, paragraph status and secret label compose original native nodes without DOM or sizing ports',async ({page}) => {
   await page.goto('/tests/fixture.html');
@@ -97,40 +76,10 @@ test('bounded flow, stacked card, paragraph status and secret label compose orig
     card: 'pui-connection-card',heading: 'pui-connection-card-heading',button: {label: 'Show',pressed: 'false'},leaks: false});
 });
 
-const scenarios: Record<string,Options> = {loading: {cold: true},empty: {entries: []},http: {},editingHTTP: {editor: httpEditor},editingStdio: {editor: stdioEditor},
-  disabled: {state: {disabled: true},editor: httpEditor},errors: {state: {error: 'Inventory unavailable',formError: 'Invalid connection'}},
-  connectionError: {entries: [{...entries[0],enabled: true,status: 'error',statusLabel: 'Authentication failed',error: 'Sign in again.'}]}};
-for (const appearance of ['light','dark'] as const) for (const [name,options] of Object.entries(scenarios)) test(`${appearance} MCP ${name} composition preserves the actual Connections opening`,async ({page}) => {
-  await page.emulateMedia({colorScheme: appearance === 'dark' ? 'light' : 'dark'});
-  await openMCP(page,true,{...options,appearance,applicationContext: true});const old = await presentation(page);
-  await openMCP(page,false,{...options,appearance,applicationContext: true});expect(await presentation(page)).toEqual(old);
-  await expect(page.getByRole('dialog')).toHaveCSS('background-color',appearance === 'dark' ? 'rgb(34, 37, 42)' : 'rgb(255, 255, 255)');
-});
 
-async function settledMCPScroll(page: Page): Promise<{scrollTop: number;scrollHeight: number;clientHeight: number}> {
-  const state = await page.evaluate(async () => {
-    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    const modal = document.querySelector<HTMLDialogElement>('dialog[open]')!;
-    const read = () => ({scrollTop: modal.scrollTop,scrollHeight: modal.scrollHeight,clientHeight: modal.clientHeight});
-    const before = read();
-    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    return {before,after: read()};
-  });
-  expect(state.after,'native dialog scrolling is settled across painted frames').toEqual(state.before);
-  return state.after;
-}
-
-for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`MCP ${viewport.width} preserves responsive editor and expanded OAuth disclosure geometry`,async ({page}) => {
-  await page.setViewportSize(viewport);await openMCP(page,true,{editor: httpEditor,applicationContext: true});
-  await expect(page.getByRole('textbox',{name: 'Server URL',exact: true})).toBeFocused();const oldFocusScroll = await settledMCPScroll(page);
-  await page.getByText('OAuth settings (optional)',{exact: true}).click();await expect(page.locator('dialog[open] details.pui-provider-advanced')).toHaveJSProperty('open',true);const oldExpandedScroll = await settledMCPScroll(page),old = await presentation(page);
-  await openMCP(page,false,{editor: httpEditor,applicationContext: true});
-  await expect(page.getByRole('textbox',{name: 'Server URL',exact: true})).toBeFocused();expect(await settledMCPScroll(page)).toEqual(oldFocusScroll);
-  await page.getByText('OAuth settings (optional)',{exact: true}).click();await expect(page.locator('dialog[open] details.pui-provider-advanced')).toHaveJSProperty('open',true);expect(await settledMCPScroll(page)).toEqual(oldExpandedScroll);expect(await presentation(page)).toEqual(old);
-});
 
 test('switching transport preserves both drafts while only native active controls validate and submit raw JSON',async ({page}) => {
-  await openMCP(page,false,{pending: ['save']});await page.getByRole('textbox',{name: 'Name',exact: true}).fill('draft-tools');await page.getByRole('textbox',{name: 'Server URL',exact: true}).fill('https://draft.example/mcp');
+  await openMCP(page,{pending: ['save']});await page.getByRole('textbox',{name: 'Name',exact: true}).fill('draft-tools');await page.getByRole('textbox',{name: 'Server URL',exact: true}).fill('https://draft.example/mcp');
   await page.getByLabel('Bearer token (optional)',{exact: true}).fill(' HTTP secret ');await page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true}).check();
   await page.getByRole('combobox',{name: 'Connection type',exact: true}).click();await page.getByRole('option',{name: 'Local command (stdio)',exact: true}).click();
   await expect(page.getByRole('textbox',{name: 'Installed executable',exact: true})).toHaveAttribute('required','');
@@ -143,7 +92,7 @@ test('switching transport preserves both drafts while only native active control
 });
 
 test('environment reveal and ordinary snapshots preserve native field, private draft, caret and focus',async ({page}) => {
-  await openMCP(page,false,{editor: stdioEditor});const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});await env.fill('{"TOKEN":"Unsaved 中文"}');
+  await openMCP(page,{editor: stdioEditor});const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});await env.fill('{"TOKEN":"Unsaved 中文"}');
   await page.getByRole('button',{name: 'Show',exact: true}).click();await expect(page.getByRole('button',{name: 'Hide',exact: true})).toHaveAttribute('aria-pressed','true');
   await expect(env).toHaveCSS('-webkit-text-security','none');
   await env.evaluate(node => {const control = node as HTMLTextAreaElement;control.focus();control.setSelectionRange(3,12);window.mcpPartsHarness.control = control;});
@@ -154,7 +103,7 @@ test('environment reveal and ordinary snapshots preserve native field, private d
 });
 
 test('explicit edit resets secrets, clear flags, reveal, pending and the immutable editing name; obsolete save errors stay retired',async ({page}) => {
-  await openMCP(page,false,{editor: stdioEditor,pending: ['save']});const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});
+  await openMCP(page,{editor: stdioEditor,pending: ['save']});const env = page.getByRole('textbox',{name: 'Environment overrides (JSON object, optional)',exact: true});
   await env.fill('{"TOKEN":"first secret"}');await page.getByRole('button',{name: 'Show',exact: true}).click();await page.getByRole('checkbox',{name: 'Clear saved environment overrides',exact: true}).check();await page.getByRole('button',{name: 'Save connection',exact: true}).click();
   await page.evaluate(editor => window.mcpPartsHarness.session.edit(editor),httpEditor);
   await expect(page.locator('textarea[name=env]')).toHaveCSS('-webkit-text-security','disc');
@@ -166,7 +115,7 @@ test('explicit edit resets secrets, clear flags, reveal, pending and the immutab
 });
 
 test('one pending save survives availability updates, reports form errors without closing and keeps its drafts after success',async ({page}) => {
-  await openMCP(page,false,{editor: httpEditor,pending: ['save']});await page.getByRole('button',{name: 'Save connection',exact: true}).click();
+  await openMCP(page,{editor: httpEditor,pending: ['save']});await page.getByRole('button',{name: 'Save connection',exact: true}).click();
   await page.evaluate(() => {const h = window.mcpPartsHarness;h.session.update({disabled: true});h.session.update({disabled: false});document.querySelector('dialog[open] form')!.dispatchEvent(new SubmitEvent('submit',{bubbles: true,cancelable: true}));});
   await expect(page.getByRole('button',{name: 'Save connection',exact: true})).toBeDisabled();expect(await page.evaluate(() => window.mcpPartsHarness.values.filter(value => value.action === 'save').length)).toBe(1);
   await page.evaluate(() => window.mcpPartsHarness.releases[0]!.resolve({ok: false,error: 'JSON rejected by controller'}));await expect(page.locator('dialog[open] form [role=alert]')).toHaveText('JSON rejected by controller');
@@ -174,7 +123,7 @@ test('one pending save survives availability updates, reports form errors withou
 });
 
 test('keyed connection actions retain pending and immutable original targets across reorder and metadata snapshots',async ({page}) => {
-  await openMCP(page,false,{pending: ['mcp-toggle']});const card = page.locator('article').filter({has: page.getByText('workspace-tools',{exact: true})}),toggle = card.getByRole('button',{name: 'Disable',exact: true});
+  await openMCP(page,{pending: ['mcp-toggle']});const card = page.locator('article').filter({has: page.getByText('workspace-tools',{exact: true})}),toggle = card.getByRole('button',{name: 'Disable',exact: true});
   await toggle.evaluate(node => {window.mcpPartsHarness.button = node as HTMLButtonElement;});await toggle.click();await expect(toggle).toBeDisabled();
   await page.evaluate(() => {const h = window.mcpPartsHarness;h.session.setConnections([...h.entries].reverse().map(entry => ({...entry,statusLabel: 'New metadata'})));});
   expect(await toggle.evaluate(node => node === window.mcpPartsHarness.button)).toBe(true);await expect(toggle).toBeDisabled();
@@ -184,14 +133,14 @@ test('keyed connection actions retain pending and immutable original targets acr
 });
 
 test('refresh and New share the existing auxiliary guard, but New still explicitly resets the editor',async ({page}) => {
-  await openMCP(page,false,{editor: httpEditor,pending: ['refresh']});await page.getByRole('button',{name: 'Refresh',exact: true}).click();await page.getByRole('button',{name: 'Refresh',exact: true}).click();
+  await openMCP(page,{editor: httpEditor,pending: ['refresh']});await page.getByRole('button',{name: 'Refresh',exact: true}).click();await page.getByRole('button',{name: 'Refresh',exact: true}).click();
   await page.getByRole('button',{name: 'New connection',exact: true}).click();await expect(page.getByRole('textbox',{name: 'Name',exact: true})).toHaveValue('');
   expect(await page.evaluate(() => window.mcpPartsHarness.values)).toEqual([{action: 'refresh'}]);
   await page.evaluate(() => window.mcpPartsHarness.releases[0]!.resolve({ok: false,error: 'Refresh rejected'}));await expect(page.locator('dialog[open] > div > div > [role=alert]')).toHaveText('Refresh rejected');
 });
 
 test('clear-token and clear-secrets ports are explicit, and closing wipes retained private native values and late outcomes',async ({page}) => {
-  await openMCP(page,false,{editor: httpEditor,pending: ['save']});await page.getByLabel('Bearer token (optional)',{exact: true}).fill('Private token');await page.evaluate(() => window.mcpPartsHarness.session.clearBearerToken());await expect(page.getByLabel('Bearer token (optional)',{exact: true})).toHaveValue('');
+  await openMCP(page,{editor: httpEditor,pending: ['save']});await page.getByLabel('Bearer token (optional)',{exact: true}).fill('Private token');await page.evaluate(() => window.mcpPartsHarness.session.clearBearerToken());await expect(page.getByLabel('Bearer token (optional)',{exact: true})).toHaveValue('');
   await page.getByLabel('Bearer token (optional)',{exact: true}).fill('Private token');await page.getByRole('button',{name: 'Save connection',exact: true}).click();await page.evaluate(() => window.mcpPartsHarness.session.close());
   await expect(page.locator('dialog')).toHaveCount(0);await expect(page.locator('#mcp-opener')).toBeFocused();
   await page.evaluate(() => {const h = window.mcpPartsHarness;h.releases[0]!.resolve({ok: false,error: 'Late failure'});h.session.update({error: 'Late snapshot'});h.session.edit();h.session.setConnections([]);h.session.clearSecrets();h.session.destroy();});

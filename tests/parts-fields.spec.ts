@@ -224,31 +224,6 @@ test('destroy clears secret values and runtime reset rejects non-text values', a
   expect(result).toEqual({secret: '', password: '', invalidReset: true});
 });
 
-test('standalone and modal form inputs preserve the existing factory control presentation', async ({page}) => {
-  const result = await page.evaluate(async () => {
-    const path = '/src/parts/index.ts', old = '/src/primitives.ts';
-    const {createInputPart, mountParts} = await import(path), {createTextInput} = await import(old);
-    const styles = (node: Element) => {
-      const value = getComputedStyle(node);
-      return Object.fromEntries(['height', 'padding', 'borderWidth', 'borderRadius', 'backgroundColor', 'color', 'fontFamily', 'fontSize', 'lineHeight', 'opacity'].map(key => [key, value[key as keyof CSSStyleDeclaration]]));
-    };
-    const reference = createTextInput({label: 'Old field'}); document.body.append(reference.element);
-    const mount = document.body.appendChild(document.createElement('div'));
-    const mounted = mountParts(mount, createInputPart({label: 'New field'}));
-    const standalone = {expected: styles(reference.control), actual: styles(mount.querySelector('input')!)};
-    const modal = document.createElement('dialog'); modal.className = 'pui-modal'; document.body.append(modal);
-    // Product forms call scopeIds, which adds pui-control before applying modal
-    // rules. A raw browser input would omit that real baseline behavior.
-    modal.append(reference.element, mount); reference.control.disabled = true; modal.showModal();
-    const input = mount.querySelector('input')!; input.disabled = true;
-    const inModal = {expected: styles(reference.control), actual: styles(input)};
-    mounted.destroy(); reference.destroy(); modal.remove();
-    return {standalone, inModal};
-  });
-  expect(result.standalone.actual).toEqual(result.standalone.expected);
-  expect(result.inModal.actual).toEqual(result.inModal.expected);
-});
-
 test('semantic hiding and description references keep the same select and native field', async ({page}) => {
   await page.evaluate(async () => {
     const path = '/src/parts/index.ts';

@@ -1,6 +1,6 @@
 import {expect,test} from '@playwright/test';
 
-test('showroom navigation and examples expose bounded parts instead of complete templates',async ({page}) => {
+test('showroom exposes formal parts and shared regions without an application template',async ({page}) => {
   await page.goto('/?item=button-parts');
   await expect(page.getByRole('heading',{name: '按钮零件',exact: true})).toBeVisible();
   await expect(page.getByRole('button',{name: '完整界面',exact: true})).toHaveCount(0);

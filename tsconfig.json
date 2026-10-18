@@ -5,5 +5,5 @@
     "noEmit": true, "skipLibCheck": true, "verbatimModuleSyntax": true,
     "allowImportingTsExtensions": true, "resolveJsonModule": true, "types": ["node"]
   },
-  "include": ["src", "showroom", "scripts", "tests", "visual-tests", "examples", "*.ts"]
+  "include": ["src", "showroom", "scripts", "tests", "examples", "*.ts"]
 }

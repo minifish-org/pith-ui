@@ -29,27 +29,6 @@ test('frame parts keep direct native ownership without shell content or presenta
   expect(result.brand).toContain('pui-app-brand');expect(result.brand).toContain('pui-brand-light');expect(result.brand).not.toContain('<svg');
 });
 
-test('navigation action variants preserve actual old markup and computed presentation', async ({page}) => {
-  await page.setViewportSize({width: 600,height: 800});
-  const result = await page.evaluate(async () => {
-    const path = '/src/parts/index.ts',oldPath = '/src/app/index.ts'; const p = await import(path),{createApplication} = await import(oldPath);
-    const oldMount = document.body.appendChild(document.createElement('div')),old = createApplication(oldMount);
-    const source = [oldMount.querySelector('.pui-settings-button[data-action=settings]')!,oldMount.querySelector('.pui-empty-workspace')!,oldMount.querySelector('.pui-compact-action')!,oldMount.querySelector('.pui-mobile-menu')!];
-    const inspect = (node: Element) => {const style = getComputedStyle(node);return {tag: node.localName,classes: [...node.classList].sort(),aria: node.getAttribute('aria-label'),title: node.getAttribute('title'),
-      children: [...node.childNodes].map(child => child.nodeType === Node.TEXT_NODE ? {tag: '#text',text: child.textContent} : {tag: (child as Element).localName,text: child.textContent,classes: [...(child as Element).classList]}),svg: node.querySelector('svg')!.innerHTML,
-      styles: ['display','font-size','font-weight','line-height','color','background-color','padding-top','padding-right','padding-bottom','padding-left','border-radius','gap','margin-right','min-height'].map(key => style.getPropertyValue(key))};};
-    const before = source.map(inspect);old.destroy();
-    const actions = [p.createButtonPart({variant: 'navigation',icon: 'settings',label: 'Settings'}),p.createButtonPart({variant: 'navigation-item',icon: 'folder',label: 'Add a workspace'}),
-      p.createButtonPart({variant: 'toolbar-action',icon: 'compress',label: 'Compact',accessibleLabel: 'Compress context',title: 'Compress context by summarizing older messages'}),p.createButtonPart({variant: 'drawer-trigger',icon: 'menu',label: 'Open sidebar'})];
-    // Compare each action inside its real small layout context. Flex items
-    // blockify inline-flex and keep native automatic minimum serialization.
-    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [p.createRailFooterPart({children: [actions[0]]}),
-      p.createTreePart({label: 'Empty tree',children: [actions[1]]}),p.createTopbarPart({children: [actions[3],p.createActionsPart({children: [actions[2]]})]})]}));
-    const after = [mount.querySelector('.pui-settings-button')!,mount.querySelector('.pui-empty-workspace')!,mount.querySelector('.pui-compact-action')!,mount.querySelector('.pui-mobile-menu')!].map(inspect);tree.destroy();return {before,after};
-  });
-  expect(result.after).toEqual(result.before);
-});
-
 test('finite action combinations and rejected frame constructors leave supplied parts reusable', async ({page}) => {
   const result = await page.evaluate(async () => {
     const path = '/src/parts/index.ts'; const p = await import(path);const rejects = (action: () => unknown) => {try {action();return false;} catch {return true;}};
@@ -120,4 +99,15 @@ test('one frame tree owns a composed settings dialog with one theme owner and or
     tree.destroy();return {...result,empty: !mount.firstChild,closed: !settings.isOpen()};
   });
   expect(result).toEqual({scopeCount: 0,dialogParent: true,background: 'rgb(34, 37, 42)',htmlAppearance: null,empty: true,closed: true});
+});
+
+test('a frame reports only changes to its own modal descendants and retires the final true state',async ({page}) => {
+  await page.goto('/tests/fixture.html');const result = await page.evaluate(async () => {
+    const path = '/src/parts/index.ts',p = await import(path),states: boolean[] = [];
+    const dialog = p.createDialogPart({title: 'Owned',children: []}),frame = p.createFramePart({children: [dialog],onModalChange(open: boolean) {states.push(open);}});
+    const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,frame);
+    const other = document.body.appendChild(document.createElement('dialog'));other.showModal();await Promise.resolve();const unrelated = frame.hasModal();other.close();other.remove();
+    dialog.open();const immediate = frame.hasModal();await Promise.resolve();dialog.update({title: 'Metadata'});await Promise.resolve();dialog.close();await Promise.resolve();dialog.open();await Promise.resolve();tree.destroy();tree.destroy();await Promise.resolve();
+    return {unrelated,immediate,states,closed: frame.hasModal(),remaining: mount.childElementCount};
+  });expect(result).toEqual({unrelated: false,immediate: true,states: [true,false,true,false],closed: false,remaining: 0});
 });

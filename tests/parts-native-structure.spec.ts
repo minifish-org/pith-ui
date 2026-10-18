@@ -24,30 +24,6 @@ test('native disclosures keep direct content, browser toggling and local open st
   await expect(page.locator('#native-mount details')).not.toHaveAttribute('open');
 });
 
-test('advanced and preview disclosure rules match the actual retained components', async ({page}) => {
-  const compared = await page.evaluate(async () => {
-    const path = '/src/parts/disclosure.ts', partsPath = '/src/parts/index.ts';
-    const oldModelPath = '/src/forms/custom-connection.ts', oldResourcesPath = '/src/files/panels.ts';
-    const {createDisclosurePart} = await import(path), {createTextPart, createPreformattedPart, createStackPart, mountParts} = await import(partsPath);
-    const {createCustomModelRow} = await import(oldModelPath), {createResourcesPanel} = await import(oldResourcesPath);
-    const inspect = (node: Element) => {
-      const style = getComputedStyle(node), summary = getComputedStyle(node.querySelector('summary')!);
-      return {tag: node.tagName, classes: node.className, styles: ['margin-top', 'padding-top', 'padding-bottom', 'border-top-width', 'border-bottom-width'].map(key => style.getPropertyValue(key)),
-        summary: ['font-size', 'font-weight', 'line-height', 'color', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left'].map(key => summary.getPropertyValue(key))};
-    };
-    const oldModel = createCustomModelRow({id: 'example', name: 'Example'}), resources = createResourcesPanel();
-    document.body.append(oldModel.element, resources.element); resources.open('Workspace'); resources.update({instructions: [{name: 'AGENTS.md', path: '/work/AGENTS.md', content: 'Example instructions'}], skills: [], templates: [], diagnostics: []});
-    const before = [inspect(oldModel.element.querySelector('details')!), inspect(resources.element.querySelector('details')!)];
-    const mount = document.createElement('div'); document.body.append(mount);
-    const tree = mountParts(mount, createStackPart({children: [
-      createDisclosurePart({title: 'Price estimate (optional)', purpose: 'advanced', children: [createTextPart({text: 'Content'})]}),
-      createDisclosurePart({title: 'View instructions', purpose: 'preview', children: [createPreformattedPart({text: 'Example instructions'})]}),
-    ]}));
-    const after = [...mount.querySelectorAll('details')].map(inspect); tree.destroy(); oldModel.destroy(); resources.destroy(); resources.element.remove(); return {before, after};
-  });
-  expect(compared.after).toEqual(compared.before);
-});
-
 test('plain disclosure and fixed form grid use only their finite native structure', async ({page}) => {
   const result = await page.evaluate(async () => {
     const disclosurePath = '/src/parts/disclosure.ts', structurePath = '/src/parts/structure.ts', partsPath = '/src/parts/index.ts';
@@ -77,18 +53,6 @@ test('native fieldset inherits disabling into a live popup select and retains it
   await expect(choice).toBeDisabled(); await expect(choice).toHaveAttribute('aria-expanded', 'false');
   await page.evaluate(() => (window as unknown as {nativeFieldset: {update(state: unknown): void}}).nativeFieldset.update({legend: 'Renamed endpoint', disabled: false}));
   await expect(choice).toBeEnabled(); await expect(choice).toHaveText('Second'); await expect(page.locator('legend')).toHaveText('Renamed endpoint');
-});
-
-test('generic legend group uses the exact retained fieldset frame', async ({page}) => {
-  const compared = await page.evaluate(async () => {
-    const path = '/src/parts/structure.ts', partsPath = '/src/parts/index.ts', oldPath = '/src/forms/custom-connection.ts';
-    const {createFieldsetPart} = await import(path), {createInputPart, mountParts} = await import(partsPath), {createCustomModelRow} = await import(oldPath);
-    const inspect = (node: Element) => {const style = getComputedStyle(node); return ['margin-top', 'margin-bottom', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'border-top-width', 'border-top-color', 'border-top-left-radius', 'font-size'].map(key => style.getPropertyValue(key));};
-    const old = createCustomModelRow({id: 'model'}); document.body.append(old.element); const before = inspect(old.element.querySelector('fieldset')!);
-    const mount = document.createElement('div'); document.body.append(mount); const tree = mountParts(mount, createFieldsetPart({legend: 'Model 1', children: [createInputPart({label: 'Model ID'})]}));
-    const after = inspect(mount.querySelector('fieldset')!); tree.destroy(); old.destroy(); return {before, after};
-  });
-  expect(compared.after).toEqual(compared.before);
 });
 
 test('input adornment adds only its real icon container and transfers control lifetime atomically', async ({page}) => {

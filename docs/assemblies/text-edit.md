@@ -1,44 +1,13 @@
 # Assemble message and pending-message editors
 
-This is an application-owned composition recipe. It is not a package export or
-a replacement whole-dialog API. The compiled implementation is
-[`examples/assemblies/text-edit.ts`](../../examples/assemblies/text-edit.ts); it
-imports only the staging entry for the formal parts.
+Import this region from `pith-ui/recipes`. Its single implementation is
+[`src/recipes/text-edit.ts`](../../src/recipes/text-edit.ts); public state, callbacks and
+handles are indexed in [API.md](../../API.md).
 
-The preservation sources are `src/primitives.ts:createTextEditDialog` and
-`src/app/workspace.ts:openEditor` at UI commit `897f46a`. Desk uses the message
-opening in `frontend/src/message-editor.ts` and the pending opening in
-`frontend/src/composer.ts` at `3f1ee24`. The application scene creates a fresh
-generic dialog; it does not reuse the shell's unused fixed editor containers.
-
-## Part tree
-
-```text
-DialogPart (purpose: prompt; title, description, close availability)
-└─ FormPart (purpose: text-entry; pending/error/submit callbacks)
-   ├─ FieldGroupPart
-   │  ├─ FieldLabelPart (associated with the textarea)
-   │  └─ TextareaPart (purpose: message or queue-message)
-   ├─ TextPart (role: muted-paragraph; note)
-   ├─ FeedbackPart (presentation: notice; tone: error)
-   └─ ActionsPart
-      ├─ ButtonPart (purpose: prompt; Cancel)
-      └─ ButtonPart (purpose: prompt; primary submit)
-```
-
-The field group contributes the single original label/control wrapper. The
-library chooses typography, colors, padding, control geometry, dialog size,
-message/queue textarea shape, error surface, button presentation and transitions.
-No recipe chooses classes, CSS, dimensions or animation parameters.
-
-## Connect application state and callbacks
-
-Copy the compiled recipe into the application's presentation layer, then supply
-current content and business callbacks. `composeTextEditor` creates the opaque
-dialog without mounting or opening it:
+Supply display state and data callbacks from the host. Ordinary snapshots retain local interaction state. Explicit reset/target changes and parent disposal retire pending UI outcomes; business requests and write validity remain host responsibilities.
 
 ```ts
-import {composeTextEditor, type TextEditorResult} from '../../examples/assemblies/text-edit.js';
+import {composeTextEditor, type TextEditorResult} from 'pith-ui/recipes';
 
 interface MessageTarget {conversationId: string; messageId: string; expectedLastMessageId: string; text: string}
 export function attachMessageEditor(
@@ -61,68 +30,7 @@ export function attachMessageEditor(
 }
 ```
 
-For a pending message, choose `purpose: 'queue-message'`, the label
-`Edit pending message`, and the action `Save message`. The purpose is semantic;
-the textarea's dimensions remain library decisions.
-
-Attach the returned `part` as a direct child of the application's shared frame,
-then call `open({value: originalTarget.text})` after that frame is mounted. The
-[frame recipe](frame-navigation.md) demonstrates the single outer appearance
-owner shared by body and dialogs. `mountTextEditor` is the standalone internal
-adapter that composes, mounts and opens; integrated applications do not create
-a separate mount per dialog. No theme CSS is added by the caller.
-
-The caller retains the original conversation/message identity and verifies it
-again before writing. `onSubmit` returns `{ok: true}` or
-`{ok: false, error: '...'}`. A rejected promise is also shown through the owned
-feedback part. Success closes only the still-current opening; failure preserves
-its draft. The recipe never performs persistence or retries a business write.
-
-| Input | Ownership and update rule |
-| --- | --- |
-| Initial `value` | Becomes the owned textarea draft. |
-| `update(state)` | Projects metadata, error and availability; never replaces the draft or textarea node. |
-| `read()` | Returns the current draft, including after close or destruction. |
-| `reset(value)` | Explicitly replaces the draft and retires the previous submit outcome. |
-| `open(input)` | Opens or retargets the owned dialog, clears old error state and resets the value explicitly. |
-| `disabled` | Blocks submission while preserving the field's existing availability. |
-| `inputDisabled` | Independently disables the native field when the application requires it. |
-| `pending` | Adds external pending state to the form's own local pending guard. |
-| `closeDisabled` | Guards the close icon, Cancel and native Escape dismissal. |
-
-Repeated availability updates cannot clear the form's local pending guard. A
-close, reset, retarget or destruction invalidates UI ownership of older results.
-It does not cancel or replay a write that the business callback already started.
-The native field retains composition, selection and focus across metadata-only
-updates. Explicit reset is the operation that changes its value.
-
-## Close and dispose
-
-`close()` closes the current opening and returns focus through the dialog
-lifecycle, retaining the owned tree for an explicit later `open()`. A standalone
-prompt ignores backdrop clicks, matching the original editor. Native Escape and
-the close icon use the same lifecycle. `onClose` is delivered once for an owned
-opening.
-
-Call `destroy()` when the application discards the editor. Parent destruction
-or replacement also retires the composition before disposing its children,
-saving its last draft and invalidating pending UI outcomes. This releases the
-dialog tree, form operation, native field controller, buttons and dialog
-listeners while an enclosing frame keeps its own appearance owner. Repeated
-destruction and late snapshots are harmless, and later results cannot update or
-reopen it. Destroying presentation does not undo an application write.
-
-## Executable evidence
-
-```sh
-npx tsc --noEmit
-npx playwright test tests/parts-edit-confirm.spec.ts
-npx playwright test tests/parts-composition-ownership.spec.ts
-```
-
-The tests compare both the old factory and the actual `createApplication`
-message/queue scenes with the assembly, including layout, typography, colors,
-error surface, icons, labels and native textarea purpose. They separately verify
-draft/composition/selection preservation, pending guards, failures, explicit
-reset, target replacement, close guards, focus return and teardown. The frozen
-rc.27 oracle remains unchanged.
+Attach the region to the existing ownership tree before opening it. See
+[APP.md](../../APP.md) for shared mounting and dialog slots. The current
+interaction assertions run in Chromium and WebKit in
+[`parts-edit-confirm.spec.ts`](../../tests/parts-edit-confirm.spec.ts).

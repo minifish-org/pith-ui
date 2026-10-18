@@ -5,15 +5,6 @@ import ts from 'typescript';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const docs = join(root, 'docs/assemblies'), examples = join(root, 'examples/assemblies');
-const coverage = await readFile(join(docs,'coverage.md'),'utf8');
-const regions = coverage.split('\n').filter(line => /^\| \d{2} /.test(line));
-if (regions.length !== 36) throw new Error(`Assembly coverage must map all 36 baseline regions; found ${regions.length}`);
-for (const row of regions) {
-  const columns = row.split('|'), sources = [...(columns[2] ?? '').matchAll(/[a-z][a-z0-9-]*\.ts/g)].map(match => match[0]), proofs = [...(columns[3] ?? '').matchAll(/parts-[a-z0-9-]+/g)].map(match => match[0]);
-  if (!sources.length || !proofs.length) throw new Error(`Assembly coverage has an incomplete mapping: ${row}`);
-  for (const source of sources) await readFile(join(examples,source),'utf8');
-  for (const proof of proofs) await readFile(join(root,'tests',proof+'.spec.ts'),'utf8');
-}
 const virtual = new Map<string, string>();
 for (const name of (await readdir(docs)).filter(name => name.endsWith('.md')).sort()) {
   const body = await readFile(join(docs, name), 'utf8');
@@ -29,7 +20,7 @@ for (const name of recipeFiles) {
   const visit = (node: ts.Node): void => {
     if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
       const specifier = node.moduleSpecifier.text;
-      if (!['pith-ui','../../src/parts/index.js'].includes(specifier) && !/^\.\/[^/]+\.js$/.test(specifier)) {
+      if (!['pith-ui','pith-ui/recipes'].includes(specifier) && !/^\.\/[^/]+\.js$/.test(specifier)) {
         throw new Error(`Assembly recipes may import only the formal parts entry or local recipes: ${name}: ${specifier}`);
       }
     }

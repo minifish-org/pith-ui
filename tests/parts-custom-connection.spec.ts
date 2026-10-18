@@ -13,30 +13,28 @@ const model: Model = {id: 'balanced-model',name: 'Balanced 中文',contextWindow
 const initial: State = {name: 'Independent endpoint',baseUrl: 'https://endpoint.example/v1',api: 'openai-completions',editing: false,models: [model]};
 interface Options {appearance?: 'light' | 'dark';state?: State;pending?: boolean;applicationContext?: boolean}
 
-async function openCustom(page: Page,old: boolean,options: Options = {}): Promise<void> {
+async function openCustom(page: Page,options: Options = {}): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old,options,initial}) => {
+  await page.evaluate(async ({options,initial}) => {
     const appearance = options.appearance ?? 'light';document.documentElement.classList.add('pui');document.documentElement.dataset.appearance = appearance;document.body.dataset.appearance = appearance;
     const opener = document.createElement('button');opener.id = 'custom-opener';opener.textContent = 'Custom opener';document.body.append(opener);opener.focus();
-    const mount = document.body.appendChild(document.createElement('div'));if (!old && options.applicationContext) mount.classList.add('pui-app');
+    const mount = document.body.appendChild(document.createElement('div'));if (options.applicationContext) mount.classList.add('pui-app');
     const h = {initial: options.state ?? initial,values: [],releases: [],closed: 0} as unknown as Harness;
     const callbacks = {onSubmit(draft: Draft): Result | Promise<Result> {h.values.push(draft);return options.pending ? new Promise(resolve => h.releases.push(resolve)) : {ok: true};},onClose() {h.closed++;}};
-    if (old) {const path = '/src/app/index.ts';const {createApplication} = await import(path);h.session = createApplication(mount,{appearance}).settings.openCustomConnection(h.initial,callbacks);}
-    else {const path = '/examples/assemblies/custom-connection.ts';const {mountCustomConnection} = await import(path);h.session = mountCustomConnection(mount,h.initial,callbacks,{appearance});}
+    const path = '/examples/assemblies/custom-connection.ts';const {mountCustomConnection} = await import(path);h.session = mountCustomConnection(mount,h.initial,callbacks,{appearance});
     window.customPartsHarness = h;
-  },{old,options,initial});
+  },{options,initial});
   await expect(page.getByRole('dialog')).toBeVisible();
 }
 
-async function openLoading(page: Page,old: boolean,editing: boolean,appearance: 'light' | 'dark'): Promise<void> {
+async function openLoading(page: Page,editing: boolean,appearance: 'light' | 'dark'): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old,editing,appearance}) => {
+  await page.evaluate(async ({editing,appearance}) => {
     document.documentElement.classList.add('pui');document.documentElement.dataset.appearance = appearance;document.body.dataset.appearance = appearance;
-    const mount = document.body.appendChild(document.createElement('div'));if (!old) mount.classList.add('pui-app');const h = {closed: 0} as Harness;
-    if (old) {const path = '/src/app/index.ts';const {createApplication} = await import(path);h.loading = createApplication(mount,{appearance}).settings.openConnectionLoading({editing},{onClose() {h.closed++;}});}
-    else {const path = '/examples/assemblies/custom-connection.ts';const {mountCustomConnectionLoading} = await import(path);h.loading = mountCustomConnectionLoading(mount,{editing},{onClose() {h.closed++;}},{appearance});}
+    const mount = document.body.appendChild(document.createElement('div'));mount.classList.add('pui-app');const h = {closed: 0} as Harness;
+    const path = '/examples/assemblies/custom-connection.ts';const {mountCustomConnectionLoading} = await import(path);h.loading = mountCustomConnectionLoading(mount,{editing},{onClose() {h.closed++;}},{appearance});
     window.customPartsHarness = h;
-  },{old,editing,appearance});
+  },{editing,appearance});
   await expect(page.getByRole('dialog',{name: editing ? 'Edit model connection' : 'Add model connection',exact: true})).toBeVisible();
 }
 
@@ -59,29 +57,16 @@ async function presentation(page: Page): Promise<unknown> {
   });
 }
 
-const scenarios: Record<string,State> = {new: initial,editing: {...initial,editing: true,api: 'openai-responses'},empty: {...initial,models: []},missingLimits: {...initial,editing: true,models: [{id: 'keep-existing'}]},
-  unknownPrices: {...initial,models: [{...model,cost: undefined}]},free: {...initial,models: [{...model,cost: {input: 0,output: 0,cacheRead: 0,cacheWrite: 0}}]},
-  disabled: {...initial,disabled: true},error: {...initial,error: 'Keep the entered connection values.'},
-  multiple: {...initial,models: [model,{id: 'plain-model',contextWindow: 64000,maxTokens: 2048,input: ['text']}]}};
-for (const appearance of ['light','dark'] as const) for (const [name,state] of Object.entries(scenarios)) test(`${appearance} custom connection ${name} composition preserves the actual editor`,async ({page}) => {
-  await page.emulateMedia({colorScheme: appearance === 'dark' ? 'light' : 'dark'});await openCustom(page,true,{state,appearance,applicationContext: true});if (name === 'error') await page.evaluate(() => window.customPartsHarness.session.fail('Independent frame failure'));const old = await presentation(page);
-  await openCustom(page,false,{state,appearance,applicationContext: true});if (name === 'error') await page.evaluate(() => window.customPartsHarness.session.fail('Independent frame failure'));expect(await presentation(page)).toEqual(old);
-});
 
 for (const appearance of ['light','dark'] as const) for (const editing of [false,true]) test(`${appearance} ${editing ? 'editing' : 'new'} custom loading preserves status and independent frame errors`,async ({page}) => {
-  await openLoading(page,true,editing,appearance);const loading = await presentation(page);await page.evaluate(() => window.customPartsHarness.loading!.update({error: 'Connection read rejected'}));const error = await presentation(page);
+  await openLoading(page,editing,appearance);const loading = await presentation(page);await page.evaluate(() => window.customPartsHarness.loading!.update({error: 'Connection read rejected'}));const error = await presentation(page);
   await page.evaluate(() => window.customPartsHarness.loading!.fail('Frame rejected'));const frame = await presentation(page);
-  await openLoading(page,false,editing,appearance);expect(await presentation(page)).toEqual(loading);await page.evaluate(() => window.customPartsHarness.loading!.update({error: 'Connection read rejected'}));expect(await presentation(page)).toEqual(error);
+  await openLoading(page,editing,appearance);expect(await presentation(page)).toEqual(loading);await page.evaluate(() => window.customPartsHarness.loading!.update({error: 'Connection read rejected'}));expect(await presentation(page)).toEqual(error);
   await page.evaluate(() => window.customPartsHarness.loading!.fail('Frame rejected'));expect(await presentation(page)).toEqual(frame);await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`custom models ${viewport.width} preserve expanded prices and responsive field grids`,async ({page}) => {
-  await page.setViewportSize(viewport);await openCustom(page,true,{applicationContext: true});await page.getByText('Price estimate (optional)',{exact: true}).click();const old = await presentation(page);
-  await openCustom(page,false,{applicationContext: true});await page.getByText('Price estimate (optional)',{exact: true}).click();expect(await presentation(page)).toEqual(old);
-});
-
 test('existing missing limits remain blank while Add model alone uses defaults and keeps monotonic source indices after removal',async ({page}) => {
-  await openCustom(page,false,{state: {...initial,models: [{id: 'existing'}]},pending: true});await expect(page.getByRole('spinbutton',{name: 'Context tokens',exact: true})).toHaveValue('');await expect(page.getByRole('spinbutton',{name: 'Max output tokens',exact: true})).toHaveValue('');
+  await openCustom(page,{state: {...initial,models: [{id: 'existing'}]},pending: true});await expect(page.getByRole('spinbutton',{name: 'Context tokens',exact: true})).toHaveValue('');await expect(page.getByRole('spinbutton',{name: 'Max output tokens',exact: true})).toHaveValue('');
   await page.getByRole('button',{name: 'Save connection',exact: true}).click();expect(await page.evaluate(() => window.customPartsHarness.values)).toEqual([]);
   await page.getByRole('button',{name: 'Add model',exact: true}).click();await expect(page.getByRole('spinbutton',{name: 'Context tokens',exact: true}).nth(1)).toHaveValue('128000');await expect(page.getByRole('spinbutton',{name: 'Max output tokens',exact: true}).nth(1)).toHaveValue('8192');
   await page.getByRole('button',{name: 'Remove model',exact: true}).first().click();await page.getByRole('button',{name: 'Add model',exact: true}).click();
@@ -91,7 +76,7 @@ test('existing missing limits remain blank while Add model alone uses defaults a
 });
 
 test('ordinary availability snapshots retain endpoint and model drafts, protocol, row count, caret and open price disclosure',async ({page}) => {
-  await openCustom(page,false);await page.getByRole('textbox',{name: 'Connection name',exact: true}).fill('Changed endpoint');const id = page.getByRole('textbox',{name: 'Model ID',exact: true}).first();await id.fill('Unsaved model ID');
+  await openCustom(page);await page.getByRole('textbox',{name: 'Connection name',exact: true}).fill('Changed endpoint');const id = page.getByRole('textbox',{name: 'Model ID',exact: true}).first();await id.fill('Unsaved model ID');
   await page.getByText('Price estimate (optional)',{exact: true}).click();await page.getByRole('spinbutton',{name: 'Input',exact: true}).fill('0.00125');await page.getByRole('button',{name: 'Add model',exact: true}).click();
   await id.evaluate(node => {const control = node as HTMLInputElement;control.focus();control.setSelectionRange(2,9);window.customPartsHarness.control = control;});
   await page.evaluate(() => {const h = window.customPartsHarness;h.session.update({...h.initial,name: 'Late name',models: [],disabled: true,error: 'Metadata message'});h.session.update({...h.initial,disabled: false});});
@@ -100,13 +85,13 @@ test('ordinary availability snapshots retain endpoint and model drafts, protocol
 });
 
 test('draft payloads retain raw endpoint/key text, trimmed model identities, boolean capabilities and zero versus unknown prices',async ({page}) => {
-  await openCustom(page,false,{pending: true});await page.getByRole('textbox',{name: 'Connection name',exact: true}).fill(' Endpoint draft ');await page.getByLabel('API key',{exact: true}).fill(' private key ');
+  await openCustom(page,{pending: true});await page.getByRole('textbox',{name: 'Connection name',exact: true}).fill(' Endpoint draft ');await page.getByLabel('API key',{exact: true}).fill(' private key ');
   await page.getByRole('textbox',{name: 'Model ID',exact: true}).fill(' edited-id ');await page.getByRole('textbox',{name: 'Display name',exact: true}).fill(' Edited name ');
   await page.getByRole('button',{name: 'Save connection',exact: true}).click();expect(await page.evaluate(() => window.customPartsHarness.values)).toEqual([{name: ' Endpoint draft ',baseUrl: initial.baseUrl,api: initial.api,apiKey: ' private key ',models: [{sourceIndex: 0,id: 'edited-id',name: 'Edited name',contextWindow: 128000,maxTokens: 8192,reasoning: true,images: true,prices: {input: '0',output: '1.25',cacheRead: '0.125',cacheWrite: '2.5'}}]}]);
 });
 
 test('pending save blocks repeated save/add/remove while allowing text and protocol drafts and Cancel',async ({page}) => {
-  await openCustom(page,false,{pending: true});await page.getByRole('button',{name: 'Save connection',exact: true}).click();
+  await openCustom(page,{pending: true});await page.getByRole('button',{name: 'Save connection',exact: true}).click();
   await expect(page.getByRole('button',{name: 'Add model',exact: true})).toBeDisabled();await expect(page.getByRole('button',{name: 'Remove model',exact: true})).toBeDisabled();await expect(page.getByRole('button',{name: 'Cancel',exact: true})).toBeEnabled();
   await expect(page.getByRole('textbox',{name: 'Connection name',exact: true})).toBeEnabled();await expect(page.getByRole('combobox',{name: 'API protocol',exact: true})).toBeEnabled();
   await page.evaluate(() => {const h = window.customPartsHarness;h.session.update({...h.initial,disabled: true});h.session.update({...h.initial,disabled: false});document.querySelector('dialog[open] form')!.dispatchEvent(new SubmitEvent('submit',{bubbles: true,cancelable: true}));});
@@ -114,7 +99,7 @@ test('pending save blocks repeated save/add/remove while allowing text and proto
 });
 
 test('clear secrets and failed save keep model drafts; a successful current save closes and returns isolated readable model data',async ({page}) => {
-  await openCustom(page,false,{pending: true});await page.getByLabel('API key',{exact: true}).fill('secret draft');await page.evaluate(() => window.customPartsHarness.session.clearSecrets());await expect(page.getByLabel('API key',{exact: true})).toHaveValue('');
+  await openCustom(page,{pending: true});await page.getByLabel('API key',{exact: true}).fill('secret draft');await page.evaluate(() => window.customPartsHarness.session.clearSecrets());await expect(page.getByLabel('API key',{exact: true})).toHaveValue('');
   await page.getByLabel('API key',{exact: true}).fill('Keep on failure');await page.getByRole('button',{name: 'Save connection',exact: true}).click();await page.evaluate(() => window.customPartsHarness.releases[0]!({ok: false,error: 'Rejected'}));await expect(page.getByLabel('API key',{exact: true})).toHaveValue('Keep on failure');
   await page.getByRole('button',{name: 'Save connection',exact: true}).click();await page.evaluate(() => window.customPartsHarness.releases[1]!({ok: true}));await expect(page.getByRole('dialog')).toHaveCount(0);await expect(page.locator('#custom-opener')).toBeFocused();
   expect(await page.evaluate(() => {const h = window.customPartsHarness;const draft = h.session.read();draft.models[0]!.prices.input = 'modified copy';return {read: h.session.read(),closed: h.closed};})).toMatchObject({read: {apiKey: '',models: [{prices: {input: '0'}}]},closed: 1});

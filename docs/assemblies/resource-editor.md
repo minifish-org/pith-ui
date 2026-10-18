@@ -1,53 +1,17 @@
 # Assemble resource loading and editing
 
-These are application-owned composition recipes, not package exports or new
-scene APIs. The compiled code is
-[`examples/assemblies/resource-editor.ts`](../../examples/assemblies/resource-editor.ts).
-It imports only the formal parts entry. The preservation sources are
-`src/forms/resource-editor.ts`, `src/forms/dialog-frame.ts`,
-`src/app/resources.ts:openEditorLoading/openEditor` and `src/app/session.ts` at
-UI commit `897f46a`. The business ownership source is Desk's
-`frontend/src/resource-editor.ts` at `3f1ee24`.
+Import this region from `pith-ui/recipes`. Its single implementation is
+[`src/recipes/resource-editor.ts`](../../src/recipes/resource-editor.ts); public state, callbacks and
+handles are indexed in [API.md](../../API.md).
 
-## Part trees
-
-```text
-DialogPart (purpose: feature; original opening's title)
-├─ StackPart (natural block flow)
-│  ├─ TextPart (role: path-paragraph; original path or workspace path)
-│  ├─ TextPart (role: paragraph; initial read-only/busy notice, when present)
-│  └─ FormPart
-│     ├─ LabelledFieldPart (Name, only new skills/templates)
-│     │  └─ InputPart (required name and native pattern validation)
-│     ├─ FieldLabelPart (Markdown; associated with the next textarea)
-│     ├─ TextareaPart (purpose: markdown; owned draft)
-│     ├─ FeedbackPart (presentation: paragraph; write error)
-│     └─ FooterPart
-│        ├─ ButtonPart (danger; Delete resource, when initially editable/existing)
-│        ├─ ButtonPart (secondary; Cancel or Close)
-│        └─ ButtonPart (primary submit; Save, when initially editable)
-└─ FeedbackPart (presentation: paragraph; frame error)
-
-DialogPart (purpose: feature; loading title)
-├─ FeedbackPart (presentation: paragraph; Loading… or body read error)
-└─ FeedbackPart (presentation: paragraph; frame error)
-```
-
-The containing Name label owns its input and adds no field wrapper or caption
-span. Markdown uses the separate associated label. Feature-dialog sizing,
-responsive overflow, padding, fonts, textarea geometry, footer spacing, colors
-and motion belong to the library. The outer natural-flow stack has no scene CSS.
-
-## Wire the original target and business write
-
-This typed example uses the compiled recipe. The application checks workspace
-availability and owns persistence; the assembly owns the draft and its opening.
+The host computes workspace/save availability and checks the original workspace/path before writes. A failed save retains the draft. A successful write stays successful if a subsequent inventory refresh fails.
 
 ```ts
+import {mountParts} from 'pith-ui';
 import {
-  mountResourceEditor, type ResourceDraft, type ResourceEditorAssembly,
+  composeResourceEditor, type ResourceDraft, type ResourceEditorAssembly,
   type ResourceResult, type ResourceState,
-} from '../../examples/assemblies/resource-editor.js';
+} from 'pith-ui/recipes';
 
 export function attachResourceEditor(
   mount: HTMLElement,
@@ -58,8 +22,8 @@ export function attachResourceEditor(
   clearOwnedEditor: () => void,
   appearance: 'light' | 'dark' | 'system',
 ): ResourceEditorAssembly {
-  let editor: ResourceEditorAssembly;
-  editor = mountResourceEditor(mount, original, {
+  let editor: ReturnType<typeof composeResourceEditor>;
+  editor = composeResourceEditor(original, {
     async onSubmit(draft) {
       const result = await writeOriginal(original, draft);
       if (!result.ok) return result;
@@ -71,75 +35,18 @@ export function attachResourceEditor(
       return result;
     },
     onClose: clearOwnedEditor,
-  }, {appearance});
+  });
+  mountParts(mount,editor.part,{appearance});editor.open();
   return editor;
 }
 ```
-
-`writeOriginal` must recheck the original workspace's availability before a
-write, preserve its original path/kind and return `{ok: false, error}` when a
-write fails. Desk's new-skill frontmatter substitution also remains in this
-business callback. Do not derive a target from whichever workspace is selected
-when an asynchronous callback finishes.
-
-Connect `onDelete(target)` to the application's confirmation assembly. The
-supplied target is frozen and contains the current name plus the opening's
-workspace/kind/path. The confirmed operation writes `editor.read()` against that
-original target with the application's remove flag. Delete is guarded while a
-save or earlier asynchronous deletion callback is pending. Its own operation
-does not change the original button presentation or disable Cancel.
-
-## State and lifetime rules
-
-| Operation or state | Preserved rule |
-| --- | --- |
-| Initial `content` / `name` | Initializes the draft once. Existing resources and new instructions have no Name input, so `read().name` is empty. |
-| `update(next)` | Accepts only the same workspace ID/path, resource kind and resource path; never replaces draft values or field nodes. |
-| `editable` / `workspaceBusy` | Makes native fields read-only and disables Save/Delete. `disabled` blocks actions independently. |
-| `saveDisabled` | Projects the current host/workspace availability onto Save and submission only. It leaves Delete, Cancel, the native field's editing mode and the draft unchanged. |
-| Local save pending | Survives availability snapshots, blocks a second submission and disables Delete. Cancel remains available. |
-| `error` omitted from a snapshot | Leaves the current write feedback intact. An explicit empty string clears it. |
-| `fail(message)` | Reports a resource editor write error; in a loading opening, it reports the separate frame error. |
-| Initial read-only notice, title and buttons | Stay structurally tied to the original opening; metadata updates do not add Save/Delete to an inherited opening. |
-| `read()` after close/destroy | Returns a copy of the final saved draft. |
-
-The native form retains required/name-pattern validation. Metadata changes keep
-the same controls, input composition, focus and selection. A failed callback or
-rejected promise retains the draft and displays its error. A successful callback
-closes only the still-current opening. A close invalidates the presentation of
-late outcomes; it never cancels, retries or replays the business write.
-
-The complete Desk assembly retains the editor's original workspace ID and its
-latest metadata. On every `workspace.updateAvailability(...)`, it updates
-`saveDisabled` from host `busy` or membership of that original workspace in
-`workspaces`; a missing workspace ID uses the original active-scope fallback.
-Unrelated workspace runs, global model availability and the currently selected
-conversation do not disable this resource's Save. Clearing the matching run or
-host busy state restores Save. Keep this projection separate from
-`editable` / `workspaceBusy`: those fields describe the editor opening and
-must not turn an already open draft read-only or disable Delete on a later
-availability snapshot. Reapply the projection when the editor metadata or an
-asynchronous write error changes, and retire it with that editor's opening.
-
-For asynchronous reads, create `mountResourceLoading(...)` first. Retain an
-application generation token and check both that token and `loading.isOpen()`
-before replacing it with the editor. `loading.update({error})` changes the body
-status; `loading.fail(message)` changes the independent frame feedback. Closing
-or replacing loading makes late reads ineligible to open an editor.
-
-The application owns the shared feature-dialog slot: close/destroy the previous
-opening before mounting its replacement. This same owner coordinates history,
-connection-loading and other feature openings; a recipe is not a second public
-scene manager. The `mountResourceEditor` and `mountResourceLoading` functions are
-standalone validation/demo adapters. A shared application uses the composable
-builders below, then mounts their genuine dialog parts through one theme owner.
 
 ```ts
 import {createStackPart, mountParts} from 'pith-ui';
 import {
   composeResourceEditor, composeResourceLoading,
   type ResourceCallbacks, type ResourceState,
-} from '../../examples/assemblies/resource-editor.js';
+} from 'pith-ui/recipes';
 
 export function attachResourceLayers(
   mount: HTMLElement,
@@ -156,38 +63,7 @@ export function attachResourceLayers(
 }
 ```
 
-`composeResourceEditor` and `composeResourceLoading` construct unopened parts.
-They receive no DOM container and create no theme scope. Their explicit `open()`
-works after the shared tree is mounted. Changing the owner's appearance updates
-every retained layer immediately without changing field values or selection.
-Destroying that parent calls the dialog disposal hook before child controls are
-cleared, saves the draft and retires outstanding outcomes. Unopened layers are
-disposed silently; an opened layer notifies `onClose` once.
-
-The current parity fixture supplies the actual baseline application's parent
-for the modal comparison; the complete shell assembly and shared owner remain
-a separate required proof. Independent part and behavior tests use ordinary
-container mounts.
-
-## Close, destroy and verify
-
-`close()` and `destroy()` both terminate these openings. They save the draft,
-destroy the mounted tree and native/form/dialog controllers, restore focus and
-deliver `onClose` once. Native Escape, backdrop dismissal, the close icon and the
-footer cancellation use that same lifecycle. Repeated disposal and late updates
-are harmless.
-
-```sh
-npx tsc --noEmit
-npx playwright test tests/parts-resource-editor.spec.ts
-npx playwright test tests/parts-resource-composition.spec.ts
-npx playwright test tests/parts-desk.spec.ts
-```
-
-The regression compares the actual old `createApplication().resources` editor
-and loading openings with these assemblies in both appearance modes and browser
-engines. It checks complete modal/control/text/button geometry, typography,
-colors, SVG close icon, native label nesting, responsive overflow, both loading
-error channels, read-only/busy states, validation, draft/selection identity,
-pending/repeated operations, immutable target gating, failures, teardown and the
-successful-write/failed-refresh boundary. The frozen rc.27 oracle is unchanged.
+Attach the region to the existing ownership tree before opening it. See
+[APP.md](../../APP.md) for shared mounting and dialog slots. The current
+interaction assertions run in Chromium and WebKit in
+[`parts-resource-editor.spec.ts`](../../tests/parts-resource-editor.spec.ts).

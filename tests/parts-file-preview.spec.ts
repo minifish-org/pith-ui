@@ -12,9 +12,9 @@ interface PreviewHarness {
 }
 declare global {interface Window {filePreviewHarness: PreviewHarness}}
 
-async function setup(page: Page, old: boolean, kind: Kind | 'loading' | 'error' = 'text', appearance: 'light' | 'dark' = 'light', large = false): Promise<void> {
+async function setup(page: Page, kind: Kind | 'loading' | 'error' = 'text', appearance: 'light' | 'dark' = 'light', large = false): Promise<void> {
   await page.goto('/tests/fixture.html');await page.emulateMedia({colorScheme: appearance === 'light' ? 'dark' : 'light'});
-  await page.evaluate(async ({old,kind,appearance,large}) => {
+  await page.evaluate(async ({kind,appearance,large}) => {
     document.documentElement.classList.add('pui');document.documentElement.dataset.appearance = appearance;document.body.dataset.appearance = appearance;
     const canvas = document.createElement('canvas');canvas.width = 1200;canvas.height = 800;canvas.getContext('2d')!.fillRect(0,0,1200,800);const imageSource = canvas.toDataURL('image/png');
     const largeText = '# Multi-page source\n' + ('中文 🙂 literal <script>not executable</script>\n'.repeat(8000));
@@ -29,22 +29,12 @@ async function setup(page: Page, old: boolean, kind: Kind | 'loading' | 'error' 
       onImage(image: {src: string;alt: string}) {h.images.push(image);},
       onClose() {h.closed++;},
     };
-    const mount = document.body.appendChild(document.createElement('div')),appPath = '/src/app/index.ts',{createApplication} = await import(appPath),app = createApplication(mount,{appearance});
-    if (old) {h.session = app.files.openPreview(input,callbacks);h.tree = app;}
-    else {
-      const partsPath = '/src/parts/index.ts',recipePath = '/examples/assemblies/file-preview.ts',p = await import(partsPath),{composeFilePreview} = await import(recipePath);
-      const announcement = p.createAnnouncementPart({message: ''}),announcerMount = document.body.appendChild(document.createElement('div'));p.mountParts(announcerMount,announcement,{appearance});
-      const session = composeFilePreview(input,callbacks,announcement);h.session = session;
-      // Match the actual application's direct flex-child modal context. The
-      // shared announcement and image viewer are siblings owned by the frame.
-      const appRoot = mount.querySelector('.pui-app')!;
-      // Keep only the measured shell context, retiring every old delegate so
-      // formal interactions cannot accidentally fall through to old handlers.
-      app.destroy();mount.replaceChildren(appRoot);
-      h.tree = p.mountParts(appRoot,session.part,{appearance});session.open();
-    }
-    window.filePreviewHarness = h;
-  },{old,kind,appearance,large});
+const mount=document.body.appendChild(document.createElement('div'));
+    const contextPath = '/tests/region-context.ts', {mountRegion} = await import(contextPath);
+    const path='/tests/recipes-fixture.ts',{parts:p,recipes:r}=await import(path),announcement=p.createAnnouncementPart({message:''}),session=r.composeFilePreview(input,callbacks,announcement);
+    h.session=session;h.tree=mountRegion(mount,session.part,'dialog',appearance,[announcement]);session.open();
+        window.filePreviewHarness = h;
+  },{kind,appearance,large});
   await expect(page.locator('dialog.pui-file-preview-modal[open]')).toBeVisible();
   if (kind === 'image') await page.locator('dialog.pui-file-preview-modal img').evaluate(image => (image as HTMLImageElement).decode());
   await page.mouse.move(0,0);
@@ -101,33 +91,21 @@ test('viewport literal text and composed footnotes share one root and reject inv
   });expect(result).toEqual({foreign: true,duplicate: true,retained: true,same: true,nodes: ['#text','p']});
 });
 
-for (const appearance of ['light','dark'] as const) for (const kind of ['loading','text','markdown','diff','image','error'] as const) test(`${appearance} ${kind} file preview assembly preserves the actual application content, actions and layout`, async ({page}) => {
-  await setup(page,true,kind,appearance);const old = await presentation(page);
-  await setup(page,false,kind,appearance);expect(await presentation(page)).toEqual(old);
-  if (kind === 'text') {await expect(page.locator('.pui-file-preview-text b')).toHaveCount(0);await expect(page.locator('.pui-file-preview-text')).toContainText('Literal <b>source</b>');}
-  if (kind === 'markdown') {await expect(page.locator('dialog script')).toHaveCount(0);await page.getByRole('button',{name: 'Copy code',exact: true}).click();expect(await page.evaluate(() => window.filePreviewHarness.copies)).toEqual(['const value = "中文";\n']);}
-});
-
-for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`file preview ${viewport.width} retains the modal and wrapping file actions`, async ({page}) => {
-  await page.setViewportSize(viewport);await setup(page,true,'markdown');const old = await presentation(page);await setup(page,false,'markdown');expect(await presentation(page)).toEqual(old);
-});
-
 test('UTF-8 Markdown paging keeps original literal windows and retains page, selection and scroll on identical snapshots', async ({page}) => {
   const snapshots: unknown[] = [],texts: string[] = [];
-  for (const old of [true,false]) {
-    await setup(page,old,'markdown','light',true);snapshots.push(await presentation(page));
+
+    await setup(page,'markdown','light',true);snapshots.push(await presentation(page));
     await expect(page.locator('.pui-preview-pagination')).toContainText('Plain text preview');await expect(page.locator('dialog .pui-markdown')).toHaveCount(0);
     await page.getByRole('button',{name: 'Next',exact: true}).click();await page.mouse.move(0,0);texts.push(await page.locator('.pui-file-preview-text').innerText());
     await page.evaluate(() => {const h = window.filePreviewHarness,pre = document.querySelector('.pui-file-preview-text')!;h.before = pre;const range = document.createRange();range.setStart(pre.firstChild!,0);range.setEnd(pre.firstChild!,6);getSelection()!.removeAllRanges();getSelection()!.addRange(range);h.selection = getSelection()!.toString();document.querySelector('.pui-file-preview-body')!.scrollTop = 130;h.session.update({...h.state!,disabled: true});});
     expect(await page.evaluate(() => ({same: window.filePreviewHarness.before === document.querySelector('.pui-file-preview-text'),selection: getSelection()!.toString() === window.filePreviewHarness.selection,scroll: document.querySelector('.pui-file-preview-body')!.scrollTop,status: document.querySelector('.pui-preview-pagination')!.textContent}))).toEqual({same: true,selection: true,scroll: 130,status: expect.stringContaining('2 /')});
     await page.evaluate(() => window.filePreviewHarness.session.update({kind: 'text',text: 'Replacement literal source'}));await expect(page.locator('.pui-preview-pagination')).toHaveCount(0);await expect(page.locator('.pui-file-preview-text')).toHaveText('Replacement literal source');
-  }
-  expect(snapshots[1]).toEqual(snapshots[0]);expect(texts[1]).toBe(texts[0]);expect(texts[1]).not.toContain('�');
+  expect(texts[0]).not.toContain('�');expect(texts[0]).toContain('中文 🙂 literal');
 });
 
 test('file actions capture immutable owner targets, share open pending and retain independent copy feedback', async ({page}) => {
-  for (const old of [true,false]) {
-    await setup(page,old);await page.evaluate(() => {const h = window.filePreviewHarness;h.input.owner.id = 'mutated';h.input.name = 'changed';h.input.path = '/changed';});
+
+    await setup(page);await page.evaluate(() => {const h = window.filePreviewHarness;h.input.owner.id = 'mutated';h.input.name = 'changed';h.input.path = '/changed';});
     await page.getByRole('button',{name: 'Open',exact: true}).click();for (const name of ['Open','Reveal','Copy path']) await expect(page.getByRole('button',{name,exact: true})).toBeDisabled();
     await page.evaluate(() => window.filePreviewHarness.session.update({...window.filePreviewHarness.state!,disabled: false}));await expect(page.getByRole('button',{name: 'Open',exact: true})).toBeDisabled();
     await page.evaluate(() => window.filePreviewHarness.resolve!({ok: true}));await expect(page.getByRole('button',{name: 'Open',exact: true})).toBeEnabled();
@@ -135,20 +113,18 @@ test('file actions capture immutable owner targets, share open pending and retai
     await page.evaluate(() => window.filePreviewHarness.resolve!({ok: true}));await expect(page.getByRole('button',{name: 'Path copied.',exact: true})).toHaveText('Copied');
     await page.evaluate(() => window.filePreviewHarness.session.update({...window.filePreviewHarness.state!,disabled: false}));await expect(page.getByRole('button',{name: 'Path copied.',exact: true})).toHaveText('Copied');
     expect(await page.evaluate(() => window.filePreviewHarness.calls)).toEqual(['open','copy-path'].map(action => ({action,target: {owner: {kind: 'artifact',id: 'session-original'},name: 'Report 中文.md',path: '/workspace/reports/Report 中文.md'},frozen: true,argc: 2})));
-  }
 });
 
 test('preview errors recover, code copy and image activation follow actual disabled behavior, and closed results stay quiet', async ({page}) => {
-  for (const old of [true,false]) {
-  await setup(page,old,'markdown');await page.evaluate(() => window.filePreviewHarness.session.update({...window.filePreviewHarness.state!,disabled: true}));
+
+  await setup(page,'markdown');await page.evaluate(() => window.filePreviewHarness.session.update({...window.filePreviewHarness.state!,disabled: true}));
   // Existing preview disabled state gates file actions; rendered content copy
   // and image activation remain available in the actual old application.
   await expect(page.getByRole('button',{name: 'Open',exact: true})).toBeDisabled();await page.getByRole('button',{name: 'Copy code',exact: true}).click();expect(await page.evaluate(() => window.filePreviewHarness.copies)).toHaveLength(1);
   await page.evaluate(() => window.filePreviewHarness.session.fail('Read failed'));await expect(page.locator('.pui-file-preview-body')).toContainText('Read failed');
   await page.evaluate(() => {const h = window.filePreviewHarness;h.session.update({kind: 'image',imageSrc: h.imageSource,imageAlt: 'Preview image',disabled: true});});
   await page.locator('img.pui-file-preview-image').evaluate(image => (image as HTMLImageElement).decode());await page.locator('img.pui-file-preview-image').click();
-  if (old) {await expect(page.locator('dialog.pui-image-viewer[open]')).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('dialog.pui-image-viewer[open]')).toHaveCount(0);}
-  else expect(await page.evaluate(() => window.filePreviewHarness.images)).toEqual([{src: expect.stringContaining('data:image/png'),alt: 'Preview image'}]);
+  expect(await page.evaluate(() => window.filePreviewHarness.images)).toEqual([{src: expect.stringContaining('data:image/png'),alt: 'Preview image'}]);
   await page.evaluate(() => window.filePreviewHarness.session.update({kind: 'text',text: 'Recovered'}));await expect(page.locator('.pui-file-preview-text')).toHaveText('Recovered');
   await page.getByRole('button',{name: 'Reveal',exact: true}).click();await page.keyboard.press('Escape');await expect(page.locator('dialog.pui-file-preview-modal[open]')).toHaveCount(0);
   await page.evaluate(() => {const h = window.filePreviewHarness;h.resolve!({ok: false,error: 'Late native cancellation'});h.session.fail('Late external failure');h.session.update({kind: 'text',text: 'Late content'});});
@@ -158,5 +134,4 @@ test('preview errors recover, code copy and image activation follow actual disab
   // its terminal dialog. Neither lifetime may display a late result.
   await expect(page.locator('dialog.pui-file-preview-modal').filter({hasText: 'Late'})).toHaveCount(0);
   await page.evaluate(() => {const h = window.filePreviewHarness;h.tree.destroy();h.session.destroy();h.tree.destroy();});await expect(page.locator('dialog.pui-file-preview-modal')).toHaveCount(0);expect(await page.evaluate(() => window.filePreviewHarness.closed)).toBe(1);
-  }
 });

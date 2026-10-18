@@ -32,9 +32,9 @@ const credential: Credential = {status: 'Configured',hidden: false,required: fal
 const update: UpdateState = {version: '0.1.0-rc.27',enabled: true,phase: 'available',availableVersion: '0.1.0-rc.28',progress: 0,message: 'An update is available.'};
 interface OpenOptions {appearance?: 'light' | 'dark'; state?: SettingsState; credential?: Credential; providers?: Provider[]; updates?: UpdateState; cold?: boolean; pending?: string[];applicationContext?: boolean}
 
-async function openSettings(page: Page, old: boolean, options: OpenOptions = {}): Promise<void> {
+async function openSettings(page: Page, options: OpenOptions = {}): Promise<void> {
   await page.goto('/tests/fixture.html');
-  await page.evaluate(async ({old, options, ready, providers, credential, update}) => {
+  await page.evaluate(async ({options, ready, providers, credential, update}) => {
     const appearance = options.appearance ?? 'light';
     document.documentElement.classList.add('pui'); document.documentElement.dataset.appearance = appearance; document.body.dataset.appearance = appearance;
     const opener = document.createElement('button'); opener.textContent = 'Settings opener'; opener.id = 'settings-opener'; document.body.append(opener); opener.focus();
@@ -42,7 +42,7 @@ async function openSettings(page: Page, old: boolean, options: OpenOptions = {})
     // Actual Desk dialogs are flex children of the application shell. Match
     // that native parent context in both oracles, including WebKit's computed
     // automatic minimum serialization; the recipe has no presentation override.
-    if (!old && options.applicationContext) mount.classList.add('pui-app');
+    if (options.applicationContext) mount.classList.add('pui-app');
     const h = {initial: options.state ?? ready,credential: options.credential ?? credential,values: [],releases: [],closed: 0} as unknown as Harness;
     const action = (name: string, value?: unknown): Result | Promise<Result> => {
       h.values.push({action: name,...(value === undefined ? {} : {value})});
@@ -58,46 +58,17 @@ async function openSettings(page: Page, old: boolean, options: OpenOptions = {})
       onUpdateAction: (name: string) => action(`update-${name}`),onCreateConnection: () => action('create'),onDiagnostics: () => action('diagnostics'),
       onClose() {h.closed++;},
     };
-    if (old) {
-      const path = '/src/app/index.ts'; const {createApplication} = await import(path);
-      const app = createApplication(mount,{appearance,brand: {name: 'Pith Desk'}}); h.session = app.settings.openSettings(h.initial,callbacks);
-    } else {
+
       const path = '/examples/assemblies/settings.ts'; const {mountSettings} = await import(path);
       h.session = mountSettings(mount,h.initial,callbacks,{appearance},'Pith Desk');
-    }
     if (!options.cold) {
       h.session.setProviders(options.providers ?? providers,'first'); h.session.setCredential(h.credential); h.session.updateUpdates(options.updates ?? update);
     }
     window.settingsPartsHarness = h;
-  },{old,options,ready,providers,credential,update});
+  },{options,ready,providers,credential,update});
   await expect(page.getByRole('dialog',{name: 'Settings',exact: true})).toBeVisible();
 }
 
-async function presentation(page: Page): Promise<unknown> {
-  return page.evaluate(async () => {
-    await document.fonts.ready;
-    for (const animation of document.getAnimations()) if (animation.effect?.getTiming().iterations !== Infinity) animation.finish();
-    const dialog = document.querySelector('dialog[open]')!,origin = dialog.getBoundingClientRect();
-    const inspect = (node: Element) => {
-      const rect = node.getBoundingClientRect(),style = getComputedStyle(node);
-      return {tag: node.localName,text: [...node.childNodes].filter(child => child.nodeType === Node.TEXT_NODE).map(child => child.textContent).join('').trim(),
-        box: [rect.x-origin.x,rect.y-origin.y,rect.width,rect.height].map(value => Math.round(value*100)/100),
-        styles: ['display','font-family','font-size','font-weight','line-height','color','background-color','margin-top','margin-bottom','padding-top','padding-right','padding-bottom','padding-left','border-top-width','border-top-color','border-radius','gap','overflow-x','overflow-y','min-height','height'].map(key => style.getPropertyValue(key)),
-        ...(node instanceof HTMLInputElement ? {value: node.value,disabled: node.disabled,required: node.required,type: node.type,placeholder: node.placeholder,autocomplete: node.autocomplete} : {}),
-        ...(node instanceof HTMLSelectElement ? {value: node.value,disabled: node.disabled,required: node.required,options: [...node.options].map(option => [option.value,option.textContent,option.disabled])} : {}),
-        ...(node instanceof HTMLButtonElement ? {label: node.getAttribute('aria-label'),disabled: node.disabled,type: node.type} : {}),
-        ...(node instanceof HTMLProgressElement ? {value: node.value,max: node.max} : {})};
-    };
-    const meaningful = [...dialog.querySelectorAll('h2,h3,label,input,select,p,progress,summary,button,.pui-configured-badge,[role=status],[role=alert],.pui-modal-footer')]
-      .filter(node => !node.closest('[hidden]'));
-    const form = dialog.querySelector('form')!;
-    return {dialog: inspect(dialog),meaningful: meaningful.map(inspect),svg: [...dialog.querySelectorAll('svg')].map(svg => svg.innerHTML),
-      nativeBoundary: {formCount: dialog.querySelectorAll('form').length,appearanceInForm: !!form.querySelector('select[aria-label=Appearance]'),
-        progressInForm: !!form.querySelector('progress'),inputNames: [...form.querySelectorAll('input')].map(input => input.name)},
-      overflow: [dialog.clientWidth,dialog.scrollWidth,dialog.clientHeight,dialog.scrollHeight],
-      background: getComputedStyle(dialog).backgroundColor};
-  });
-}
 
 test('small form layout, section, field stack, progress, label suffix and invalid callback preserve native boundaries without DOM ports',async ({page}) => {
   await page.goto('/tests/fixture.html');
@@ -180,33 +151,9 @@ test('a rejected field-stack state leaves the supplied control available for its
   expect(value).toEqual({rejected: true,value: 'Keep this draft',count: 1});
 });
 
-const scenarios: Record<string,OpenOptions> = {
-  ready: {},loading: {cold: true,state: {baseUrl: '',hasApiKey: false,ready: false}},
-  disabled: {state: {...ready,disabled: true,appearance: {mode: 'dark',disabled: true}}},
-  testing: {state: {...ready,testing: true,testResult: {message: 'Testing streaming and tool calling…'}}},
-  errors: {state: {...ready,error: 'Provider rejected the saved key.',appearance: {mode: 'light',error: 'Appearance preference could not be saved.'},testResult: {message: 'Tool calling is unavailable.',ok: false}}},
-  oauth: {credential: {...credential,status: 'Signed in',hidden: true,required: false,removeVisible: false,hint: 'Requests use your provider account.',providerActions: {id: 'first',oauth: true,signedIn: true,custom: false}}},
-  empty: {providers: [],credential: {...credential,status: '',required: true,removeVisible: false,providerActions: undefined}},
-  installing: {updates: {...update,phase: 'installing',progress: 37,message: 'Installing update…'}},
-  checking: {updates: {...update,phase: 'checking',availableVersion: '',message: 'Checking for updates…'}},
-};
-for (const appearance of ['light','dark'] as const) for (const [name,options] of Object.entries(scenarios)) test(`${appearance} settings ${name} assembly preserves the actual application scene`,async ({page}) => {
-  await page.emulateMedia({colorScheme: appearance === 'dark' ? 'light' : 'dark'});
-  await openSettings(page,true,{...options,appearance,applicationContext: true}); const old = await presentation(page);
-  await openSettings(page,false,{...options,appearance,applicationContext: true}); expect(await presentation(page)).toEqual(old);
-  expect((await presentation(page) as {background: string}).background).toBe(appearance === 'dark' ? 'rgb(34, 37, 42)' : 'rgb(255, 255, 255)');
-  if (!options.cold && !options.credential?.hidden) await expect(page.locator('dialog[open] input[type=password]')).toHaveAccessibleName(`API key ${options.credential?.status ?? credential.status}`.trim());
-});
-
-for (const viewport of [{width: 900,height: 568},{width: 390,height: 844}]) test(`settings ${viewport.width} preserves responsive scrolling and expanded advanced fields`,async ({page}) => {
-  await page.setViewportSize(viewport); await openSettings(page,true,{applicationContext: true}); await page.getByText('Advanced connection settings',{exact: true}).click(); const old = await presentation(page);
-  await openSettings(page,false,{applicationContext: true}); await page.getByText('Advanced connection settings',{exact: true}).click(); expect(await presentation(page)).toEqual(old);
-  await page.getByRole('button',{name: 'Save settings',exact: true}).scrollIntoViewIfNeeded();
-  const box = await page.getByRole('button',{name: 'Save settings',exact: true}).boundingBox(); expect(box!.y+box!.height).toBeLessThanOrEqual(viewport.height);
-});
 
 test('settings snapshots retain URL and key drafts, caret and provider choice; hiding a credential excludes it without erasing it',async ({page}) => {
-  await openSettings(page,false); await page.getByText('Advanced connection settings',{exact: true}).click();
+  await openSettings(page); await page.getByText('Advanced connection settings',{exact: true}).click();
   const url = page.getByRole('textbox',{name: 'API base URL',exact: true}),key = page.getByLabel('API key',{exact: false});
   await url.fill('https://draft.example/v2'); await key.fill('Unsaved private key');
   await key.evaluate(node => {const control = node as HTMLInputElement; window.settingsPartsHarness.control = control; control.focus(); control.setSelectionRange(3,10);});
@@ -220,7 +167,7 @@ test('settings snapshots retain URL and key drafts, caret and provider choice; h
 
 test('native URL validation expands advanced fields, required credentials block save, and all auxiliary buttons remain non-submit',async ({page}) => {
   const validate = async (old: boolean) => {
-    await openSettings(page,old,{credential: {...credential,required: true}});
+    await openSettings(page,{credential: {...credential,required: true}});
     const save = page.getByRole('button',{name: 'Save settings',exact: true}); await save.click();
     expect(await page.evaluate(() => window.settingsPartsHarness.values.filter(value => value.action === 'save'))).toEqual([]);
     await page.getByLabel('API key',{exact: false}).fill('Draft key');
@@ -236,7 +183,7 @@ test('native URL validation expands advanced fields, required credentials block 
 });
 
 test('the host can expose Cancel test while the original test callback is still pending',async ({page}) => {
-  await openSettings(page,false,{pending: ['test']}); await page.getByRole('button',{name: 'Test connection',exact: true}).click();
+  await openSettings(page,{pending: ['test']}); await page.getByRole('button',{name: 'Test connection',exact: true}).click();
   const cancel = page.getByRole('button',{name: 'Cancel test',exact: true}); await expect(cancel).toBeEnabled(); await cancel.click();
   await expect(page.getByRole('button',{name: 'Test connection',exact: true})).toBeEnabled();
   expect(await page.evaluate(() => window.settingsPartsHarness.values.filter(value => value.action !== 'draft'))).toEqual([
@@ -245,7 +192,7 @@ test('the host can expose Cancel test while the original test callback is still 
 });
 
 for (const action of ['save','remove'] as const) test(`resetProvider retires an earlier ${action} without replacing or erasing the next provider draft`,async ({page}) => {
-  await openSettings(page,false,{pending: [action]}); await page.getByLabel('API key',{exact: false}).fill('First private draft');
+  await openSettings(page,{pending: [action]}); await page.getByLabel('API key',{exact: false}).fill('First private draft');
   await page.getByRole('button',{name: action === 'save' ? 'Save settings' : 'Remove saved API key',exact: true}).click();
   await expect(page.getByRole('button',{name: 'Save settings',exact: true})).toBeDisabled();
   await page.evaluate(() => window.settingsPartsHarness.session.resetProvider({provider: 'second',baseUrl: 'https://second.example/v1',clearKey: true,collapseAdvanced: true}));
@@ -257,7 +204,7 @@ for (const action of ['save','remove'] as const) test(`resetProvider retires an 
 });
 
 test('remove and save share one operation and a failed removal keeps the private draft',async ({page}) => {
-  await openSettings(page,false,{pending: ['remove']}); await page.getByLabel('API key',{exact: false}).fill('Keep this key');
+  await openSettings(page,{pending: ['remove']}); await page.getByLabel('API key',{exact: false}).fill('Keep this key');
   await page.getByRole('button',{name: 'Remove saved API key',exact: true}).click();
   await expect(page.getByRole('button',{name: 'Save settings',exact: true})).toBeDisabled(); await expect(page.getByRole('button',{name: 'Test connection',exact: true})).toBeDisabled();
   await page.evaluate(() => {document.querySelector('dialog[open] form')!.dispatchEvent(new SubmitEvent('submit',{bubbles: true,cancelable: true}));});
@@ -267,7 +214,7 @@ test('remove and save share one operation and a failed removal keeps the private
 });
 
 test('provider action buttons retain keyed pending, callback identity and focus across credential snapshots',async ({page}) => {
-  await openSettings(page,false,{pending: ['provider-login']}); const login = page.getByRole('button',{name: 'Sign in with provider',exact: true});
+  await openSettings(page,{pending: ['provider-login']}); const login = page.getByRole('button',{name: 'Sign in with provider',exact: true});
   await login.evaluate(node => {window.settingsPartsHarness.button = node as HTMLButtonElement;}); await login.click(); await expect(login).toBeDisabled();
   await page.evaluate(() => {const h = window.settingsPartsHarness; h.session.setCredential({...h.credential,providerActions: {...h.credential.providerActions!,disabled: true}}); h.session.setCredential(h.credential);});
   await expect(login).toBeDisabled(); expect(await login.evaluate(node => node === window.settingsPartsHarness.button)).toBe(true);
@@ -277,7 +224,7 @@ test('provider action buttons retain keyed pending, callback identity and focus 
 });
 
 test('update pending merges local and host state; check failure enables retry while an install failure remains busy',async ({page}) => {
-  await openSettings(page,false,{pending: ['update-check']}); const check = page.getByRole('button',{name: 'Check for updates',exact: true}); await check.click();
+  await openSettings(page,{pending: ['update-check']}); const check = page.getByRole('button',{name: 'Check for updates',exact: true}); await check.click();
   await page.evaluate(() => {const h = window.settingsPartsHarness; h.session.setUpdatePending(true); h.session.setUpdatePending(false);}); await expect(check).toBeDisabled();
   await page.evaluate(update => {const h = window.settingsPartsHarness; h.session.updateUpdates({...update,phase: 'checking'}); h.releases[0]!.resolve({ok: false,error: 'Download status unavailable'});},update);
   await expect(check).toBeEnabled(); await expect(page.getByText('Download status unavailable',{exact: true})).toBeVisible();
@@ -286,7 +233,7 @@ test('update pending merges local and host state; check failure enables retry wh
 });
 
 test('closing clears secrets and all late outcomes, preserves host focus and only notifies once',async ({page}) => {
-  await openSettings(page,false,{pending: ['save']}); await page.getByLabel('API key',{exact: false}).fill('Private draft'); await page.getByRole('button',{name: 'Save settings',exact: true}).click();
+  await openSettings(page,{pending: ['save']}); await page.getByLabel('API key',{exact: false}).fill('Private draft'); await page.getByRole('button',{name: 'Save settings',exact: true}).click();
   await page.evaluate(() => window.settingsPartsHarness.session.close()); await expect(page.getByRole('dialog')).toHaveCount(0); await expect(page.locator('#settings-opener')).toBeFocused();
   await page.evaluate(() => {const h = window.settingsPartsHarness; h.releases[0]!.resolve({ok: false,error: 'Late failure'}); h.session.update({...h.initial,error: 'Late snapshot'}); h.session.fail('Late frame failure'); h.session.clearSecrets(); h.session.destroy(); h.session.destroy();});
   expect(await page.evaluate(() => ({read: window.settingsPartsHarness.session.read(),closed: window.settingsPartsHarness.closed,open: window.settingsPartsHarness.session.isOpen()}))).toEqual({read: {provider: 'first',baseUrl: ready.baseUrl,apiKey: ''},closed: 1,open: false});

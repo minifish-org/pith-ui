@@ -61,11 +61,13 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
         }>;
     };
     assert(pkg.name === metadata.name && pkg.version === metadata.version, 'Installed package metadata differs');
-    assert(JSON.stringify(Object.keys(pkg.exports ?? {}).sort()) === JSON.stringify(['.', './styles.css']), 'The package must expose only the bounded root and stylesheet');
+    assert(JSON.stringify(Object.keys(pkg.exports ?? {}).sort()) === JSON.stringify(['.', './recipes', './styles.css']), 'The package must expose the parts, recipes and stylesheet entries');
     const entry = pkg.exports?.['.'];
     assert(entry && typeof entry !== 'string' && entry.types === './dist/index.d.ts' && entry.import === './dist/index.js', 'Invalid bounded public entry');
+    const recipeEntry = pkg.exports?.['./recipes'];
+    assert(recipeEntry && typeof recipeEntry !== 'string' && recipeEntry.types === './dist/recipes/index.d.ts' && recipeEntry.import === './dist/recipes/index.js', 'Invalid formal recipes entry');
     assert(pkg.exports?.['./styles.css'] === './dist/styles.css', 'Missing portable public stylesheet entry');
-    for (const name of ['README.md', 'AI.md', 'API.md', 'APP.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/styles.css'])
+    for (const name of ['README.md', 'AI.md', 'API.md', 'APP.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/recipes/index.js', 'dist/recipes/index.d.ts', 'dist/styles.css'])
         assert((await readFile(join(installed, name))).byteLength > 0, `Missing or empty package file: ${name}`);
     assert(pkg.dependencies && Object.values(pkg.dependencies).every(version => /^\d+\.\d+\.\d+$/.test(version)), 'Runtime dependencies must use exact versions');
     const css = await readFile(join(installed, 'dist/styles.css'), 'utf8');
@@ -74,6 +76,7 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
     const runtime = JSON.parse(await run(process.execPath, ['--input-type=module', '-e', `
  const ui=await import('pith-ui'),names=Object.keys(ui).sort();
  if(!names.length||names.some(name=>name!=='mountParts'&&!/^create[A-Za-z0-9]+Part$/.test(name)))throw new Error('An unrestricted or template API escaped through the public root');
+ const recipes=await import('pith-ui/recipes');if(typeof recipes.composeFrame!=='function'||typeof recipes.createDialogHost!=='function'||Object.keys(recipes).some(name=>name.startsWith('mount')))throw new Error('Invalid public region API');
  for(const name of ${JSON.stringify(blocked)}){let rejected=false;try{await import(name);}catch(error){if(error.code!=='ERR_PACKAGE_PATH_NOT_EXPORTED')throw error;rejected=true;}if(!rejected)throw new Error('Private package import accepted: '+name);}console.log(JSON.stringify(names));`], consumer)) as string[];
     const api = await readFile(join(installed, 'API.md'), 'utf8'), documented = [...api.matchAll(/^\| \[\x60((?:create[A-Za-z0-9]+Part)|mountParts)\x60\]/gm)].map(match => match[1]!).sort();
     assert(JSON.stringify(runtime) === JSON.stringify(documented), 'Installed runtime exports differ from the generated public API index');
@@ -88,12 +91,12 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
         const body = await readFile(join(installed, 'examples/assemblies', name), 'utf8'), source = ts.createSourceFile(name, body, ts.ScriptTarget.Latest, true);
         const visit = (node: import('typescript').Node): void => { if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
             if (node.moduleSpecifier)
-                assert(ts.isStringLiteral(node.moduleSpecifier) && (node.moduleSpecifier.text === 'pith-ui' || /^\.\/[^/]+\.js$/.test(node.moduleSpecifier.text)), `Packed assembly uses a private or source import: ${name}`); assert(!(ts.isIdentifier(node) && ['document', 'window', 'Node', 'DOMParser'].includes(node.text)), `Packed assembly creates or inspects raw DOM: ${name}`); ts.forEachChild(node, visit); };
+                assert(ts.isStringLiteral(node.moduleSpecifier) && (['pith-ui','pith-ui/recipes'].includes(node.moduleSpecifier.text) || /^\.\/[^/]+\.js$/.test(node.moduleSpecifier.text)), `Packed assembly uses a private or source import: ${name}`); assert(!(ts.isIdentifier(node) && ['document', 'window', 'Node', 'DOMParser'].includes(node.text)), `Packed assembly creates or inspects raw DOM: ${name}`); ts.forEachChild(node, visit); };
         visit(source);
         await writeFile(join(recipeDirectory, name), body);
         reference += name + '\n' + body + '\n';
     }
-    assert(recipes.includes('desk.ts'), 'The complete tested local assembly is missing from package documentation');
+    assert(!recipes.includes('desk.ts'), 'Application coordination must remain in the consumer');
     const docDirectory = join(consumer, 'docs/assemblies');
     await mkdir(docDirectory, { recursive: true });
     let compiledDocumentationExamples = 0;
@@ -107,30 +110,37 @@ export async function verifyInstalledPackageConsumer(root: string, consumer: str
         assert(index > 0, `Assembly documentation has no executable example: ${name}`);
     }
     const main = `import {createButtonPart,createInputPart,createStackPart,createTextPart,mountParts} from 'pith-ui';\nimport 'pith-ui/styles.css';\nconst message=createTextPart({text:'Installed bounded parts'}),input=createInputPart({label:'Name',value:'中文 example 🐟'});\nconst save=createButtonPart({label:'Save',variant:'primary',onAction(){message.update({text:input.read()});}});\nmountParts(document.getElementById('app') as HTMLElement,createStackPart({children:[message,input,save]}),{appearance:'light'});\n`;
-    const recipeMain = `import {mountDesk} from './examples/assemblies/desk.js';\nimport 'pith-ui/styles.css';\nconst app=mountDesk(document.getElementById('app') as HTMLElement,{appearance:'light'});\nwindow.addEventListener('pagehide',()=>app.destroy(),{once:true});\n`;
+    const recipeMain = `import {mountParts} from 'pith-ui';
+import {composeFrame,composeComposer,composeConversationReader,composeSettings,createDialogHost} from 'pith-ui/recipes';
+import 'pith-ui/styles.css';
+const composer=composeComposer({},{onSubmit:()=>({ok:true})});
+const reader=composeConversationReader({id:'demo',messages:[],working:false});
+const frame=composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{main:[reader.find,reader.region,composer.part],siblings:[reader.announcement]});
+const tree=mountParts(document.getElementById('app') as HTMLElement,frame.part,{appearance:'light'});
+const dialogs=createDialogHost(frame);
+dialogs.open('settings',onClose=>composeSettings({baseUrl:'',hasApiKey:false},{onClose}),local=>local.open());
+window.addEventListener('pagehide',()=>tree.destroy(),{once:true});
+`;
     await writeFile(join(consumer, 'main.ts'), main);
     await writeFile(join(consumer, 'recipe-main.ts'), recipeMain);
     await writeFile(join(consumer, 'tsconfig.json'), JSON.stringify({ compilerOptions, include: ['main.ts', 'recipe-main.ts', 'examples/assemblies/*.ts', 'docs/assemblies/*.ts'] }, null, 2));
     await run(process.execPath, [compiler, '--project', 'tsconfig.json'], consumer);
     const prelude = `import {createButtonPart,createInputPart,createStackPart,mountParts,type Part} from 'pith-ui';\ndeclare const mount:HTMLElement;\nconst button=createButtonPart({label:'Save'}),input=createInputPart({label:'Name'});\n`;
     const forbidden = [['button.element;', 'element'], ['input.control;', 'control'], ['input.element;', 'element'], ["createButtonPart({label:'Save',style:{padding:8}});", 'style'], ["createButtonPart({label:'Save',className:'custom'});", 'className'], ["createButtonPart({label:'Save',render:()=>document.createElement('span')});", 'render'], ['createStackPart({children:[document.body]});', 'Part'], ['createStackPart({children:[],gap:12});', 'gap'], ["createButtonPart({label:'Save',duration:100});", 'duration'], ["createButtonPart({label:'Save',icon:'custom-svg'});", 'custom-svg'], ["createInputPart({label:'Name',width:300});", 'width'], ["mountParts(mount,button,{appearance:'custom'});", 'custom'], ['const fake:Part={destroy(){}};', 'Part'], ["createButtonPart({purpose:'prompt',variant:'overlay-close',icon:'close',label:'Close'});", 'prompt'], ["import {createApplication} from 'pith-ui';", 'createApplication'], ["import {createButton} from 'pith-ui';", 'createButton']];
-    for (const [source, diagnostic] of forbidden) {
-        await writeFile(join(consumer, 'rejected-consumer.ts'), prelude + source + '\n');
-        await writeFile(join(consumer, 'rejected-tsconfig.json'), JSON.stringify({ compilerOptions, include: ['rejected-consumer.ts'] }));
-        let rejected = false;
-        try {
-            await execute(process.execPath, [compiler, '--project', 'rejected-tsconfig.json'], { cwd: consumer, maxBuffer: 8 * 1024 * 1024 });
-        }
-        catch (error) {
-            const e = error as {
-                code?: unknown;
-                stdout?: string;
-                stderr?: string;
-            }, output = `${e.stdout ?? ''}\n${e.stderr ?? ''}`;
-            assert(typeof e.code === 'number' && output.includes('rejected-consumer.ts') && output.includes(diagnostic!), `Unexpected failure while checking forbidden public type: ${output}`);
-            rejected = true;
-        }
-        assert(rejected, `Packed public declarations accepted forbidden UI surface: ${source}`);
+    // One compiler program checks every invalid consumer independently.
+    const invalidFiles: string[] = [];
+    for (const [index, [source]] of forbidden.entries()) {
+        const file = join(consumer, `rejected-${index}.ts`);
+        await writeFile(file, prelude + source + '\n');invalidFiles.push(file);
+    }
+    const options = ts.convertCompilerOptionsFromJson(compilerOptions, consumer);
+    assert(options.errors.length === 0, 'Invalid consumer compiler options');
+    const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram(invalidFiles, options.options));
+    const expectedFiles = new Set(invalidFiles);
+    assert(diagnostics.every(item => item.file && expectedFiles.has(item.file.fileName)), ts.formatDiagnosticsWithColorAndContext(diagnostics, {getCurrentDirectory: () => consumer,getCanonicalFileName: name => name,getNewLine: () => '\n'}));
+    for (const [index, [source, token]] of forbidden.entries()) {
+        const own = diagnostics.filter(item => item.file?.fileName === invalidFiles[index]);
+        assert(own.some(item => ts.flattenDiagnosticMessageText(item.messageText, '\n').includes(token!)), `Packed public declarations accepted forbidden UI surface: ${source}`);
     }
     const html = (entry: string) => `<!doctype html><html><head><meta charset="utf-8"><title>Installed Pith UI consumer</title></head><body><div id="app"></div><script type="module" src="/${entry}"></script></body></html>`, vite = join(root, 'node_modules/vite/bin/vite.js');
     await writeFile(join(consumer, 'index.html'), html('main.ts'));
@@ -156,11 +166,10 @@ async function main(): Promise<void> {
     const root = resolve(dirname(fileURLToPath(import.meta.url)), '..'), evidence = process.env.PITH_UI_EVIDENCE_DIR ? resolve(process.env.PITH_UI_EVIDENCE_DIR) : await mkdtemp(join(tmpdir(), 'pith-ui-package-'));
     await mkdir(evidence, { recursive: true });
     const consumer = await realpath(await mkdtemp(join(tmpdir(), 'pith-ui-consumer-')));
-    await run('npm', ['run', 'build'], root);
     const [packed] = JSON.parse(await run('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', evidence], root)) as Packed[];
     assert(packed, 'npm pack did not return a package');
     const paths = new Set(packed.files.map(file => file.path));
-    for (const expected of ['package.json', 'README.md', 'AI.md', 'API.md', 'APP.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/styles.css'])
+    for (const expected of ['package.json', 'README.md', 'AI.md', 'API.md', 'APP.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/recipes/index.js', 'dist/recipes/index.d.ts', 'dist/styles.css'])
         assert(paths.has(expected), `Missing published entry: ${expected}`);
     for (const path of paths) {
         assert(!/^(?:src|showroom|tests|node_modules|output)\//.test(path), `Development-only file entered the package: ${path}`);

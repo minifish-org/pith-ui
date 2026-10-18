@@ -13,16 +13,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  validate:
-    if: github.event_name == 'push'
-    uses: ./.github/workflows/ci.yml
   publish:
     if: github.event_name == 'push'
-    needs: validate
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
       contents: read
+      actions: read
       id-token: write
     environment: npm
     steps:
@@ -36,9 +33,22 @@ jobs:
           package-manager-cache: false
       - run: npm install --global npm@11.12.1
       - run: node scripts/release.ts verify-tag
+      - name: Find successful validation for this exact main commit
+        id: validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --commit "$GITHUB_SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            echo 'No successful main validation exists for this commit. Finish Validate before tagging.'
+            exit 1
+          fi
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: package-${{ github.sha }}
+          run-id: ${{ steps.validation.outputs.run-id }}
+          github-token: ${{ github.token }}
           path: artifacts
       - run: node scripts/release.ts publish
   verify-publisher:

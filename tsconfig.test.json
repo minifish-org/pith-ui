@@ -6,5 +6,7 @@
     "rootDir": ".",
     "outDir": "test-dist"
   },
-  "include": ["tests/*.test.ts"]
+  "include": [
+    "tests/**/*.test.ts"
+  ]
 }

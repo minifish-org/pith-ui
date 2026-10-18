@@ -1,46 +1,15 @@
 # Assemble task failure and recovery actions
 
-This application-owned recipe composes a bounded callout and ordinary text and
-buttons. It is not a package export or public recovery scene. Its executable
-source is [`examples/assemblies/task-failure.ts`](../../examples/assemblies/task-failure.ts).
-The recipe imports only formal parts and creates no DOM, HTML or CSS.
+Import this region from `pith-ui/recipes`. Its single implementation is
+[`src/recipes/task-failure.ts`](../../src/recipes/task-failure.ts); public state, callbacks and
+handles are indexed in [API.md](../../API.md).
 
-The old contract is `src/tasks/permission.ts:createTaskFailure` and
-`src/app/workspace.ts` at `897f46a`. Desk renders the state from
-`frontend/src/task-controls.ts:renderRuntime` at `3f1ee24`. Recovery, model
-configuration, diagnostics delivery and availability remain controller work.
-
-## Part tree and state
-
-```text
-neutral CalloutPart: native section, polite status
-├─ strong TextPart: failure message
-├─ paragraph TextPart: advice
-└─ StackPart: existing native action div
-   ├─ secondary ButtonPart: Review and continue / Check model settings
-   └─ secondary ButtonPart: Save diagnostics
-```
-
-The library owns the surface, padding, border, fonts, paragraph rhythm and
-action spacing. The natural action div keeps the old parent layout without a
-wrapper around each button. Message and advice are literal text, including
-angle brackets or other provider content.
-
-An initially hidden failure has no content children. The first visible update
-creates them. Later hidden updates retain the existing text/action nodes;
-showing it again updates the visible state. The diagnostics action is keyed
-independently, so switching between Continue and Settings preserves its node
-and focus. Repeated updates do not rebuild unchanged actions.
-
-## Attach and connect callbacks
-
-The full workspace places the opaque part in its existing composer panels.
-This compiled example shows that part alongside another owned region:
+Supply display state and data callbacks from the host. Ordinary snapshots retain local interaction state. Explicit reset/target changes and parent disposal retire pending UI outcomes; business requests and write validity remain host responsibilities.
 
 ```ts
 import {
-  composeTaskFailure, type FailureAction, type TaskFailureState, type Result,
-} from '../../examples/assemblies/task-failure.js';
+  composeTaskFailure, type FailureAction, type TaskFailureState, type RecipeResult as Result,
+} from 'pith-ui/recipes';
 import {createStackPart, mountParts, type Part} from 'pith-ui';
 
 interface RecoveryController {
@@ -64,51 +33,7 @@ export function attachTaskFailure(
 }
 ```
 
-`update` receives visibility, message, advice, `canContinue` and the current
-workspace ID. Its local `disabled` flag gates only Continue. In the complete
-Desk composition, host busy disables Continue; otherwise the selected workspace
-is checked against `availability.workspaces`. A missing workspace uses the old
-`availability.active` fallback. Settings and Diagnostics retain their original
-availability even when recovery is disabled. Continue sends that workspace ID from the visible state at the
-time of activation. Settings and Diagnostics send only their action. Preserve
-the controller's original selected-workspace and activity checks before
-recovery or export; a UI action does not grant permission to act on a different
-workspace.
-
-The original actions leave business pending and availability state with the controller.
-The composition therefore adds no local pending lock: a diagnostics callback
-may remain unresolved while the button stays enabled. The existing activity
-guard decides whether a repeated request is valid. Failed results and thrown
-errors reach `onError`; they do not replace failure advice or invent a second
-error surface. State changes keep the original recovery behavior.
-
-## Lifetime and verification
-
-The shared owner controls appearance. Destroying the local composition removes
-only the failure subtree, preserving siblings. Destroying its parent retires
-the local callback outcome before releasing its children. Late results and
-updates cannot restore the section or report stale UI errors. Disposal is
-idempotent, and an unattached composition should be destroyed when discarded.
-
-```sh
-npm run check
-node scripts/verify-assemblies.ts
-npx playwright test tests/parts-task-failure.spec.ts tests/parts-desk.spec.ts
-```
-
-The permanent suite passed 42 checks across Chromium and WebKit. It compares
-actual old application failure regions in both
-themes with the opposite OS theme: continue/settings, empty advice, literal
-content, long advice and hidden state, plus 390/720px layouts. It compares
-native structure, geometry, status semantics, text and computed presentation.
-The formal side uses the actual cloned native parent after destroying the old
-application. Behavioral cases cover keyed action identity/focus, hidden/show
-retention, updated workspace scope, the old controller-owned pending/error
-behavior, sibling preservation and parent teardown. Direct part cases preserve
-caller ownership on rejected constructors, reject presentation escapes and
-verify disposal once before a child password is wiped.
-
-The full-application regression additionally compares nine availability states
-against the old app in both engines: selected/other workspace runs, clearing a
-run, global activity, host busy, missing workspace/active fallback and changing
-the selected workspace. Settings and Diagnostics stay enabled in that matrix.
+Attach the region to the existing ownership tree before opening it. See
+[APP.md](../../APP.md) for shared mounting and dialog slots. The current
+interaction assertions run in Chromium and WebKit in
+[`parts-task-failure.spec.ts`](../../tests/parts-task-failure.spec.ts).
