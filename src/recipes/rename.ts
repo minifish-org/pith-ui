@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Internal executable assembly. This function is not a package scene API. */
 import {
   createButtonPart, createDialogPart, createFeedbackPart, createFieldLabelPart,
@@ -7,7 +8,7 @@ import {
 
 export interface RenameState {id: string; title: string; error?: string; disabled?: boolean}
 export interface RenameDraft {id: string; title: string}
-export type RenameResult = {ok: true} | {ok: false; error: string};
+export type RenameResult = RecipeResult;
 export interface RenameCallbacks {onSubmit?(draft: RenameDraft): RenameResult | Promise<RenameResult>; onClose?(): void}
 export interface RenameAssembly {
   read(): RenameDraft;

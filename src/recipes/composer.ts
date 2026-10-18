@@ -1,10 +1,11 @@
+import type {RecipeResult} from './types.js';
 /** Internal executable blueprint. Draft, action and permission policy belong to Desk. */
 import {createButtonPart,createCompactSelectPart,createComposerRegionPart,createComposerPanelsPart,createInputToolbarPart,createInputContextPart,createInputActionsPart,createMessageInputPart,createFilePickerPart,createFormPart,createFeedbackPart,createContextNotePart,type LayoutPart,type ImageData,type NativeFileDropData} from '../parts/index.js';
 import {composePermissionControl,type PermissionState} from './permission-control.js';
 import {composeAttachments,type AttachmentsState} from './attachments.js';
 
 export interface ComposerState {placeholder?: string;disabled?: boolean;readOnly?: boolean;action?: 'send'|'queue'|'stop';actionDisabled?: boolean;model?: {label: string;description: string;disabled?: boolean};thinking?: {options: readonly {value: string;label: string}[];value: string;disabled?: boolean}}
-type Result = void|{ok: true}|{ok: false;error: string};
+type Result = void | RecipeResult;
 export interface ComposerCallbacks {onSubmit?(text: string): Result|Promise<Result>;onStop?(): Result|Promise<Result>;onInput?(text: string): void;onBlur?(): void;onAction?(action: 'model'): void;onThinkingChange?(value: string): void;onImages?(files: File[]): void;onPermissionChange?(mode: string): void;onRemoveAttachment?(id: string): void;onOpenImage?(image: ImageData): void;onDropReferences?(data: {paths: readonly string[];uris?: string;hasUnidentifiedFiles: boolean}): void}
 export interface ComposerComposition {readonly part: LayoutPart;readonly panels: LayoutPart;updateComposer(state: Readonly<ComposerState>): void;readDraft(): string;resetDraft(text: string): void;focusComposer(): void;pickImages(): void;insertReferences(paths: readonly string[]): void;updatePermission(state: Readonly<PermissionState>): void;updateAttachments(state: Readonly<AttachmentsState>): void;updateAvailability(state: {busy?: boolean}): void;updateImageGuidance(message: string): void;setDropPending(value: boolean): void;receiveNativeDrop(data: NativeFileDropData): void;destroy(): void}
 export function composeComposer(initial: Readonly<ComposerState>,callbacks: ComposerCallbacks = {}): ComposerComposition {

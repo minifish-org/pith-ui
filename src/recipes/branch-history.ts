@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Shared region composition; branch identity and continuation are host data. */
 import {
   createButtonPart,createCardHeadingPart,createDialogPart,createFeedbackPart,createSelectableCardPart,createStackPart,createTextPart,
@@ -6,7 +7,7 @@ import {
 
 export interface HistoryNode {id: string;role: string;text: string;active: boolean}
 export interface HistoryState {nodes: readonly HistoryNode[]|null;loading?: boolean;error?: string}
-export type HistoryResult = void|{ok: true}|{ok: false;error: string};
+export type HistoryResult = void | RecipeResult;
 export interface HistoryCallbacks {onContinue?(id: string): HistoryResult|Promise<HistoryResult>;onClose?(): void}
 export interface HistoryAssembly {update(state: Readonly<HistoryState>): void;fail(message: string): void;close(): void;isOpen(): boolean;destroy(): void}
 export interface HistoryComposition extends HistoryAssembly {readonly part: DialogPart;open(): void}

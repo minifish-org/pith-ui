@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Internal local composition of the existing welcome/setup structure. */
 import {
   createBrandMarkPart,createBrandTilePart,createButtonPart,createCenteredContentPart,createContextLinePart,createIconNotePart,createIconPart,
@@ -6,7 +7,7 @@ import {
 } from '../parts/index.js';
 
 export interface WelcomeState {workspace?: {name: string;path: string};hasApiKey: boolean;hasConnections: boolean;modelName: string;hidden?: boolean}
-export type WelcomeResult = void|{ok: true}|{ok: false;error: string};
+export type WelcomeResult = void | RecipeResult;
 export interface WelcomeCallbacks {
   onAction?(action: 'model'|'settings'|'workspace'): WelcomeResult|Promise<WelcomeResult>;
   canPrompt?(): boolean;

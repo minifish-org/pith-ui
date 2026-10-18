@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Executable consumer composition, intentionally absent from package exports. */
 import {
   createButtonPart, createDialogPart, createFeedbackPart, createFooterPart,
@@ -7,7 +8,7 @@ import {
 } from '../parts/index.js';
 
 export interface FullAccessState {title?: string; error?: string; disabled?: boolean}
-export type FullAccessResult = {ok: true} | {ok: false; error: string};
+export type FullAccessResult = RecipeResult;
 export interface FullAccessCallbacks {onConfirm(): FullAccessResult | Promise<FullAccessResult>; onClose?(): void}
 export interface FullAccessAssembly {update(state: Readonly<FullAccessState>): void; close(): void; isOpen(): boolean; destroy(): void}
 export interface FullAccessComposition extends FullAccessAssembly {readonly part: DialogPart; open(): void}

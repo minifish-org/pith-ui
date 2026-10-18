@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Shared frame/navigation recipe. Conversation, composer, files
  * and task bodies are composed separately as caller-owned small parts. */
 import {
@@ -9,7 +10,7 @@ import {
   type Part, type TextPart, type TreeBranchPart, type TreeItemPart,
 } from '../parts/index.js';
 
-type HostResult = void | {ok: true} | {ok: false; error: string};
+type HostResult = void | RecipeResult;
 export interface FrameConversation {
   id: string; title?: string; active: boolean; status?: {kind: 'approval'|'running'|'unread'|'idle'};
   actions?: {rename?: boolean; history?: boolean; export?: boolean; delete?: boolean};

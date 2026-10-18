@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Internal conversation composition. Image loading and reader coordination
  * have separate acceptance tranches. */
 import {
@@ -11,7 +12,7 @@ import {createConversationImageScope,type ImageReference,type GalleryCallbacks,t
 export interface BodyMessage {id: string;role: string;text: string;timestamp?: number;status?: string;toolName?: string;toolCallId?: string;command?: {text: string;cwd: string;exitCode?: number};images?: readonly ImageReference[];actions?: {copy?: boolean|string;edit?: boolean;branch?: {key: string;label?: string}}}
 export interface ConversationBodyState {id: string;messages: readonly BodyMessage[];working: boolean;folds?: ReadonlyMap<string,boolean>}
 export interface MessageAction {action: 'copy'|'edit'|'branch';messageId: string;branchKey?: string}
-export type BodyResult = void|{ok: true}|{ok: false;error: string};
+export type BodyResult = void | RecipeResult;
 export interface ConversationBodyCallbacks extends GalleryCallbacks {onMessageAction?(target: Readonly<MessageAction>): BodyResult|Promise<BodyResult>;onCopyCode?(text: string): BodyResult|Promise<BodyResult>;resolveLocalLink?(href: string,conversationId: string): LocalContentLink|null;onLocalFile?(target: Readonly<LocalContentLink>): BodyResult|Promise<BodyResult>;onError?(message: string): void}
 export interface ConversationHostAvailability {busy?: boolean;conversations?: readonly string[]}
 export interface ConversationBodyComposition {readonly part: ReadingColumnPart;readonly announcement: AnnouncementPart;update(state: Readonly<ConversationBodyState>): void;updateAvailability(state: Readonly<Partial<Record<MessageAction['action'],boolean>>>): void;updateHostAvailability(state: Readonly<ConversationHostAvailability>): void;prune(ids: readonly string[]): void;destroy(): void}

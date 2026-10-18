@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Internal artifact-control assembly. File discovery and native actions stay in the host. */
 import {
   createAnchoredGroupPart, createButtonPart, createCardBodyPart, createCardPart,
@@ -12,7 +13,7 @@ export interface ArtifactsState {
   readonly loading: boolean;readonly error: string;readonly copyMode: 'file' | 'path';readonly disabled?: boolean;
 }
 export interface ArtifactTarget {readonly owner: {readonly kind: 'artifact';readonly id: string};readonly name: string;readonly path: string}
-export type ArtifactActionResult = void | {ok: true} | {ok: false;error: string};
+export type ArtifactActionResult = void | RecipeResult;
 export interface ArtifactsCallbacks {
   onPreview(target: ArtifactTarget): ArtifactActionResult | Promise<ArtifactActionResult>;
   onFileAction(action: 'open' | 'reveal' | 'copy' | 'copy-path',target: ArtifactTarget): ArtifactActionResult | Promise<ArtifactActionResult>;

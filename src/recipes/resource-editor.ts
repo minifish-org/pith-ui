@@ -1,4 +1,4 @@
-import type {ResourceKind, ResourceTarget} from "./types.js";
+import type {RecipeResult, ResourceKind, ResourceTarget} from "./types.js";
 /** Shared region recipes. Applications own their resource data and writes. */
 import {
   createButtonPart, createDialogPart, createFeedbackPart, createFieldLabelPart,
@@ -6,7 +6,7 @@ import {
   createStackPart, createTextareaPart, createTextPart,
   type DialogPart, type FormPart,
 } from '../parts/index.js';
-export type ResourceResult = {ok: true} | {ok: false; error: string};
+export type ResourceResult = RecipeResult;
 export interface ResourceState {
   readonly workspaceId: string;
   readonly workspacePath: string;

@@ -1,4 +1,4 @@
-import type {ResourceKind, ResourceTarget} from "./types.js";
+import type {RecipeResult, ResourceKind, ResourceTarget} from "./types.js";
 /** Shared region recipe; resource loading, commands and writes stay in the app. */
 import {
   createButtonPart, createCardBodyPart, createCardPart, createCompactActionsPart,
@@ -19,7 +19,7 @@ export interface InventoryState {
   readonly error?: string;
   readonly busy?: boolean;
 }
-export type ResourceActionResult = void | {ok: true} | {ok: false; error: string};
+export type ResourceActionResult = void | RecipeResult;
 export interface InventoryCallbacks {
   onRefresh?(): ResourceActionResult | Promise<ResourceActionResult>;
   onCreate?(kind: ResourceKind): ResourceActionResult | Promise<ResourceActionResult>;

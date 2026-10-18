@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Shared region composition. Workspace IDs, folder selection and writes
  * remain application data and callbacks, supplied by the host. */
 import {
@@ -8,7 +9,7 @@ import {
 
 export interface PickerWorkspace {id: string;name: string;path: string}
 export interface WorkspacePickerState {workspaces: readonly PickerWorkspace[];error?: string;disabled?: boolean}
-export type WorkspacePickerResult = {ok: true}|{ok: false;error: string};
+export type WorkspacePickerResult = RecipeResult;
 export interface WorkspacePickerCallbacks {
   onSubmit?(path: string): WorkspacePickerResult|Promise<WorkspacePickerResult>;
   onPick?(): Promise<{path?: string;error?: string}>;

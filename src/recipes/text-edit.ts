@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Shared region recipe: the application owns this controller, not the package API. */
 import {
   createActionsPart, createButtonPart, createDialogPart, createFeedbackPart,
@@ -18,7 +19,7 @@ export interface TextEditorState {
   closeDisabled?: boolean;
 }
 export interface TextEditorInput {value: string; title?: string; description?: string; note?: string}
-export type TextEditorResult = {ok: true} | {ok: false; error: string};
+export type TextEditorResult = RecipeResult;
 export interface TextEditorCallbacks {
   purpose?: 'message' | 'queue-message';
   onInput?(value: string): void;

@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /**
  * Internal, compiled assembly recipe. This file is never a package entry or a
  * public model-picker factory: consumers can copy its small-part composition
@@ -23,7 +24,7 @@ export interface ModelCatalog {
   disabled?: boolean;
 }
 export interface ModelPickerState {editor?: ModelCatalog; loading?: boolean; error?: string; disabled?: boolean}
-type SubmitResult = {ok: true} | {ok: false; error: string};
+type SubmitResult = RecipeResult;
 export interface ModelPickerCallbacks {
   onSubmit?(selection: ModelSelection): SubmitResult | Promise<SubmitResult>;
   onClose?(): void;

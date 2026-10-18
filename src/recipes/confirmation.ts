@@ -1,3 +1,4 @@
+import type {RecipeResult} from './types.js';
 /** Shared region recipe: content and business ownership stay in the consumer. */
 import {
   createActionsPart, createButtonPart, createDialogPart, createFeedbackPart,
@@ -16,7 +17,7 @@ export interface ConfirmationState {
   pending?: boolean;
   closeDisabled?: boolean;
 }
-export type ConfirmationResult = {ok: true} | {ok: false; error: string};
+export type ConfirmationResult = RecipeResult;
 export interface ConfirmationCallbacks {onConfirm(): ConfirmationResult | Promise<ConfirmationResult>; onClose?(): void}
 export interface ConfirmationAssembly {
   update(state: Readonly<ConfirmationState>): void;
