@@ -35,13 +35,16 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
   {id:'navigation',title:'导航区域',factories:['composeFrame'],create(c) {
     return r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[{id:'demo',name:'Demo workspace',path:'/demo',selected:true,children:[{id:'chat',title:'Demo conversation',active:true}]}],empty:null}},{onAction:action=>{c.log(action);}});
   }},
+  {id:'navigation-overlay',title:'原生标题栏融合',factories:['composeFrame'],create(c) {
+    return r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[{id:'demo',name:'Demo workspace',path:'/demo',selected:true,children:[{id:'chat',title:'Demo conversation',active:true}]}],empty:null}},{onAction:action=>{c.log(action);}},{titlebar:'overlay'});
+  }},
 ];
 export const recipeCases: readonly ShowcaseCase[] = examples.map(example=>({
   id:'recipe-'+example.id,title:example.title,layer:'blocks',category:'正式区域组合',factories:example.factories,
   description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:['normal'],controls:['outcome'],
   code:recipeCode[example.id]!,
   mount(context) {
-    const element=document.createElement('div');element.style.position='relative';element.style.minHeight=example.id==='navigation'?'440px':'280px';
+    const element=document.createElement('div');element.style.position='relative';element.style.minHeight=example.id.startsWith('navigation')?'440px':'280px';
     const region=example.create(context),open=region.open;
     const trigger=open?p.createButtonPart({label:'Open region',onAction:()=>open()}):undefined;
     const tree=p.mountParts(element,trigger?p.createStackPart({children:[trigger,region.part]}):region.part,{appearance:context.host.closest<HTMLElement>('[data-appearance]')?.dataset.appearance as 'light'|'dark'|'system' ?? 'system'});

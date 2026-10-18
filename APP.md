@@ -46,6 +46,15 @@ There is no public `mountDesk` or full application template. A product keeps a
 small coordinator that connects regions and projects business availability. Use
 public types or infer them from the recipe return value; avoid structural copies.
 
+For a native window whose controls overlay the webview, pass
+`{titlebar: 'overlay'}` as `composeFrame` content (or on `createFramePart`).
+The frame keeps the existing brand and controls, shares a 52px top row with
+the native window buttons, and marks only that row as draggable. It adds no
+window buttons or side panels. The MyGo host supplies `--mygo-titlebar-height`
+and `--mygo-titlebar-inset-left/right`; fullscreen changes update the reserved
+space through CSS. Omit the option in ordinary browsers. The application owns
+the native window setting; the library owns layout and drag regions.
+
 See [region coverage](./docs/assemblies/coverage.md), [settings](./docs/assemblies/settings.md),
 [conversation reader](./docs/assemblies/conversation-reader.md),
 [composer](./docs/assemblies/composer.md), [resources](./docs/assemblies/resource-editor.md),

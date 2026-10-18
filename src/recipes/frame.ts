@@ -31,6 +31,8 @@ export interface FrameCallbacks {
   onModalChange?(open: boolean): void;onDispose?(): void;
 }
 export interface FrameContent {
+  /** Share the native window controls' row; ordinary browser frames omit this. */
+  titlebar?: 'overlay';
   /** Already composed conversation/composer bodies, in their native main order. */
   main?: readonly Part[];
   dialogs?: readonly DialogPart[];
@@ -76,7 +78,7 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
   const compact = createButtonPart({variant: 'toolbar-action', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: initial.compactDisabled ?? true, onAction() {return callbacks.onAction?.('compact');}, onError: fail});
   const topbarActions = createTopbarActionsPart({children: [compact,...content.topbarActions ?? []]});
   const topbar = createTopbarPart({children: [trigger, breadcrumb,topbarActions]});
-  const main = createMainPart({children: [topbar, ...content.main ?? []]}), part = createFramePart({children: [],onDispose: retire,onModalChange: callbacks.onModalChange});
+  const main = createMainPart({children: [topbar, ...content.main ?? []]}), part = createFramePart({children: [],titlebar: content.titlebar,onDispose: retire,onModalChange: callbacks.onModalChange});
   const drawer = createDrawerPart({scope: part, panel: rail, content: main, trigger});
   const menu = createMenuPart({label: 'Conversation actions', items: [], onToggle(open) {if (!open) menuTarget = undefined; syncMenuButtons();}, onError: fail});
   part.replace([rail, menu, drawer, main, ...content.siblings ?? [], ...content.dialogs ?? []]);

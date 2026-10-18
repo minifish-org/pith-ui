@@ -17,6 +17,9 @@ export function framePartContract(frame: FramePart,rail: SideRailPart,main: Main
   // @ts-expect-error Content cannot inject arbitrary styles.
   createButtonPart({variant: 'drawer-trigger',icon: 'menu',label: 'Open',style: {width: 32}});
   createDrawerPart({scope: frame,panel: rail,content: main,trigger});
+  createFramePart({children: [],titlebar: 'overlay'});
+  // @ts-expect-error Window chrome is a finite native overlay mode, never custom presentation.
+  createFramePart({children: [],titlebar: 'custom'});
   // @ts-expect-error A main region cannot impersonate a branded side rail.
   createDrawerPart({scope: frame,panel: main,content: main,trigger});
   // @ts-expect-error A side rail cannot impersonate a branded viewport frame.

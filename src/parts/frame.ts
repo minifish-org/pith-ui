@@ -15,12 +15,17 @@ function layout(options: {children: readonly Part[]}, tag: 'div'|'aside'|'main'|
   const part = createOwnedPart(node, {replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part, children);}}, {children: options.children}); return part;
 }
 /** Viewport layout only: callers supply every region and dialog as child parts. */
-export function createFramePart(options: {children: readonly Part[];onDispose?(): void;onModalChange?(open: boolean): void}): FramePart {
-  assertOptions(options, ['children','onDispose','onModalChange'], 'frame');
+export function createFramePart(options: {children: readonly Part[];titlebar?: 'overlay';onDispose?(): void;onModalChange?(open: boolean): void}): FramePart {
+  assertOptions(options, ['children','titlebar','onDispose','onModalChange'], 'frame');
+  if (options.titlebar !== undefined && options.titlebar !== 'overlay') throw new TypeError('Unknown frame titlebar mode.');
   if (options.onDispose !== undefined && typeof options.onDispose !== 'function') throw new TypeError('Frame disposal must be a callback.');
   if (options.onModalChange !== undefined && typeof options.onModalChange !== 'function') throw new TypeError('Frame modal change must be a callback.');
   if (!Array.isArray(options.children)) throw new TypeError('Frame children must be arrays of Pith UI parts.');
   const node = document.createElement('div');node.className = 'pui-app pui-viewport-frame';let lastModal = false;
+  if (options.titlebar === 'overlay') {
+    node.classList.add('pui-titlebar-overlay');
+    const titlebar = document.createElement('div');titlebar.className = 'pui-native-titlebar';titlebar.setAttribute('aria-hidden','true');node.append(titlebar);
+  }
   const hasModal = () => isPartAlive(part) && !!node.querySelector('dialog[open]');
   const changed = () => {const next = hasModal();if (next !== lastModal) {lastModal = next;options.onModalChange?.(next);}};
   const observer = new MutationObserver(changed);

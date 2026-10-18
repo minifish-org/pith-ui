@@ -88,6 +88,13 @@
 .pui .pui-status-dot.pui-reconnecting { background: var(--pui-warning-text); }
 .pui .pui-main { flex: 1; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--pui-bg-main); }
 .pui .pui-topbar { display: flex; align-items: center; justify-content: space-between; height: 79px; flex-shrink: 0; padding: 0 var(--pui-space-xl); border-bottom: 1px solid var(--pui-border); }
+/* Native controls and their fullscreen insets are supplied by the window host.
+   Only overlay frames reserve this space; the ordinary frame is unchanged. */
+.pui .pui-titlebar-overlay { --pui-native-titlebar-height: var(--mygo-titlebar-height, 52px); }
+.pui .pui-titlebar-overlay > .pui-native-titlebar { position: absolute; top: 0; left: 0; width: var(--pui-sidebar-width); height: var(--pui-native-titlebar-height); --app-region: drag; user-select: none; }
+.pui .pui-titlebar-overlay > .pui-sidebar { padding-top: calc(var(--pui-space-xl) + var(--pui-native-titlebar-height)); }
+.pui .pui-titlebar-overlay > .pui-main > .pui-topbar { height: max(52px, var(--pui-native-titlebar-height)); padding-right: max(var(--pui-space-xl), calc(var(--mygo-titlebar-inset-right, 0px) + var(--pui-space-lg))); --app-region: drag; user-select: none; }
+.pui .pui-titlebar-overlay .pui-topbar :is(button, a, input, textarea, select, summary, [contenteditable], .pui-conversation-actions) { --app-region: no-drag; }
 .pui .pui-breadcrumb { display: flex; align-items: center; gap: var(--pui-space-md); color: var(--pui-muted); font-size: var(--pui-text-small); min-width: 0; }
 .pui .pui-breadcrumb > .pui-icon { width: 17px; height: 17px; color: var(--pui-muted); }
 .pui .pui-breadcrumb span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
@@ -403,6 +410,8 @@
   .pui .pui-sidebar-scrim.pui-visible { display: block; position: fixed; inset: 0; background: var(--pui-overlay); z-index: 4; }
   .pui .pui-mobile-menu { display: inline-flex; margin-right: var(--pui-space-md); }
   .pui .pui-topbar { height: 64px; padding: 0 var(--pui-space-lg); }
+  .pui .pui-titlebar-overlay > .pui-native-titlebar { display: none; }
+  .pui .pui-titlebar-overlay > .pui-main > .pui-topbar { padding-left: max(var(--pui-space-lg), calc(var(--mygo-titlebar-inset-left, 84px) + var(--pui-space-lg))); }
   .pui .pui-breadcrumb { font-size: var(--pui-text-small); flex: 1; gap: var(--pui-space-sm); }
   .pui .pui-breadcrumb span { max-width: 110px; }
   .pui .pui-breadcrumb-current, .pui .pui-breadcrumb-chevron { display: none; }
