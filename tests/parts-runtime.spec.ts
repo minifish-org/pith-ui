@@ -1,6 +1,6 @@
 import {test,expect,type Page} from '@playwright/test';
 
-interface State {visible: boolean;summary: string;duration: string;speed: string;provider?: string;thinkingLevel?: string;inputTokens: string;outputTokens: string;cacheRead: string;cacheWrite: string;contextTokens: string;contextWindow: string;compactions: string;toolFailures: string;recordedCost: string;latestCost: string}
+interface State {visible: boolean;summary: string;duration: string;speed: string;provider?: string;model?: string;thinkingLevel?: string;inputTokens: string;outputTokens: string;cacheRead: string;cacheWrite: string;contextTokens: string;contextWindow: string;compactions: string;toolFailures: string;recordedCost: string;latestCost: string}
 interface Session {update(state: State): void;updateTiming(state: {summary: string;duration: string;speed: string}): void;updateCostsVisible(visible: boolean): void;readCosts(): {open: boolean;runtimeOpen: boolean};resetCosts(): void;destroy(): void}
 interface Harness {session: Session;initial: State;changes: number;root: HTMLDetailsElement;duration?: Element;selected?: Element;shared?: {setAppearance(mode: 'light'|'dark'): void;destroy(): void}}
 declare global {interface Window {runtimePartsHarness: Harness}}
@@ -34,6 +34,12 @@ test('timing updates retain definition nodes, selection and disclosure state acr
     const range = document.createRange();range.selectNodeContents(h.selected);getSelection()!.removeAllRanges();getSelection()!.addRange(range);h.session.updateTiming({summary: 'Updated timing',duration: '1m 13s',speed: '18.7'});
   });expect(await page.evaluate(() => {const h = window.runtimePartsHarness;return {summary: h.root.querySelector('summary')!.textContent,duration: h.duration!.textContent,selection: getSelection()!.toString(),same: [...h.root.querySelectorAll('dt')].find(node => node.textContent === 'Latest task duration')!.nextElementSibling === h.duration,open: h.root.open};})).toEqual({summary: 'Updated timing',duration: '1m 13s',selection: 'Example provider',same: true,open: true});
   await page.evaluate(() => {const h = window.runtimePartsHarness;h.session.update(h.initial);h.session.update({...h.initial,thinkingLevel: undefined});});expect(await page.evaluate(() => {const h = window.runtimePartsHarness;return [...h.root.querySelectorAll('dt')].find(node => node.textContent === 'Latest task duration')!.nextElementSibling === h.duration;})).toBe(true);
+});
+
+test('the model remains available in expanded runtime details beside a compact speed summary',async ({page}) => {
+  await openRuntime(page,{...initial,model: 'deepseek-flash',summary: 'Finished · 25s · 162 tok/s · 74M tok · ~$1.07'});
+  await expect(page.locator('.pui-run-status > summary')).toContainText('162 tok/s');
+  await expect(page.locator('dt').filter({hasText: /^Model$/}).locator('+ dd')).toHaveText('deepseek-flash');
 });
 
 test(`${'parts'} disclosures emit lazy cost intent and hiding does not implicitly close them`,async ({page}) => {

@@ -2,7 +2,7 @@ import {test,expect,type Page} from '@playwright/test';
 
 type Result = {ok: true}|{ok: false;error: string};
 interface State {placeholder?: string;disabled?: boolean;readOnly?: boolean;action?: 'send'|'queue'|'stop';actionDisabled?: boolean;model?: {label: string;description: string;disabled?: boolean};thinking?: {options: Array<{value: string;label: string}>;value: string;disabled?: boolean}}
-interface Composer {updateComposer(state: State): void;readDraft(): string;resetDraft(text: string): void;focusComposer(): void;pickImages(): void;insertReferences(paths: readonly string[]): void;destroy(): void}
+interface Composer {updateComposer(state: State): void;updatePermission(state: {mode: string;description: string}): void;readDraft(): string;resetDraft(text: string): void;focusComposer(): void;pickImages(): void;insertReferences(paths: readonly string[]): void;destroy(): void}
 interface Harness {composer: Composer;state: State;inputs: string[];submits: string[];stops: number;models: number;thinking: string[];files: string[][];blurs: number;releases: Array<(result: Result) => void>;tree: {destroy(): void};input?: Element}
 declare global {interface Window {composerPartsHarness: Harness}}
 const base: State = {action: 'send',model: {label: 'Original model 中文',description: 'Original provider model'},thinking: {options: [{value: 'off',label: 'Off'},{value: 'high',label: 'High'}],value: 'high'}};
@@ -27,6 +27,13 @@ test('message input and image picker keep native controls and reject presentatio
     input.reset('Before selected after');const native = mount.querySelector('textarea')!;native.setSelectionRange(7,15);const selected = input.readSelection();input.replaceSelection('new');
     const value = {pixels,css,root: mount.firstElementChild!.localName,children: [...mount.firstElementChild!.children].map(node => node.localName),rows: native.rows,selected,result: input.read(),caret: native.selectionStart,accept: mount.querySelector('input')!.accept,multiple: mount.querySelector('input')!.multiple,leaks: [input,picker,form].some(part => Object.values(part).some(value => value instanceof Node))};tree.destroy();return value;
   });expect(value).toEqual({pixels: true,css: true,root: 'form',children: ['input','textarea'],rows: 1,selected: {before: 'Before ',selected: 'selected',after: ' after'},result: 'Before new after',caret: 10,accept: 'image/png,image/jpeg,image/gif,image/webp',multiple: true,leaks: false});
+});
+test('narrow composers retain the permission state without a persistent explanatory footer',async ({page}) => {
+  await page.setViewportSize({width: 480,height: 600});await setup(page);
+  await page.evaluate(() => window.composerPartsHarness.composer.updatePermission({mode: 'full-access',description: 'Full access: all enabled tools run without asking.'}));
+  await expect(page.getByRole('combobox',{name: 'Conversation permissions',exact: true})).toContainText('Full access');
+  await expect(page.getByText('Full access: all enabled tools run without asking.',{exact: true})).not.toBeVisible();
+  await expect(page.getByRole('button',{name: 'Send message',exact: true})).toBeVisible();
 });
 test('ordinary projections retain the draft, native field, focus and selection while reset invalidates pending work',async ({page}) => {
 

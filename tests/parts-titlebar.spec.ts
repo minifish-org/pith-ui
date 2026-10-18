@@ -68,6 +68,11 @@ test('native fullscreen metrics preserve the draft and remove only the window-co
 
 test('narrow overlay titlebars avoid the native controls and preserve drawer actions',async ({page}) => {
   await page.setViewportSize({width: 390,height: 844});await mountFrame(page,true);
+  await expect(page.locator('.pui-breadcrumb-current')).toBeVisible();
+  const title = await page.locator('.pui-breadcrumb-current').boundingBox();
+  const compact = await page.getByRole('button',{name: 'Compress context',exact: true}).boundingBox();
+  expect(title!.width).toBeGreaterThan(40);
+  expect(title!.x + title!.width).toBeLessThanOrEqual(compact!.x);
   const trigger = page.getByRole('button',{name: 'Open sidebar',exact: true});
   const triggerBox = await trigger.boundingBox();
   expect(triggerBox!.x).toBeGreaterThanOrEqual(92);

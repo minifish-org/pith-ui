@@ -43,6 +43,24 @@ async function openInventory(page: Page, state: InventoryState = full, appearanc
   await expect(page.getByRole('dialog',{name: 'Workspace resources',exact: true})).toBeVisible();
 }
 
+test('narrow skill lists keep names readable and all actions below the metadata', async ({page}) => {
+  const skill = {name: 'i-have-adhd',path: '/demo/project/.pi/skills/i-have-adhd/SKILL.md',description: 'Shape output for a reader with ADHD. '.repeat(12)};
+  for (const viewport of [{width: 480,height: 600},{width: 375,height: 667}]) {
+    await page.setViewportSize(viewport);
+    await openInventory(page,{...empty,canCreateInstructions: false,skills: [skill]});
+    const row = page.locator('article.pui-file-card').filter({has: page.getByText(skill.name,{exact: true})});
+    await expect(row.locator('.pui-file-info p')).toHaveCount(0);
+    const info = await row.locator('.pui-file-info').boundingBox();
+    expect(info!.width).toBeGreaterThan(200);
+    await expect(row.getByRole('button')).toHaveCount(4);
+    for (const button of await row.getByRole('button').all()) {
+      const bounds = await button.boundingBox();
+      expect(bounds!.y).toBeGreaterThanOrEqual(info!.y + info!.height);
+      expect(bounds!.x + bounds!.width).toBeLessThan(viewport.width);
+    }
+  }
+});
+
 
 test('small collection containers retain native cards, literal text, intrinsic grouped header and opaque ownership', async ({page}) => {
   await page.goto('/tests/fixture.html');
