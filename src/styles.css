@@ -510,6 +510,7 @@
   .pui .pui-composer-context { flex-wrap: nowrap; flex-shrink: 0; }
   .pui .pui-permission-control, .pui .pui-permission-control.pui-full-access { position: relative; flex-shrink: 0; width: 44px; height: 44px; padding: 0; gap: 0; border: 0; background: transparent; }
   .pui .pui-permission-control > .pui-icon:first-child { position: absolute; top: 12px; left: 12px; width: 20px; height: 20px; pointer-events: none; }
+  .pui .pui-permission-control:has(.pui-select-trigger:disabled) > .pui-icon:first-child { opacity: .45; }
   .pui .pui-permission-control > .pui-icon:last-child { display: none; }
   .pui .pui-permission-control > .pui-select { width: 44px; height: 44px; }
   .pui .pui-permission-control .pui-select-trigger { width: 44px; height: 44px; max-width: none; padding: 0; border-radius: 6px; }
