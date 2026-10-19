@@ -27,7 +27,8 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
     return {part:p.createStackPart({children:[region.find,region.region,region.announcement]}),destroy:region.destroy};
   }},
   {id:'composer',title:'输入与任务区域',factories:['composeComposer','composeApproval','composePendingMessages','composeTaskFailure','composeRuntime','composeCostLedger'],create(c) {
-    const composer=r.composeComposer({action:'send',actionDisabled:false,model:{label:'Demo model',description:'Demonstration data'}},{onSubmit:c.action});
+    const composer=r.composeComposer({action:'send',actionDisabled:false,model:{label:'GPT-6.1 Sol',description:'Demonstration data'},thinking:{options:[{value:'off',label:'Off'},{value:'high',label:'High'}],value:'high'}},{onSubmit:c.action,onPermissionChange(mode){composer.updatePermission({mode,description:'Demonstration permissions'});c.log(mode);}});
+    composer.updatePermission({mode:c.state==='normal'?'ask':c.state,description:'Demonstration permissions'});
     const approval=r.composeApproval({approval:{id:'demo',toolName:'run_command',argsText:'{"command":"inspect"}',canAlwaysAllow:false}}),pending=r.composePendingMessages({items:[{id:'queued',text:'A queued request',mode:'followUp',imageCount:0}],running:false,busy:false});
     const ledger=r.composeCostLedger(),runtime=r.composeRuntime({visible:true,summary:'Demo task',duration:'1s',speed:'20',inputTokens:'100',outputTokens:'20',cacheRead:'0',cacheWrite:'0',contextTokens:'120',contextWindow:'128,000',compactions:'0',toolFailures:'0',recordedCost:'Unknown',latestCost:'Unknown'},{costLedger:ledger.part});
     const failure=r.composeTaskFailure({visible:false,message:'',advice:'',canContinue:false});composer.panels.replace([approval.part,runtime.part,failure.part,pending.part]);return composer;
@@ -41,7 +42,7 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
 ];
 export const recipeCases: readonly ShowcaseCase[] = examples.map(example=>({
   id:'recipe-'+example.id,title:example.title,layer:'blocks',category:'正式区域组合',factories:example.factories,
-  description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:['normal'],controls:['outcome'],
+  description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:example.id==='composer'?['normal','workspace-write','full-access']:['normal'],controls:['outcome'],
   code:recipeCode[example.id]!,
   mount(context) {
     const element=document.createElement('div');element.style.position='relative';element.style.minHeight=example.id.startsWith('navigation')?'440px':'280px';

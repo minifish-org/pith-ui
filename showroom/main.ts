@@ -22,7 +22,7 @@ const state = {
 };
 if (!catalog.some(item => item.id === state.item)) state.item = catalog[0].id;
 const layerNames: Record<ShowcaseLayer, string> = { foundations: '设计基础', components: '基础组件', blocks: '组合积木', pages: '完整界面' };
-const sceneNames: Record<string, string> = { normal: '正常', loading: '加载', error: '错误', disabled: '禁用', empty: '空状态', long: '长内容', pending: '提交中', 'local-file-disabled': '本地文件不可用', 'copy-busy': '复制反馈忙碌' };
+const sceneNames: Record<string, string> = { normal: '正常', loading: '加载', error: '错误', disabled: '禁用', empty: '空状态', long: '长内容', pending: '提交中', 'local-file-disabled': '本地文件不可用', 'copy-busy': '复制反馈忙碌', 'workspace-write': '允许工作区修改', 'full-access': '完全访问' };
 setAppearance(document.documentElement, state.theme);setControlAppearance(state.theme);
 const app = document.getElementById('showroom')!;
 const title = element('h1', '', 'Pith UI');

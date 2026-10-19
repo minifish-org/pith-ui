@@ -27,7 +27,7 @@ export const specialExamples = {
   'text','small','paragraph','muted','muted-paragraph','path','path-paragraph','location','footnote','warning-paragraph','scope-note','surface-status','note','caption','hint','description','eyebrow','eyebrow-paragraph','heading','display-heading','strong','bubble','interrupted','section-title',
  ] as const).map(role=>p.createTextPart({role,text:role+' · Literal text 中文'}))}),
  createIconPart:()=>p.createActionsPart({children:([
-  'steer','edit','trash','branch','compress','image','plus','chat','folder','settings','arrow','stop','chevron','down','close','check','shield','file','terminal','copy','menu','globe','search','more','compose','plug',
+  'steer','edit','trash','branch','compress','image','plus','chat','folder','settings','arrow','stop','chevron','down','close','check','shield','shield-question','shield-edit','shield-alert','file','terminal','copy','menu','globe','search','more','compose','plug',
  ] as const).map(name=>p.createIconPart({name}))}),
  createToolbarPart:()=>p.createToolbarPart({label:'Actions',children:[p.createButtonPart({label:'Action'})]}),
  createInputPart:({disabled,notify}:ExampleControls)=>p.createStackPart({children:([
@@ -36,7 +36,7 @@ export const specialExamples = {
  createTextareaPart:({disabled,notify}:ExampleControls)=>p.createTextareaPart({label:'Notes',value:'Literal multiline content\n中文',disabled,onInput:notify}),
  createSelectPart:({disabled,notify}:ExampleControls)=>p.createSelectPart({label:'Choose',value:'a',disabled,options:[{value:'a',label:'First'},{value:'b',label:'Second'}],onChange:notify}),
  createChoiceListPart:({disabled,notify}:ExampleControls)=>p.createChoiceListPart({label:'Choices',value:'a',disabled,options:[{value:'a',label:'First'},{value:'b',label:'Second'}],onChange:notify}),
- createCompactSelectPart:({disabled,notify}:ExampleControls)=>p.createCompactSelectPart({label:'Compact choices',icon:'shield',value:'a',disabled,options:[{value:'a',label:'First'},{value:'b',label:'Second'}],onChange:notify}),
+ createCompactSelectPart:({disabled,notify}:ExampleControls)=>{const choice=p.createCompactSelectPart({label:'Compact choices',icon:'shield-question',value:'a',disabled,options:[{value:'a',label:'Ask before changes'},{value:'b',label:'Allow workspace changes'},{value:'c',label:'Full access'}],onChange(value){choice.update({icon:value==='c'?'shield-alert':value==='b'?'shield-edit':'shield-question',tone:value==='c'?'warning':'standard'});notify(value);}});return choice;},
  createFieldLabelPart:()=>{const input=p.createInputPart({label:'Name'});return p.createStackPart({children:[p.createFieldLabelPart({label:'Name',control:input}),input]});},
  createLabelledFieldPart:()=>p.createLabelledFieldPart({label:'Name',control:p.createInputPart({label:'Name'})}),
  createCheckboxPart:({disabled,notify}:ExampleControls)=>p.createCheckboxPart({label:'Enabled',checked:true,disabled,onChange(value){notify(String(value));}}),

@@ -217,21 +217,22 @@ export function createSelectPart(options: SelectOptions): ChoicePart {return cho
 /** Native six-row choice list; its geometry and keyboard behavior belong to the library. */
 export function createChoiceListPart(options: ChoiceOptions): ChoicePart {return choicePart(options, true);}
 
-export interface CompactSelectPartState extends Omit<ChoiceState,'catalog'> {tone?: 'standard'|'warning'}
-export interface CompactSelectOptions extends CompactSelectPartState {purpose?: 'icon'|'inline';label: string;icon?: IconName;options: readonly ChoiceOption[];value?: string;name?: string;onChange?(value: string): void}
+export interface CompactSelectPartState extends Omit<ChoiceState,'catalog'> {tone?: 'standard'|'warning';icon?: IconName}
+export interface CompactSelectOptions extends CompactSelectPartState {purpose?: 'icon'|'inline';label: string;options: readonly ChoiceOption[];value?: string;name?: string;onChange?(value: string): void}
 export interface CompactSelectPart extends ChoicePart {update(state: Readonly<CompactSelectPartState>): void}
 /** A compact icon choice in one native label. Its popup anchors to that label,
  * and its trailing indicator, hidden caption and warning treatment are fixed. */
 export function createCompactSelectPart(options: CompactSelectOptions): CompactSelectPart {
-  const keys = ['label','disabled','required','hidden','describedBy','options','tone'] as const;
+  const keys = ['label','disabled','required','hidden','describedBy','options','tone','icon'] as const;
+  const purpose = options.purpose ?? 'icon';
+  if (!['icon','inline'].includes(purpose)) throw new TypeError('Unsupported compact choice purpose.');
   const validate = (state: Readonly<CompactSelectPartState>) => {
     validateState(state);if (state.options !== undefined) validateChoices(state.options);
     if (state.tone !== undefined && !['standard','warning'].includes(state.tone)) throw new TypeError('Unsupported compact select tone.');
+    if (state.icon !== undefined) {if (purpose === 'inline') throw new TypeError('An inline choice has no icon.');assertIconName(state.icon);}
   };
-  assertOptions(options,[...keys,'purpose','icon','value','name','onChange'],'compact select');validate(options);
-  const purpose = options.purpose ?? 'icon';
-  if (!['icon','inline'].includes(purpose)) throw new TypeError('Unsupported compact choice purpose.');
-  if (purpose === 'icon') assertIconName(options.icon);else if (options.icon !== undefined) throw new TypeError('An inline choice has no icon.');
+  assertOptions(options,[...keys,'purpose','value','name','onChange'],'compact select');validate(options);
+  if (purpose === 'icon') assertIconName(options.icon);
   if (typeof options.label !== 'string') throw new TypeError('A compact select requires a text label.');
   validateChoices(options.options);
   if (options.value !== undefined && typeof options.value !== 'string' || options.name !== undefined && typeof options.name !== 'string') throw new TypeError('Choice value and name must be text.');
@@ -242,21 +243,26 @@ export function createCompactSelectPart(options: CompactSelectOptions): CompactS
   if (options.name !== undefined) control.name = options.name;
   reconcileSelectOptions(control,options.options,options.value ?? options.options.find(option => !option.disabled)?.value ?? '');
   for (const option of control.options) option.defaultSelected = option.selected;
-  if (purpose === 'icon') node.append(iconElement(options.icon!),caption,control,iconElement('down'));else node.append(caption,control);
+  const glyph = purpose === 'icon' ? iconElement(options.icon!) : undefined;
+  if (glyph) node.append(glyph,caption,control,iconElement('down'));else node.append(caption,control);
   let disabled = !!options.disabled,tone = options.tone ?? 'standard',part: CompactSelectPart;
-  const native = adoptNativeControl(control,{onChange: options.onChange ? value => {if (isPartAlive(part) && !disabled) options.onChange!(value);} : undefined});
+  const updateTitle = () => {if (glyph) control.title = control.selectedOptions[0]?.label ?? control.getAttribute('aria-label') ?? '';};
+  updateTitle();
+  const native = adoptNativeControl(control,{onChange(value) {updateTitle();if (isPartAlive(part) && !disabled) options.onChange?.(value);}});
   const update = (state: Readonly<CompactSelectPartState>) => {
     assertOptions(state,keys,'compact select state');validate(state);if (!isPartAlive(part)) return;
     if (state.disabled !== undefined) disabled = state.disabled;
     if (state.tone !== undefined) tone = state.tone;
+    if (state.icon !== undefined) glyph!.replaceChildren(...iconElement(state.icon).childNodes);
     node.className = purpose === 'inline' ? 'pui-composer-thinking' : `pui-permission-control${tone === 'warning' ? ' pui-full-access' : ''}`;
     if (state.label !== undefined) {caption.textContent = state.label;control.setAttribute('aria-label',state.label);}
     if (state.hidden !== undefined) node.hidden = state.hidden;
     const {hidden: _hidden,...references} = state;applyReferences(control,references);
     if (state.options !== undefined) reconcileSelectOptions(control,state.options);
+    updateTitle();
     native.update({...state,disabled});
   };
-  part = createOwnedPart<Omit<CompactSelectPart,keyof Part>>(node,{update,read: native.getValue,reset(value: string) {if (typeof value !== 'string') throw new TypeError('Choice reset must be text.');if (isPartAlive(part)) native.reset(value);},focus() {if (isPartAlive(part)) native.focus();}}, {dispose() {native.destroy();control.remove();}});
+  part = createOwnedPart<Omit<CompactSelectPart,keyof Part>>(node,{update,read: native.getValue,reset(value: string) {if (typeof value !== 'string') throw new TypeError('Choice reset must be text.');if (isPartAlive(part)) {native.reset(value);updateTitle();}},focus() {if (isPartAlive(part)) native.focus();}}, {dispose() {native.destroy();control.remove();}});
   controls.set(part,control);
   update({label: options.label,tone,disabled,required: !!options.required,hidden: !!options.hidden,...(options.describedBy !== undefined ? {describedBy: options.describedBy} : {})});
   return part;

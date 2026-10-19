@@ -56,7 +56,7 @@ test('permission collapse follows composer space and preserves the same focused 
   const trigger=page.getByRole('combobox',{name:'Conversation permissions',exact:true}),caption=page.locator('.pui-permission-control .pui-select-value'),field=page.getByRole('textbox',{name:'Message Pith',exact:true});
   await field.fill('Keep this draft 中文');await expect(caption).toBeVisible();
   expect((await trigger.boundingBox())!.width).toBeGreaterThan(44);
-  await trigger.focus();await page.evaluate(()=>{window.permissionPartsHarness.trigger=document.querySelector('.pui-permission-control button')!;document.querySelector<HTMLElement>('.pui-composer-region')!.style.width='420px';});
+  await trigger.focus();await page.evaluate(()=>{window.permissionPartsHarness.trigger=document.querySelector<HTMLButtonElement>('.pui-permission-control button')!;document.querySelector<HTMLElement>('.pui-composer-region')!.style.width='420px';});
   await expect.poll(async()=> (await trigger.boundingBox())!.width).toBeLessThanOrEqual(44);
   await expect(trigger).toBeFocused();expect(await trigger.evaluate(node=>node===window.permissionPartsHarness.trigger)).toBe(true);await expect(field).toHaveValue('Keep this draft 中文');
   await page.evaluate(()=>document.querySelector<HTMLElement>('.pui-composer-region')!.style.removeProperty('width'));
@@ -70,9 +70,18 @@ test('compact select and context note expose bounded semantic state, genuine des
     const note = p.createContextNotePart({text: 'Bounded description',tone: 'warning'}),choice = p.createCompactSelectPart({label: 'Compact choice',icon: 'shield',tone: 'warning',describedBy: [note],options: [{value: 'a',label: 'First'},{value: 'b',label: 'Second'}],value: 'b'});
     const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,p.createStackPart({children: [choice,note]}));
     const label = mount.querySelector('label')!,select = mount.querySelector('select')!,before = label.innerHTML;
-    const invalid = [rejects(() => choice.update({tone: 'magenta'})),rejects(() => choice.update({describedBy: [{destroy() {}}]})),rejects(() => choice.update({style: {width: 500}})),rejects(() => note.update({text: 'Changed',tone: 'magenta'})),rejects(() => p.createCompactSelectPart({label: 'Invalid',icon: 'unknown',options: []})),rejects(() => p.createContextNotePart({text: 'Invalid',className: 'other'}))];
+    const invalid = [rejects(() => choice.update({tone: 'magenta'})),rejects(() => choice.update({describedBy: [{destroy() {}}]})),rejects(() => choice.update({style: {width: 500}})),rejects(() => note.update({text: 'Changed',tone: 'magenta'})),rejects(() => p.createCompactSelectPart({label: 'Invalid',icon: 'unknown',options: []})),rejects(() => p.createContextNotePart({text: 'Invalid',className: 'other'})),rejects(() => choice.update({label:'Changed',icon:'unknown'}))];
     const result = {invalid,unchanged: before === label.innerHTML,value: choice.read(),label: label.localName,children: [...label.children].map(node => node.localName),description: mount.querySelector('p')!.textContent,reference: select.getAttribute('aria-describedby') === mount.querySelector('p')!.id,leaks: [note,choice].some(part => Object.values(part).some(value => value instanceof Node))};tree.destroy();return result;
-  });expect(value).toEqual({invalid: [true,true,true,true,true,true],unchanged: true,value: 'b',label: 'label',children: ['svg','span','span','svg'],description: 'Bounded description',reference: true,leaks: false});
+  });expect(value).toEqual({invalid: [true,true,true,true,true,true,true],unchanged: true,value: 'b',label: 'label',children: ['svg','span','span','svg'],description: 'Bounded description',reference: true,leaks: false});
+});
+
+test('inline choices reject icon updates before changing their caption or native value',async ({page})=>{
+  await page.goto('/tests/fixture.html');const result=await page.evaluate(async()=>{
+    const path='/src/parts/index.ts',p=await import(path),choice=p.createCompactSelectPart({purpose:'inline',label:'Thinking effort',options:[{value:'high',label:'High'}],value:'high'});
+    const mount=document.body.appendChild(document.createElement('div')),tree=p.mountParts(mount,choice),before=mount.innerHTML;
+    let rejected=false;try {choice.update({label:'Changed',icon:'shield-alert'});} catch {rejected=true;}
+    const result={rejected,unchanged:before===mount.innerHTML,value:choice.read()};tree.destroy();return result;
+  });expect(result).toEqual({rejected:true,unchanged:true,value:'high'});
 });
 
 test('text and context notes reject invalid visibility before changing literal content',async ({page}) => {
