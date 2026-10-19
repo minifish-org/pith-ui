@@ -14,7 +14,7 @@ export function createInputToolbarPart(options: ComposerLayoutOptions): LayoutPa
   const observer = new ResizeObserver(entries => {
     if (!isPartAlive(part)) return;
     const entry = entries.find(entry => entry.target === node);
-    if (entry) node.classList.toggle('pui-composer-compact',entry.contentRect.width <= 680);
+    if (entry) node.classList.toggle('pui-composer-compact',node.getBoundingClientRect().width <= 680);
   });
   observer.observe(node);onPartDestroy(part,() => observer.disconnect());return part;
 }
