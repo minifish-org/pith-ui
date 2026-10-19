@@ -92,7 +92,7 @@
    Only overlay frames reserve this space; the ordinary frame is unchanged. */
 .pui .pui-titlebar-overlay { --pui-native-titlebar-height: var(--mygo-titlebar-height, 52px); }
 .pui .pui-titlebar-overlay > .pui-native-titlebar { position: absolute; top: 0; left: 0; width: var(--pui-sidebar-width); height: var(--pui-native-titlebar-height); --app-region: drag; user-select: none; }
-.pui .pui-titlebar-overlay > .pui-sidebar { padding-top: calc(var(--pui-space-xl) + var(--pui-native-titlebar-height)); }
+.pui .pui-titlebar-overlay > .pui-sidebar { padding-top: max(var(--pui-space-xl), calc(var(--pui-space-sm) + var(--pui-native-titlebar-height))); }
 .pui .pui-titlebar-overlay > .pui-main > .pui-topbar { height: max(52px, var(--pui-native-titlebar-height)); padding-right: max(var(--pui-space-xl), calc(var(--mygo-titlebar-inset-right, 0px) + var(--pui-space-lg))); --app-region: drag; user-select: none; }
 .pui .pui-titlebar-overlay .pui-topbar :is(button, a, input, textarea, select, summary, [contenteditable], .pui-conversation-actions) { --app-region: no-drag; }
 .pui .pui-breadcrumb { display: flex; align-items: center; gap: var(--pui-space-md); color: var(--pui-muted); font-size: var(--pui-text-small); min-width: 0; flex: 1; }
