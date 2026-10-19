@@ -35,6 +35,10 @@ test('narrow permission icons keep a full click target and align with the unchan
     for (const name of ['Ask before changes','Allow workspace changes','Full access']) await expect(page.getByRole('option',{name,exact:true})).toBeVisible();
     await page.keyboard.press('Escape');await expect(trigger).toBeFocused();
     expect(await page.evaluate(()=>window.permissionPartsHarness.changes)).toEqual([]);
+    await page.evaluate(()=>{const h=window.permissionPartsHarness;h.session.update({...h.initial,disabled:true});});
+    await expect(trigger).toBeDisabled();await expect(permission.locator(':scope > svg').first()).toHaveCSS('opacity','0.45');
+    await page.evaluate(()=>{const h=window.permissionPartsHarness;h.session.update({...h.initial,disabled:false});});
+    await expect(trigger).toBeEnabled();await expect(permission.locator(':scope > svg').first()).toHaveCSS('opacity','1');
   }
 });
 
