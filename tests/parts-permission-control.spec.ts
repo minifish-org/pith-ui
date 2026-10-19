@@ -11,11 +11,57 @@ async function openPermission(page: Page,state: State = initial,appearance: 'lig
     document.documentElement.classList.add('pui');document.documentElement.dataset.appearance = appearance;document.body.dataset.appearance = appearance;
 const mount=document.body.appendChild(document.createElement('div')),h={initial:state,changes:[]} as unknown as Harness;
     const contextPath = '/tests/region-context.ts', {mountRegion} = await import(contextPath);
-    const path='/examples/assemblies/composer.ts',{composeComposer}=await import(path),composer=composeComposer({},{onPermissionChange(value:string){h.changes.push(value);}});composer.updatePermission(state);
+    const path='/examples/assemblies/composer.ts',{composeComposer}=await import(path),composer=composeComposer({model:{label:'GPT-6.1 Sol',description:'Selected model'},thinking:{options:[{value:'off',label:'Off'},{value:'high',label:'High'}],value:'high'}},{onPermissionChange(value:string){h.changes.push(value);}});composer.updatePermission(state);
     h.tree=mountRegion(mount,composer.part,'composer',appearance);h.session={update:composer.updatePermission,destroy:composer.destroy};
         window.permissionPartsHarness = h;
   },{state,appearance});
 }
+
+test('narrow permission icons keep a full click target and align with the unchanged composer actions',async ({page}) => {
+  for (const width of [480,390]) {
+    await page.setViewportSize({width,height:700});await openPermission(page);
+    const trigger=page.getByRole('combobox',{name:'Conversation permissions',exact:true});
+    const permission=page.locator('.pui-permission-control');
+    const geometry=await permission.evaluate(node=>{
+      const rect=node.getBoundingClientRect(),caption=node.querySelector('.pui-select-value')!.getBoundingClientRect();
+      const controls=[node,document.querySelector('[aria-label="Attach images"]')!,document.querySelector('[aria-label="Choose model"]')!,document.querySelector('.pui-composer-thinking button')!,document.querySelector('.pui-send-button')!];
+      return {width:rect.width,height:rect.height,captionWidth:caption.width,centers:controls.map(control=>{const r=control.getBoundingClientRect();return r.top+r.height/2;})};
+    });
+    expect(geometry.width).toBeGreaterThanOrEqual(40);expect(geometry.width).toBeLessThanOrEqual(44);
+    expect(geometry.height).toBeGreaterThanOrEqual(40);expect(geometry.captionWidth).toBeLessThanOrEqual(1);
+    expect(Math.max(...geometry.centers)-Math.min(...geometry.centers)).toBeLessThanOrEqual(1);
+    await expect(permission.locator(':scope > svg').last()).not.toBeVisible();
+    await trigger.click({position:{x:2,y:2}});
+    for (const name of ['Ask before changes','Allow workspace changes','Full access']) await expect(page.getByRole('option',{name,exact:true})).toBeVisible();
+    await page.keyboard.press('Escape');await expect(trigger).toBeFocused();
+    expect(await page.evaluate(()=>window.permissionPartsHarness.changes)).toEqual([]);
+  }
+});
+
+test('all three permission modes have distinct symbols and expose their complete current names',async ({page})=>{
+  await page.setViewportSize({width:480,height:600});await openPermission(page,initial,'dark');
+  const trigger=page.getByRole('combobox',{name:'Conversation permissions',exact:true}),icons:string[]=[],colors:string[]=[];
+  for (const [mode,name] of [['ask','Ask before changes'],['workspace-write','Allow workspace changes'],['full-access','Full access']]) {
+    await page.evaluate(mode=>{const h=window.permissionPartsHarness;h.session.update({...h.initial,mode});},mode!);
+    await expect(trigger).toHaveAttribute('title',name!);
+    const icon=page.locator('.pui-permission-control > svg').first();icons.push(await icon.innerHTML());colors.push(await icon.evaluate(node=>getComputedStyle(node).color));
+    await trigger.click();await expect(page.getByRole('option',{name:name!,exact:true})).toHaveAttribute('aria-selected','true');await page.keyboard.press('Escape');
+  }
+  expect(new Set(icons).size).toBe(3);expect(colors[0]).toBe(colors[1]);expect(colors[2]).not.toBe(colors[0]);
+  expect(await page.evaluate(()=>window.permissionPartsHarness.changes)).toEqual([]);
+});
+
+test('permission collapse follows composer space and preserves the same focused control and draft across resizing',async ({page})=>{
+  await page.setViewportSize({width:1280,height:800});await openPermission(page);
+  const trigger=page.getByRole('combobox',{name:'Conversation permissions',exact:true}),caption=page.locator('.pui-permission-control .pui-select-value'),field=page.getByRole('textbox',{name:'Message Pith',exact:true});
+  await field.fill('Keep this draft 中文');await expect(caption).toBeVisible();
+  expect((await trigger.boundingBox())!.width).toBeGreaterThan(44);
+  await trigger.focus();await page.evaluate(()=>{window.permissionPartsHarness.trigger=document.querySelector('.pui-permission-control button')!;document.querySelector<HTMLElement>('.pui-composer-region')!.style.width='420px';});
+  await expect.poll(async()=> (await trigger.boundingBox())!.width).toBeLessThanOrEqual(44);
+  await expect(trigger).toBeFocused();expect(await trigger.evaluate(node=>node===window.permissionPartsHarness.trigger)).toBe(true);await expect(field).toHaveValue('Keep this draft 中文');
+  await page.evaluate(()=>document.querySelector<HTMLElement>('.pui-composer-region')!.style.removeProperty('width'));
+  await expect.poll(async()=> (await trigger.boundingBox())!.width).toBeGreaterThan(44);await expect(trigger).toBeFocused();await expect(field).toHaveValue('Keep this draft 中文');
+});
 
 
 test('compact select and context note expose bounded semantic state, genuine descriptions and one native label',async ({page}) => {
