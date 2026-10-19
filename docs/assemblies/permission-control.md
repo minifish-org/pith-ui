@@ -5,7 +5,8 @@ Import this region from `pith-ui/recipes`. Its single implementation is
 handles are indexed in [API.md](../../API.md).
 
 The composer shows the permission name at ordinary widths and a 44px icon button
-when its own content width is at most 520px. The shield contains a question mark
+when its toolbar content width is at most 680 CSS pixels. The toolbar observes
+its actual width so Linux desktop DPI scaling cannot delay this change. The shield contains a question mark
 for `ask`, a pencil for `workspace-write`, and an amber exclamation mark for
 `full-access`. The current name remains available in the tooltip and all three
 full names remain in the menu. Container resizing keeps the same control,

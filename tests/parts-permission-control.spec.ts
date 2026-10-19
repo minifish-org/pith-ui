@@ -67,6 +67,31 @@ test('permission collapse follows composer space and preserves the same focused 
   await expect.poll(async()=> (await trigger.boundingBox())!.width).toBeGreaterThan(44);await expect(trigger).toBeFocused();await expect(field).toHaveValue('Keep this draft 中文');
 });
 
+test('disposing the composer releases its width observer',async ({page})=>{
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(() => {
+    const NativeObserver=window.ResizeObserver,active=new Set<ResizeObserver>();
+    Object.assign(window,{permissionWidthObservers:active});
+    window.ResizeObserver=class extends NativeObserver {
+      override observe(target:Element,options?:ResizeObserverOptions):void {active.add(this);super.observe(target,options);}
+      override disconnect():void {active.delete(this);super.disconnect();}
+    };
+  });
+  // Mount without navigating, retaining the instrumented native observer.
+  await page.evaluate(async initial => {
+    const path='/examples/assemblies/composer.ts',parts='/src/parts/index.ts';
+    const {composeComposer}=await import(path),{mountParts}=await import(parts),composer=composeComposer({});
+    composer.updatePermission(initial);
+    const mount=document.body.appendChild(document.createElement('div')),tree=mountParts(mount,composer.part);
+    Object.assign(window,{disposePermissionWidth:()=>tree.destroy()});
+  },initial);
+  expect(await page.evaluate(()=>Reflect.get(window,'permissionWidthObservers').size)).toBe(1);
+  await page.evaluate(()=>Reflect.get(window,'disposePermissionWidth')());
+  expect(await page.evaluate(()=>Reflect.get(window,'permissionWidthObservers').size)).toBe(0);
+  await page.setViewportSize({width:390,height:700});
+  await expect(page.locator('.pui-composer-toolbar')).toHaveCount(0);
+});
+
 
 test('compact select and context note expose bounded semantic state, genuine descriptions and one native label',async ({page}) => {
   await page.goto('/tests/fixture.html');const value = await page.evaluate(async () => {
