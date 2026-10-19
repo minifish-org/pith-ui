@@ -18,7 +18,7 @@ const mount=document.body.appendChild(document.createElement('div')),h={initial:
 }
 
 test('narrow permission icons keep a full click target and align with the unchanged composer actions',async ({page}) => {
-  for (const width of [480,390]) {
+  for (const width of [640,590,480,390]) {
     await page.setViewportSize({width,height:700});await openPermission(page);
     const trigger=page.getByRole('combobox',{name:'Conversation permissions',exact:true});
     const permission=page.locator('.pui-permission-control');
