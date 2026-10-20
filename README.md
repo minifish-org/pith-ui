@@ -73,4 +73,48 @@ This covers types, units, tools, catalog and API documentation, assembly example
 
 The ESM package and stylesheet are separate from the showroom and fixtures. Install a published exact version and commit the consumer lockfile. Package verification compiles assembly documentation from an isolated installation and rejects private imports and presentation escapes. Source preview, npm publication and consumer delivery are separate verification steps.
 
+## CI checks and caches
+
+`Validate / validate` always reports a result; the workflow has no path filter.
+Every main push, manual run and reusable invocation performs complete validation.
+PRs use the actual base diff:
+
+| Change | Checks |
+|---|---|
+| Maintenance documents (`AGENTS.md`, validation/release guide) | Whitespace; no dependency installation |
+| Shipped Markdown and license | Build, types, catalog/API, showroom build and isolated packed-package consumer |
+| Only unit/tool tests | Build, types and unit/tool tests |
+| Only browser specs | Build, types and both browser engines |
+| Source, public types, dependencies, fixtures, examples, build/workflow config, mixed or unknown changes | Complete validation |
+
+Missing base history selects the complete suite. To inspect a committed PR range
+or run the focused groups locally:
+
+```sh
+node --experimental-strip-types scripts/ci-scope.ts pull_request origin/main
+npm run build
+npm run check
+npm test
+npm run test:tools
+```
+
+Full validation installs dependencies once, builds once and compiles the shipped
+assembly examples against the independently installed archive once. For a quick
+documentation check before packing, `node scripts/verify-assemblies.ts` remains
+available after a build; `npm run validate` does not repeat it before the archive
+consumer check. The latter also retains private-import/type rejection and both
+consumer production builds.
+
+CI caches npm downloads under the lockfile, including those used by isolated
+package verification. It does not cache `node_modules`, `dist`, test results or
+release output. Browser engines and system libraries are installed only when
+browser checks run. Superseded PR runs are canceled; main validation is retained.
+Publishing and the showroom continue to reuse the exact successful main
+artifacts rather than rebuilding or retesting them. No release is needed to
+validate a workflow change.
+
+Use `gh run view RUN_ID --json createdAt,jobs` to distinguish queue time from
+execution and individual step times. Report cache/selection savings only after
+measurement, and label any unmeasured gains.
+
 Licensed under [AGPL-3.0-only](LICENSE). Runtime dependencies retain their own licenses.

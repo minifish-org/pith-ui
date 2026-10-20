@@ -45,7 +45,7 @@
     "prepack": "npm run build",
     "test:tools": "node --test test-dist/tests/tools/*.test.js",
     "test:package": "node scripts/release.ts pack && node scripts/release.ts verify",
-    "validate": "npm run build && npm run check && npm test && npm run test:tools && node scripts/catalog.ts && node scripts/api-docs.ts --check && node scripts/verify-assemblies.ts && npm run test:browser && npm run showroom:build && npm run test:package"
+    "validate": "npm run build && npm run check && npm test && npm run test:tools && node scripts/catalog.ts && node scripts/api-docs.ts --check && npm run test:browser && npm run showroom:build && npm run test:package"
   },
   "dependencies": {
     "dompurify": "3.4.16",
