@@ -20,3 +20,5 @@ Read `AI.md`, the relevant entry in `docs/catalog.md`, and the actual implementa
 - Keep review notes, benchmarks, ad hoc screenshots, browser profiles, tarballs and temporary fixtures out of commits. Maintained visual regression baselines under `visual-baselines/` are the explicit exception: update them only through the visual tool's `--update`, inspect the changes and commit them with the relevant component change. Never change tests to conceal a behavior regression or mark automated results as human acceptance.
 
 See `docs/validation.md` for acceptance scenarios and `docs/releasing.md` for artifact and release evidence. A local build, a push, a successful workflow, npm publication and downloaded consumer validation are distinct facts; report them separately.
+
+<!-- Temporary CI scope verification; this branch is not for merging. -->
