@@ -65,7 +65,7 @@ for (const teardown of ['mount','replace'] as const) test(`ancestor ${teardown} 
     const state = {compactDisabled: false,navigation: {empty: null,groups: []}};
     const frame = composeFrame(state,{onAction() {actions++;return new Promise(done => {resolve = done;});},onSearch() {searches++;},onError() {errors++;}});
     const mount = document.body.appendChild(document.createElement('div')),owner = p.createStackPart({children: [frame.part]}),tree = p.mountParts(mount,owner);
-    (mount.querySelector('.pui-compact-action') as HTMLButtonElement).click();if (teardown === 'mount') tree.destroy();else owner.replace([]);
+    (mount.querySelector('button[aria-label="Compress context"]') as HTMLButtonElement).click();if (teardown === 'mount') tree.destroy();else owner.replace([]);
     resolve({ok: false,error: 'Retired'});await new Promise(done => setTimeout(done,0));
     const quiet: boolean[] = [];for (const operation of [() => frame.update(state),() => frame.search('late'),() => frame.closeNavigationMenu(),() => frame.setSidebarOpen(true),() => frame.destroy()]) {
       try {operation();quiet.push(true);} catch {quiet.push(false);}

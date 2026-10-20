@@ -75,7 +75,7 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
   const rail = createSideRailPart({children: [brandPart, heading, searchField, navigation, footer]});
   const trigger = createButtonPart({variant: 'drawer-trigger', icon: 'menu', label: 'Open sidebar'});
   const breadcrumb = createBreadcrumbPart({ancestor: workspace, current: conversation});
-  const compact = createButtonPart({variant: 'toolbar-action', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: initial.compactDisabled ?? true, onAction() {return callbacks.onAction?.('compact');}, onError: fail});
+  const compact = createButtonPart({variant: 'quiet-icon', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: initial.compactDisabled ?? true, onAction() {return callbacks.onAction?.('compact');}, onError: fail});
   const topbarActions = createTopbarActionsPart({children: [compact,...content.topbarActions ?? []]});
   const topbar = createTopbarPart({children: [trigger, breadcrumb,topbarActions]});
   const main = createMainPart({children: [topbar, ...content.main ?? []]}), part = createFramePart({children: [],titlebar: content.titlebar,onDispose: retire,onModalChange: callbacks.onModalChange});
@@ -155,7 +155,7 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
     if (!alive) return; state = next;
     if (next.workspace !== undefined) workspace = next.workspace; if (next.conversation !== undefined) conversation = next.conversation;
     breadcrumb.update({ancestor: workspace, current: conversation}); connection.update({message: 'Reconnecting…', hidden: !next.reconnecting});
-    compact.update({variant: 'toolbar-action', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: next.compactDisabled ?? true});
+    compact.update({variant: 'quiet-icon', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: next.compactDisabled ?? true});
     const active = next.navigation.groups.flatMap(group => group.children.filter(entry => entry.active).map(entry => ({workspace: group.id, conversation: entry.id})))[0];
     if (active && active.conversation !== activeConversation) expanded.set(active.workspace, true); activeConversation = active?.conversation ?? '';
     const ids = new Set(next.navigation.groups.map(group => group.id)); for (const id of expanded.keys()) if (!ids.has(id)) expanded.delete(id);

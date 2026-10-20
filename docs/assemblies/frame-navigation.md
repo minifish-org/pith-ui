@@ -6,6 +6,8 @@ handles are indexed in [API.md](../../API.md).
 
 Project conversation/workspace availability in the host. Compose children before the one mount. Use createDialogHost to manage dialog slots on the frame; root disposal retires them before descendants.
 
+The Compact control uses an icon button with an accessible name and hover hint. Caller-supplied topbar actions can use the same `quiet-icon` variant; file counters keep their visible count.
+
 ```ts
 import {mountParts, type Part} from 'pith-ui';
 import {

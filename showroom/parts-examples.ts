@@ -27,7 +27,7 @@ export const specialExamples = {
   'text','small','paragraph','muted','muted-paragraph','path','path-paragraph','location','footnote','warning-paragraph','scope-note','surface-status','note','caption','hint','description','eyebrow','eyebrow-paragraph','heading','display-heading','strong','bubble','interrupted','section-title',
  ] as const).map(role=>p.createTextPart({role,text:role+' · Literal text 中文'}))}),
  createIconPart:()=>p.createActionsPart({children:([
-  'steer','edit','trash','branch','compress','image','plus','chat','folder','settings','arrow','stop','chevron','down','close','check','shield','shield-question','shield-edit','shield-alert','file','terminal','copy','menu','globe','search','more','compose','plug',
+  'steer','edit','trash','branch','compress','image','plus','chat','folder','settings','arrow','stop','chevron','down','close','logout','check','shield','shield-question','shield-edit','shield-alert','file','terminal','copy','menu','globe','search','more','compose','plug',
  ] as const).map(name=>p.createIconPart({name}))}),
  createToolbarPart:()=>p.createToolbarPart({label:'Actions',children:[p.createButtonPart({label:'Action'})]}),
  createInputPart:({disabled,notify}:ExampleControls)=>p.createStackPart({children:([

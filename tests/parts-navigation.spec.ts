@@ -104,8 +104,10 @@ test('compact action keeps its own async pending across ordinary shell snapshots
         snapshot = () => frame.update({...state,compactDisabled: false});
       (window as unknown as {compactPending: {snapshot(): void;finish(): void;errors: string[]}}).compactPending = {snapshot,finish() {resolve({ok: false,error: 'Compaction failed'});},errors};
     },{state: populated});
-    const compact = page.getByRole('button',{name: 'Compress context',exact: true});await expect(compact).toBeEnabled();await compact.click();await expect(compact,'assembled compact owns local pending').toBeDisabled();
-    await page.evaluate(() => (window as unknown as {compactPending: {snapshot(): void}}).compactPending.snapshot());await expect(compact).toBeDisabled();
+    const compact = page.getByRole('button',{name: 'Compress context',exact: true});await expect(compact).toBeEnabled();
+    await expect(compact).toHaveText('');await expect(compact.locator('svg')).toBeVisible();await expect(compact).toHaveAttribute('title','Compress context by summarizing older messages');
+    await compact.click();await expect(compact,'assembled compact owns local pending').toBeDisabled();
+    await page.evaluate(() => (window as unknown as {compactPending: {snapshot(): void}}).compactPending.snapshot());await expect(compact).toBeDisabled();await expect(compact).toHaveText('');
     await page.evaluate(() => (window as unknown as {compactPending: {finish(): void}}).compactPending.finish());await expect(compact).toBeEnabled();
     expect(await page.evaluate(() => (window as unknown as {compactPending: {errors: string[]}}).compactPending.errors)).toEqual(['Compaction failed']);
 });

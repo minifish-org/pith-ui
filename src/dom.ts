@@ -14,6 +14,7 @@ const paths: Record<string, string> = {
   chevron: '<path d="m9 5 7 7-7 7"/>',
   down: '<path d="m6 9 6 6 6-6"/>',
   close: '<path d="m6 6 12 12M18 6 6 18"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
   check: '<path d="m5 12 4 4L19 6"/>',
   shield: '<path d="m12 3 8 4v5c0 5-8 9-8 9s-8-4-8-9V7Z"/><path d="m8 12 3 3 5-6"/>',
   'shield-question': '<path d="m12 3 8 4v5c0 5-8 9-8 9s-8-4-8-9V7Z"/><path d="M9.6 9.2a2.4 2.4 0 0 1 4.8 0c0 1.6-2.4 1.6-2.4 3.2M12 15.6h.01"/>',
