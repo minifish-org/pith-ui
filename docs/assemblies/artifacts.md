@@ -4,6 +4,10 @@ Import this region from `pith-ui/recipes`. Its single implementation is
 [`src/recipes/artifacts.ts`](../../src/recipes/artifacts.ts); public state, callbacks and
 handles are indexed in [API.md](../../API.md).
 
+The host controls file-action visibility with `state.fileActions`, for example
+`{reveal: false}` for a browser runtime. Omit it to retain Open and Reveal.
+Updates preserve the keyed rows, pending actions and file count.
+
 The host owns file operations and original conversation targets. Row removal and owner changes retire pending feedback. Borrowed related dialogs preserve inspector focus without transferring ownership.
 
 ```ts

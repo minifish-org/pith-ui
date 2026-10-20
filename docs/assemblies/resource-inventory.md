@@ -4,6 +4,10 @@ Import this region from `pith-ui/recipes`. Its single implementation is
 [`src/recipes/resource-inventory.ts`](../../src/recipes/resource-inventory.ts); public state, callbacks and
 handles are indexed in [API.md](../../API.md).
 
+Set `state.fileActions` to `{reveal: false}` when the host has no native file
+manager. Omitted actions remain visible. This changes controls without replacing
+resource rows, selection or ongoing requests; the host owns runtime policy.
+
 Callbacks retain the displayed workspace and resource target. The host owns fetching and decides whether creation and writes are available. Keyed snapshots preserve rows, selection and disclosure state.
 
 Skill rows display the name, path and actions without the description. The supplied description remains in inventory state. Narrow layouts place actions below the metadata so names retain readable width.

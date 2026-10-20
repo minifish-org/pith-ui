@@ -6,7 +6,7 @@ interface Entry {name: string; path: string; description?: string; content?: str
 interface Target {workspaceId: string; kind: Kind; name: string; path: string}
 interface InventoryState {
   workspace: {id: string; name: string; path: string}; instructions: Entry[]; skills: Entry[]; templates: Entry[];
-  diagnostics: string[]; canCreateInstructions?: boolean; loading?: boolean; error?: string; busy?: boolean;
+  diagnostics: string[]; canCreateInstructions?: boolean; loading?: boolean; error?: string; busy?: boolean;fileActions?: {open?: boolean;reveal?: boolean};
 }
 interface InventoryHandle {read(): InventoryState; update(state: InventoryState): void; fail(message: string): void; close(): void; isOpen(): boolean; destroy(): void}
 interface InventoryHarness {
@@ -42,6 +42,15 @@ async function openInventory(page: Page, state: InventoryState = full, appearanc
   }, {state,appearance,applicationContext});
   await expect(page.getByRole('dialog',{name: 'Workspace resources',exact: true})).toBeVisible();
 }
+
+test('host file capabilities hide Reveal without replacing resource content or edit actions',async ({page}) => {
+  await openInventory(page,{...full,fileActions: {reveal: false}});
+  await expect(page.getByRole('button',{name: 'Reveal',exact: true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name: 'Open',exact: true})).toHaveCount(3);
+  await expect(page.getByRole('button',{name: 'View / edit',exact: true})).toHaveCount(4);
+  await page.evaluate(() => {const h = window.inventoryPartsHarness;h.session.update({...h.initial,fileActions: {reveal: true}});});
+  await expect(page.getByRole('button',{name: 'Reveal',exact: true})).toHaveCount(3);
+});
 
 test('narrow skill lists keep names readable and all actions below the metadata', async ({page}) => {
   const skill = {name: 'i-have-adhd',path: '/demo/project/.pi/skills/i-have-adhd/SKILL.md',description: 'Shape output for a reader with ADHD. '.repeat(12)};

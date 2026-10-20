@@ -13,3 +13,7 @@ Import parts from `pith-ui`, complete regions from `pith-ui/recipes`, and styles
 There is no public whole-application entry or `pith-ui/app`. Region recipes are public modules, not source blueprints to copy. Add a concrete regression before changing an established behavior. Do not introduce a UI framework or broad rendering DSL.
 
 Source validation, packed-package proof, npm publication, consumer installation, product build and human acceptance are separate evidence states.
+
+Explicit local preview may resolve the same three public entries to checkout
+source as described in APP.md. This is a development-only resolution; product
+imports, ownership and production registry checks keep the same boundaries.

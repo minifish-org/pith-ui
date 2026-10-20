@@ -1,4 +1,4 @@
-import type {RecipeResult} from './types.js';
+import type {FileActions,RecipeResult} from './types.js';
 /** Internal artifact-control assembly. File discovery and native actions stay in the host. */
 import {
   createAnchoredGroupPart, createButtonPart, createCardBodyPart, createCardPart,
@@ -11,6 +11,7 @@ import {
 export interface ArtifactsState {
   readonly ownerId: string;readonly files: readonly {readonly name: string;readonly path: string}[];
   readonly loading: boolean;readonly error: string;readonly copyMode: 'file' | 'path';readonly disabled?: boolean;
+  readonly fileActions?: FileActions;
 }
 export interface ArtifactTarget {readonly owner: {readonly kind: 'artifact';readonly id: string};readonly name: string;readonly path: string}
 export type ArtifactActionResult = void | RecipeResult;
@@ -28,7 +29,7 @@ export interface ArtifactsComposition {
 /** The counter, heading, status, viewport and keyed cards are independent parts. */
 export function composeArtifacts(initial: Readonly<ArtifactsState>, callbacks: ArtifactsCallbacks, dependencies: ArtifactsDependencies): ArtifactsComposition {
   let state = initial,handlers = callbacks,alive = true;
-  type Row = {part: CardPart;name: ReturnType<typeof createTextPart>;path: string;buttons: {part: ButtonPart;label: string | (() => string)}[]};
+  type Row = {part: CardPart;name: ReturnType<typeof createTextPart>;path: string;buttons: {part: ButtonPart;label: string | (() => string);action?: keyof FileActions}[]};
   const rows = new Map<string,Row>(),list = createStackPart({children: []});
   const fail = (message: string) => {if (alive) {state = {...state,error: message};render();}};
   const trigger = createButtonPart({variant: 'counter',icon: 'file',count: '',label: 'Conversation files',title: 'Conversation files',onAction() {if (inspector.isOpen()) inspector.close();else inspector.open(trigger);}});
@@ -49,13 +50,13 @@ export function composeArtifacts(initial: Readonly<ArtifactsState>, callbacks: A
     const onError = (message: string) => {if (valid()) fail(message);};
     const availableTarget = () => valid() && !state.disabled ? targetFor(file.path) : undefined;
     const preview = createButtonPart({label: 'Preview',variant: 'secondary',async onAction() {const target = availableTarget();if (target) return handlers.onPreview(target);},onError});
-    const open = createButtonPart({label: 'Open',variant: 'secondary',async onAction() {const target = availableTarget();if (target) return handlers.onFileAction('open',target);},onError});
-    const reveal = createButtonPart({label: 'Reveal',variant: 'secondary',async onAction() {const target = availableTarget();if (target) return handlers.onFileAction('reveal',target);},onError});
+    const open = createButtonPart({label: 'Open',variant: 'secondary',async onAction() {const target = availableTarget();if (target && state.fileActions?.open !== false) return handlers.onFileAction('open',target);},onError});
+    const reveal = createButtonPart({label: 'Reveal',variant: 'secondary',async onAction() {const target = availableTarget();if (target && state.fileActions?.reveal !== false) return handlers.onFileAction('reveal',target);},onError});
     const copyLabel = () => state.copyMode === 'file' ? 'Copy file' : 'Copy path';
     const copy = createCopyButtonPart({label: copyLabel(),variant: 'secondary',announcement: dependencies.announcement,
       successMessage: () => state.copyMode === 'file' ? 'File copied.' : 'Path copied.',
       async onCopy() {const target = availableTarget();if (target) return handlers.onFileAction(state.copyMode === 'file' ? 'copy' : 'copy-path',target);},onError});
-    const buttons = [{part: preview,label: 'Preview'},{part: open,label: 'Open'},{part: reveal,label: 'Reveal'},{part: copy,label: copyLabel}];
+    const buttons: Row['buttons'] = [{part: preview,label: 'Preview'},{part: open,label: 'Open',action: 'open'},{part: reveal,label: 'Reveal',action: 'reveal'},{part: copy,label: copyLabel}];
     const name = createTextPart({role: 'strong',text: file.name});
     const body = createCardBodyPart({children: [name,createTextPart({role: 'path',text: file.path})]});
     row = {part: createCardPart({children: [createIconPart({name: 'file'}),body,createCompactActionsPart({children: buttons.map(button => button.part)})]}),name,path: file.path,buttons};return row;
@@ -70,7 +71,7 @@ export function composeArtifacts(initial: Readonly<ArtifactsState>, callbacks: A
     const parts: CardPart[] = [];
     for (const file of state.files) {
       const key = JSON.stringify([state.ownerId,file.path]);let row = rows.get(key);if (!row) {row = makeRow(file);rows.set(key,row);}
-      row.name.update({text: file.name});for (const button of row.buttons) button.part.update({label: typeof button.label === 'function' ? button.label() : button.label,variant: 'secondary',disabled: !!state.disabled});parts.push(row.part);
+      row.name.update({text: file.name});for (const button of row.buttons) button.part.update({label: typeof button.label === 'function' ? button.label() : button.label,variant: 'secondary',disabled: !!state.disabled,hidden: !!button.action && state.fileActions?.[button.action] === false});parts.push(row.part);
     }
     list.replace(parts);part.update({hidden: !state.ownerId || (!state.files.length && !state.error)});
   }

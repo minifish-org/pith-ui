@@ -1,5 +1,5 @@
 /** Shared region implementations. Business data and operations stay in the host. */
-export type {RecipeResult, ResourceKind, ResourceTarget} from "./types.js";
+export type {FileActions, RecipeResult, ResourceKind, ResourceTarget} from "./types.js";
 export {composeApproval, type Approval, type ApprovalState, type ApprovalComposition} from "./approval.js";
 export {composeArtifacts, type ArtifactsState, type ArtifactTarget, type ArtifactActionResult, type ArtifactsCallbacks, type ArtifactsDependencies, type ArtifactsComposition} from "./artifacts.js";
 export {composeAttachments, type AttachmentItem, type AttachmentsState, type AttachmentsCallbacks, type AttachmentsComposition} from "./attachments.js";

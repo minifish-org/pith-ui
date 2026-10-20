@@ -1,4 +1,4 @@
-import type {RecipeResult} from './types.js';
+import type {FileActions,RecipeResult} from './types.js';
 import {previewPageRanges} from './preview-pages.js';
 /** Shared region recipe. File reads, native actions and URL lifetime stay in the host. */
 import {
@@ -13,7 +13,7 @@ export type PreviewKind = 'text' | 'markdown' | 'diff' | 'image';
 export type PreviewResult = void | RecipeResult;
 export interface PreviewState {readonly kind: PreviewKind; readonly text?: string; readonly imageSrc?: string; readonly imageAlt?: string; readonly truncated?: boolean; readonly error?: string; readonly disabled?: boolean}
 export interface PreviewTarget {readonly owner: {readonly kind: 'artifact'; readonly id: string}; readonly name: string; readonly path: string}
-export interface PreviewInput extends PreviewTarget {readonly capabilities: {readonly open?: boolean; readonly reveal?: boolean; readonly copyMode?: 'file' | 'path' | 'none'}; readonly content?: PreviewState}
+export interface PreviewInput extends PreviewTarget {readonly capabilities: FileActions & {readonly copyMode?: 'file' | 'path' | 'none'}; readonly content?: PreviewState}
 export interface PreviewCallbacks {
   onFileAction?(action: 'open' | 'reveal' | 'copy' | 'copy-path', target: PreviewTarget): PreviewResult | Promise<PreviewResult>;
   onCopyCode?(text: string): PreviewResult | Promise<PreviewResult>;

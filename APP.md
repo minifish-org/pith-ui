@@ -46,6 +46,14 @@ There is no public `mountDesk` or full application template. A product keeps a
 small coordinator that connects regions and projects business availability. Use
 public types or infer them from the recipe return value; avoid structural copies.
 
+For explicit local development, a consumer may resolve the three public entries
+to this checkout's `src/index.ts`, `src/recipes/index.ts` and `src/styles.css` in
+its Vite server and type check. Keep that resolution in the development runner,
+without changing npm installs, lockfiles or production build configuration.
+The source stylesheet includes its palette as ordinary CSS and supports HMR.
+Production and CI consume the exact published package. Source imports and UI
+internals remain private to the library.
+
 For a native window whose controls overlay the webview, pass
 `{titlebar: 'overlay'}` as `composeFrame` content (or on `createFramePart`).
 The frame keeps the existing brand and controls, shares a 52px top row with

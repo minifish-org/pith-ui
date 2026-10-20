@@ -16,7 +16,7 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
   {id:'connection',title:'独立连接编辑区域',factories:['composeCustomConnection','customModelDefaults'],create:c=>r.composeCustomConnection({name:'Demo',baseUrl:'https://provider.example/v1',api:'openai-completions',editing:false,models:[r.customModelDefaults()]},{onSubmit:c.action})},
   {id:'login',title:'登录区域',factories:['composeProviderLogin'],create:c=>r.composeProviderLogin({phase:'prompt',message:'Demonstration sign-in challenge',prompt:'Verification code',promptType:'text'},{onAnswer:c.action,onCancel:c.action})},
   {id:'editor',title:'资源编辑区域',factories:['composeResourceEditor'],create:c=>r.composeResourceEditor({workspaceId:'demo',workspacePath:'/demo',kind:'skill',name:'inspect',content:'# Demo skill\n\nInspect the current project.',editable:true,workspaceBusy:false},{onSubmit:c.action})},
-  {id:'resources',title:'资源列表区域',factories:['composeResourcesInventory'],create:c=>r.composeResourcesInventory({workspace:{id:'demo',name:'Demo workspace',path:'/demo'},instructions:[{name:'AGENTS.md',path:'/demo/AGENTS.md',content:'Demo instructions'}],skills:[{name:'review-changes',path:'/demo/.agents/skills/review-changes/SKILL.md',description:'Review changes and explain the most important findings.'}],templates:[],diagnostics:[],canCreateInstructions:false},{onRefresh:c.action,onCreate:c.action,onEdit:c.action,onUse:c.action})},
+  {id:'resources',title:'资源列表区域',factories:['composeResourcesInventory'],create:c=>r.composeResourcesInventory({workspace:{id:'demo',name:'Demo workspace',path:'/demo'},instructions:[{name:'AGENTS.md',path:'/demo/AGENTS.md',content:'Demo instructions'}],skills:[{name:'review-changes',path:'/demo/.agents/skills/review-changes/SKILL.md',description:'Review changes and explain the most important findings.'}],templates:[],diagnostics:[],canCreateInstructions:false,fileActions:{reveal:c.state!=='browser'}},{onRefresh:c.action,onCreate:c.action,onEdit:c.action,onUse:c.action})},
   {id:'preview',title:'文件预览区域',factories:['composeFilePreview'],create(c) {
     const announcement=p.createAnnouncementPart({message:''});
     const region=r.composeFilePreview({owner:{kind:'artifact',id:'demo'},name:'Report.md',path:'/demo/Report.md',capabilities:{open:true,copyMode:'path'},content:{kind:'markdown',text:'# Demo report\n\nA **shared** preview.\n\n```ts\nconst ready = true;\n```'}},{onFileAction:c.action,onCopyCode:c.action},announcement);
@@ -42,7 +42,7 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
 ];
 export const recipeCases: readonly ShowcaseCase[] = examples.map(example=>({
   id:'recipe-'+example.id,title:example.title,layer:'blocks',category:'正式区域组合',factories:example.factories,
-  description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:example.id==='composer'?['normal','workspace-write','full-access']:['normal'],controls:['outcome'],
+  description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:example.id==='composer'?['normal','workspace-write','full-access']:example.id==='resources'?['normal','browser']:['normal'],controls:['outcome'],
   code:recipeCode[example.id]!,
   mount(context) {
     const element=document.createElement('div');element.style.position='relative';element.style.minHeight=example.id.startsWith('navigation')?'440px':'280px';

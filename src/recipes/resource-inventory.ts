@@ -1,4 +1,4 @@
-import type {RecipeResult, ResourceKind, ResourceTarget} from "./types.js";
+import type {FileActions, RecipeResult, ResourceKind, ResourceTarget} from "./types.js";
 /** Shared region recipe; resource loading, commands and writes stay in the app. */
 import {
   createButtonPart, createCardBodyPart, createCardPart, createCompactActionsPart,
@@ -18,6 +18,7 @@ export interface InventoryState {
   readonly loading?: boolean;
   readonly error?: string;
   readonly busy?: boolean;
+  readonly fileActions?: FileActions;
 }
 export type ResourceActionResult = void | RecipeResult;
 export interface InventoryCallbacks {
@@ -87,7 +88,7 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
   type Row = {
     part: Part; target: ResourceTarget; name: ReturnType<typeof createTextPart>; path: ReturnType<typeof createTextPart>;
     description?: ReturnType<typeof createTextPart>; content?: ReturnType<typeof createPreformattedPart>;
-    actions: LayoutPart; signature: string; fileButtons: ButtonPart[]; fileTask: ReturnType<typeof task>;
+    actions: LayoutPart; signature: string; fileButtons: {part: ButtonPart;action: keyof FileActions;label: string}[]; fileTask: ReturnType<typeof task>;
   };
   type Section = {part: ReturnType<typeof createContentSectionPart>; rows: Map<string,Row>; empty?: Part};
   const sections = new Map<ResourceKind,Section>();
@@ -99,19 +100,19 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
     if (signature === row.signature) return;
     const use = row.target.kind !== 'instructions' ? createButtonPart({variant: 'secondary',label: 'Use',onAction: () => current() ? callbacks.onUse?.(row.target) : undefined,onError: fail}) : undefined;
     const edit = createButtonPart({variant: 'secondary',label: 'View / edit',onAction: () => current() ? callbacks.onEdit?.(row.target) : undefined,onError: fail});
-    row.actions.replace([...row.fileButtons,...(use ? [use,edit] : [edit])]); row.signature = signature;
+    row.actions.replace([...row.fileButtons.map(button => button.part),...(use ? [use,edit] : [edit])]); row.signature = signature;
   }
   function createRow(kind: ResourceKind,entry: ResourceEntry): Row {
     const name = createTextPart({role: 'strong',text: entry.name}),path = createTextPart({role: 'path',text: entry.path});
     const detail = kind === 'template' ? createTextPart({role: 'paragraph',text: entry.description ?? ''}) : undefined;
     const info = createCardBodyPart({children: detail ? [name,detail,path] : [name,path]});
     const actions = createCompactActionsPart({children: []});
-    const fileButtons: ButtonPart[] = [];
+    const fileButtons: Row['fileButtons'] = [];
     let row: Row;
     const fileTask = task(() => current() && !state.busy,fail,() => updateFileAvailability(row));
-    if (kind !== 'template') for (const [action,label] of [['open','Open'],['reveal','Reveal']] as const) fileButtons.push(createButtonPart({variant: 'secondary',label,onAction() {
-      if (callbacks.onFileAction) fileTask.run(() => callbacks.onFileAction!(action,row.target));
-    }}));
+    if (kind !== 'template') for (const [action,label] of [['open','Open'],['reveal','Reveal']] as const) fileButtons.push({action,label,part: createButtonPart({variant: 'secondary',label,onAction() {
+      if (callbacks.onFileAction && state.fileActions?.[action] !== false) fileTask.run(() => callbacks.onFileAction!(action,row.target));
+    }})});
     const summary = [kind !== 'template' ? createIconPart({name: 'file'}) : undefined,info,actions].filter((part): part is NonNullable<typeof part> => !!part);
     const content = kind === 'instructions' ? createPreformattedPart({text: entry.content ?? ''}) : undefined;
     const preview = content ? createDisclosurePart({purpose: 'preview',title: 'View instructions',children: [content]}) : undefined;
@@ -120,7 +121,7 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
     updateResourceActions(row); updateFileAvailability(row); return row;
   }
   function updateFileAvailability(row: Row): void {
-    for (const [index,label] of ['Open','Reveal'].entries()) row.fileButtons[index]?.update({variant: 'secondary',label,disabled: !!state.busy || row.fileTask.pending});
+    for (const {part,action,label} of row.fileButtons) part.update({variant: 'secondary',label,disabled: !!state.busy || row.fileTask.pending,hidden: state.fileActions?.[action] === false});
   }
   function render(next: Readonly<InventoryState>): void {
     if (!current() || next.workspace.id !== owner) return;

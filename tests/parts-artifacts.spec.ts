@@ -1,6 +1,6 @@
 import {test, expect, type Page} from '@playwright/test';
 
-interface ArtifactState {ownerId: string; files: {name: string;path: string}[];loading: boolean;error: string;copyMode: 'file' | 'path';disabled?: boolean}
+interface ArtifactState {ownerId: string; files: {name: string;path: string}[];loading: boolean;error: string;copyMode: 'file' | 'path';disabled?: boolean;fileActions?: {open?: boolean;reveal?: boolean}}
 interface ArtifactTarget {owner: {kind: 'artifact';id: string};name: string;path: string}
 interface ArtifactSession {update(state: ArtifactState): void;close(): void;isOpen(): boolean;destroy(): void}
 interface ArtifactHarness {
@@ -27,6 +27,18 @@ const mount=document.body.appendChild(document.createElement('div'));
 }
 async function open(page: Page): Promise<void> {await page.locator('.pui-artifacts-toggle').click();await expect(page.locator('.pui-artifacts-panel')).toBeVisible();await page.mouse.move(0,0);}
 async function settleNativeFocus(page: Page): Promise<void> {await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));}
+
+test('host file capabilities hide Reveal while retaining the file count and keyed rows',async ({page}) => {
+  await setup(page);await open(page);
+  await expect(page.getByRole('button',{name: 'Reveal',exact: true})).toHaveCount(2);
+  await page.evaluate(() => {const h = window.artifactsHarness;h.row = document.querySelector('.pui-file-card')!;h.state = {...h.state,fileActions: {reveal: false}};h.session.update(h.state);});
+  await expect(page.getByRole('button',{name: 'Reveal',exact: true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name: 'Open',exact: true})).toHaveCount(2);
+  await expect(page.getByRole('button',{name: 'Conversation files (2 files)',exact: true})).toHaveText('2');
+  expect(await page.evaluate(() => window.artifactsHarness.row === document.querySelector('.pui-file-card'))).toBe(true);
+  await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,fileActions: undefined};h.session.update(h.state);});
+  await expect(page.getByRole('button',{name: 'Reveal',exact: true})).toHaveCount(2);
+});
 
 test('small inspector parts transfer genuine slots atomically and expose no native or positioning port', async ({page}) => {
   await page.goto('/tests/fixture.html');

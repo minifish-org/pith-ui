@@ -1,5 +1,6 @@
 @import "./design.css";
 @import "./primitives.css";
+@import "./palette.css";
 
 .pui .pui-feature-actions { display: contents; }
 .pui .pui-field > .pui-field-label { margin: 0; }
@@ -8,8 +9,6 @@
 .pui .pui-confirm .pui-danger { background: var(--pui-error-text); color: var(--pui-bg-main); border-color: transparent; }
 .pui .pui-confirm .pui-danger:hover:not(:disabled) { background: var(--pui-error-text); filter: brightness(.9); }
 .pui .pui-confirm .pui-neutral { background: var(--pui-surface-subtle); }
-/* Theme rules share the build-only palette in scripts/palette.ts. */
-/* PUI_THEME_PALETTE */
 .pui {
   font-family: var(--pui-font-ui);
   font-synthesis: none;
