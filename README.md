@@ -107,6 +107,15 @@ available after a build; `npm run validate` does not repeat it before the archiv
 consumer check. The latter also retains private-import/type rejection and both
 consumer production builds.
 
+For the headless CI browser runtime on Linux:
+
+```sh
+npx --no-install playwright install --with-deps --only-shell chromium webkit
+```
+
+Both browser projects remain required. Full Chrome is not downloaded for these
+headless tests; install it separately for headed local Playwright tools.
+
 CI caches npm downloads under the lockfile, including those used by isolated
 package verification. It does not cache `node_modules`, `dist`, test results or
 release output. Browser engines and system libraries are installed only when

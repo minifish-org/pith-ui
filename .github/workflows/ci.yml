@@ -50,7 +50,7 @@ jobs:
         if: steps.scope.outputs.package == 'true'
       - run: node scripts/api-docs.ts --check
         if: steps.scope.outputs.package == 'true'
-      - run: npx --no-install playwright install --with-deps chromium webkit
+      - run: npx --no-install playwright install --with-deps --only-shell chromium webkit
         if: steps.scope.outputs.browser == 'true'
       - run: npm run test:browser -- --workers=4
         if: steps.scope.outputs.browser == 'true'
