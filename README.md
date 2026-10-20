@@ -76,7 +76,7 @@ The ESM package and stylesheet are separate from the showroom and fixtures. Inst
 ## CI checks and caches
 
 `Validate / validate` always reports a result; the workflow has no path filter.
-Every main push, manual run and reusable invocation performs complete validation.
+Every main push and manual run performs complete validation.
 PRs use the actual base diff:
 
 | Change | Checks |
@@ -98,8 +98,10 @@ npm test
 npm run test:tools
 ```
 
-Full validation installs dependencies once, builds once and compiles the shipped
-assembly examples against the independently installed archive once. For a quick
+Full validation installs working-tree dependencies once, builds the library once
+and compiles the shipped assembly examples against the independently installed
+archive once. The separate consumer installation is retained as package proof.
+For a quick
 documentation check before packing, `node scripts/verify-assemblies.ts` remains
 available after a build; `npm run validate` does not repeat it before the archive
 consumer check. The latter also retains private-import/type rejection and both

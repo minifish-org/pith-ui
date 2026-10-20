@@ -34,8 +34,8 @@ Full validation does not separately repeat `scripts/verify-assemblies.ts`:
 the installed-archive check retains its example import/DOM boundary checks and
 compiles every shipped recipe and Markdown example against the actual package.
 The standalone script remains a fast documentation check after building.
-The README documents PR selection and reproduction commands. Main/manual and
-reusable runs remain full; the `validate` job always returns a result, including
+The README documents PR selection and reproduction commands. Main/manual runs
+remain full; the `validate` job always returns a result, including
 when a maintenance-only PR needs no package or browser work.
 
 Preserve IME, drafts, selection, scrolling, async retirement, replacement and
