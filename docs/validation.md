@@ -5,7 +5,9 @@ Current tests run against public parts and recipes. The old rc.27 dual-runtime
 comparison and screenshot infrastructure is retired after the extraction parity
 pass; Git retains that source and evidence history.
 
-`npm run validate` builds once and runs the current checks. Individual groups:
+Use relevant fast checks and focused specs while iterating; see the commands in
+`README.md`. Before delivering shared component, public API or release changes,
+`npm run validate` builds once and runs the complete library checks. Individual groups:
 
 | Group | Command | Preparation |
 |---|---|---|
@@ -16,8 +18,11 @@ pass; Git retains that source and evidence history.
 
 `npm run check`, `dev`, `showroom:build` and browser startup reuse the build;
 they do not silently rebuild. After editing source, explicitly rebuild before
-checking declarations or an installed package. UI's Vite source aliases are only
-for its own development. Consumer/package validation has no source alias.
+checking declarations or an installed package. UI's Vite source aliases and
+Desk's explicit `--ui-source` resolution are development-only. They preserve the
+same public entries and ownership boundaries. Formal consumer builds, CI,
+releases and package validation use the locked published dependency without
+source aliases; library CI builds and validates its own source package.
 
 The single archive chain packs once and independently installs that exact tarball.
 It checks root/recipes ESM and declarations, CSS, private-entry rejection, all
