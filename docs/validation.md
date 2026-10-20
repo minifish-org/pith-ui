@@ -42,3 +42,8 @@ Preserve IME, drafts, selection, scrolling, async retirement, replacement and
 root disposal regressions in UI. Desk validates request targets, permissions,
 persistence, recovery and non-replayed writes. Both browsers remain required;
 native integration also receives a macOS WebView check before delivery.
+
+Phone keyboard geometry is covered in `tests/mobile-viewport.spec.ts` using a
+shrinking visual viewport in Chromium and WebKit: input/selection, approval
+scrolling, drawer bounds, modal bounds and zoom behavior. This simulation does
+not replace a real iOS/Android soft-keyboard acceptance check.

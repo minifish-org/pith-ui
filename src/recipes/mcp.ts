@@ -9,7 +9,7 @@ import {
   type ButtonPart,type CardPart,type DialogPart,type FormPart,type Part,
 } from '../parts/index.js';
 type HostResult = void | Result | Promise<void | Result>;
-export interface MCPState {error?: string;formError?: string;disabled?: boolean}
+export interface MCPState {error?: string;formError?: string;disabled?: boolean;connectionHint?: string;oauthAvailable?: boolean}
 export interface MCPEditor {name: string;type: string;url?: string;oauth?: boolean;oauthClientId?: string;oauthScope?: string;command?: string;args?: readonly string[];enabled?: boolean;hasBearerToken?: boolean;envKeys?: readonly string[]}
 export interface MCPDraft {name: string;type: 'http' | 'stdio';url: string;oauth: boolean;oauthClientId: string;oauthScope: string;command: string;args: string;enabled: boolean;bearerToken: string;clearBearerToken: boolean;env: string;clearEnv: boolean}
 export interface MCPConnection extends MCPEditor {enabled: boolean;status?: string;statusLabel: string;error?: string;signedIn?: boolean}
@@ -65,7 +65,7 @@ export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks
   const clearEnv = createCheckboxPart({label: 'Clear saved environment overrides',hidden: true});
   const stdio = createStackPart({hidden: true,children: [createFieldLabelPart({label: 'Installed executable',control: command}),command,
     createFieldLabelPart({label: 'Arguments (JSON array)',control: args}),args,
-    createTextPart({role: 'hint',text: 'The executable and any runtime it needs must already be installed on your computer. Pith Desk does not bundle external runtimes or a marketplace.'}),
+    createTextPart({role: 'hint',text: 'The executable and any runtime it needs must already be installed on the machine running Pith Desk. Pith Desk does not bundle external runtimes or a marketplace.'}),
     envLabel,env,envHint,savedKeys,clearEnv]});
   const enabled = createCheckboxPart({label: 'Enable this connection',name: 'enabled',checked: true});
   const read = (): MCPDraft => alive ? {name: name.read().trim(),type: transport.read() === 'stdio' ? 'stdio' : 'http',url: url.read().trim(),oauth: oauth.read(),oauthClientId: client.read().trim(),oauthScope: scope.read().trim(),command: command.read().trim(),args: args.read(),enabled: enabled.read(),bearerToken: token.read().trim(),clearBearerToken: clearToken.read(),env: env.read(),clearEnv: clearEnv.read()} : {...saved};
@@ -87,7 +87,9 @@ export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks
   const editor = createSeparatedSectionPart({children: [createSectionHeadingPart({children: [editorTitle,create]}),form]});
   const list = createStackPart({children: [createTextPart({role: 'caption',text: 'Loading connections…'})]});
   const refresh = createButtonPart({label: 'Refresh',variant: 'secondary',onAction() {runAuxiliary(callbacks.onRefresh);}});
+  const connectionHint = createTextPart({role: 'hint',text: initial.connectionHint ?? '',hidden: !initial.connectionHint});
   const body = createStackPart({children: [createTextPart({role: 'description',text: 'Add an MCP server to give Pith access to its tools. Enabled connections connect automatically when a task starts. Disable a connection to stop using it in tasks. External tools require approval unless this conversation has full access.'}),
+    connectionHint,
     createToolbarPart({purpose: 'feature',label: 'Connections actions',children: [refresh]}),list,feedback,editor]});
   dialog = createDialogPart({purpose: 'feature',title: 'Connections',eyebrow: 'EXTERNAL TOOLS',children: [body],onClose: release,onDispose: release});
 
@@ -113,7 +115,7 @@ export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks
       row.env.update({text: item.envKeys?.length ? `Saved environment keys: ${item.envKeys.join(', ')}` : '',hidden: !item.envKeys?.length});
       row.error.update({message: item.error || row.localError,tone: 'error'});
       for (const [action,button] of row.buttons) {
-        const hidden = action === 'mcp-login' ? !item.oauth : action === 'mcp-logout' ? !item.oauth || !item.signedIn : false;
+        const hidden = action === 'mcp-login' ? !item.oauth || state.oauthAvailable === false : action === 'mcp-logout' ? !item.oauth || !item.signedIn : false;
         button.update({label: action === 'mcp-login' ? item.signedIn ? 'Sign in again' : 'Sign in' : action === 'mcp-logout' ? 'Sign out' : action === 'mcp-edit' ? 'Edit' : action === 'mcp-toggle' ? item.enabled ? 'Disable' : 'Enable' : 'Delete',variant: action === 'mcp-remove' ? 'danger' : 'secondary',hidden,disabled: !!state.disabled || hidden});
       }
       children.push(row.part);
@@ -130,7 +132,7 @@ export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks
   function renderTransport(): void {
     if (!alive) return;
     const isHTTP = transport.read() === 'http';http.update({hidden: !isHTTP});stdio.update({hidden: isHTTP});
-    for (const control of [url,client,scope,token]) control.update({disabled: !isHTTP});oauth.update({disabled: !isHTTP});clearToken.update({disabled: !isHTTP});
+    for (const control of [url,client,scope,token]) control.update({disabled: !isHTTP});oauth.update({disabled: !isHTTP || state.oauthAvailable === false,hidden: state.oauthAvailable === false && !oauth.read()});oauthDetails.update({title: 'OAuth settings (optional)',hidden: state.oauthAvailable === false});clearToken.update({disabled: !isHTTP});
     for (const control of [command,args,env]) control.update({disabled: isHTTP});clearEnv.update({disabled: isHTTP});url.update({required: isHTTP});command.update({required: !isHTTP});
   }
   function resetEditor(entry?: Readonly<MCPEditor>): void {
@@ -144,7 +146,8 @@ export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks
   function update(next: Readonly<MCPState>): void {
     if (!alive) return;
     state = next;if (next.error !== undefined) fail(next.error);if (next.formError !== undefined) formError.update({message: next.formError,tone: 'error'});
-    form.update({disabled: !!next.disabled});syncSave();renderConnections();
+    connectionHint.update({text: next.connectionHint ?? '',hidden: !next.connectionHint});
+    form.update({disabled: !!next.disabled});renderTransport();syncSave();renderConnections();
   }
   renderTransport();update(initial);
   return {part: dialog,open() {if (alive) dialog.open();},read,update,

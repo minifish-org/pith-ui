@@ -1,6 +1,6 @@
 import {test, expect, type Page} from '@playwright/test';
 
-interface ArtifactState {ownerId: string; files: {name: string;path: string}[];loading: boolean;error: string;copyMode: 'file' | 'path';disabled?: boolean;fileActions?: {open?: boolean;reveal?: boolean}}
+interface ArtifactState {ownerId: string; files: {name: string;path: string}[];loading: boolean;error: string;copyMode: 'file' | 'path';disabled?: boolean;fileActions?: {open?: boolean;reveal?: boolean;openLabel?: string;copyPathLabel?: string}}
 interface ArtifactTarget {owner: {kind: 'artifact';id: string};name: string;path: string}
 interface ArtifactSession {update(state: ArtifactState): void;close(): void;isOpen(): boolean;destroy(): void}
 interface ArtifactHarness {
@@ -38,6 +38,16 @@ test('host file capabilities hide Reveal while retaining the file count and keye
   expect(await page.evaluate(() => window.artifactsHarness.row === document.querySelector('.pui-file-card'))).toBe(true);
   await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,fileActions: undefined};h.session.update(h.state);});
   await expect(page.getByRole('button',{name: 'Reveal',exact: true})).toHaveCount(2);
+});
+
+test('browser delivery labels retain the same file operations and original owner',async ({page}) => {
+  await setup(page);await open(page);
+  await page.evaluate(() => {const h = window.artifactsHarness;h.state = {...h.state,copyMode: 'path',fileActions: {reveal: false,openLabel: 'Download',copyPathLabel: 'Copy server path'}};h.session.update(h.state);});
+  const row = page.locator('.pui-file-card').first();
+  await expect(row.getByRole('button',{name: 'Copy server path',exact: true})).toBeVisible();
+  await row.getByRole('button',{name: 'Download',exact: true}).click();
+  expect(await page.evaluate(() => window.artifactsHarness.calls.map(call => [call.action,call.target.owner.id]))).toEqual([['open','original-owner']]);
+  await page.evaluate(() => window.artifactsHarness.resolve!({ok: true}));
 });
 
 test('small inspector parts transfer genuine slots atomically and expose no native or positioning port', async ({page}) => {

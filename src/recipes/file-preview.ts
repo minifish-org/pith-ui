@@ -50,15 +50,16 @@ export function composeFilePreview(input: Readonly<PreviewInput>, callbacks: Pre
       if (alive && revision === sequence) {pending = false;availability();}
     });
   }
-  const open = input.capabilities.open === false ? undefined : createButtonPart({label: 'Open',variant: 'secondary',onAction() {run('open');}});
+  const openLabel = input.capabilities.openLabel ?? 'Open';
+  const open = input.capabilities.open === false ? undefined : createButtonPart({label: openLabel,variant: 'secondary',onAction() {run('open');}});
   const reveal = input.capabilities.reveal === false ? undefined : createButtonPart({label: 'Reveal',variant: 'secondary',onAction() {run('reveal');}});
-  const copyMode = input.capabilities.copyMode ?? 'none',copyLabel = copyMode === 'file' ? 'Copy file' : 'Copy path';
+  const copyMode = input.capabilities.copyMode ?? 'none',copyLabel = copyMode === 'file' ? 'Copy file' : input.capabilities.copyPathLabel ?? 'Copy path';
   const copy = copyMode === 'none' ? undefined : !callbacks.onFileAction ? createButtonPart({label: copyLabel,variant: 'secondary'}) : createCopyButtonPart({label: copyLabel,variant: 'secondary',announcement,successMessage: copyMode === 'file' ? 'File copied.' : 'Path copied.',
     async onCopy() {if (!current() || content.disabled) return;await completed(callbacks.onFileAction!(copyMode === 'file' ? 'copy' : 'copy-path',target));},onError: fail});
-  if (open) actionButtons.push({button: open,label: 'Open'});if (reveal) actionButtons.push({button: reveal,label: 'Reveal'});if (copy) actionButtons.push({button: copy,label: copyLabel});
+  if (open) actionButtons.push({button: open,label: openLabel});if (reveal) actionButtons.push({button: reveal,label: 'Reveal'});if (copy) actionButtons.push({button: copy,label: copyLabel});
   const actions = createCompactActionsPart({children: actionButtons.map(entry => entry.button)});
   function footnote(): Part[] {
-    if (content.truncated && !note) note = createTextPart({role: 'footnote',text: 'Showing the first 8 MiB. Use Open for the complete file.'});
+    if (content.truncated && !note) note = createTextPart({role: 'footnote',text: `Showing the first 8 MiB. Use ${openLabel} for the complete file.`});
     if (!content.truncated) note = undefined;
     return note ? [note] : [];
   }

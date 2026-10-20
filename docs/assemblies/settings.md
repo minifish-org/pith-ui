@@ -6,6 +6,12 @@ handles are indexed in [API.md](../../API.md).
 
 Snapshots preserve the draft and caret. Use resetProvider only for an explicit provider target change. A failed save keeps the draft; clearing or destroying secrets wipes the native input.
 
+`connectionHint` supplies host-specific endpoint context without changing the
+form. `diagnosticsLabel` can name browser delivery, such as `Download diagnostics`.
+Custom connection editors also accept `connectionHint`. These are text only;
+the host still owns requests, storage and execution location. The showroom's
+browser state demonstrates these options.
+
 ```ts
 import {
   composeSettings, type Appearance, type RecipeResult as Result, type SettingsState,

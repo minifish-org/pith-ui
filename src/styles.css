@@ -25,10 +25,10 @@
 .pui button { transition: background .16s, color .16s, border-color .16s, opacity .16s; }
 .pui [hidden] { display: none !important; }
 .pui .pui-icon { width: 19px; height: 19px; flex-shrink: 0; }
-.pui .pui-app { display: flex; height: 100dvh; min-height: 520px; overflow: hidden; }
+.pui .pui-app { display: flex; height: var(--pui-viewport-height, 100dvh); min-height: 0; overflow: hidden; }
 /* A viewport frame owns its origin even when the host retains the browser's
    ordinary body margin. Theme ownership remains local to the checked mount. */
-.pui .pui-viewport-frame { position: absolute; inset: 0; }
+.pui .pui-viewport-frame { position: absolute; inset: var(--pui-viewport-top, 0) 0 auto; }
 .pui .pui-sidebar { width: var(--pui-sidebar-width); background: var(--pui-bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; padding: var(--pui-space-xl) var(--pui-space-lg) var(--pui-space-lg); border-right: 1px solid var(--pui-border); }
 .pui .pui-brand { display: flex; align-items: center; gap: var(--pui-space-md); text-decoration: none; color: var(--pui-text); font-size: var(--pui-text-large); letter-spacing: normal; font-weight: var(--pui-weight-strong); padding: 0 var(--pui-space-sm); }
 .pui .pui-brand-light { font-weight: var(--pui-weight-regular); color: var(--pui-muted); }
@@ -404,10 +404,9 @@
   .pui .pui-welcome { padding-top: var(--pui-space-xl); }
 }
 @media (max-width: 720px) {
-  .pui .pui-app { min-height: 420px; }
-  .pui .pui-sidebar { position: fixed; z-index: 5; height: 100dvh; width: 260px; left: -260px; transition: left .2s; }
+  .pui .pui-sidebar { position: absolute; z-index: 5; height: 100%; top: 0; width: 260px; left: -260px; transition: left .2s; }
   .pui .pui-sidebar.pui-open { left: 0; }
-  .pui .pui-sidebar-scrim.pui-visible { display: block; position: fixed; inset: 0; background: var(--pui-overlay); z-index: 4; }
+  .pui .pui-sidebar-scrim.pui-visible { display: block; position: absolute; inset: 0; background: var(--pui-overlay); z-index: 4; }
   .pui .pui-mobile-menu { display: inline-flex; margin-right: var(--pui-space-md); }
   .pui .pui-topbar { height: 64px; padding: 0 var(--pui-space-lg); }
   .pui .pui-titlebar-overlay > .pui-native-titlebar { display: none; }
@@ -603,4 +602,18 @@
   --pui-success-text: var(--pui-accent);
   --pui-success-surface: var(--pui-surface-subtle);
   --pui-duration-fast: 160ms;
+}
+
+/* Avoid focus zoom hiding the message controls on phone browsers. */
+@media (max-width: 720px) and (pointer: coarse) {
+  .pui input, .pui textarea, .pui .pui-composer textarea { font-size: var(--pui-text-large); }
+}
+@media (max-width: 720px) {
+  .pui .pui-composer-region { padding-bottom: max(var(--pui-space-md), env(safe-area-inset-bottom)); }
+  .pui .pui-composer textarea { max-height: min(180px, calc(var(--pui-viewport-height, 100dvh) / 4)); }
+  .pui .pui-viewport-frame > :is(dialog.pui-modal, dialog.pui-dialog) {
+    inset-block-start: var(--pui-visual-top, 0px);
+    inset-block-end: calc(100% - var(--pui-visual-top, 0px) - var(--pui-viewport-height, 100dvh));
+    max-height: calc(var(--pui-viewport-height, 100dvh) - 24px);
+  }
 }

@@ -29,7 +29,7 @@ export interface ArtifactsComposition {
 /** The counter, heading, status, viewport and keyed cards are independent parts. */
 export function composeArtifacts(initial: Readonly<ArtifactsState>, callbacks: ArtifactsCallbacks, dependencies: ArtifactsDependencies): ArtifactsComposition {
   let state = initial,handlers = callbacks,alive = true;
-  type Row = {part: CardPart;name: ReturnType<typeof createTextPart>;path: string;buttons: {part: ButtonPart;label: string | (() => string);action?: keyof FileActions}[]};
+  type Row = {part: CardPart;name: ReturnType<typeof createTextPart>;path: string;buttons: {part: ButtonPart;label: string | (() => string);action?: 'open'|'reveal'}[]};
   const rows = new Map<string,Row>(),list = createStackPart({children: []});
   const fail = (message: string) => {if (alive) {state = {...state,error: message};render();}};
   const trigger = createButtonPart({variant: 'counter',icon: 'file',count: '',label: 'Conversation files',title: 'Conversation files',onAction() {if (inspector.isOpen()) inspector.close();else inspector.open(trigger);}});
@@ -52,11 +52,11 @@ export function composeArtifacts(initial: Readonly<ArtifactsState>, callbacks: A
     const preview = createButtonPart({label: 'Preview',variant: 'secondary',async onAction() {const target = availableTarget();if (target) return handlers.onPreview(target);},onError});
     const open = createButtonPart({label: 'Open',variant: 'secondary',async onAction() {const target = availableTarget();if (target && state.fileActions?.open !== false) return handlers.onFileAction('open',target);},onError});
     const reveal = createButtonPart({label: 'Reveal',variant: 'secondary',async onAction() {const target = availableTarget();if (target && state.fileActions?.reveal !== false) return handlers.onFileAction('reveal',target);},onError});
-    const copyLabel = () => state.copyMode === 'file' ? 'Copy file' : 'Copy path';
+    const copyLabel = () => state.copyMode === 'file' ? 'Copy file' : state.fileActions?.copyPathLabel ?? 'Copy path';
     const copy = createCopyButtonPart({label: copyLabel(),variant: 'secondary',announcement: dependencies.announcement,
       successMessage: () => state.copyMode === 'file' ? 'File copied.' : 'Path copied.',
       async onCopy() {const target = availableTarget();if (target) return handlers.onFileAction(state.copyMode === 'file' ? 'copy' : 'copy-path',target);},onError});
-    const buttons: Row['buttons'] = [{part: preview,label: 'Preview'},{part: open,label: 'Open',action: 'open'},{part: reveal,label: 'Reveal',action: 'reveal'},{part: copy,label: copyLabel}];
+    const buttons: Row['buttons'] = [{part: preview,label: 'Preview'},{part: open,label: () => state.fileActions?.openLabel ?? 'Open',action: 'open'},{part: reveal,label: 'Reveal',action: 'reveal'},{part: copy,label: copyLabel}];
     const name = createTextPart({role: 'strong',text: file.name});
     const body = createCardBodyPart({children: [name,createTextPart({role: 'path',text: file.path})]});
     row = {part: createCardPart({children: [createIconPart({name: 'file'}),body,createCompactActionsPart({children: buttons.map(button => button.part)})]}),name,path: file.path,buttons};return row;

@@ -1,7 +1,7 @@
 import {test,expect,type Page} from '@playwright/test';
 
 type Result = {ok: true} | {ok: false;error: string};
-interface State {error?: string;formError?: string;disabled?: boolean}
+interface State {error?: string;formError?: string;disabled?: boolean;connectionHint?: string;oauthAvailable?: boolean}
 interface Editor {name: string;type: string;url?: string;oauth?: boolean;oauthClientId?: string;oauthScope?: string;command?: string;args?: readonly string[];enabled?: boolean;hasBearerToken?: boolean;envKeys?: readonly string[]}
 interface Draft {name: string;type: 'http' | 'stdio';url: string;oauth: boolean;oauthClientId: string;oauthScope: string;command: string;args: string;enabled: boolean;bearerToken: string;clearBearerToken: boolean;env: string;clearEnv: boolean}
 interface Item extends Editor {enabled: boolean;status?: string;statusLabel: string;error?: string;signedIn?: boolean}
@@ -49,6 +49,18 @@ async function openMCP(page: Page,options: Options = {}): Promise<void> {
   },{options,entries});
   await expect(page.getByRole('dialog',{name: 'Connections',exact: true})).toBeVisible();
 }
+
+test('unavailable OAuth hides new login without stripping existing credentials from edited connections',async ({page}) => {
+  await openMCP(page,{state: {oauthAvailable: false,connectionHint: 'Commands and environment variables run on the server.'},editor: httpEditor});
+  await expect(page.getByRole('dialog')).toContainText('environment variables run on the server');
+  await expect(page.getByRole('button',{name: 'Sign in again',exact: true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name: 'Sign out',exact: true})).toBeVisible();
+  await expect(page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true})).toBeChecked();
+  await expect(page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true})).toBeDisabled();
+  await page.getByRole('button',{name: 'Save connection',exact: true}).click();
+  const values = await page.evaluate(() => window.mcpPartsHarness.values);
+  expect(values.find(value => value.action === 'save')?.value).toMatchObject({oauth: true,bearerToken: '',oauthClientId: 'registered-client'});
+});
 
 
 test('bounded flow, stacked card, paragraph status and secret label compose original native nodes without DOM or sizing ports',async ({page}) => {

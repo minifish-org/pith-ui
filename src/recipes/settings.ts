@@ -12,6 +12,7 @@ export type Appearance = 'light' | 'dark' | 'system';
 type HostResult = void | Result | Promise<void | Result>;
 export interface SettingsState {
   baseUrl: string;hasApiKey: boolean;ready?: boolean;testing?: boolean;disabled?: boolean;error?: string;
+  connectionHint?: string;diagnosticsLabel?: string;
   appearance?: {mode: Appearance;disabled?: boolean;error?: string};testResult?: {message: string;ok?: boolean};
 }
 export interface SettingsDraft {provider: string;baseUrl: string;apiKey: string}
@@ -123,8 +124,10 @@ export function composeSettings(initial: Readonly<SettingsState>,callbacks: Sett
   }});
   const keyField = createFieldStackPart({children: [keyLabel,apiKey,createTextPart({role: 'hint',text: 'The saved key is never returned to this page. Model requests go to your configured provider.'}),remove]});
   const addConnection = createButtonPart({label: 'Add independent model connection',variant: 'secondary',onError: fail,onAction() {if (alive && !state.disabled) return callbacks.onCreateConnection?.();}});
+  const connectionHint = createTextPart({role: 'hint',text: initial.connectionHint ?? '',hidden: !initial.connectionHint});
   const providerSection = createSectionPart({title: 'Model providers',children: [
     createTextPart({role: 'description',text: 'Connect your model providers here. Choose models and thinking effort beside the message box.'}),
+    connectionHint,
     createActionsPart({align: 'start',children: [addConnection]}),providerField,advanced,keyField,
   ]});
   const test = createButtonPart({label: 'Test connection',variant: 'secondary',pending: true,onAction() {
@@ -135,7 +138,7 @@ export function composeSettings(initial: Readonly<SettingsState>,callbacks: Sett
   const testResult = createStatusPart({message: '',tone: 'neutral'});
   const testSection = createSectionPart({children: [createTextPart({role: 'hint',text: 'Uses this provider’s last selected model, or Pith’s default, to check streaming and tool calling. Does not save settings or access files.'}),
     createActionsPart({align: 'start',children: [test]}),testResult]});
-  const diagnostics = createButtonPart({label: 'Save diagnostics',variant: 'secondary',onAction() {run('diagnostics',callbacks.onDiagnostics);}});
+  const diagnostics = createButtonPart({label: initial.diagnosticsLabel ?? 'Save diagnostics',variant: 'secondary',onAction() {run('diagnostics',callbacks.onDiagnostics);}});
   const diagnosticsSection = createSectionPart({children: [createTextPart({role: 'hint',text: 'Version, usage and failure category only; no conversation, file contents, paths or credentials.'}),createActionsPart({align: 'start',children: [diagnostics]})]});
   const cancel = createButtonPart({label: 'Cancel',variant: 'secondary',onAction: close});
   const save = createButtonPart({label: 'Save settings',variant: 'primary',type: 'submit',pending: true});
@@ -191,6 +194,8 @@ export function composeSettings(initial: Readonly<SettingsState>,callbacks: Sett
   function update(next: Readonly<SettingsState>): void {
     if (!alive) return;
     state = next;if (next.error !== undefined) fail(next.error);
+    connectionHint.update({text: next.connectionHint ?? '',hidden: !next.connectionHint});
+    diagnostics.update({label: next.diagnosticsLabel ?? 'Save diagnostics',variant: 'secondary'});
     if (next.appearance) {appearanceChoice.reset(next.appearance.mode);appearanceChoice.update({disabled: !!next.appearance.disabled});appearanceError.update({message: next.appearance.error ?? '',tone: 'error'});}
     if (next.testResult) testResult.update({message: next.testResult.message,tone: next.testResult.ok === undefined ? 'neutral' : next.testResult.ok ? 'success' : 'error'});
     syncAvailability();

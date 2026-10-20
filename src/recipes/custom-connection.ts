@@ -9,7 +9,7 @@ import {
 export interface CustomModel {id: string;name?: string;contextWindow?: number;maxTokens?: number;reasoning?: boolean;input?: readonly string[];cost?: {input: number;output: number;cacheRead: number;cacheWrite: number}}
 /** Initial values for a new definition; existing definitions remain untouched. */
 export function customModelDefaults(): CustomModel {return {id: '',contextWindow: 128000,maxTokens: 8192};}
-export interface CustomConnectionState {name: string;baseUrl: string;api: string;editing: boolean;models: readonly CustomModel[];error?: string;disabled?: boolean}
+export interface CustomConnectionState {name: string;baseUrl: string;api: string;editing: boolean;models: readonly CustomModel[];error?: string;disabled?: boolean;connectionHint?: string}
 export interface CustomModelDraft {sourceIndex: number;id: string;name: string;contextWindow: number;maxTokens: number;reasoning: boolean;images: boolean;prices: {input: string;output: string;cacheRead: string;cacheWrite: string}}
 export interface CustomConnectionDraft {name: string;baseUrl: string;api: string;apiKey: string;models: CustomModelDraft[]}
 export interface CustomConnectionCallbacks {onSubmit?(draft: CustomConnectionDraft): Result | Promise<Result>;onClose?(): void}
@@ -69,9 +69,10 @@ export function composeCustomConnection(initial: Readonly<CustomConnectionState>
       error.update({message: '',tone: 'error'});const result = callbacks.onSubmit ? await callbacks.onSubmit(read()) : {ok: false as const,error: 'This action is unavailable.'};if (alive && result.ok) close();return result;
     },
   });
-  const body = createStackPart({children: [createTextPart({role: 'description',text: 'Give this endpoint its own name. It can coexist with official providers and other compatible endpoints.'}),form]});
+  const connectionHint = createTextPart({role: 'hint',text: initial.connectionHint ?? '',hidden: !initial.connectionHint});
+  const body = createStackPart({children: [createTextPart({role: 'description',text: 'Give this endpoint its own name. It can coexist with official providers and other compatible endpoints.'}),connectionHint,form]});
   dialog = createDialogPart({purpose: 'feature',title: initial.editing ? 'Edit model connection' : 'Add model connection',children: [body,frameError],onClose: release,onDispose: release});
-  const update = (next: Readonly<CustomConnectionState>) => {if (alive) {state = next;if (next.error !== undefined) error.update({message: next.error,tone: 'error'});form.update({disabled: !!next.disabled});syncButtons();}};
+  const update = (next: Readonly<CustomConnectionState>) => {if (alive) {state = next;connectionHint.update({text: next.connectionHint ?? '',hidden: !next.connectionHint});if (next.error !== undefined) error.update({message: next.error,tone: 'error'});form.update({disabled: !!next.disabled});syncButtons();}};
   update(initial);
   return {part: dialog,open() {if (alive) dialog.open();},read,update,clearSecrets() {if (alive) key.reset('');saved.apiKey = '';},fail(message) {if (alive) frameError.update({message,tone: 'error'});},close,isOpen: () => alive && dialog.isOpen(),destroy: close};
 }

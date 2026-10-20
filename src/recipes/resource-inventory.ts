@@ -88,7 +88,7 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
   type Row = {
     part: Part; target: ResourceTarget; name: ReturnType<typeof createTextPart>; path: ReturnType<typeof createTextPart>;
     description?: ReturnType<typeof createTextPart>; content?: ReturnType<typeof createPreformattedPart>;
-    actions: LayoutPart; signature: string; fileButtons: {part: ButtonPart;action: keyof FileActions;label: string}[]; fileTask: ReturnType<typeof task>;
+    actions: LayoutPart; signature: string; fileButtons: {part: ButtonPart;action: 'open'|'reveal';label: string}[]; fileTask: ReturnType<typeof task>;
   };
   type Section = {part: ReturnType<typeof createContentSectionPart>; rows: Map<string,Row>; empty?: Part};
   const sections = new Map<ResourceKind,Section>();
@@ -121,7 +121,7 @@ export function composeResourcesInventory(initial: Readonly<InventoryState>, cal
     updateResourceActions(row); updateFileAvailability(row); return row;
   }
   function updateFileAvailability(row: Row): void {
-    for (const {part,action,label} of row.fileButtons) part.update({variant: 'secondary',label,disabled: !!state.busy || row.fileTask.pending,hidden: state.fileActions?.[action] === false});
+    for (const {part,action,label} of row.fileButtons) part.update({variant: 'secondary',label: action === 'open' ? state.fileActions?.openLabel ?? label : label,disabled: !!state.busy || row.fileTask.pending,hidden: state.fileActions?.[action] === false});
   }
   function render(next: Readonly<InventoryState>): void {
     if (!current() || next.workspace.id !== owner) return;

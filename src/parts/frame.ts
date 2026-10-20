@@ -31,6 +31,18 @@ export function createFramePart(options: {children: readonly Part[];titlebar?: '
   const observer = new MutationObserver(changed);
   const part: FramePart = createOwnedPart<Omit<FramePart,keyof Part|typeof frameRole>>(node,{replace(children: readonly Part[]) {if (isPartAlive(part)) replacePartChildren(part,children);},hasModal},{children: options.children}) as FramePart;
   observer.observe(node,{subtree: true,childList: true,attributes: true,attributeFilter: ['open']});
+  // Mobile keyboards can shrink only the visual viewport. Keep the input and
+  // scrollable panels inside it; pinch zoom must retain ordinary browser panning.
+  const view = node.ownerDocument.defaultView!,viewport = view.visualViewport;
+  const fit = () => {
+    const height = viewport?.scale === 1 ? viewport.height : view.innerHeight;
+    const top = viewport?.scale === 1 ? viewport.pageTop : 0;
+    node.style.setProperty('--pui-viewport-height', `${height}px`);
+    node.style.setProperty('--pui-viewport-top', `${top}px`);
+    node.style.setProperty('--pui-visual-top', `${viewport?.scale === 1 ? viewport.offsetTop : 0}px`);
+  };
+  viewport?.addEventListener('resize',fit);viewport?.addEventListener('scroll',fit);view.addEventListener('resize',fit);fit();
+  onPartDestroy(part,() => {viewport?.removeEventListener('resize',fit);viewport?.removeEventListener('scroll',fit);view.removeEventListener('resize',fit);});
   frames.add(part);if (options.onDispose) onPartDestroy(part,options.onDispose);
   onPartDestroy(part,() => {observer.disconnect();if (lastModal) {lastModal = false;options.onModalChange?.(false);}});return part;
 }

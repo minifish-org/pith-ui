@@ -8,6 +8,12 @@ The host controls file-action visibility with `state.fileActions`, for example
 `{reveal: false}` for a browser runtime. Omit it to retain Open and Reveal.
 Updates preserve the keyed rows, pending actions and file count.
 
+Hosts can supply `openLabel` and `copyPathLabel` in `fileActions`, e.g.
+`{reveal: false, openLabel: 'Download', copyPathLabel: 'Copy server path'}`.
+Labels change presentation only; the original `open` and `copy-path` intents
+and owner targets stay the same. Preview accepts the same labels; resources
+can label their open intent `Copy server path` when that is the host action.
+
 The host owns file operations and original conversation targets. Row removal and owner changes retire pending feedback. Borrowed related dialogs preserve inspector focus without transferring ownership.
 
 ```ts

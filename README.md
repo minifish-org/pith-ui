@@ -5,7 +5,7 @@ Native TypeScript parts for AI-assisted application development. Compose buttons
 The package exports `pith-ui` and `pith-ui/styles.css`. Parts expose no generated element, HTML, selector, class, style, pixel or animation options. A checked mount is the only DOM input. There is no public application, page or scene factory.
 
 ```sh
-npm install --save-exact pith-ui@0.8.6
+npm install --save-exact pith-ui@0.8.7
 ```
 
 ```ts
@@ -23,6 +23,12 @@ Mount into an ordinary DIV, MAIN, SECTION or ARTICLE. Composition transfers each
 The [showroom](https://minifish-org.github.io/pith-ui/) contains formal parts, specifications, legal states and interaction examples. Read the [API reference](API.md), [AI instructions](AI.md) and [assembly guide](APP.md).
 
 Import full regions from `pith-ui/recipes`; examples and showroom call the same implementation. Pith UI owns presentation, controls, drafts, focus, scrolling and dialog lifetime. The application owns data, requests, persistence, permissions, credentials, native actions and cross-feature coordination.
+
+Browser hosts can supply file delivery labels, connection hints and OAuth
+availability without replacing shared regions. The showroom's browser states
+demonstrate these capabilities. Viewport frames track the visual viewport at
+normal zoom so phone keyboards leave the composer, approval scrolling, drawer
+and dialogs reachable. Pinch zoom keeps ordinary browser panning.
 
 System/light/dark appearance is the visual theme choice. Focus retains native keyboard operation without outlines, glows or border highlights; hover, caret, selection, errors and semantic selections retain their presentation.
 
