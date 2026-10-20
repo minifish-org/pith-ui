@@ -29,6 +29,7 @@ export interface MCPComposition extends MCPAssembly {readonly part: DialogPart;o
 export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks: MCPCallbacks = {}): MCPComposition {
   let alive = true,state = initial,items: readonly MCPConnection[] = [],rendered = false,auxiliaryPending = false,auxiliaryRevision = 0;
   let form: FormPart,dialog: DialogPart;
+  let editingOAuth = false;
   let saved: MCPDraft = {name: '',type: 'http',url: '',oauth: false,oauthClientId: '',oauthScope: '',command: '',args: '[]',enabled: true,bearerToken: '',clearBearerToken: false,env: '',clearEnv: false};
   const feedback = createFeedbackPart({message: initial.error ?? '',tone: 'error'}),formError = createFeedbackPart({message: initial.formError ?? '',tone: 'error'});
   const fail = (message: string) => {if (alive) feedback.update({message,tone: 'error'});};
@@ -132,11 +133,12 @@ export function composeMCPConnections(initial: Readonly<MCPState> = {},callbacks
   function renderTransport(): void {
     if (!alive) return;
     const isHTTP = transport.read() === 'http';http.update({hidden: !isHTTP});stdio.update({hidden: isHTTP});
-    for (const control of [url,client,scope,token]) control.update({disabled: !isHTTP});oauth.update({disabled: !isHTTP || state.oauthAvailable === false,hidden: state.oauthAvailable === false && !oauth.read()});oauthDetails.update({title: 'OAuth settings (optional)',hidden: state.oauthAvailable === false});clearToken.update({disabled: !isHTTP});
+    for (const control of [url,client,scope,token]) control.update({disabled: !isHTTP});oauth.update({disabled: !isHTTP || state.oauthAvailable === false && !editingOAuth,hidden: state.oauthAvailable === false && !editingOAuth});oauthDetails.update({title: 'OAuth settings (optional)',hidden: state.oauthAvailable === false});clearToken.update({disabled: !isHTTP});
     for (const control of [command,args,env]) control.update({disabled: isHTTP});clearEnv.update({disabled: isHTTP});url.update({required: isHTTP});command.update({required: !isHTTP});
   }
   function resetEditor(entry?: Readonly<MCPEditor>): void {
     if (!alive) return;
+    editingOAuth = !!entry?.oauth;
     form.reset();envLabel.update({label: 'Environment overrides (JSON object, optional)',revealed: false});editorTitle.update({text: entry ? `Edit ${entry.name}` : 'Add connection'});
     name.reset(entry?.name ?? '');name.update({readOnly: !!entry});transport.reset(entry?.type || 'http');url.reset(entry?.url ?? '');oauth.reset(entry?.oauth ?? false);client.reset(entry?.oauthClientId ?? '');scope.reset(entry?.oauthScope ?? '');
     command.reset(entry?.command ?? '');args.reset(JSON.stringify(entry?.args ?? [],null,2));enabled.reset(entry?.enabled ?? true);token.update({placeholder: entry?.hasBearerToken ? 'Leave blank to keep your saved token' : 'Optional token'});

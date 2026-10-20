@@ -9,7 +9,8 @@ The selected transport alone participates in native validation and submission. K
 Use `connectionHint` to explain where commands, environment and dependencies
 run. Set `oauthAvailable: false` when this host cannot complete new authorization:
 new OAuth controls and sign-in actions are hidden, while an edited connection's
-saved OAuth selection and Sign out remain intact. The host must enforce the
+saved OAuth selection and Sign out remain intact. Existing connections can
+explicitly turn OAuth off to use a bearer token. The host must enforce the
 same policy at its API boundary. See the browser state in the showroom.
 
 ```ts

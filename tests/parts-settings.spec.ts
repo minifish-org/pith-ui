@@ -4,6 +4,7 @@ type Result = {ok: true} | {ok: false; error: string};
 type Appearance = 'light' | 'dark' | 'system';
 interface SettingsState {
   baseUrl: string; hasApiKey: boolean; ready?: boolean; testing?: boolean; disabled?: boolean; error?: string;
+  connectionHint?: string;diagnosticsLabel?: string;updatesAvailable?: boolean;
   appearance?: {mode: Appearance; disabled?: boolean; error?: string}; testResult?: {message: string; ok?: boolean};
 }
 interface Draft {provider: string; baseUrl: string; apiKey: string}
@@ -69,6 +70,18 @@ async function openSettings(page: Page, options: OpenOptions = {}): Promise<void
   await expect(page.getByRole('dialog',{name: 'Settings',exact: true})).toBeVisible();
 }
 
+
+test('host capabilities hide the updater without changing provider controls or secret drafts',async ({page}) => {
+  await openSettings(page,{state: {...ready,updatesAvailable: false,connectionHint: 'Requests run on the server.',diagnosticsLabel: 'Download diagnostics'}});
+  await expect(page.getByRole('button',{name: 'Check for updates',exact: true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name: 'Update and restart',exact: true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name: 'Download diagnostics',exact: true})).toBeVisible();
+  await expect(page.getByRole('dialog')).toContainText('Requests run on the server.');
+  await page.locator('input[name="apiKey"]').fill('new-draft-key');
+  await page.evaluate(() => {const h = window.settingsPartsHarness;h.session.update({...h.initial,updatesAvailable: true});});
+  await expect(page.getByRole('button',{name: 'Check for updates',exact: true})).toBeVisible();
+  await expect(page.locator('input[name="apiKey"]')).toHaveValue('new-draft-key');
+});
 
 test('small form layout, section, field stack, progress, label suffix and invalid callback preserve native boundaries without DOM ports',async ({page}) => {
   await page.goto('/tests/fixture.html');

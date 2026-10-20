@@ -12,6 +12,9 @@ Custom connection editors also accept `connectionHint`. These are text only;
 the host still owns requests, storage and execution location. The showroom's
 browser state demonstrates these options.
 
+Set `updatesAvailable: false` to hide the complete updater region when the host
+does not install updates. Omitting it retains the existing Desktop presentation.
+
 ```ts
 import {
   composeSettings, type Appearance, type RecipeResult as Result, type SettingsState,

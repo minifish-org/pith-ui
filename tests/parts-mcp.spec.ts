@@ -56,10 +56,18 @@ test('unavailable OAuth hides new login without stripping existing credentials f
   await expect(page.getByRole('button',{name: 'Sign in again',exact: true})).toHaveCount(0);
   await expect(page.getByRole('button',{name: 'Sign out',exact: true})).toBeVisible();
   await expect(page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true})).toBeChecked();
-  await expect(page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true})).toBeDisabled();
+  await expect(page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true})).toBeEnabled();
   await page.getByRole('button',{name: 'Save connection',exact: true}).click();
   const values = await page.evaluate(() => window.mcpPartsHarness.values);
   expect(values.find(value => value.action === 'save')?.value).toMatchObject({oauth: true,bearerToken: '',oauthClientId: 'registered-client'});
+});
+
+test('an existing OAuth connection can explicitly switch to a bearer token when new sign-in is unavailable',async ({page}) => {
+  await openMCP(page,{state: {oauthAvailable: false},editor: httpEditor});
+  await page.getByRole('checkbox',{name: 'Sign in with OAuth',exact: true}).uncheck();
+  await page.getByRole('textbox',{name: 'Bearer token (optional)',exact: true}).fill('replacement-token');
+  await page.getByRole('button',{name: 'Save connection',exact: true}).click();
+  expect(await page.evaluate(() => window.mcpPartsHarness.values.find(value => value.action === 'save')?.value)).toMatchObject({oauth: false,bearerToken: 'replacement-token'});
 });
 
 

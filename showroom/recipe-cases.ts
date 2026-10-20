@@ -6,7 +6,7 @@ import type {DemoContext,ShowcaseCase} from './types.js';
 type Region = {part: p.Part;open?(): void;destroy(): void};
 const examples: Array<{id: string;title: string;factories: string[];create(context: DemoContext): Region}> = [
   {id:'settings',title:'设置区域',factories:['composeSettings'],create(c) {
-    const region=r.composeSettings({baseUrl:'https://provider.example/v1',hasApiKey:true,ready:true,disabled:c.state==='disabled',...(c.state==='browser'?{connectionHint:'Requests run on the remote host; localhost refers to that host.',diagnosticsLabel:'Download diagnostics'}:{})},{onSubmit:c.action,onTest:c.action,onRemoveKey:c.action,onProviderAction:c.action});
+    const region=r.composeSettings({baseUrl:'https://provider.example/v1',hasApiKey:true,ready:true,disabled:c.state==='disabled',...(c.state==='browser'?{connectionHint:'Requests run on the remote host; localhost refers to that host.',diagnosticsLabel:'Download diagnostics',updatesAvailable:false}:{})},{onSubmit:c.action,onTest:c.action,onRemoveKey:c.action,onProviderAction:c.action});
     region.setProviders([{id:'demo',name:'Demo provider',configured:true}],'demo');
     region.setCredential({status:'Configured',hidden:false,required:false,placeholder:'Keep the saved key',removeVisible:true});
     if(c.state!=='browser') region.updateUpdates({version:'Demo',phase:'idle',enabled:true,availableVersion:'',progress:0,message:'Demonstration data'});return region;

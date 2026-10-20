@@ -12,7 +12,7 @@ export type Appearance = 'light' | 'dark' | 'system';
 type HostResult = void | Result | Promise<void | Result>;
 export interface SettingsState {
   baseUrl: string;hasApiKey: boolean;ready?: boolean;testing?: boolean;disabled?: boolean;error?: string;
-  connectionHint?: string;diagnosticsLabel?: string;
+  connectionHint?: string;diagnosticsLabel?: string;updatesAvailable?: boolean;
   appearance?: {mode: Appearance;disabled?: boolean;error?: string};testResult?: {message: string;ok?: boolean};
 }
 export interface SettingsDraft {provider: string;baseUrl: string;apiKey: string}
@@ -194,6 +194,7 @@ export function composeSettings(initial: Readonly<SettingsState>,callbacks: Sett
   function update(next: Readonly<SettingsState>): void {
     if (!alive) return;
     state = next;if (next.error !== undefined) fail(next.error);
+    updatesSection.update({hidden: next.updatesAvailable === false});
     connectionHint.update({text: next.connectionHint ?? '',hidden: !next.connectionHint});
     diagnostics.update({label: next.diagnosticsLabel ?? 'Save diagnostics',variant: 'secondary'});
     if (next.appearance) {appearanceChoice.reset(next.appearance.mode);appearanceChoice.update({disabled: !!next.appearance.disabled});appearanceError.update({message: next.appearance.error ?? '',tone: 'error'});}
