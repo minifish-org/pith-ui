@@ -14,7 +14,7 @@ export {formatCost, composeCostLedger, type CostRequestDisplay, type CostLedgerS
 export {customModelDefaults, composeCustomConnection, composeCustomConnectionLoading, type CustomModel, type CustomConnectionState, type CustomModelDraft, type CustomConnectionDraft, type CustomConnectionCallbacks, type CustomConnectionAssembly, type CustomConnectionComposition, type CustomLoadingState, type CustomLoadingAssembly, type CustomLoadingComposition} from "./custom-connection.js";
 export {composeFilePreview, type PreviewKind, type PreviewResult, type PreviewState, type PreviewTarget, type PreviewInput, type PreviewCallbacks, type FilePreviewAssembly, type FilePreviewComposition} from "./file-preview.js";
 export {composeFileBrowser,type BrowserEntry,type BrowserDirectory,type FileBrowserState,type BrowserTarget,type BrowserAction,type FileBrowserCallbacks,type FileBrowserComposition} from './file-browser.js';
-export {composeFrame, type FrameConversation, type FrameWorkspace, type FrameState, type FrameCallbacks, type FrameContent, type FrameAssembly, type FrameComposition} from "./frame.js";
+export {composeFrame, type FrameConversation, type FrameWorkspace, type FrameState, type FrameCallbacks, type FrameContent, type FrameAssembly, type FrameComposition,type SidebarWidths} from "./frame.js";
 export {composeFullAccess, type FullAccessState, type FullAccessResult, type FullAccessCallbacks, type FullAccessAssembly, type FullAccessComposition} from "./full-access.js";
 export {composeImageViewer, type ImageViewerInput, type ImageViewerCallbacks, type ImageViewerComposition} from "./image-viewer.js";
 export {composeMCPConnections, type MCPState, type MCPEditor, type MCPDraft, type MCPConnection, type MCPAction, type MCPCallbacks, type MCPAssembly, type MCPComposition} from "./mcp.js";
@@ -34,4 +34,5 @@ export {composeWelcome, type WelcomeState, type WelcomeResult, type WelcomeCallb
 export {composeWorkspacePicker, type PickerWorkspace, type WorkspacePickerState, type WorkspacePickerResult, type WorkspacePickerCallbacks, type WorkspacePickerAssembly, type WorkspacePickerComposition} from "./workspace-picker.js";
 export {createDialogHost, type DialogHost, type DialogOpening, type DialogHostOptions} from "./dialog-host.js";
 export {previewPageRanges, previewPageBytes} from "./preview-pages.js";
-export {composeTerminal,composeWorkspaceTools,type TerminalState,type TerminalCallbacks,type WorkspaceToolView} from './terminal.js';
+export {composeTerminal,type TerminalState,type TerminalCallbacks} from './terminal.js';
+export {composeWorkspaceTools,type WorkspaceToolView,type WorkspaceToolTab,type WorkspaceToolsState,type WorkspaceToolsCallbacks} from './workspace-tools.js';

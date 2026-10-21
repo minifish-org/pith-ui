@@ -87,18 +87,38 @@ export function createDrawerPart(options: {scope: FramePart; panel: SideRailPart
   const node = document.createElement('div'); node.className = 'pui-sidebar-scrim'; node.setAttribute('aria-hidden', 'true');
   const narrow = matchMedia('(max-width: 720px)'), originalPanelInert = panel.inert, originalContentInert = content.inert;
   const originalControls = trigger.getAttribute('aria-controls'), originalExpanded = trigger.getAttribute('aria-expanded');
+  const originalHidden = trigger.hidden,closeControls = close?.getAttribute('aria-controls'),closeExpanded = close?.getAttribute('aria-expanded');
   const collapsible = options.desktop === 'collapsible',right = panel.classList.contains('pui-tools');
-  let opened = false,desktopOpen = !right,disposed = false,part: DrawerPart;
+  let opened = false,desktopOpen = !right,disposed = false,part: DrawerPart,focusFrame=0;
   const peers = drawerPeers.get(options.scope) ?? new Set<DrawerPeer>();drawerPeers.set(options.scope,peers);
   const peer: DrawerPeer = {overlay: () => !disposed && narrow.matches && opened,closeOverlay};peers.add(peer);
   if (collapsible) trigger.classList.add('pui-sidebar-trigger');
   close?.classList.add('pui-sidebar-close');
   const stops: Array<() => void> = [];
   const isOpen = () => !disposed && (narrow.matches || !collapsible ? opened : desktopOpen);
+  const cancelFocus=()=>{cancelAnimationFrame(focusFrame);focusFrame=0;};
+  const focusPanel=()=>{
+    const target=close ?? focusableElements(panel)[0];target?.focus({preventScroll:true});
+    if (!target || !narrow.matches || document.activeElement===target) return;
+    // WKWebView can reject focus while the entering control is offscreen.
+    // Retry only during its short slide, without taking later user focus.
+    const previous=document.activeElement,deadline=performance.now()+500;
+    const retry=()=>{
+      focusFrame=0;
+      if (disposed || !opened || !scope.isConnected || scope.querySelector('dialog[open]') || document.activeElement!==previous && document.activeElement!==document.body) return;
+      target.focus({preventScroll:true});
+      if (document.activeElement!==target && performance.now()<deadline) focusFrame=requestAnimationFrame(retry);
+    };
+    focusFrame=requestAnimationFrame(retry);
+  };
   const sync = () => {
     if (disposed) return;
     content.inert = [...peers].some(peer => peer.overlay());panel.inert = narrow.matches ? !opened : collapsible && !desktopOpen;
     trigger.setAttribute('aria-controls', panel.id);trigger.setAttribute('aria-expanded', String(isOpen()));
+    // The closed rail's opener stays in the topbar. An open rail owns its
+    // visible control, without reparenting checked parts or losing drafts.
+    trigger.hidden = originalHidden || !!close && panel.contains(close) && isOpen();
+    close?.setAttribute('aria-controls',panel.id);close?.setAttribute('aria-expanded',String(isOpen()));
     panel.classList.toggle('pui-open',narrow.matches && opened);node.classList.toggle('pui-visible',narrow.matches && opened);
     panel.classList.toggle('pui-overlay-closed',narrow.matches && !opened);
     panel.classList.toggle('pui-collapsed',collapsible && !narrow.matches && !desktopOpen);
@@ -107,18 +127,20 @@ export function createDrawerPart(options: {scope: FramePart; panel: SideRailPart
   const setOpen = (open: boolean) => {
     if (typeof open !== 'boolean') throw new TypeError('Drawer open state must be boolean.');
     if (disposed || !isPartAlive(part)) return;
+    cancelFocus();
     if (open && (!scope.isConnected || !scope.contains(panel) || !scope.contains(content) || !content.contains(trigger))) throw new Error('A drawer must be assembled in its mounted frame before opening.');
-    const wasOpen = isOpen(),hadFocus = panel.contains(document.activeElement);
+    const wasOpen = isOpen(),hadFocus = panel.contains(document.activeElement),triggerFocused = trigger === document.activeElement;
     if (open && narrow.matches) for (const other of peers) if (other !== peer) other.closeOverlay();
     if (narrow.matches || !collapsible) opened = open;else desktopOpen = open;
     sync();
     if (!open && wasOpen && (narrow.matches || hadFocus) && !scope.querySelector('dialog[open]')) trigger.focus({preventScroll: true});
-    if (narrow.matches && open && !wasOpen) (close ?? focusableElements(panel)[0])?.focus({preventScroll: true});
+    if (open && !wasOpen && (narrow.matches || triggerFocused)) focusPanel();
     if (wasOpen !== isOpen()) options.onToggle?.(isOpen());
   };
   function closeOverlay(): void {if (narrow.matches) setOpen(false);}
   const breakpoint = () => {
     if (disposed) return;
+    cancelFocus();
     const hadFocus = panel.contains(document.activeElement);opened = false;sync();
     if (hadFocus && !isOpen()) trigger.focus({preventScroll: true});
     options.onToggle?.(isOpen());
@@ -133,9 +155,10 @@ export function createDrawerPart(options: {scope: FramePart; panel: SideRailPart
     else if (!key.shiftKey && document.activeElement === last) {key.preventDefault(); first?.focus();}
   };
   const toggle = (event: Event) => {if (!trigger.disabled) {event.stopPropagation(); setOpen(!isOpen());}};
-  const dismiss = (event: Event) => {event.stopPropagation(); setOpen(false);};
+  const dismiss = (event: Event) => {event.stopPropagation(); setOpen(false);if (!scope.querySelector('dialog[open]')) trigger.focus({preventScroll:true});};
   const dispose = () => {
     if (disposed) return; disposed = true; opened = false;
+    cancelFocus();
     peers.delete(peer);if (!peers.size) drawerPeers.delete(options.scope);
     narrow.removeEventListener('change', breakpoint); scope.removeEventListener('keydown', keydown); trigger.removeEventListener('click', toggle); node.removeEventListener('click', dismiss);close?.removeEventListener('click',dismiss);
     panel.inert = originalPanelInert;content.inert = peers.size ? [...peers].some(peer => peer.overlay()) : originalContentInert;
@@ -143,6 +166,11 @@ export function createDrawerPart(options: {scope: FramePart; panel: SideRailPart
     if (collapsible && !right) scope.classList.remove('pui-navigation-collapsed');
     if (originalControls === null) trigger.removeAttribute('aria-controls'); else trigger.setAttribute('aria-controls', originalControls);
     if (originalExpanded === null) trigger.removeAttribute('aria-expanded'); else trigger.setAttribute('aria-expanded', originalExpanded);
+    trigger.hidden = originalHidden;
+    if (close) {
+      if (closeControls == null) close.removeAttribute('aria-controls');else close.setAttribute('aria-controls',closeControls);
+      if (closeExpanded == null) close.removeAttribute('aria-expanded');else close.setAttribute('aria-expanded',closeExpanded);
+    }
     for (const stop of stops.splice(0)) stop();
   };
   part = createOwnedPart<Omit<DrawerPart, keyof Part>>(node, {setOpen,isOpen,closeOverlay}, {dispose});

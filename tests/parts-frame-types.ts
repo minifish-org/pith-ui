@@ -2,10 +2,17 @@ import {
   createButtonPart, createDrawerPart, createFramePart, createMainPart,
   createSideRailPart, type ButtonPart, type FramePart, type MainPart, type SideRailPart,
 } from '../src/parts/index.js';
+import type {FrameContent,FrameCallbacks,FrameComposition,SidebarWidths} from '../src/recipes/index.js';
 
 // Compiled consumer boundary. Each rejected program must remain rejected by the
 // same formal entry used by executable assembly recipes.
 export function framePartContract(frame: FramePart,rail: SideRailPart,main: MainPart,trigger: ButtonPart): void {
+  const tabbed: FrameContent = {tools: {label:'Tools',layout:'tabs',children:[],close:trigger}};
+  // @ts-expect-error A tabbed rail borrows an explicit owned close button.
+  const missingClose: FrameContent = {tools: {label:'Tools',layout:'tabs',children:[]}};
+  // @ts-expect-error A data object cannot impersonate a genuine close control.
+  const fakeClose: FrameContent = {tools: {label:'Tools',layout:'tabs',children:[],close:{}}};
+  void [tabbed,missingClose,fakeClose];
   createButtonPart({variant: 'navigation',icon: 'settings',label: 'Settings'});
   createButtonPart({variant: 'quiet-icon',icon: 'more',label: 'Actions',menuExpanded: false});
   // @ts-expect-error Navigation actions always have a closed library icon.
@@ -36,4 +43,16 @@ export function framePartContract(frame: FramePart,rail: SideRailPart,main: Main
   createMainPart({children: [],padding: 20});
   // @ts-expect-error Opaque frame handles expose no DOM root.
   void frame.element;
+}
+
+export function sidebarSizingContract(frame:FrameComposition): void {
+  const widths:SidebarWidths={navigation:300,tools:420};
+  const content:FrameContent={sidebarWidths:widths};
+  const callbacks:FrameCallbacks={onSidebarResize(value) {const navigation:number=value.navigation;void navigation;
+    // @ts-expect-error Published preferences are immutable callback values.
+    value.tools=300;
+  }};
+  frame.setSidebarWidths({tools:500});void [content,callbacks];
+  // @ts-expect-error Widths are semantic numeric preferences, never CSS expressions.
+  frame.setSidebarWidths({navigation:'20vw'});
 }

@@ -27,7 +27,7 @@ function relatedNodes(options: FloatingOptions): HTMLDialogElement[] {
     return node;
   });
 }
-function anchored(panel: HTMLElement, alive: () => boolean, canOpen: () => boolean, related: readonly HTMLDialogElement[], onToggle?: (open: boolean) => void, dismissOnMove = false) {
+function anchored(panel: HTMLElement, alive: () => boolean, canOpen: () => boolean, related: readonly HTMLDialogElement[], onToggle?: (open: boolean) => void, dismissOnMove: boolean|'anchor' = false) {
   let surface: ReturnType<typeof installAnchoredSurface> | undefined;
   let current: ButtonPart | undefined;
   let unsubscribe: (() => void) | undefined;
@@ -98,15 +98,16 @@ function validateItems(items: readonly MenuPartItem[]): void {
   }
 }
 /** A keyboard menu with the retained menu row markup and no coordinate input. */
-export function createMenuPart(options: MenuPartState & {relatedDialogs?: readonly DialogPart[]; onToggle?(open: boolean): void; onError?(message: string): void}): MenuPart {
-  assertOptions(options, ['label', 'disabled', 'items', 'relatedDialogs', 'onToggle', 'onError'], 'menu'); validateFloating(options); validateItems(options.items);
+export function createMenuPart(options: MenuPartState & {relatedDialogs?: readonly DialogPart[]; scrollBehavior?: 'dismiss'|'anchor'; onToggle?(open: boolean): void; onError?(message: string): void}): MenuPart {
+  assertOptions(options, ['label', 'disabled', 'items', 'relatedDialogs', 'scrollBehavior', 'onToggle', 'onError'], 'menu'); validateFloating(options); validateItems(options.items);
+  if (options.scrollBehavior !== undefined && !['dismiss','anchor'].includes(options.scrollBehavior)) throw new TypeError('Unknown menu scroll behavior.');
   if (options.onError !== undefined && typeof options.onError !== 'function') throw new TypeError('Menu onError must be a callback.');
   const related = relatedNodes(options);
   const node = document.createElement('div'); node.className = 'pui-sidebar-conversation-menu pui-context-menu'; node.id = uniqueId('pui-menu'); node.setAttribute('role', 'menu'); node.tabIndex = -1; node.hidden = true;
   let state: Readonly<MenuPartState> = options;
   let part: MenuPart;
   const entries = new Map<string, MenuItemPart>(), generation = new Generation();
-  const surface = anchored(node, () => isPartAlive(part), () => !state.disabled, related, open => {generation.invalidate(); options.onToggle?.(open);}, true);
+  const surface = anchored(node, () => isPartAlive(part), () => !state.disabled, related, open => {generation.invalidate(); options.onToggle?.(open);}, options.scrollBehavior === 'anchor' ? 'anchor' : true);
   const navigation = installMenuNavigation(node, {isOpen: surface.isOpen, onDismiss(restore) {surface.close(restore);}});
   const makeItem = (item: MenuPartItem): MenuItemPart => {
     const button = document.createElement('button'); button.type = 'button';

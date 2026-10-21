@@ -1,25 +1,49 @@
 import {test,expect,type Page} from '@playwright/test';
 
-async function mountFrame(page: Page, overlay: boolean): Promise<void> {
+async function mountFrame(page: Page, overlay: boolean, withTools = false): Promise<void> {
   await page.goto('/tests/fixture.html');
   await page.addStyleTag({content: ':root { --mygo-titlebar-height: 52px; --mygo-titlebar-inset-left: 92px; --mygo-titlebar-inset-right: 0px; }'});
-  await page.evaluate(async overlay => {
+  await page.evaluate(async ({overlay,withTools}) => {
     const partsPath = '/src/parts/index.ts',recipesPath = '/src/recipes/index.ts';
     const p = await import(partsPath),r = await import(recipesPath),actions: string[] = [];
     const draft = p.createTextareaPart({label: 'Retained draft',value: 'Existing 中文 draft'});
+    const tools = withTools ? r.composeWorkspaceTools({tabs: [{id:'files',kind:'files',label:'Files'}],activeId:'files',location:'Local',detail:'/workspace'}) : undefined;
+    tools?.attach('files',p.createInputPart({label:'File search',value:'Retained filter'}));
     const frame = r.composeFrame({workspace: 'Workspace',conversation: 'Conversation',compactDisabled: false,
       navigation: {groups: [{id: 'workspace',name: 'Workspace',path: '/workspace',selected: true,children: [{id: 'chat',title: 'Conversation',active: true}]}],empty: null}},
-      {onAction(action: string) {actions.push(action);}}, {main: [draft],...(overlay ? {titlebar: 'overlay'} : {})});
+      {onAction(action: string) {actions.push(action);}}, {main: [draft],...(overlay ? {titlebar: 'overlay'} : {}),...(tools ? {tools:{label:'Workspace tools',layout:'tabs',close:tools.dismiss,children:[tools.part]}} : {})});
     const mount = document.body.appendChild(document.createElement('div')),tree = p.mountParts(mount,frame.part);
     Object.assign(window,{titlebarTest: {frame,tree,actions}});
-  },overlay);
+  },{overlay,withTools});
 }
 
-test('ordinary frames retain their original titlebar and sidebar without native decoration',async ({page}) => {
+for (const overlay of [false,true]) test(`${overlay ? 'native' : 'browser'} headers keep one compact height across rail states and narrow overlays`,async({page})=>{
+  await mountFrame(page,overlay,true);
+  for (const width of [1280,900,390]) {
+    await page.setViewportSize({width,height:800});
+    for (const [navigation,tools] of [[true,true],[false,true],[false,false],[true,false]]) {
+      await page.evaluate(({navigation,tools})=>{const frame=(window as any).titlebarTest.frame;frame.setSidebarOpen(navigation);frame.setToolsOpen(tools);},{navigation,tools});
+      const expected=overlay ? 52 : 44;
+      await expect(page.locator('.pui-topbar')).toHaveCSS('height',expected+'px');
+      await expect(page.locator('.pui-tool-tabs-heading')).toHaveCSS('height',expected+'px');
+      const rows=await page.evaluate(()=>{
+        const root=document.querySelector('.pui-app')!.getBoundingClientRect();
+        return [...document.querySelectorAll('.pui-topbar,.pui-tool-tabs-heading,button[aria-label="Close navigation"],button[aria-label="Close tools"]')]
+          .filter(node=>node.getClientRects().length && getComputedStyle(node).visibility!=='hidden')
+          .map(node=>{const box=node.getBoundingClientRect();return box.y+box.height/2-root.y;});
+      });
+      for (const center of rows) expect(Math.abs(center-expected/2)).toBeLessThanOrEqual(1);
+      if (!overlay && navigation && width>720) await expect(page.locator('.pui-navigation-top')).toHaveCSS('height','44px');
+    }
+  }
+  await expect(page.getByRole('textbox',{name:'Retained draft',exact:true})).toHaveValue('Existing 中文 draft');
+});
+
+test('ordinary frames use a compact titlebar without native decoration',async ({page}) => {
   await mountFrame(page,false);
-  await expect(page.locator('.pui-topbar')).toHaveCSS('height','79px');
+  await expect(page.locator('.pui-topbar')).toHaveCSS('height','44px');
   await expect(page.locator('.pui-native-titlebar')).toHaveCount(0);
-  await expect(page.locator('.pui-sidebar')).toHaveCSS('padding-top','24px');
+  await expect(page.locator('.pui-sidebar')).toHaveCSS('padding-top','0px');
   expect(await page.locator('.pui-topbar').evaluate(node => getComputedStyle(node).getPropertyValue('--app-region').trim())).toBe('');
 });
 
@@ -58,8 +82,8 @@ test('native fullscreen metrics preserve the draft and remove only the window-co
     (window as any).titlebarTest.frame.update({workspace: 'Workspace',conversation: 'Updated title',navigation: {groups: [],empty: 'workspaces'}});
   });
   await expect(page.locator('.pui-native-titlebar')).toHaveCSS('height','0px');
-  await expect(page.locator('.pui-sidebar')).toHaveCSS('padding-top','24px');
-  await expect(page.locator('.pui-topbar')).toHaveCSS('height','52px');
+  await expect(page.locator('.pui-sidebar')).toHaveCSS('padding-top','0px');
+  await expect(page.locator('.pui-topbar')).toHaveCSS('height','44px');
   await expect(draft).toBeFocused();await expect(draft).toHaveValue('Unsaved 中文 input');
   expect(await draft.evaluate((node: HTMLTextAreaElement) => [node.selectionStart,node.selectionEnd])).toEqual([2,7]);
   await page.evaluate(() => (window as any).titlebarTest.tree.destroy());

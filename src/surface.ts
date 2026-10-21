@@ -11,7 +11,7 @@ interface AnchoredSurfaceOptions {
   canEscape?: () => boolean;
   getAnchor?: () => Pick<DOMRect, 'left' | 'right' | 'top' | 'bottom' | 'width' | 'height'>;
   anchorElement?: HTMLElement;
-  dismissOnMove?: boolean;
+  dismissOnMove?: boolean|'anchor';
 }
 interface AnchoredSurface {
   open(): void;
@@ -41,10 +41,11 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
   const contains = (target: EventTarget | null) => target instanceof Node &&
     (trigger.contains(target) || panel.contains(target) || options.exclusions?.some(node => node.contains(target)));
   const style = (name: string, value: string) => { if (panel.style.getPropertyValue(name) !== value) panel.style.setProperty(name, value); };
+  const readAnchor = () => options.getAnchor?.() ?? options.anchorElement?.getBoundingClientRect() ?? trigger.getBoundingClientRect();
   const place = () => {
     if (!opened || !position) return;
     if (!trigger.isConnected || !trigger.getClientRects().length) { close(); return; }
-    const anchor = options.getAnchor?.() ?? options.anchorElement?.getBoundingClientRect() ?? trigger.getBoundingClientRect();
+    const anchor = readAnchor();
     const viewport = view.visualViewport;
     const left = viewport?.offsetLeft ?? 0, top = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? doc.documentElement.clientWidth;
@@ -109,8 +110,16 @@ export function installAnchoredSurface(options: AnchoredSurfaceOptions): Anchore
       }) as EventListener, { capture: true });
       if (position) {
         const move = () => { if (options.dismissOnMove) close(); else place(); };
+        const anchor = readAnchor();
         events.listen(view, 'resize', move);
-        events.listen(doc, 'scroll', event => { if (!(event.target instanceof Node) || !panel.contains(event.target)) move(); }, { capture: true });
+        events.listen(doc, 'scroll', event => {
+          if (event.target instanceof Node && panel.contains(event.target)) return;
+          // A fixed tool header is unaffected by terminal output or a queued
+          // tab-strip scroll. Dismiss a menu only if its anchor actually moved.
+          const next = readAnchor();
+          if (!options.dismissOnMove) place();
+          else if (options.dismissOnMove === true || !trigger.isConnected || !trigger.getClientRects().length || next.left !== anchor.left || next.top !== anchor.top || next.width !== anchor.width || next.height !== anchor.height) close();
+        }, { capture: true });
         if (view.visualViewport) { events.listen(view.visualViewport, 'resize', move); events.listen(view.visualViewport, 'scroll', move); }
         const observer = new ResizeObserver(place); observer.observe(trigger); observer.observe(panel);
         if (options.anchorElement && options.anchorElement !== trigger) observer.observe(options.anchorElement);

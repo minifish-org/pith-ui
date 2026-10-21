@@ -48,17 +48,27 @@ shrinking visual viewport in Chromium and WebKit: input/selection, approval
 scrolling, drawer bounds, modal bounds and zoom behavior. This simulation does
 not replace a real iOS/Android soft-keyboard acceptance check.
 
-`sidebars.spec.ts` verifies independent wide navigation/tools, preserved draft
+`parts-titlebar.spec.ts` verifies one compact header height across navigation,
+conversation and tool tabs, all wide rail states and narrow overlays, including
+native window-control reservations and fullscreen draft preservation.
+`sidebars.spec.ts` verifies rail-owned expanded controls and topbar openers,
+independent wide navigation/tools, preserved draft
 content, native titlebar reservations when navigation collapses, modal openings
 that preserve wide state, and mutually exclusive phone overlays with close,
-scrim and focus restoration. `file-browser.spec.ts` checks retained search input
-and selection, lazy directory intents, original file targets and workspace reset.
+scrim and focus restoration. `file-browser.spec.ts` checks the compact path/refresh
+row, retained disclosure focus, lazy directory intents, original file targets and workspace reset.
 Desk covers authenticated directory IO, search bounds, retired responses,
 native actions and persistent drafts using the public recipes.
+`sidebar-sizing.spec.ts` verifies independent pointer drags, keyboard limits,
+native drag regions, width constraints without overwriting preferences, draft
+selection, phone overlays and cancellation/teardown during a drag. Sidebar
+focus checks also reproduce WKWebView's rejection of an offscreen entering
+control before verifying recovery and opener restoration.
 
 `terminal.spec.ts` checks byte-fragmented UTF-8/ANSI, Chinese/emoji text input,
-focus-local control keys, selection/copy, retained views, stale paste/reset
-callbacks, root disposal and short visual-viewport fitting in both engines.
+focus-local control keys, standard selection/copy/paste, connection gating,
+retained tab views, add/close intents, keyboard/overflow navigation, reset
+callbacks/input identity, root disposal and short visual-viewport fitting in both engines.
 The pinned upstream CSS has an exact-content/scope check independent of authored
 design tokens. Desk checks real PTYs, bounded parse acknowledgements/history,
 leases, reconnect, process cleanup, vim/top and actual macOS WebView integration.

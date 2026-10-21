@@ -1,10 +1,13 @@
 import type {RecipeResult} from './types.js';
+import {nodeOf} from '../parts/ownership.js';
+import {composeSidebarSizing,type SidebarWidths} from './frame-sizing.js';
+export type {SidebarWidths} from './frame-sizing.js';
 /** Shared frame/navigation recipe. Conversation, composer, files
  * and task bodies are composed separately as caller-owned small parts. */
 import {
   createActivityPart, createBrandMarkPart, createBrandPart, createBreadcrumbPart, createButtonPart,
   createConnectionIndicatorPart, createDrawerPart, createFramePart, createMainPart, createMenuPart, createRailFooterPart,
-  createRailHeadingPart, createSearchFieldPart, createSideRailPart, createTextPart, createTopbarPart, createTopbarActionsPart, createTreeBranchPart,
+  createRailHeadingPart, createSearchFieldPart, createSideRailPart, createStackPart, createTextPart, createTopbarPart, createTopbarActionsPart, createTreeBranchPart,
   createTreeItemPart, createTreePart,
   type ActivityPart, type BrandMarkOptions, type ButtonPart, type DialogPart, type FramePart, type MenuPartItem,
   type Part, type TextPart, type TreeBranchPart, type TreeItemPart,
@@ -30,10 +33,13 @@ export interface FrameCallbacks {
   onSearch?(query: string): void; onError?(message: string): void;
   onModalChange?(open: boolean): void;onDispose?(): void;
   onToolsToggle?(open: boolean): void;
+  onSidebarResize?(widths: Readonly<SidebarWidths>): void;
 }
 export interface FrameContent {
   /** Share the native window controls' row; ordinary browser frames omit this. */
   titlebar?: 'overlay';
+  /** Initial desktop preferences; viewport constraints do not overwrite them. */
+  sidebarWidths?: Partial<SidebarWidths>;
   /** Already composed conversation/composer bodies, in their native main order. */
   main?: readonly Part[];
   dialogs?: readonly DialogPart[];
@@ -42,13 +48,14 @@ export interface FrameContent {
   topbarActions?: readonly Part[];
   brand?: {name: string; qualifier?: string; mark?: BrandMarkOptions};
   /** Optional tool region. Applications supply its wording and opaque content. */
-  tools?: {label: string;children: readonly Part[]};
+  tools?: {label: string;children: readonly Part[]} & ({layout: 'tabs';close: ButtonPart}|{layout?: undefined});
 }
 export interface FrameAssembly {
   update(state: Readonly<FrameState>): void; search(query: string): void;
   setSidebarOpen(open: boolean): void; isSidebarOpen(): boolean;
   closeNavigationOverlay(): void;setToolsOpen(open: boolean): void;isToolsOpen(): boolean;closeToolsOverlay(): void;
   closeNavigationMenu(): void; setAppearance(appearance: 'light'|'dark'|'system'): void; destroy(): void;
+  setSidebarWidths(widths: Partial<SidebarWidths>): void;
 }
 export interface FrameComposition extends Omit<FrameAssembly, 'setAppearance'> {readonly part: FramePart;replaceOverlays(parts: readonly DialogPart[]): void;replaceTopbarActions(parts: readonly Part[]): void}
 
@@ -69,26 +76,34 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
   const brand = content.brand ?? {name: 'Pith', qualifier: 'Desk', mark: {symbol: 'pith' as const, alt: ''}};
   const brandPart = createBrandPart({name: brand.name, qualifier: brand.qualifier, ...(brand.mark ? {mark: createBrandMarkPart(brand.mark)} : {})});
   const manage = createButtonPart({variant: 'quiet-icon', icon: 'plus', label: 'Manage workspaces', onAction() {run(() => callbacks.onAction?.('workspace'));}});
-  const closeNavigation = createButtonPart({variant: 'quiet-icon',icon: 'close',label: 'Close navigation',title: 'Close navigation'});
-  const heading = createRailHeadingPart({label: 'WORKSPACES', actions: [manage,closeNavigation]});
+  const closeNavigation = createButtonPart({variant: 'quiet-icon',icon: 'sidebar-left',label: 'Close navigation',title: 'Close navigation'});
+  nodeOf(closeNavigation).classList.add('pui-navigation-toggle');
+  const navigationTop = createStackPart({children: [brandPart,closeNavigation]});nodeOf(navigationTop).className = 'pui-navigation-top';
+  const heading = createRailHeadingPart({label: 'WORKSPACES', actions: [manage]});
   const searchField = createSearchFieldPart({label: 'Search conversation titles', placeholder: 'Search conversations', onInput: search});
   const navigation = createTreePart({label: 'Workspaces and conversations', children: []});
   const utilities = ([['resources', 'file', 'Workspace resources'], ['connections', 'plug', 'Connections'], ['settings', 'settings', 'Settings']] as const)
     .map(([action, icon, label]) => createButtonPart({variant: 'navigation', icon, label, onAction() {run(() => callbacks.onAction?.(action));}}));
   const connection = createConnectionIndicatorPart({message: 'Reconnecting…', hidden: !initial.reconnecting});
   const footer = createRailFooterPart({children: [...utilities, connection]});
-  const rail = createSideRailPart({label: 'Navigation',children: [brandPart, heading, searchField, navigation, footer]});
+  const rail = createSideRailPart({label: 'Navigation',children: [navigationTop, heading, searchField, navigation, footer]});
   const trigger = createButtonPart({variant: 'quiet-icon',icon: 'sidebar-left',label: 'Toggle navigation',title: 'Toggle navigation'});
   const toolsTrigger = content.tools ? createButtonPart({variant: 'quiet-icon',icon: 'sidebar-right',label: 'Toggle tools',title: 'Toggle tools'}) : undefined;
-  const closeTools = content.tools ? createButtonPart({variant: 'quiet-icon',icon: 'close',label: 'Close tools',title: 'Close tools'}) : undefined;
-  const tools = content.tools ? createSideRailPart({side: 'right',label: content.tools.label,children: [createRailHeadingPart({label: content.tools.label,actions: [closeTools!]}),...content.tools.children]}) : undefined;
+  const closeTools = content.tools ? content.tools.layout === 'tabs' ? content.tools.close : createButtonPart({variant: 'quiet-icon',icon: 'sidebar-right',label: 'Close tools',title: 'Close tools'}) : undefined;
+  const toolsChildren = content.tools ? [...content.tools.layout !== 'tabs' ? [createRailHeadingPart({label: content.tools.label,actions: [closeTools!]})] : [],...content.tools.children] : [];
+  const tools = content.tools ? createSideRailPart({side: 'right',label: content.tools.label,children: toolsChildren}) : undefined;
+  if (tools && content.tools?.layout === 'tabs') nodeOf(tools).classList.add('pui-tools-tabbed');
   const breadcrumb = createBreadcrumbPart({ancestor: workspace, current: conversation});
   const compact = createButtonPart({variant: 'quiet-icon', icon: 'compress', label: 'Compact', accessibleLabel: 'Compress context', title: 'Compress context by summarizing older messages', disabled: initial.compactDisabled ?? true, onAction() {return callbacks.onAction?.('compact');}, onError: fail});
   const topbarActions = createTopbarActionsPart({children: [compact,...content.topbarActions ?? [],...toolsTrigger ? [toolsTrigger] : []]});
   const topbar = createTopbarPart({children: [trigger, breadcrumb,topbarActions]});
   const main = createMainPart({children: [topbar, ...content.main ?? []]}), part = createFramePart({children: [],titlebar: content.titlebar,onDispose: retire,onModalChange: callbacks.onModalChange});
-  const drawer = createDrawerPart({scope: part,panel: rail,content: main,trigger,close: closeNavigation,desktop: 'collapsible'});
-  const toolsDrawer = tools ? createDrawerPart({scope: part,panel: tools,content: main,trigger: toolsTrigger!,close: closeTools,desktop: 'collapsible',onToggle: callbacks.onToolsToggle}) : undefined;
+  let sizing: ReturnType<typeof composeSidebarSizing>|undefined;
+  const drawer = createDrawerPart({scope: part,panel: rail,content: main,trigger,close: closeNavigation,desktop: 'collapsible',onToggle() {sizing?.fit();}});
+  const toolsDrawer = tools ? createDrawerPart({scope: part,panel: tools,content: main,trigger: toolsTrigger!,close: closeTools,desktop: 'collapsible',onToggle(open) {sizing?.fit();callbacks.onToolsToggle?.(open);}}) : undefined;
+  sizing=composeSidebarSizing(part,{navigation:rail,tools},content.sidebarWidths,widths=>run(()=>callbacks.onSidebarResize?.(widths)));
+  rail.replace([navigationTop,heading,searchField,navigation,footer,sizing.navigation]);
+  if (tools && sizing.tools) tools.replace([...toolsChildren,sizing.tools]);
   const menu = createMenuPart({label: 'Conversation actions', items: [], onToggle(open) {if (!open) menuTarget = undefined; syncMenuButtons();}, onError: fail});
   const bodies = [rail,menu,drawer,main,...tools && toolsDrawer ? [tools,toolsDrawer] : [],...content.siblings ?? []];
   part.replace([...bodies,...content.dialogs ?? []]);
@@ -176,7 +191,7 @@ export function composeFrame(initial: Readonly<FrameState>, callbacks: FrameCall
   function retire(): void {
     if (!alive) return;alive = false;menuTarget = undefined;branches.clear();rows.clear();expanded.clear();emptyWorkspace = undefined;emptySearch = undefined;callbacks.onDispose?.();
   }
-  return {part, update, search, closeNavigationMenu, setSidebarOpen: drawer.setOpen, isSidebarOpen: drawer.isOpen,
+  return {part, update, search, closeNavigationMenu, setSidebarWidths: sizing.setWidths,setSidebarOpen: drawer.setOpen, isSidebarOpen: drawer.isOpen,
     closeNavigationOverlay: drawer.closeOverlay,setToolsOpen(open) {toolsDrawer?.setOpen(open);},isToolsOpen: () => toolsDrawer?.isOpen() ?? false,closeToolsOverlay() {toolsDrawer?.closeOverlay();},
     replaceOverlays(parts) {if (alive) part.replace([...bodies,...parts]);},
     replaceTopbarActions(parts) {if (alive) topbarActions.replace([compact,...parts,...toolsTrigger ? [toolsTrigger] : []]);},

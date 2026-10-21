@@ -30,8 +30,9 @@ mutually exclusive phone overlays and matching focus restoration. Compose a
 reads, search, native actions, downloads and draft references remain host intents.
 The [manual terminal](docs/assemblies/terminal.md) wraps pinned xterm.js and
 addon-fit, with ANSI/UTF-8, theme, fit, selection/copy/paste, touch keys and a
-parse-completion callback for flow control. The Files/Terminal switch retains
-both views. Host applications own PTYs, sessions, authentication, leases,
+parse-completion callback for flow control. Compact workspace tabs retain
+multiple Files/Terminal panels, with close intents and a small add menu.
+Host applications own tab data, persistence, PTYs, sessions, authentication, leases,
 transport, output history and process cleanup; UI disposal never stops a shell.
 
 Browser hosts can supply file delivery labels, connection hints and OAuth

@@ -2058,6 +2058,7 @@ Referenced declarations: [`FieldState`](#fieldstate), [`Part`](#part).
 /** A keyboard menu with the retained menu row markup and no coordinate input. */
 export declare function createMenuPart(options: MenuPartState & {
     relatedDialogs?: readonly DialogPart[];
+    scrollBehavior?: 'dismiss' | 'anchor';
     onToggle?(open: boolean): void;
     onError?(message: string): void;
 }): MenuPart;
@@ -4661,6 +4662,7 @@ Referenced declarations: [`TerminalPartState`](#terminalpartstate).
 ```ts
 export interface TerminalPartState {
     disabled?: boolean;
+    preserveSize?: boolean;
     label: string;
 }
 ```
@@ -5355,10 +5357,10 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `AttachmentsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/attachments.ts#L8) |
 | `BodyMessage` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L12) |
 | `BodyResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L15) |
-| `BrowserAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L15) |
+| `BrowserAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L14) |
 | `BrowserDirectory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L6) |
 | `BrowserEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L5) |
-| `BrowserTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L14) |
+| `BrowserTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L13) |
 | `CompletionNoticeDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/completion-notices.ts#L4) |
 | `CompletionNoticesComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/completion-notices.ts#L5) |
 | `composeApproval` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/approval.ts#L28) |
@@ -5373,9 +5375,9 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `composeCostLedger` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L19) |
 | `composeCustomConnection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L21) |
 | `composeCustomConnectionLoading` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L83) |
-| `composeFileBrowser` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L27) |
+| `composeFileBrowser` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L26) |
 | `composeFilePreview` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L33) |
-| `composeFrame` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L55) |
+| `composeFrame` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L62) |
 | `composeFullAccess` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L18) |
 | `composeImageViewer` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/image-viewer.ts#L18) |
 | `composeMCPConnections` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L29) |
@@ -5393,12 +5395,12 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `composeRuntime` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/runtime.ts#L8) |
 | `composeSettings` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L50) |
 | `composeTaskFailure` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L9) |
-| `composeTerminal` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L20) |
+| `composeTerminal` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L18) |
 | `composeTextEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L42) |
 | `composeToolGroup` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/tool-disclosures.ts#L22) |
 | `composeWelcome` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/welcome.ts#L20) |
 | `composeWorkspacePicker` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L26) |
-| `composeWorkspaceTools` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L55) |
+| `composeWorkspaceTools` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L16) |
 | `ConfirmationAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L22) |
 | `ConfirmationCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L21) |
 | `ConfirmationComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L29) |
@@ -5432,19 +5434,19 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `DialogOpening` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/dialog-host.ts#L5) |
 | `FailureAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L4) |
 | `FileActions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/types.ts#L5) |
-| `FileBrowserCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L16) |
-| `FileBrowserComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L22) |
+| `FileBrowserCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L15) |
+| `FileBrowserComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L21) |
 | `FileBrowserState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L7) |
 | `FilePreviewAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L24) |
 | `FilePreviewComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L28) |
 | `formatCost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L14) |
-| `FrameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L47) |
-| `FrameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L25) |
-| `FrameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L53) |
-| `FrameContent` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L34) |
-| `FrameConversation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L14) |
-| `FrameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L19) |
-| `FrameWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L18) |
+| `FrameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L53) |
+| `FrameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L28) |
+| `FrameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L60) |
+| `FrameContent` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L38) |
+| `FrameConversation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L17) |
+| `FrameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L22) |
+| `FrameWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L21) |
 | `FullAccessAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L13) |
 | `FullAccessCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L12) |
 | `FullAccessComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L14) |
@@ -5534,6 +5536,7 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `SettingsDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L18) |
 | `SettingsProvider` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L19) |
 | `SettingsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L13) |
+| `SidebarWidths` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame-sizing.ts#L4) |
 | `TaskFailureCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L6) |
 | `TaskFailureComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L7) |
 | `TaskFailureState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L5) |
@@ -5558,4 +5561,7 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `WorkspacePickerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L23) |
 | `WorkspacePickerResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L12) |
 | `WorkspacePickerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L11) |
-| `WorkspaceToolView` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L53) |
+| `WorkspaceToolsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L10) |
+| `WorkspaceToolsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L7) |
+| `WorkspaceToolTab` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L6) |
+| `WorkspaceToolView` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L5) |

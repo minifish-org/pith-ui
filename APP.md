@@ -60,15 +60,34 @@ The frame keeps the existing brand and controls, shares a 52px top row with
 the native window buttons, and marks only that row as draggable. It adds no
 window buttons. Supply `tools: {label, children}` for an optional right rail.
 Navigation and tools toggle independently on wide screens and become mutually
-exclusive phone overlays. The MyGo host supplies `--mygo-titlebar-height`
+exclusive phone overlays. Expanded rails own their compact top controls;
+collapsed rails expose their openers at the corresponding ends of the main
+topbar. The drawer restores focus and keyboard navigation without moving owned
+parts between parents. The MyGo host supplies `--mygo-titlebar-height`
 and `--mygo-titlebar-inset-left/right`; fullscreen changes update the reserved
 space through CSS. Omit the option in ordinary browsers. The application owns
 the native window setting; the library owns layout and drag regions.
 
+`composeFrame` includes lightweight, keyboard-accessible edge separators on
+wide screens. Drag either edge, or focus its separator and use Left/Right
+(10px), Shift+Left/Right (40px), Home or End. Navigation prefers 200–480px,
+tools 240–800px; the frame reserves 320px for main content and temporarily
+reduces rail widths when space is limited. Phone overlays keep their normal
+width and hide the separators. Pass `sidebarWidths: {navigation, tools}` in
+content or call `frame.setSidebarWidths(...)` to restore numeric preferences.
+`onSidebarResize(widths)` reports a completed drag or keyboard adjustment;
+viewport constraints and programmatic restoration do not emit persistence
+events. The application owns saving these preferences. Resizing preserves
+child parts, drafts and terminal instances.
+
 See [file browser](./docs/assemblies/file-browser.md) for lazy directory display
 and tool-rail composition. Applications retain file IO, permissions and drafts.
 See [manual terminal](./docs/assemblies/terminal.md) for xterm presentation and
-retained Files/Terminal switching. Applications retain shell and transport lifetimes.
+retained workspace tabs. Use the frame's `tools.layout: 'tabs'` with
+`composeWorkspaceTools`, passing `close: tools.dismiss`, to avoid a duplicate
+rail heading. The frame borrows the tab strip's genuine button for drawer focus
+and dismissal. Applications retain
+tab data, persistence, shell and transport lifetimes.
 
 See [region coverage](./docs/assemblies/coverage.md), [settings](./docs/assemblies/settings.md),
 [conversation reader](./docs/assemblies/conversation-reader.md),

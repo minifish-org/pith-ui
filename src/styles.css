@@ -15,6 +15,7 @@
   font-family: var(--pui-font-ui);
   font-synthesis: none;
   --pui-sidebar-width: 260px;
+  --pui-frame-header-height: 44px;
   color: var(--pui-text);
   background: var(--pui-bg-main);
 }
@@ -31,21 +32,29 @@
 /* A viewport frame owns its origin even when the host retains the browser's
    ordinary body margin. Theme ownership remains local to the checked mount. */
 .pui .pui-viewport-frame { position: absolute; inset: var(--pui-viewport-top, 0) 0 auto; }
-.pui .pui-sidebar { width: var(--pui-sidebar-width); background: var(--pui-bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; padding: var(--pui-space-xl) var(--pui-space-lg) var(--pui-space-lg); border-right: 1px solid var(--pui-border); }
+.pui .pui-sidebar { position: relative; width: var(--pui-sidebar-width); background: var(--pui-bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; padding: 0 var(--pui-space-lg) var(--pui-space-lg); border-right: 1px solid var(--pui-border); }
 .pui .pui-sidebar.pui-collapsed { display: none; }
 .pui .pui-sidebar.pui-overlay-closed { visibility: hidden; }
-.pui .pui-sidebar.pui-tools { width: 300px;min-height: 0;border-right: 0;border-left: 1px solid var(--pui-border);padding-top: var(--pui-space-lg); }
-.pui .pui-tools > .pui-sidebar-section-label { margin-top: 0;flex-shrink: 0; }
-.pui .pui-sidebar-close { display: none; }
+.pui .pui-sidebar.pui-tools { width: var(--pui-tools-width,300px);min-height: 0;border-right: 0;border-left: 1px solid var(--pui-border);padding-top: 0; }
+.pui .pui-rail-resize { position: absolute; z-index: 3; top: 0; bottom: 0; width: 10px; cursor: col-resize; touch-action: none; user-select: none; --app-region: no-drag; }
+.pui .pui-rail-resize-navigation { right: -9px; }
+.pui .pui-rail-resize-tools { left: -9px; }
+.pui .pui-rail-resize::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: transparent; }
+.pui .pui-rail-resize-navigation::after { left: 0; }
+.pui .pui-rail-resize-tools::after { left: 9px; }
+.pui .pui-rail-resize:is(:hover,:focus-visible)::after, .pui .pui-resizing-rails .pui-rail-resize::after { background: var(--pui-muted); }
+.pui .pui-resizing-rails, .pui .pui-resizing-rails * { cursor: col-resize !important; user-select: none !important; }
+.pui .pui-tools > .pui-sidebar-section-label { height: var(--pui-frame-header-height);margin-top: 0;flex-shrink: 0; }
+.pui .pui-sidebar-close { display: inline-flex; flex-shrink: 0; width: 28px; height: 28px; padding: var(--pui-space-xs); }
+.pui .pui-navigation-top { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; min-width: 0; height: var(--pui-frame-header-height); }
+.pui .pui-navigation-top > .pui-brand { min-width: 0; }
 .pui .pui-sidebar-trigger { flex-shrink: 0;margin-right: var(--pui-space-sm); }
 .pui .pui-file-browser { display: flex;flex-direction: column;min-height: 0;flex: 1; }
-.pui .pui-file-browser > .pui-file-path { margin: 0;max-height: 4em;overflow: auto;flex-shrink: 0; }
 .pui .pui-file-browser > .pui-sidebar-section-label { margin-top: var(--pui-space-md);flex-shrink: 0; }
 .pui .pui-file-browser .pui-tree-item > .pui-quiet-icon { opacity: 1; }
 .pui .pui-file-browser .pui-tree-branch-heading > .pui-workspace-toggle { overflow: hidden; }
 .pui .pui-titlebar-overlay.pui-navigation-collapsed > .pui-native-titlebar { display: none; }
 .pui .pui-titlebar-overlay.pui-navigation-collapsed > .pui-main > .pui-topbar { padding-left: max(var(--pui-space-lg), calc(var(--mygo-titlebar-inset-left, 84px) + var(--pui-space-lg))); }
-.pui .pui-titlebar-overlay > .pui-tools { padding-top: max(var(--pui-space-lg),var(--pui-native-titlebar-height)); }
 .pui .pui-brand { display: flex; align-items: center; gap: var(--pui-space-md); text-decoration: none; color: var(--pui-text); font-size: var(--pui-text-large); letter-spacing: normal; font-weight: var(--pui-weight-strong); padding: 0 var(--pui-space-sm); }
 .pui .pui-brand-light { font-weight: var(--pui-weight-regular); color: var(--pui-muted); }
 .pui .pui-app-brand { display: contents; }
@@ -102,14 +111,18 @@
 .pui .pui-status-dot { width: 5px; height: 5px; flex-shrink: 0; border-radius: 50%; background: var(--pui-muted); }
 .pui .pui-status-dot.pui-reconnecting { background: var(--pui-warning-text); }
 .pui .pui-main { flex: 1; min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; background: var(--pui-bg-main); }
-.pui .pui-topbar { display: flex; align-items: center; justify-content: space-between; height: 79px; flex-shrink: 0; padding: 0 var(--pui-space-xl); border-bottom: 1px solid var(--pui-border); }
+.pui .pui-topbar { display: flex; align-items: center; justify-content: space-between; height: var(--pui-frame-header-height); flex-shrink: 0; padding: 0 var(--pui-space-xl); border-bottom: 1px solid var(--pui-border); }
 /* Native controls and their fullscreen insets are supplied by the window host.
-   Only overlay frames reserve this space; the ordinary frame is unchanged. */
-.pui .pui-titlebar-overlay { --pui-native-titlebar-height: var(--mygo-titlebar-height, 52px); }
+   Every header in the frame follows the same compact row height. */
+.pui .pui-titlebar-overlay { --pui-native-titlebar-height: var(--mygo-titlebar-height, 52px); --pui-frame-header-height: max(44px,var(--pui-native-titlebar-height)); }
 .pui .pui-titlebar-overlay > .pui-native-titlebar { position: absolute; top: 0; left: 0; width: var(--pui-sidebar-width); height: var(--pui-native-titlebar-height); --app-region: drag; user-select: none; }
-.pui .pui-titlebar-overlay > .pui-sidebar { padding-top: max(var(--pui-space-xl), calc(var(--pui-space-sm) + var(--pui-native-titlebar-height))); }
-.pui .pui-titlebar-overlay > .pui-main > .pui-topbar { height: max(52px, var(--pui-native-titlebar-height)); padding-right: max(var(--pui-space-xl), calc(var(--mygo-titlebar-inset-right, 0px) + var(--pui-space-lg))); --app-region: drag; user-select: none; }
+.pui .pui-titlebar-overlay > .pui-sidebar { padding-top: var(--pui-native-titlebar-height); }
+.pui .pui-titlebar-overlay > .pui-main > .pui-topbar { padding-right: max(var(--pui-space-xl), calc(var(--mygo-titlebar-inset-right, 0px) + var(--pui-space-lg))); --app-region: drag; user-select: none; }
 .pui .pui-titlebar-overlay .pui-topbar :is(button, a, input, textarea, select, summary, [contenteditable], .pui-conversation-actions) { --app-region: no-drag; }
+.pui .pui-titlebar-overlay .pui-navigation-toggle { position: absolute; top: calc((var(--pui-frame-header-height) - 28px) / 2); right: var(--pui-space-lg); z-index: 1; --app-region: no-drag; }
+.pui .pui-titlebar-overlay > .pui-tools { padding-top: 0; }
+.pui .pui-titlebar-overlay > .pui-tools > .pui-sidebar-section-label { --app-region: drag; }
+.pui .pui-titlebar-overlay > .pui-tools .pui-sidebar-close { --app-region: no-drag; }
 .pui .pui-breadcrumb { display: flex; align-items: center; gap: var(--pui-space-md); color: var(--pui-muted); font-size: var(--pui-text-small); min-width: 0; flex: 1; }
 .pui .pui-breadcrumb > .pui-icon { width: 17px; height: 17px; color: var(--pui-muted); }
 .pui .pui-breadcrumb span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
@@ -420,6 +433,7 @@
   .pui .pui-welcome { padding-top: var(--pui-space-xl); }
 }
 @media (max-width: 720px) {
+  .pui .pui-rail-resize { display: none; }
   .pui .pui-sidebar { position: absolute; z-index: 5; height: 100%; top: 0; width: 260px; left: -260px; transition: left .2s; }
   .pui .pui-sidebar.pui-open { left: 0; }
   .pui .pui-sidebar.pui-tools { left: auto;right: -300px;width: min(300px,calc(100% - 48px));transition: right .2s; }
@@ -427,7 +441,7 @@
   .pui .pui-sidebar-close { display: inline-flex; }
   .pui .pui-sidebar-scrim.pui-visible { display: block; position: absolute; inset: 0; background: var(--pui-overlay); z-index: 4; }
   .pui .pui-mobile-menu { display: inline-flex; margin-right: var(--pui-space-md); }
-  .pui .pui-topbar { height: 64px; padding: 0 var(--pui-space-lg); }
+  .pui .pui-topbar { padding: 0 var(--pui-space-lg); }
   .pui .pui-titlebar-overlay > .pui-native-titlebar { display: none; }
   .pui .pui-titlebar-overlay > .pui-main > .pui-topbar { padding-left: max(var(--pui-space-lg), calc(var(--mygo-titlebar-inset-left, 84px) + var(--pui-space-lg))); }
   .pui .pui-breadcrumb { font-size: var(--pui-text-small); flex: 1; gap: var(--pui-space-sm); }

@@ -4,7 +4,7 @@ import type {Terminal} from '@xterm/xterm';
 import type {FitAddon} from '@xterm/addon-fit';
 import {assertOptions,createOwnedPart,isPartAlive,onPartAppearance,type Part} from './ownership.js';
 
-export interface TerminalPartState {disabled?: boolean;label: string}
+export interface TerminalPartState {disabled?: boolean;preserveSize?: boolean;label: string}
 export interface TerminalPartOptions extends TerminalPartState {
   onInput?(data: string): void;
   onResize?(size: {cols: number;rows: number}): void;
@@ -21,13 +21,14 @@ export interface TerminalPart extends Part {
 /** An opaque xterm emulator. The host owns transport and shell lifetime.
  * A write callback means parsed, allowing bounded end-to-end flow control. */
 export function createTerminalPart(options: TerminalPartOptions): TerminalPart {
-  assertOptions(options,['label','disabled','onInput','onResize','onCopy'],'terminal');
+  assertOptions(options,['label','disabled','preserveSize','onInput','onResize','onCopy'],'terminal');
   const validate = (state: Readonly<TerminalPartState>) => {
-    assertOptions(state,['label','disabled'],'terminal state');
-    if (typeof state.label !== 'string' || state.disabled !== undefined && typeof state.disabled !== 'boolean') throw new TypeError('Invalid terminal state.');
+    assertOptions(state,['label','disabled','preserveSize'],'terminal state');
+    if (typeof state.label !== 'string') throw new TypeError('Invalid terminal state.');
+    for (const key of ['disabled','preserveSize'] as const) if (state[key] !== undefined && typeof state[key] !== 'boolean') throw new TypeError('Invalid terminal state.');
   };
   for (const key of ['onInput','onResize','onCopy'] as const) if (options[key] !== undefined && typeof options[key] !== 'function') throw new TypeError('Terminal events must be callbacks.');
-  let state: TerminalPartState = {label: options.label,disabled: options.disabled};validate(state);
+  let state: TerminalPartState = {label: options.label,disabled: options.disabled,preserveSize: options.preserveSize};validate(state);
   const node = document.createElement('div');node.className = 'pui-terminal-viewport';
   const display = document.createElement('div');display.className = 'pui-terminal-reader';display.setAttribute('role','log');display.setAttribute('aria-label','Terminal display');display.setAttribute('aria-live','off');
   const media = matchMedia('(prefers-color-scheme: dark)');
@@ -69,7 +70,7 @@ export function createTerminalPart(options: TerminalPartOptions): TerminalPart {
     term.options.fontSize = Number.parseFloat(colors.fontSize);
     term.options.fontFamily = colors.fontFamily;
     term.options.theme = {background: colors.backgroundColor,foreground: colors.color,cursor: colors.color,selectionBackground: '#7495c966',selectionInactiveBackground: '#7495c944'};
-    fitAddon.fit();
+    if (!state.preserveSize) fitAddon.fit();
   }
   function schedule(): void {if (!frame) frame = requestAnimationFrame(() => {frame = 0;fit();});}
   // xterm's own listener runs first. Prevent terminal keys (including Esc/Tab
@@ -80,13 +81,20 @@ export function createTerminalPart(options: TerminalPartOptions): TerminalPart {
   const viewport = window.visualViewport;viewport?.addEventListener('resize',schedule);
   media.addEventListener('change',schedule);
   const part: TerminalPart = createOwnedPart<Omit<TerminalPart,keyof Part>>(node,{
-    update(next) {validate(next);if (!isPartAlive(part)) return;state = next;node.setAttribute('aria-label',next.label);term.options.disableStdin = !!next.disabled;},
+    update(next) {validate(next);if (!isPartAlive(part)) return;const resume = !!state.preserveSize && !next.preserveSize;state = next;node.setAttribute('aria-label',next.label);node.setAttribute('aria-disabled',String(!!next.disabled));term.options.disableStdin = !!next.disabled;if (resume) schedule();},
     write(data,onParsed) {
       if (!(data instanceof Uint8Array)) throw new TypeError('Terminal output must be UTF-8 bytes.');
       if (!isPartAlive(part)) return;
       const epoch = generation;term.write(data,() => {if (isPartAlive(part) && epoch === generation) {readDisplay();onParsed?.();}});
     },
-    reset(value) {if (!isPartAlive(part)) return;const focused = node.contains(document.activeElement);term.dispose();make(value?.cols,value?.rows);if (focused) {fit();if (opened) term.focus();}},
+    reset(value) {
+      if (!isPartAlive(part)) return;
+      const epoch = ++generation;display.textContent = '';
+      // Cancel a partial sequence and queue RIS after old bytes. Recreating
+      // xterm would detach the focused input on every history truncation.
+      term.write(new Uint8Array([0x18,0x1b,0x63]),() => {if (isPartAlive(part) && epoch === generation) readDisplay();});
+      if (value) term.resize(value.cols,value.rows);
+    },
     fit,focus() {if (isPartAlive(part)) {fit();if (opened) term.focus();}},
     selection: () => isPartAlive(part) ? term.getSelection() : '',
     paste(text) {if (isPartAlive(part) && !state.disabled) term.paste(text);},

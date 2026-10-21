@@ -5,11 +5,12 @@ import type {DemoContext,ShowcaseCase} from './types.js';
 
 type Region = {part: p.Part;open?(): void;destroy(): void};
 const examples: Array<{id: string;title: string;factories: string[];create(context: DemoContext): Region}> = [
-  {id:'terminal',title:'交互终端与工具切换',factories:['composeTerminal','composeWorkspaceTools'],create(c) {
-    const terminal=r.composeTerminal({location:'Demo host',directory:'Initial directory: /demo',status:'Demonstration only',connected:true,exists:true},{onInput(data){terminal.write(new TextEncoder().encode(data));},onClose(){c.log('Close session intent');},onCopy:c.action});
+  {id:'terminal',title:'Workspace 工具标签与交互终端',factories:['composeTerminal','composeWorkspaceTools'],create(c) {
+    const restoring=c.state==='loading';
+    const terminal=r.composeTerminal({location:'Demo host',directory:'Initial directory: /demo',status:restoring?'Restoring terminal output…':'',connected:!restoring,restoring,disabled:c.state==='disabled',error:c.state==='error'?'Terminal connection failed.':'',exists:true},{onInput(data){terminal.write(new TextEncoder().encode(data));},onCopy:c.action});
     terminal.write(new TextEncoder().encode('\x1b[32mTerminal 中文\x1b[0m\r\n$ '));
-    const tools=r.composeWorkspaceTools({files:p.createTextPart({text:'File browser placeholder'}),terminal:terminal.part});tools.select('terminal');
-    const frame=r.composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{tools:{label:'Workspace tools',children:[tools.part]}});
+    const tools=r.composeWorkspaceTools({tabs:[{id:'files',kind:'files',label:'Files'},{id:'terminal',kind:'terminal',label:'Terminal'}],activeId:'terminal',location:c.state==='browser'?'Server':'Local',detail:'/demo',disabled:c.state==='disabled'},{onNew:kind=>c.log('New '+kind+' intent'),onClose:id=>c.log('Close '+id+' intent')});tools.attach('files',p.createTextPart({text:'File browser placeholder'}));tools.attach('terminal',terminal.part);
+    const frame=r.composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{tools:{label:'Workspace tools',layout:'tabs',close:tools.dismiss,children:[tools.part]}});
     return {...frame,open(){frame.setToolsOpen(true);}};
   }},
   {id:'settings',title:'设置区域',factories:['composeSettings'],create(c) {
@@ -47,9 +48,9 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
     return r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[{id:'demo',name:'Demo workspace',path:'/demo',selected:true,children:[{id:'chat',title:'Demo conversation',active:true}]}],empty:null}},{onAction:action=>{c.log(action);}},{titlebar:'overlay'});
   }},
   {id:'file-browser',title:'双侧栏与 Workspace 文件',factories:['composeFrame','composeFileBrowser'],create(c) {
-    let state: r.FileBrowserState = {workspaceId:'demo',location:c.state==='browser'?'Server workspace: /srv/demo':'Workspace: /demo',query:'',directories:[{path:'',expanded:true,entries:[{name:'docs',path:'docs',directory:true},{name:'README.md',path:'README.md',directory:false}]}],capabilities:{native:c.state!=='browser',copyFile:c.state!=='browser',copyPathLabel:c.state==='browser'?'Copy server path':'Copy path'}};
-    const browser=r.composeFileBrowser(state,{onSearch(query){state={...state,query,search:{entries:query?[{name:'README.md',path:'README.md',directory:false}]:[]}};browser.update(state);},onRefresh(){c.log('Refresh workspace files');},onToggle(target,expanded){state={...state,directories:[state.directories[0]!,{path:target.path,expanded,entries:[{name:'Guide.md',path:'docs/Guide.md',directory:false}]}]};browser.update(state);},onAction(action,target){c.log(action+': '+target.path);}});
-    const frame=r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[],empty:'workspaces'}},{},{main:[p.createTextPart({role:'paragraph',text:'Navigation and tools open independently on wide screens. On phones, open one overlay at a time.'})],tools:{label:'Workspace files',children:[browser.part]}});
+    let state: r.FileBrowserState = {workspaceId:'demo',location:c.state==='browser'?'Server workspace: /srv/demo':'Workspace: /demo',directories:[{path:'',expanded:true,entries:[{name:'docs',path:'docs',directory:true},{name:'README.md',path:'README.md',directory:false}]}],capabilities:{native:c.state!=='browser',copyFile:c.state!=='browser',copyPathLabel:c.state==='browser'?'Copy server path':'Copy path'}};
+    const browser=r.composeFileBrowser(state,{onRefresh(){c.log('Refresh workspace files');},onToggle(target,expanded){state={...state,directories:[state.directories[0]!,{path:target.path,expanded,entries:[{name:'Guide.md',path:'docs/Guide.md',directory:false}]}]};browser.update(state);},onAction(action,target){c.log(action+': '+target.path);}});
+    const frame=r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[],empty:'workspaces'}},{onSidebarResize(widths){c.log(`Widths: navigation ${widths.navigation}px, tools ${widths.tools}px`);}},{sidebarWidths:{navigation:260,tools:320},main:[p.createTextPart({role:'paragraph',text:'Drag either rail edge, or focus its separator and use Left/Right, Shift+Left/Right and Home/End. On phones the rails remain overlays.'})],tools:{label:'Workspace files',children:[browser.part]}});
     return {...frame,open(){frame.setToolsOpen(true);}};
   }},
 ];

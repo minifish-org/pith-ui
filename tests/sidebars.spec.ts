@@ -11,20 +11,28 @@ test('wide sidebars expand independently and preserve the composer and native co
     Object.assign(window,{openSidebarDialog() {dialogs.open('example',(onClose: () => void) => {const part = p.createDialogPart({title: 'Example',children: [],onClose});return {part,isOpen: part.isOpen,close: part.close,destroy: part.destroy};},(local: {part: {open(): void}}) => local.part.open());}});
     document.documentElement.style.setProperty('--mygo-titlebar-inset-left','92px');
   });
-  const left = page.getByRole('button',{name: 'Toggle navigation',exact: true}),right = page.getByRole('button',{name: 'Toggle tools',exact: true});
+  const left = page.getByRole('button',{name: 'Toggle navigation',exact: true,includeHidden:true}),right = page.getByRole('button',{name: 'Toggle tools',exact: true,includeHidden:true});
+  const closeLeft=page.getByRole('complementary',{name:'Navigation',exact:true}).getByRole('button',{name:'Close navigation',exact:true});
+  const closeRight=page.getByRole('complementary',{name:'Workspace files',exact:true}).getByRole('button',{name:'Close tools',exact:true});
   await expect(left).toHaveAttribute('aria-expanded','true');await expect(right).toHaveAttribute('aria-expanded','false');
+  await expect(left).toBeHidden();await expect(closeLeft).toBeVisible();
   const main = page.locator('main'),wide = (await main.boundingBox())!.width;
   await right.click();await expect(right).toHaveAttribute('aria-expanded','true');await expect(left).toHaveAttribute('aria-expanded','true');
+  await expect(right).toBeHidden();await expect(closeRight).toBeVisible();
+  expect((await closeLeft.boundingBox())!.y).toBeLessThan(52);expect((await closeRight.boundingBox())!.y).toBeLessThan(52);
+  await expect(page.locator('.pui-topbar').getByRole('button',{name:/Toggle (navigation|tools)/})).toHaveCount(0);
   await page.evaluate(() => (window as any).openSidebarDialog());await page.keyboard.press('Escape');
   await expect(left).toHaveAttribute('aria-expanded','true');await expect(right).toHaveAttribute('aria-expanded','true');
   expect((await main.boundingBox())!.width).toBeLessThan(wide);
-  await left.click();await expect(left).toHaveAttribute('aria-expanded','false');await expect(right).toHaveAttribute('aria-expanded','true');
+  await closeLeft.click();await expect(left).toHaveAttribute('aria-expanded','false');await expect(right).toHaveAttribute('aria-expanded','true');await expect(left).toBeFocused();
   expect((await left.boundingBox())!.x).toBeGreaterThanOrEqual(92);
   expect(await left.evaluate(node => getComputedStyle(node).getPropertyValue('--app-region').trim())).toBe('no-drag');
-  await right.click();expect((await main.boundingBox())!.width).toBeGreaterThan(wide);
+  await closeRight.click();expect((await main.boundingBox())!.width).toBeGreaterThan(wide);await expect(right).toBeFocused();
   await expect(page.getByRole('textbox',{name: 'Draft',exact: true})).toHaveValue('Keep 中文 text');
   await expect(left).toHaveText('');await expect(right).toHaveText('');
   await expect(left).toHaveAttribute('title','Toggle navigation');await expect(right).toHaveAttribute('title','Toggle tools');
+  await left.focus();await left.press('Space');await expect(closeLeft).toBeFocused();await expect(left).toBeHidden();
+  await closeLeft.press('Enter');await expect(left).toBeFocused();
 });
 
 test('phone sidebars exclude each other, dismiss with scrim and close, and restore focus after keyboard resize',async ({page}) => {
@@ -47,4 +55,18 @@ test('phone sidebars exclude each other, dismiss with scrim and close, and resto
   await page.locator('.pui-sidebar-scrim.pui-visible').click({position: {x: 5,y: 300}});await expect(right).toBeFocused();
   await expect(page.getByRole('textbox',{name: 'Draft',exact: true})).toHaveValue('Retained');
   await page.evaluate(() => (window as any).sidebars.tree.destroy());await expect(page.locator('.pui-app')).toHaveCount(0);
+});
+
+test('a phone opening recovers focus when the WebView initially rejects an offscreen control',async({page})=>{
+  await page.setViewportSize({width:390,height:844});await page.goto('/tests/fixture.html');
+  await page.evaluate(async()=>{
+    const partsPath='/src/parts/index.ts',recipesPath='/src/recipes/index.ts',p=await import(partsPath),r=await import(recipesPath);
+    const frame=r.composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{main:[p.createTextareaPart({label:'Draft',value:'Retained'})]});
+    p.mountParts(document.body.appendChild(document.createElement('div')),frame.part);
+    const close=document.querySelector<HTMLButtonElement>('button[aria-label="Close navigation"]')!,focus=close.focus.bind(close);
+    close.focus=options=>{if (close.getBoundingClientRect().left>=0) focus(options);};
+  });
+  await page.getByRole('button',{name:'Toggle navigation',exact:true}).click();
+  await expect(page.getByRole('button',{name:'Close navigation',exact:true})).toBeFocused();
+  await page.keyboard.press('Escape');await expect(page.getByRole('button',{name:'Toggle navigation',exact:true})).toBeFocused();
 });
