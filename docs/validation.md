@@ -47,3 +47,11 @@ Phone keyboard geometry is covered in `tests/mobile-viewport.spec.ts` using a
 shrinking visual viewport in Chromium and WebKit: input/selection, approval
 scrolling, drawer bounds, modal bounds and zoom behavior. This simulation does
 not replace a real iOS/Android soft-keyboard acceptance check.
+
+`sidebars.spec.ts` verifies independent wide navigation/tools, preserved draft
+content, native titlebar reservations when navigation collapses, modal openings
+that preserve wide state, and mutually exclusive phone overlays with close,
+scrim and focus restoration. `file-browser.spec.ts` checks retained search input
+and selection, lazy directory intents, original file targets and workspace reset.
+Desk covers authenticated directory IO, search bounds, retired responses,
+native actions and persistent drafts using the public recipes.

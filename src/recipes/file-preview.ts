@@ -12,8 +12,8 @@ import {
 export type PreviewKind = 'text' | 'markdown' | 'diff' | 'image';
 export type PreviewResult = void | RecipeResult;
 export interface PreviewState {readonly kind: PreviewKind; readonly text?: string; readonly imageSrc?: string; readonly imageAlt?: string; readonly truncated?: boolean; readonly error?: string; readonly disabled?: boolean}
-export interface PreviewTarget {readonly owner: {readonly kind: 'artifact'; readonly id: string}; readonly name: string; readonly path: string}
-export interface PreviewInput extends PreviewTarget {readonly capabilities: FileActions & {readonly copyMode?: 'file' | 'path' | 'none'}; readonly content?: PreviewState}
+export interface PreviewTarget {readonly owner: {readonly kind: 'artifact'|'workspace'; readonly id: string}; readonly name: string; readonly path: string}
+export interface PreviewInput extends PreviewTarget {readonly capabilities: FileActions & {readonly copyMode?: 'file' | 'path' | 'none'}; readonly content?: PreviewState;readonly location?: string}
 export interface PreviewCallbacks {
   onFileAction?(action: 'open' | 'reveal' | 'copy' | 'copy-path', target: PreviewTarget): PreviewResult | Promise<PreviewResult>;
   onCopyCode?(text: string): PreviewResult | Promise<PreviewResult>;
@@ -93,7 +93,7 @@ export function composeFilePreview(input: Readonly<PreviewInput>, callbacks: Pre
     try {dialog.destroy();} finally {if (notify) callbacks.onClose?.();}
   }
   function close(): void {if (alive) {dialog.close();release();}}
-  dialog = createDialogPart({purpose: 'preview',title: target.name,eyebrow: 'File preview',children: [createTextPart({role: 'location',text: target.path}),viewport,createTrailingActionsPart({children: [actions]})],onClose: release,onDispose: release});
+  dialog = createDialogPart({purpose: 'preview',title: target.name,eyebrow: 'File preview',children: [createTextPart({role: 'location',text: input.location ?? target.path}),viewport,createTrailingActionsPart({children: [actions]})],onClose: release,onDispose: release});
   if (input.content) renderContent();availability();
   return {
     part: dialog,

@@ -2415,7 +2415,7 @@ export interface NativeFileDropData {
 
 ### createDrawerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L72)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L80)
 
 ```ts
 /** The native scrim and fixed mobile drawer behavior. References are borrowed;
@@ -2425,6 +2425,9 @@ export declare function createDrawerPart(options: {
     panel: SideRailPart;
     content: MainPart;
     trigger: ButtonPart;
+    desktop?: 'collapsible';
+    close?: ButtonPart;
+    onToggle?(open: boolean): void;
 }): DrawerPart;
 ```
 
@@ -2448,7 +2451,7 @@ Referenced declarations: [`FramePart`](#framepart), [`Part`](#part).
 
 ### createMainPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L50)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L56)
 
 ```ts
 export declare function createMainPart(options: {
@@ -2460,7 +2463,7 @@ Referenced declarations: [`MainPart`](#mainpart), [`Part`](#part).
 
 ### createRailFooterPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L54)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L60)
 
 ```ts
 export declare function createRailFooterPart(options: {
@@ -2472,7 +2475,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createRailHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L57)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L63)
 
 ```ts
 export declare function createRailHeadingPart(options: {
@@ -2490,6 +2493,8 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`RailHeadingPart`](#railh
 ```ts
 export declare function createSideRailPart(options: {
     children: readonly Part[];
+    side?: 'right';
+    label?: string;
 }): SideRailPart;
 ```
 
@@ -2497,7 +2502,7 @@ Referenced declarations: [`Part`](#part), [`SideRailPart`](#siderailpart).
 
 ### createTopbarActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L53)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L59)
 
 ```ts
 /** A trailing header action group. Children remain caller-owned content. */
@@ -2510,7 +2515,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createTopbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L51)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L57)
 
 ```ts
 export declare function createTopbarPart(options: {
@@ -2522,12 +2527,13 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### DrawerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L69)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L75)
 
 ```ts
 export interface DrawerPart extends Part {
     setOpen(open: boolean): void;
     isOpen(): boolean;
+    closeOverlay(): void;
 }
 ```
 
@@ -2568,7 +2574,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`frameRole`](#framerole).
 
 ### RailHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L56)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/parts/frame.ts#L62)
 
 ```ts
 export interface RailHeadingPart extends Part {
@@ -4761,6 +4767,9 @@ export declare const iconNames: readonly [
     "terminal",
     "copy",
     "menu",
+    "sidebar-left",
+    "sidebar-right",
+    "refresh",
     "globe",
     "search",
     "more",
@@ -5277,6 +5286,10 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `AttachmentsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/attachments.ts#L8) |
 | `BodyMessage` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/conversation-body.ts#L12) |
 | `BodyResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/conversation-body.ts#L15) |
+| `BrowserAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L15) |
+| `BrowserDirectory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L6) |
+| `BrowserEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L5) |
+| `BrowserTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L14) |
 | `CompletionNoticeDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/completion-notices.ts#L4) |
 | `CompletionNoticesComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/completion-notices.ts#L5) |
 | `composeApproval` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/approval.ts#L28) |
@@ -5291,8 +5304,9 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `composeCostLedger` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/cost-ledger.ts#L19) |
 | `composeCustomConnection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/custom-connection.ts#L21) |
 | `composeCustomConnectionLoading` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/custom-connection.ts#L83) |
+| `composeFileBrowser` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L27) |
 | `composeFilePreview` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-preview.ts#L33) |
-| `composeFrame` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L51) |
+| `composeFrame` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L55) |
 | `composeFullAccess` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/full-access.ts#L18) |
 | `composeImageViewer` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/image-viewer.ts#L18) |
 | `composeMCPConnections` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/mcp.ts#L29) |
@@ -5347,13 +5361,16 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 | `DialogOpening` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/dialog-host.ts#L5) |
 | `FailureAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/task-failure.ts#L4) |
 | `FileActions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/types.ts#L5) |
+| `FileBrowserCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L16) |
+| `FileBrowserComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L22) |
+| `FileBrowserState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-browser.ts#L7) |
 | `FilePreviewAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-preview.ts#L24) |
 | `FilePreviewComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/file-preview.ts#L28) |
 | `formatCost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/cost-ledger.ts#L14) |
-| `FrameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L44) |
+| `FrameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L47) |
 | `FrameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L25) |
-| `FrameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L49) |
-| `FrameContent` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L33) |
+| `FrameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L53) |
+| `FrameContent` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L34) |
 | `FrameConversation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L14) |
 | `FrameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L19) |
 | `FrameWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.8.8/src/recipes/frame.ts#L18) |

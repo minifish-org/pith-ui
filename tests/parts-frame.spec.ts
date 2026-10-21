@@ -81,9 +81,8 @@ test('mobile drawer traps native focus, respects modal precedence and cleans bor
   await last.focus();await page.keyboard.press('Tab');await expect(first).toBeFocused();await page.keyboard.press('Shift+Tab');await expect(last).toBeFocused();
   await page.evaluate(() => (window as unknown as {frameDrawer: {openModal(): void}}).frameDrawer.openModal());await page.keyboard.press('Escape');await expect(page.getByRole('dialog',{name: 'Nested modal'})).not.toBeVisible();await expect(page.locator('aside')).toHaveClass(/pui-open/);
   await page.keyboard.press('Escape');await expect(trigger).toBeFocused();await expect(page.locator('main')).toHaveJSProperty('inert',false);
-  // The retained factory leaves BODY focused after pointer scrim dismissal;
-  // Escape and breakpoint transitions restore the trigger separately.
-  await trigger.click();await page.mouse.click(370,300);await expect(page.locator('body')).toBeFocused();await expect(trigger).toHaveAttribute('aria-expanded','false');
+  // Pointer dismissal now restores the same trigger as Escape and Close.
+  await trigger.click();await page.mouse.click(370,300);await expect(trigger).toBeFocused();await expect(trigger).toHaveAttribute('aria-expanded','false');
   await page.setViewportSize({width: 1280,height: 800});await expect(page.locator('aside')).toHaveJSProperty('inert',false);await first.focus();await expect(first).toBeFocused();
   await page.setViewportSize({width: 390,height: 844});await expect(trigger).toBeFocused();
   await page.evaluate(() => (window as unknown as {frameDrawer: {destroy(): void}}).frameDrawer.destroy());await page.setViewportSize({width: 900,height: 600});await expect(page.locator('#drawer-mount')).toBeEmpty();

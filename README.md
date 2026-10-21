@@ -24,6 +24,11 @@ The [showroom](https://minifish-org.github.io/pith-ui/) contains formal parts, s
 
 Import full regions from `pith-ui/recipes`; examples and showroom call the same implementation. Pith UI owns presentation, controls, drafts, focus, scrolling and dialog lifetime. The application owns data, requests, persistence, permissions, credentials, native actions and cross-feature coordination.
 
+The frame supports independent wide navigation and optional tool rails, with
+mutually exclusive phone overlays and matching focus restoration. Compose a
+[lazy file browser](docs/assemblies/file-browser.md) in the tool rail; directory
+reads, search, native actions, downloads and draft references remain host intents.
+
 Browser hosts can supply file delivery labels, connection hints and OAuth
 availability without replacing shared regions. The showroom's browser states
 demonstrate these capabilities. Viewport frames track the visual viewport at

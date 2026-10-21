@@ -55,7 +55,7 @@ export function createDialogHost(frame: FrameComposition, options: DialogHostOpt
       if (!alive || released || attempts.get(slot) !== attempt) {local.destroy();release();return local;}
       slots.set(slot, local);overlays.add(local.part);
       try {
-        sync();frame.setSidebarOpen(false);activate(local);changed();
+        sync();frame.closeNavigationOverlay();activate(local);changed();
         if (!local.isOpen()) release();
       } catch (error) {local.destroy();release();throw error;}
       return local;

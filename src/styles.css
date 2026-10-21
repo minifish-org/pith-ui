@@ -30,6 +30,20 @@
    ordinary body margin. Theme ownership remains local to the checked mount. */
 .pui .pui-viewport-frame { position: absolute; inset: var(--pui-viewport-top, 0) 0 auto; }
 .pui .pui-sidebar { width: var(--pui-sidebar-width); background: var(--pui-bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; padding: var(--pui-space-xl) var(--pui-space-lg) var(--pui-space-lg); border-right: 1px solid var(--pui-border); }
+.pui .pui-sidebar.pui-collapsed { display: none; }
+.pui .pui-sidebar.pui-overlay-closed { visibility: hidden; }
+.pui .pui-sidebar.pui-tools { width: 300px;min-height: 0;border-right: 0;border-left: 1px solid var(--pui-border);padding-top: var(--pui-space-lg); }
+.pui .pui-tools > .pui-sidebar-section-label { margin-top: 0;flex-shrink: 0; }
+.pui .pui-sidebar-close { display: none; }
+.pui .pui-sidebar-trigger { flex-shrink: 0;margin-right: var(--pui-space-sm); }
+.pui .pui-file-browser { display: flex;flex-direction: column;min-height: 0;flex: 1; }
+.pui .pui-file-browser > .pui-file-path { margin: 0;max-height: 4em;overflow: auto;flex-shrink: 0; }
+.pui .pui-file-browser > .pui-sidebar-section-label { margin-top: var(--pui-space-md);flex-shrink: 0; }
+.pui .pui-file-browser .pui-tree-item > .pui-quiet-icon { opacity: 1; }
+.pui .pui-file-browser .pui-tree-branch-heading > .pui-workspace-toggle { overflow: hidden; }
+.pui .pui-titlebar-overlay.pui-navigation-collapsed > .pui-native-titlebar { display: none; }
+.pui .pui-titlebar-overlay.pui-navigation-collapsed > .pui-main > .pui-topbar { padding-left: max(var(--pui-space-lg), calc(var(--mygo-titlebar-inset-left, 84px) + var(--pui-space-lg))); }
+.pui .pui-titlebar-overlay > .pui-tools { padding-top: max(var(--pui-space-lg),var(--pui-native-titlebar-height)); }
 .pui .pui-brand { display: flex; align-items: center; gap: var(--pui-space-md); text-decoration: none; color: var(--pui-text); font-size: var(--pui-text-large); letter-spacing: normal; font-weight: var(--pui-weight-strong); padding: 0 var(--pui-space-sm); }
 .pui .pui-brand-light { font-weight: var(--pui-weight-regular); color: var(--pui-muted); }
 .pui .pui-app-brand { display: contents; }
@@ -406,6 +420,9 @@
 @media (max-width: 720px) {
   .pui .pui-sidebar { position: absolute; z-index: 5; height: 100%; top: 0; width: 260px; left: -260px; transition: left .2s; }
   .pui .pui-sidebar.pui-open { left: 0; }
+  .pui .pui-sidebar.pui-tools { left: auto;right: -300px;width: min(300px,calc(100% - 48px));transition: right .2s; }
+  .pui .pui-sidebar.pui-tools.pui-open { right: 0; }
+  .pui .pui-sidebar-close { display: inline-flex; }
   .pui .pui-sidebar-scrim.pui-visible { display: block; position: absolute; inset: 0; background: var(--pui-overlay); z-index: 4; }
   .pui .pui-mobile-menu { display: inline-flex; margin-right: var(--pui-space-md); }
   .pui .pui-topbar { height: 64px; padding: 0 var(--pui-space-lg); }

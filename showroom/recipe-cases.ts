@@ -39,10 +39,16 @@ const examples: Array<{id: string;title: string;factories: string[];create(conte
   {id:'navigation-overlay',title:'原生标题栏融合',factories:['composeFrame'],create(c) {
     return r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[{id:'demo',name:'Demo workspace',path:'/demo',selected:true,children:[{id:'chat',title:'Demo conversation',active:true}]}],empty:null}},{onAction:action=>{c.log(action);}},{titlebar:'overlay'});
   }},
+  {id:'file-browser',title:'双侧栏与 Workspace 文件',factories:['composeFrame','composeFileBrowser'],create(c) {
+    let state: r.FileBrowserState = {workspaceId:'demo',location:c.state==='browser'?'Server workspace: /srv/demo':'Workspace: /demo',query:'',directories:[{path:'',expanded:true,entries:[{name:'docs',path:'docs',directory:true},{name:'README.md',path:'README.md',directory:false}]}],capabilities:{native:c.state!=='browser',copyFile:c.state!=='browser',copyPathLabel:c.state==='browser'?'Copy server path':'Copy path'}};
+    const browser=r.composeFileBrowser(state,{onSearch(query){state={...state,query,search:{entries:query?[{name:'README.md',path:'README.md',directory:false}]:[]}};browser.update(state);},onRefresh(){c.log('Refresh workspace files');},onToggle(target,expanded){state={...state,directories:[state.directories[0]!,{path:target.path,expanded,entries:[{name:'Guide.md',path:'docs/Guide.md',directory:false}]}]};browser.update(state);},onAction(action,target){c.log(action+': '+target.path);}});
+    const frame=r.composeFrame({workspace:'Demo workspace',conversation:'Demo conversation',navigation:{groups:[],empty:'workspaces'}},{},{main:[p.createTextPart({role:'paragraph',text:'Navigation and tools open independently on wide screens. On phones, open one overlay at a time.'})],tools:{label:'Workspace files',children:[browser.part]}});
+    return {...frame,open(){frame.setToolsOpen(true);}};
+  }},
 ];
 export const recipeCases: readonly ShowcaseCase[] = examples.map(example=>({
   id:'recipe-'+example.id,title:example.title,layer:'blocks',category:'正式区域组合',factories:example.factories,
-  description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:example.id==='composer'?['normal','workspace-write','full-access']:['resources','settings','mcp','connection','preview'].includes(example.id)?['normal','browser']:['normal'],controls:['outcome'],
+  description:'从 pith-ui/recipes 直接引用；所有数据和操作均为演示。',states:example.id==='composer'?['normal','workspace-write','full-access']:['resources','settings','mcp','connection','preview','file-browser'].includes(example.id)?['normal','browser']:['normal'],controls:['outcome'],
   code:recipeCode[example.id]!,
   mount(context) {
     const element=document.createElement('div');element.style.position='relative';element.style.minHeight=example.id.startsWith('navigation')?'440px':'280px';

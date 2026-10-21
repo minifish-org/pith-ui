@@ -2,7 +2,7 @@ import {iconElement} from '../dom.js';
 import {patchChildren} from '../content/views.js';
 import {assertOptions, createOwnedPart, isPartAlive, type Part} from './ownership.js';
 
-export const iconNames = ['steer', 'edit', 'trash', 'branch', 'compress', 'image', 'plus', 'chat', 'folder', 'settings', 'arrow', 'stop', 'chevron', 'down', 'close', 'logout', 'check', 'shield', 'shield-question', 'shield-edit', 'shield-alert', 'file', 'terminal', 'copy', 'menu', 'globe', 'search', 'more', 'compose', 'plug'] as const;
+export const iconNames = ['steer', 'edit', 'trash', 'branch', 'compress', 'image', 'plus', 'chat', 'folder', 'settings', 'arrow', 'stop', 'chevron', 'down', 'close', 'logout', 'check', 'shield', 'shield-question', 'shield-edit', 'shield-alert', 'file', 'terminal', 'copy', 'menu', 'sidebar-left', 'sidebar-right', 'refresh', 'globe', 'search', 'more', 'compose', 'plug'] as const;
 export type IconName = typeof iconNames[number];
 export function assertIconName(name: unknown): asserts name is IconName {
   if (!iconNames.includes(name as IconName)) throw new TypeError('Unknown Pith UI icon.');

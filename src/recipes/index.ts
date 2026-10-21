@@ -13,6 +13,7 @@ export {composeConversationReader, type ConversationReaderComposition} from "./c
 export {formatCost, composeCostLedger, type CostRequestDisplay, type CostLedgerState, type CostSummaryDisplay, type CostLedgerComposition} from "./cost-ledger.js";
 export {customModelDefaults, composeCustomConnection, composeCustomConnectionLoading, type CustomModel, type CustomConnectionState, type CustomModelDraft, type CustomConnectionDraft, type CustomConnectionCallbacks, type CustomConnectionAssembly, type CustomConnectionComposition, type CustomLoadingState, type CustomLoadingAssembly, type CustomLoadingComposition} from "./custom-connection.js";
 export {composeFilePreview, type PreviewKind, type PreviewResult, type PreviewState, type PreviewTarget, type PreviewInput, type PreviewCallbacks, type FilePreviewAssembly, type FilePreviewComposition} from "./file-preview.js";
+export {composeFileBrowser,type BrowserEntry,type BrowserDirectory,type FileBrowserState,type BrowserTarget,type BrowserAction,type FileBrowserCallbacks,type FileBrowserComposition} from './file-browser.js';
 export {composeFrame, type FrameConversation, type FrameWorkspace, type FrameState, type FrameCallbacks, type FrameContent, type FrameAssembly, type FrameComposition} from "./frame.js";
 export {composeFullAccess, type FullAccessState, type FullAccessResult, type FullAccessCallbacks, type FullAccessAssembly, type FullAccessComposition} from "./full-access.js";
 export {composeImageViewer, type ImageViewerInput, type ImageViewerCallbacks, type ImageViewerComposition} from "./image-viewer.js";

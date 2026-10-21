@@ -58,10 +58,15 @@ For a native window whose controls overlay the webview, pass
 `{titlebar: 'overlay'}` as `composeFrame` content (or on `createFramePart`).
 The frame keeps the existing brand and controls, shares a 52px top row with
 the native window buttons, and marks only that row as draggable. It adds no
-window buttons or side panels. The MyGo host supplies `--mygo-titlebar-height`
+window buttons. Supply `tools: {label, children}` for an optional right rail.
+Navigation and tools toggle independently on wide screens and become mutually
+exclusive phone overlays. The MyGo host supplies `--mygo-titlebar-height`
 and `--mygo-titlebar-inset-left/right`; fullscreen changes update the reserved
 space through CSS. Omit the option in ordinary browsers. The application owns
 the native window setting; the library owns layout and drag regions.
+
+See [file browser](./docs/assemblies/file-browser.md) for lazy directory display
+and tool-rail composition. Applications retain file IO, permissions and drafts.
 
 See [region coverage](./docs/assemblies/coverage.md), [settings](./docs/assemblies/settings.md),
 [conversation reader](./docs/assemblies/conversation-reader.md),

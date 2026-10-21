@@ -73,7 +73,7 @@ test('narrow overlay titlebars avoid the native controls and preserve drawer act
   const compact = await page.getByRole('button',{name: 'Compress context',exact: true}).boundingBox();
   expect(title!.width).toBeGreaterThan(40);
   expect(title!.x + title!.width).toBeLessThanOrEqual(compact!.x);
-  const trigger = page.getByRole('button',{name: 'Open sidebar',exact: true});
+  const trigger = page.getByRole('button',{name: 'Toggle navigation',exact: true});
   const triggerBox = await trigger.boundingBox();
   expect(triggerBox!.x).toBeGreaterThanOrEqual(92);
   await trigger.click();await expect(page.locator('.pui-sidebar')).toHaveClass(/pui-open/);
