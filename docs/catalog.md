@@ -123,6 +123,7 @@ Every linked exhibit has a strictly compiled example made from the formal API. S
 | `createSuggestionGroupPart` | [suggestion-group-part](https://minifish-org.github.io/pith-ui/?item=suggestion-group-part) |
 | `createTablePart` | [table-part](https://minifish-org.github.io/pith-ui/?item=table-part) |
 | `createTableRowPart` | [table-row-part](https://minifish-org.github.io/pith-ui/?item=table-row-part) |
+| `createTerminalPart` | [terminal-part](https://minifish-org.github.io/pith-ui/?item=terminal-part) |
 | `createTextFlowPart` | [text-flow-part](https://minifish-org.github.io/pith-ui/?item=text-flow-part) |
 | `createTextPart` | [text-part](https://minifish-org.github.io/pith-ui/?item=text-part) |
 | `createTextareaPart` | [textarea-part](https://minifish-org.github.io/pith-ui/?item=textarea-part) |

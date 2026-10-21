@@ -17,6 +17,7 @@ export const simpleLayouts = {
  createToastPart:p.createToastPart,createToastBodyPart:p.createToastBodyPart,
 } satisfies Record<string,(options:{children:readonly p.Part[]})=>p.Part>;
 export const specialExamples = {
+ createTerminalPart:({disabled,notify}:ExampleControls)=>{const terminal=p.createTerminalPart({label:'Interactive terminal',disabled,onInput:notify,onResize(size){notify(`${size.cols} × ${size.rows}`);}});terminal.write(new TextEncoder().encode('\x1b[32mTerminal 中文\x1b[0m\r\n$ '));return terminal;},
  createButtonPart:({disabled,notify}:ExampleControls)=>p.createActionsPart({children:[
   p.createButtonPart({label:'Save',variant:'primary',disabled,onAction(){notify('Save');}}),
   p.createButtonPart({label:'Secondary',variant:'secondary',disabled,onAction(){notify('Secondary');}}),

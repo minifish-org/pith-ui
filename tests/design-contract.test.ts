@@ -47,6 +47,9 @@ test('the design contract has three text roles, two font stacks and five spacing
 test('authored CSS consumes shared type and gap tokens instead of adding local scales', () => {
   const violations: string[] = [];
   for (const file of cssFiles) {
+    // Upstream's xterm renderer has its own cell/scrollbar geometry. Its exact
+    // pinned CSS and the scope prefix are checked independently below.
+    if (file === join(root,'src/xterm-vendor.css')) continue;
     const css = readFileSync(file,'utf8').replace(/\/\*[\s\S]*?\*\//g,'');
     for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       for (const declaration of rule[2].matchAll(/([\w-]+)\s*:\s*([^;{}]+)(?:;|$)/g)) {
@@ -58,6 +61,12 @@ test('authored CSS consumes shared type and gap tokens instead of adding local s
     }
   }
   assert.deepEqual(violations,[]);
+});
+
+test('xterm vendor CSS exactly matches its pinned dependency inside the terminal scope', () => {
+  const upstream = readFileSync(join(root,'node_modules/@xterm/xterm/css/xterm.css'),'utf8');
+  const scoped = upstream.replace(/(\.xterm[^{}]*)(?=\{)/g,selectors => selectors.split(',').map(selector => '.pui .pui-terminal-viewport '+selector.trim()).join(',\n')+' ');
+  assert.equal(readFileSync(join(root,'src/xterm-vendor.css'),'utf8'),'/* Scoped from @xterm/xterm 6.0.0. Preserve the upstream license below. */\n'+scoped);
 });
 
 const styleProperties = new Map([['fontSize','font-size'],['fontFamily','font-family'],['fontWeight','font-weight'],['lineHeight','line-height'],['font','font'],['gap','gap'],['rowGap','row-gap'],['columnGap','column-gap']]);

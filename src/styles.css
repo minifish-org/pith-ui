@@ -1,6 +1,8 @@
 @import "./design.css";
 @import "./primitives.css";
 @import "./palette.css";
+@import './xterm-vendor.css';
+@import './terminal.css';
 
 .pui .pui-feature-actions { display: contents; }
 .pui .pui-field > .pui-field-label { margin: 0; }

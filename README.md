@@ -5,7 +5,7 @@ Native TypeScript parts for AI-assisted application development. Compose buttons
 The package exports `pith-ui` and `pith-ui/styles.css`. Parts expose no generated element, HTML, selector, class, style, pixel or animation options. A checked mount is the only DOM input. There is no public application, page or scene factory.
 
 ```sh
-npm install --save-exact pith-ui@0.8.8
+npm install --save-exact pith-ui@0.10.0
 ```
 
 ```ts
@@ -28,6 +28,11 @@ The frame supports independent wide navigation and optional tool rails, with
 mutually exclusive phone overlays and matching focus restoration. Compose a
 [lazy file browser](docs/assemblies/file-browser.md) in the tool rail; directory
 reads, search, native actions, downloads and draft references remain host intents.
+The [manual terminal](docs/assemblies/terminal.md) wraps pinned xterm.js and
+addon-fit, with ANSI/UTF-8, theme, fit, selection/copy/paste, touch keys and a
+parse-completion callback for flow control. The Files/Terminal switch retains
+both views. Host applications own PTYs, sessions, authentication, leases,
+transport, output history and process cleanup; UI disposal never stops a shell.
 
 Browser hosts can supply file delivery labels, connection hints and OAuth
 availability without replacing shared regions. The showroom's browser states

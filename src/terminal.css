@@ -1,0 +1,20 @@
+/* Terminal geometry belongs to the shared component, including hidden views. */
+.pui .pui-workspace-tools, .pui .pui-tool-view, .pui .pui-terminal {
+  display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0;
+}
+.pui .pui-workspace-tools > .pui-actions { padding: 8px 12px; }
+.pui .pui-terminal { padding: 0 10px 10px; gap: var(--pui-space-xs); overflow: hidden; }
+.pui .pui-terminal-heading { flex: 0 1 auto; min-height: 24px; max-height: 45%; overflow: auto; display: grid; gap: var(--pui-space-xs); }
+.pui .pui-terminal-heading > p, .pui .pui-terminal-heading > .pui-feature-hint, .pui .pui-terminal-heading > .pui-form-error { margin: 0; overflow-wrap: anywhere; }
+.pui .pui-terminal-heading > .pui-actions { gap: var(--pui-space-xs); flex-wrap: wrap; justify-content: start; }
+.pui .pui-terminal > .pui-actions { flex: 0 0 auto; gap: var(--pui-space-xs); flex-wrap: wrap; }
+.pui .pui-terminal .pui-secondary-button { min-height: 32px; padding: 5px 8px; font-size: var(--pui-text-small); }
+.pui .pui-terminal-viewport { flex: 1; min-width: 0; min-height: 30px; overflow: hidden; background: var(--pui-surface); color: var(--pui-text); font-size: var(--pui-text-medium); font-family: var(--pui-font-code); }
+.pui .pui-terminal-viewport .xterm { height: 100%; }
+.pui .pui-terminal-viewport .xterm .xterm-viewport { background-color: var(--pui-surface); }
+.pui .pui-terminal-reader { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: pre; }
+.pui .pui-terminal-viewport textarea.xterm-helper-textarea { font-size: var(--pui-text-large); min-height: 0; max-height: none; }
+.pui .pui-workspace-tools [hidden] { display: none !important; }
+@media (pointer: coarse) {
+  .pui .pui-terminal .pui-secondary-button { min-height: 36px; }
+}

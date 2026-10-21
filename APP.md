@@ -67,6 +67,8 @@ the native window setting; the library owns layout and drag regions.
 
 See [file browser](./docs/assemblies/file-browser.md) for lazy directory display
 and tool-rail composition. Applications retain file IO, permissions and drafts.
+See [manual terminal](./docs/assemblies/terminal.md) for xterm presentation and
+retained Files/Terminal switching. Applications retain shell and transport lifetimes.
 
 See [region coverage](./docs/assemblies/coverage.md), [settings](./docs/assemblies/settings.md),
 [conversation reader](./docs/assemblies/conversation-reader.md),

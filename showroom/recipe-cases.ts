@@ -5,6 +5,13 @@ import type {DemoContext,ShowcaseCase} from './types.js';
 
 type Region = {part: p.Part;open?(): void;destroy(): void};
 const examples: Array<{id: string;title: string;factories: string[];create(context: DemoContext): Region}> = [
+  {id:'terminal',title:'交互终端与工具切换',factories:['composeTerminal','composeWorkspaceTools'],create(c) {
+    const terminal=r.composeTerminal({location:'Demo host',directory:'Initial directory: /demo',status:'Demonstration only',connected:true,exists:true},{onInput(data){terminal.write(new TextEncoder().encode(data));},onClose(){c.log('Close session intent');},onCopy:c.action});
+    terminal.write(new TextEncoder().encode('\x1b[32mTerminal 中文\x1b[0m\r\n$ '));
+    const tools=r.composeWorkspaceTools({files:p.createTextPart({text:'File browser placeholder'}),terminal:terminal.part});tools.select('terminal');
+    const frame=r.composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{tools:{label:'Workspace tools',children:[tools.part]}});
+    return {...frame,open(){frame.setToolsOpen(true);}};
+  }},
   {id:'settings',title:'设置区域',factories:['composeSettings'],create(c) {
     const region=r.composeSettings({baseUrl:'https://provider.example/v1',hasApiKey:true,ready:true,disabled:c.state==='disabled',...(c.state==='browser'?{connectionHint:'Requests run on the remote host; localhost refers to that host.',diagnosticsLabel:'Download diagnostics',updatesAvailable:false}:{})},{onSubmit:c.action,onTest:c.action,onRemoveKey:c.action,onProviderAction:c.action});
     region.setProviders([{id:'demo',name:'Demo provider',configured:true}],'demo');

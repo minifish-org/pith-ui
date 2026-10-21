@@ -55,3 +55,11 @@ scrim and focus restoration. `file-browser.spec.ts` checks retained search input
 and selection, lazy directory intents, original file targets and workspace reset.
 Desk covers authenticated directory IO, search bounds, retired responses,
 native actions and persistent drafts using the public recipes.
+
+`terminal.spec.ts` checks byte-fragmented UTF-8/ANSI, Chinese/emoji text input,
+focus-local control keys, selection/copy, retained views, stale paste/reset
+callbacks, root disposal and short visual-viewport fitting in both engines.
+The pinned upstream CSS has an exact-content/scope check independent of authored
+design tokens. Desk checks real PTYs, bounded parse acknowledgements/history,
+leases, reconnect, process cleanup, vim/top and actual macOS WebView integration.
+Soft-keyboard automation does not establish physical phone acceptance.
