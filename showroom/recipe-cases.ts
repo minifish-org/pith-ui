@@ -6,7 +6,7 @@ import type {DemoContext,ShowcaseCase} from './types.js';
 type Region = {part: p.Part;open?(): void;destroy(): void};
 const examples: Array<{id: string;title: string;factories: string[];create(context: DemoContext): Region}> = [
   {id:'web-preview',title:'轻量网页预览',factories:['composeWebPreview'],create(c) {
-    const preview=r.composeWebPreview({url:'',disabled:c.state==='disabled',pending:c.state==='loading',error:c.state==='error'?'Preview unavailable. Check the project and refresh.':''},{onNavigate:address=>c.log('Navigate: '+address),onRefresh:()=>c.log('Refresh preview'),onExternal:url=>c.log('Open: '+url)});
+    const preview=r.composeWebPreview({url:'',presentation:c.state==='browser'?'external':'native',disabled:c.state==='disabled',pending:c.state==='loading',error:c.state==='error'?'Preview unavailable. Check the project and refresh.':''},{onNavigate:address=>c.log('Navigate: '+address),onRefresh:()=>c.log('Refresh preview'),onExternal:url=>c.log('Open: '+url)});
     const tools=r.composeWorkspaceTools({tabs:[{id:'preview',kind:'preview',label:'Web'}],activeId:'preview',location:c.state==='browser'?'Server':'Local',detail:'Demo',webPreview:true});tools.attach('preview',preview.part);
     const frame=r.composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{tools:{label:'Workspace tools',layout:'tabs',close:tools.dismiss,children:[tools.part]}});
     return {...frame,open(){frame.setToolsOpen(true);}};

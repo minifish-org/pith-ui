@@ -50,9 +50,9 @@ not replace a real iOS/Android soft-keyboard acceptance check.
 
 `tests/web-preview.spec.ts` covers the single-row toolbar at 240px, Return
 navigation, the refresh icon and external-opening context menu, error-only
-feedback, address-draft and iframe retention, sandbox
-permissions, unsafe/same-origin address rejection, the optional tool intent and
-frame teardown on disable/disposal. Desk covers URL admission, isolated preview
+feedback, address-draft retention, native geometry/visibility reports, modal/popover
+yielding, unsafe/same-origin metadata rejection, independent tool intents and
+report teardown on disable/disposal. Neither presentation creates an iframe. Desk covers URL admission, isolated preview
 grants, credential stripping, lease revocation, real Vite HMR and WKWebView use.
 
 `parts-titlebar.spec.ts` verifies one compact header height across navigation,

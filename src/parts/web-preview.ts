@@ -1,32 +1,31 @@
 import {assertOptions,createOwnedPart,isPartAlive,type Part} from './ownership.js';
 
-export interface WebPreviewPartState {url: string;disabled?: boolean;revision?: number}
-export interface WebPreviewPart extends Part {update(state: Readonly<WebPreviewPartState>): void}
+export interface WebPreviewBounds {x:number;y:number;width:number;height:number}
+export interface WebPreviewPartState {disabled?:boolean}
+export interface WebPreviewPart extends Part {update(state:Readonly<WebPreviewPartState>):void}
 
-/** Sandboxed, separate-origin web content. The host admits addresses and owns
- * proxy/authentication policy; this part never reads the frame or its messages. */
-export function createWebPreviewPart(initial: WebPreviewPartState): WebPreviewPart {
-  const node = document.createElement('div');node.className = 'pui-web-preview-viewport';
-  let frame: HTMLIFrameElement|undefined,url = '',revision: number|undefined;
-  function update(state: Readonly<WebPreviewPartState>): void {
-    assertOptions(state,['url','disabled','revision'],'web preview');
-    if (typeof state.url !== 'string' || state.disabled !== undefined && typeof state.disabled !== 'boolean' || state.revision !== undefined && !Number.isSafeInteger(state.revision)) throw new TypeError('Invalid web preview state.');
-    if (state.url) {
-      const target = new URL(state.url);
-      if (!['http:','https:'].includes(target.protocol) || target.username || target.password || target.origin === location.origin) throw new TypeError('Web previews require a separate HTTP or HTTPS origin.');
-    }
-    if (!isPartAlive(part)) return;
-    const next = state.disabled ? '' : state.url;
-    if (next === url && state.revision === revision) return;
-    frame?.remove();frame = undefined;url = next;revision = state.revision;
-    if (!next) return;
-    frame = document.createElement('iframe');frame.title = 'Web preview';
-    frame.sandbox.add('allow-scripts','allow-forms','allow-same-origin');
-    frame.referrerPolicy = 'no-referrer';
-    frame.allow = "camera 'none'; microphone 'none'; geolocation 'none'; clipboard-read 'none'; clipboard-write 'none'; usb 'none'; serial 'none'";
-    frame.src = next;node.append(frame);
+/** An opaque viewport for host-rendered content. No webpage or credentials enter
+ * the DOM. Coordinates are CSS pixels; the native host owns rendering and scale. */
+export function createWebPreviewPart(initial:WebPreviewPartState,onViewport?:(bounds:WebPreviewBounds|null)=>void):WebPreviewPart {
+  const node=document.createElement('div');node.className='pui-web-preview-viewport';
+  let disabled=true,frame=0,last='';
+  function report(bounds:WebPreviewBounds|null) {
+    const key=JSON.stringify(bounds);if(key===last)return;last=key;onViewport?.(bounds);
   }
-  const part = createOwnedPart(node,{update},{dispose() {frame?.remove();frame=undefined;url='';}});
-  try {update(initial);} catch (error) {part.destroy();throw error;}
+  function measure() {
+    frame=0;if(!isPartAlive(part) || disabled)return;
+    const rect=node.getBoundingClientRect();
+    const visible=!disabled && node.isConnected && !node.closest('[hidden],[inert]') && rect.width>0 && rect.height>0 && document.visibilityState==='visible' && !document.querySelector(':modal, :popover-open');
+    report(visible ? {x:Math.max(0,rect.x),y:Math.max(0,rect.y),width:Math.max(0,Math.min(rect.right,innerWidth)-Math.max(0,rect.x)),height:Math.max(0,Math.min(rect.bottom,innerHeight)-Math.max(0,rect.y))}:null);
+    if(isPartAlive(part) && !disabled)frame=requestAnimationFrame(measure);
+  }
+  function update(state:Readonly<WebPreviewPartState>) {
+    assertOptions(state,['disabled'],'web preview');
+    if(state.disabled!==undefined && typeof state.disabled!=='boolean')throw new TypeError('Invalid web preview state.');
+    if(!isPartAlive(part))return;disabled=!!state.disabled;
+    if(disabled){cancelAnimationFrame(frame);frame=0;if(last)report(null);}else if(onViewport && !frame)frame=requestAnimationFrame(measure);
+  }
+  const part=createOwnedPart(node,{update},{dispose(){cancelAnimationFrame(frame);report(null);}});
+  try {update(initial);}catch(error){part.destroy();throw error;}
   return part;
 }

@@ -17,33 +17,44 @@ test('web toolbar stays on one line with only an address and refresh icon',async
   await expect(page.locator('.pui-web-preview > .pui-feature-hint:visible')).toHaveCount(0);
 });
 
-test('web preview keeps address drafts and the live frame across metadata updates; sandbox and disposal remain bounded',async({page})=>{
-  let loads=0;
-  await page.route('https://preview.example.test/**',route=>{loads++;return route.fulfill({contentType:'text/html',body:'<button onclick="this.textContent=\'Clicked\'">Project action</button>'});});
+
+test('native viewport retains address drafts, reports geometry and yields to popovers, dialogs, hidden tabs and disposal',async({page})=>{
+  let requests=0;await page.route('https://preview.example.test/**',route=>{requests++;return route.abort();});
   await page.goto('/tests/fixture.html');
   await page.evaluate(async()=>{
     const pp='/src/parts/index.ts',rr='/src/recipes/index.ts',p=await import(pp),r=await import(rr),events:unknown[]=[];
-    let state={url:'https://preview.example.test/',externalUrl:'https://preview.example.test/',error:''};
-    const preview=r.composeWebPreview(state,{onNavigate:(value:string)=>events.push(value),onRefresh:()=>events.push('refresh'),onExternal:(value:string)=>events.push(value)});
-    const tools=r.composeWorkspaceTools({tabs:[{id:'preview',kind:'preview',label:'Web'}],activeId:'preview',location:'Local',detail:'',webPreview:true});tools.attach('preview',preview.part);
+    let state={url:'https://preview.example.test/',externalUrl:'https://preview.example.test/',presentation:'native',error:''};
+    const preview=r.composeWebPreview(state,{onNavigate:(v:string)=>events.push(v),onRefresh:()=>events.push('refresh'),onExternal:(v:string)=>events.push(v),onViewport:(v:unknown)=>Object.assign(window,{bounds:v})});
+    const tools=r.composeWorkspaceTools({tabs:[{id:'web',kind:'preview',label:'Web'},{id:'other',kind:'files',label:'Files'}],activeId:'web',location:'Local',detail:'',webPreview:true});tools.attach('web',preview.part);
     const frame=r.composeFrame({navigation:{groups:[],empty:'workspaces'}},{},{tools:{label:'Workspace tools',layout:'tabs',close:tools.dismiss,children:[tools.part]}});
     const tree=p.mountParts(document.body.appendChild(document.createElement('div')),frame.part);frame.setToolsOpen(true);
-    Object.assign(window,{previewTest:{tree,events,preview,update(next:object){state={...state,...next};preview.update(state);},reject(){for(const url of [location.href,'javascript:alert(1)','https://user:secret@example.test']){let threw=false;try{p.createWebPreviewPart({url})}catch{threw=true}if(!threw)throw Error('Unsafe frame admitted')}}}});
+    Object.assign(window,{previewTest:{events,preview,tree,frame,tools,update(next:object){state={...state,...next};preview.update(state);}}});
   });
-  const frame=page.locator('iframe[title="Web preview"]'),address=page.getByRole('textbox',{name:'Web address',exact:true});
-  await expect(frame).toHaveAttribute('sandbox','allow-scripts allow-forms allow-same-origin');await expect(frame).toHaveAttribute('referrerpolicy','no-referrer');
-  await page.frameLocator('iframe').getByRole('button',{name:'Project action'}).click();await expect(page.frameLocator('iframe').getByRole('button',{name:'Clicked'})).toBeVisible();
-  await address.fill('https://typed.example.test/draft');await page.evaluate(()=>(window as any).previewTest.update({error:'Temporary issue'}));
-  await expect(page.locator('.pui-web-preview > .pui-form-error')).toHaveText('Temporary issue');
-  await expect(address).toHaveValue('https://typed.example.test/draft');await expect(page.frameLocator('iframe').getByRole('button',{name:'Clicked'})).toBeVisible();expect(loads).toBe(1);
-  await page.evaluate(()=>(window as any).previewTest.update({error:''}));await expect(page.locator('.pui-web-preview > .pui-form-error')).toBeHidden();
-  const refresh=page.getByRole('button',{name:'Refresh',exact:true});
-  await address.press('Enter');await refresh.click();await refresh.click({button:'right'});await page.getByRole('menuitem',{name:'Open externally',exact:true}).click();
-  expect(await page.evaluate(()=>(window as any).previewTest.events)).toEqual(['https://typed.example.test/draft','refresh','https://preview.example.test/']);
-  await refresh.press('Shift+F10');await expect(page.getByRole('menuitem',{name:'Open externally',exact:true})).toBeVisible();await page.keyboard.press('Escape');
-  expect(await page.evaluate(()=>{try{(window as any).previewTest.preview.update({url:'https://preview.example.test/',externalUrl:'javascript:alert(1)'});return false}catch{return true}})).toBe(true);
-  await expect(page.frameLocator('iframe').getByRole('button',{name:'Clicked'})).toBeVisible();
-  await page.getByRole('button',{name:'New tool tab',exact:true}).click();await expect(page.getByRole('menuitem',{name:'New Web',exact:true})).toBeVisible();
-  await page.keyboard.press('Escape');await page.evaluate(()=>(window as any).previewTest.update({disabled:true}));await expect(frame).toHaveCount(0);await expect(address).toBeDisabled();
-  await page.evaluate(()=>{const h=(window as any).previewTest;h.reject();h.tree.destroy();h.preview.update({url:'https://preview.example.test/'});});await expect(frame).toHaveCount(0);
+  const bounds=()=>page.evaluate(()=>(window as any).bounds);
+  await expect.poll(async()=>(await bounds())?.height??0).toBeGreaterThan(100);
+  expect(requests).toBe(0);await expect(page.locator('iframe')).toHaveCount(0);
+  const address=page.getByRole('textbox',{name:'Web address',exact:true,includeHidden:true});await address.fill('https://typed.example.test/draft');
+  await page.evaluate(()=>(window as any).previewTest.update({error:'Temporary issue'}));await expect(address).toHaveValue('https://typed.example.test/draft');
+  const refresh=page.getByRole('button',{name:'Refresh',exact:true});await address.press('Enter');await refresh.click();await refresh.press('Shift+F10');
+  await expect.poll(bounds).toBeNull();await page.getByRole('menuitem',{name:'Open externally',exact:true}).click();
+  await expect.poll(bounds).not.toBeNull();expect(await page.evaluate(()=>(window as any).previewTest.events)).toEqual(['https://typed.example.test/draft','refresh','https://preview.example.test/']);
+  await page.evaluate(()=>{const dialog=document.createElement('dialog');dialog.textContent='Native host must yield';document.body.append(dialog);dialog.showModal();});
+  await expect.poll(bounds).toBeNull();await page.evaluate(()=>document.querySelector('dialog')!.remove());await expect.poll(bounds).not.toBeNull();
+  await page.evaluate(()=>(window as any).previewTest.tools.update({tabs:[{id:'web',kind:'preview',label:'Web'},{id:'other',kind:'files',label:'Files'}],activeId:'other',location:'Local',detail:''}));await expect.poll(bounds).toBeNull();
+  await page.evaluate(()=>(window as any).previewTest.update({disabled:true}));await expect(address).toBeDisabled();
+  await page.evaluate(()=>{const h=(window as any).previewTest;h.tree.destroy();h.preview.update({url:'https://preview.example.test/'});});await expect.poll(bounds).toBeNull();
+});
+
+test('external presentation never creates browser content; unsafe metadata is rejected',async({page})=>{
+  await page.goto('/tests/fixture.html');
+  await page.evaluate(async()=>{
+    const rr='/src/recipes/index.ts',r=await import(rr);
+    for(const url of ['https://example.test/','http://8.8.8.8/','http://192.168.1.20:3000/','https://[fd00::1]/','http://localhost/']) {
+      const preview=r.composeWebPreview({url,externalUrl:url,presentation:'external'});preview.destroy();
+    }
+    for(const url of [location.href,'javascript:alert(1)']) {
+      let threw=false;try{r.composeWebPreview({url})}catch{threw=true}if(!threw)throw Error('Unsafe metadata admitted');
+    }
+  });
+  await expect(page.locator('iframe')).toHaveCount(0);
 });

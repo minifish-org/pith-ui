@@ -1,13 +1,14 @@
-import {createButtonPart,createFeedbackPart,createInputPart,createMenuPart,createStackPart,createWebPreviewPart} from '../parts/index.js';
+import {createButtonPart,createFeedbackPart,createInputPart,createMenuPart,createStackPart,createWebPreviewPart,type WebPreviewBounds} from '../parts/index.js';
 import {nodeOf,onPartDestroy} from '../parts/ownership.js';
 
-export interface WebPreviewState {url: string;externalUrl?: string;disabled?: boolean;pending?: boolean;revision?: number;error?: string}
-export interface WebPreviewCallbacks {onNavigate?(address: string): void;onRefresh?(): void;onExternal?(url: string): void}
+export interface WebPreviewState {url: string;externalUrl?: string;disabled?: boolean;pending?: boolean;error?: string;presentation?:'native'|'external'}
+export interface WebPreviewCallbacks {onNavigate?(address: string): void;onRefresh?(): void;onExternal?(url: string): void;onViewport?(bounds:WebPreviewBounds|null):void}
 
-/** One address draft and one iframe. Requests and URL admission stay in the host. */
+/** Address controls and a host-rendered viewport. Requests and URL admission stay in the host. */
 export function composeWebPreview(initial: Readonly<WebPreviewState>,callbacks: WebPreviewCallbacks = {}) {
   const validate=(next:Readonly<WebPreviewState>)=>{
-    for(const value of [next.url,next.externalUrl])if(value){const target=new URL(value);if(!['http:','https:'].includes(target.protocol)||target.username||target.password||target.origin===location.origin)throw new TypeError('Web preview addresses require a separate HTTP or HTTPS origin.');}
+    if(next.presentation!==undefined && !['native','external'].includes(next.presentation))throw new TypeError('Invalid web preview presentation.');
+    for(const value of [next.url,next.externalUrl])if(value){const target=new URL(value);if(!['http:','https:'].includes(target.protocol)||target.origin===location.origin)throw new TypeError('Web preview addresses require a separate HTTP or HTTPS origin.');}
   };
   validate(initial);
   let alive=true,state=initial;
@@ -18,7 +19,7 @@ export function composeWebPreview(initial: Readonly<WebPreviewState>,callbacks: 
   const menuKey=(event:Event)=>{if(event instanceof KeyboardEvent && (event.key==='ContextMenu' || event.shiftKey && event.key==='F10'))openMenu(event);};
   const refreshNode=nodeOf(refresh);refreshNode.addEventListener('contextmenu',openMenu);refreshNode.addEventListener('keydown',menuKey);
   const toolbar=createStackPart({children:[address,refresh]});nodeOf(toolbar).className='pui-web-preview-toolbar';
-  const feedback=createFeedbackPart({message:'',tone:'error',hidden:true}),viewport=createWebPreviewPart({url:initial.url,disabled:initial.disabled,revision:initial.revision});
+  const feedback=createFeedbackPart({message:'',tone:'error',hidden:true}),viewport=createWebPreviewPart({disabled:initial.disabled || initial.presentation!=='native'},callbacks.onViewport);
   const part=createStackPart({children:[toolbar,feedback,viewport,menu]});nodeOf(part).className='pui-web-preview';
   function update(next:Readonly<WebPreviewState>) {
     if(!alive)return;validate(next);state=next;
@@ -26,7 +27,7 @@ export function composeWebPreview(initial: Readonly<WebPreviewState>,callbacks: 
     refresh.update({label:'Refresh',title:'Refresh',icon:'refresh',variant:'quiet-icon',disabled:!!next.disabled || !!next.pending || !next.externalUrl});
     if(next.disabled || next.pending || !next.externalUrl)menu.close();
     feedback.update({message:next.error??'',tone:'error',hidden:!next.error});
-    viewport.update({url:next.url,disabled:next.disabled,revision:next.revision});
+    viewport.update({disabled:next.disabled || next.presentation!=='native'});
   }
   onPartDestroy(part,()=>{alive=false;refreshNode.removeEventListener('contextmenu',openMenu);refreshNode.removeEventListener('keydown',menuKey);});update(initial);
   return {part,update,resetAddress:address.reset,destroy:part.destroy};

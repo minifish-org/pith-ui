@@ -2,7 +2,7 @@
 // independently verified assemblies made only from these constrained parts.
 export {mountParts, type Part, type MountedParts, type MountPartsOptions} from './ownership.js';
 export {createTerminalPart,type TerminalPart,type TerminalPartOptions,type TerminalPartState} from './terminal.js';
-export {createWebPreviewPart,type WebPreviewPart,type WebPreviewPartState} from './web-preview.js';
+export {createWebPreviewPart,type WebPreviewPart,type WebPreviewPartState,type WebPreviewBounds} from './web-preview.js';
 export {createButtonPart, type ButtonPart, type ButtonPartState, type ButtonPartOptions, type ButtonVariant} from './button.js';
 export {createTextPart, createIconPart, type TextPart, type TextPartState, type TextRole, type IconPart, type IconPartState, type IconName} from './text.js';
 export {createActionsPart, createFooterPart, createToolbarPart, createStackPart, type LayoutPart, type StackPart, type StackPartState, type ActionsPart, type ActionsPartState, type ToolbarPart, type ToolbarPartState, type ToolbarPurpose} from './layout.js';

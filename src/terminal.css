@@ -8,7 +8,6 @@
 .pui .pui-web-preview, .pui .pui-web-preview-viewport { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .pui .pui-web-preview-toolbar { display: flex; align-items: center; gap: var(--pui-space-xs); padding: var(--pui-space-sm); }
 .pui .pui-web-preview-toolbar input { flex: 1; width: 0; min-width: 0; }
-.pui .pui-web-preview-viewport iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: white; }
 .pui .pui-tool-tabs-heading { display: flex; flex: 0 0 auto; align-items: center; min-width: 0; height: var(--pui-frame-header-height); padding: var(--pui-space-xs); gap: var(--pui-space-xs); }
 .pui .pui-tool-tabs { display: flex; flex: 1; min-width: 0; height: 100%; overflow-x: auto; scrollbar-width: none; align-items: center; gap: var(--pui-space-xs); }
 .pui .pui-tool-tab { display: flex; flex: 0 0 auto; align-items: center; border-radius: 5px; }
