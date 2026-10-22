@@ -1,6 +1,6 @@
 # Public constrained parts API
 
-Generated for `pith-ui@0.10.0` by `node scripts/api-docs.ts` from TypeScript declaration emit. Installed declarations are authoritative. This reference covers 138 public factories and all reachable state, options, callbacks and opaque handles.
+Generated for `pith-ui@0.11.0` by `node scripts/api-docs.ts` from TypeScript declaration emit. Installed declarations are authoritative. This reference covers 139 public factories and all reachable state, options, callbacks and opaque handles.
 
 Only names in the public index may be imported from `pith-ui`. The package also exports `pith-ui/styles.css`. Parts accept literal content, finite semantic options, state and data callbacks; they expose no DOM, CSS, pixel or animation ports. `mountParts` is the sole ordinary-container boundary. See [AI.md](./AI.md), the [assembly guide](./APP.md) and [shared recipes](./docs/assemblies/coverage.md).
 
@@ -147,6 +147,7 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 | [`createTreeItemPart`](#createtreeitempart) | [tree-item-part](https://minifish-org.github.io/pith-ui/?item=tree-item-part) |
 | [`createTreePart`](#createtreepart) | [tree-part](https://minifish-org.github.io/pith-ui/?item=tree-part) |
 | [`createWarningPart`](#createwarningpart) | [warning-part](https://minifish-org.github.io/pith-ui/?item=warning-part) |
+| [`createWebPreviewPart`](#createwebpreviewpart) | [web-preview-part](https://minifish-org.github.io/pith-ui/?item=web-preview-part) |
 | [`createWorkingIndicatorPart`](#createworkingindicatorpart) | [working-indicator-part](https://minifish-org.github.io/pith-ui/?item=working-indicator-part) |
 | [`createZoomImagePart`](#createzoomimagepart) | [zoom-image-part](https://minifish-org.github.io/pith-ui/?item=zoom-image-part) |
 | [`mountParts`](#mountparts) | [button-parts](https://minifish-org.github.io/pith-ui/?item=button-parts) |
@@ -381,6 +382,8 @@ Regenerate: `node scripts/api-docs.ts`. Verify without writing: `node scripts/ap
 - [`TreePart`](#treepart)
 - [`TreePartState`](#treepartstate)
 - [`ValuePart`](#valuepart)
+- [`WebPreviewPart`](#webpreviewpart)
+- [`WebPreviewPartState`](#webpreviewpartstate)
 - [`WorkingIndicatorPart`](#workingindicatorpart)
 - [`WorkingIndicatorPartState`](#workingindicatorpartstate)
 - [`ZoomImageOptions`](#zoomimageoptions)
@@ -410,7 +413,7 @@ The following supporting names explain signatures and private opaque identity. T
 
 ### LocalContentLink
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/content/markdown.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/content/markdown.ts#L5)
 
 ```ts
 export interface LocalContentLink {
@@ -421,7 +424,7 @@ export interface LocalContentLink {
 
 ### ReadingSearchState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/content/reading-engine.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/content/reading-engine.ts#L3)
 
 ```ts
 export interface ReadingSearchState {
@@ -435,7 +438,7 @@ export interface ReadingSearchState {
 
 ### ActionResult
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/core.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/core.ts#L8)
 
 ```ts
 export type ActionResult = {
@@ -448,7 +451,7 @@ export type ActionResult = {
 
 ### UIAction
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/core.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/core.ts#L9)
 
 ```ts
 export type UIAction = () => void | ActionResult | Promise<void | ActionResult>;
@@ -458,7 +461,7 @@ Referenced declarations: [`ActionResult`](#actionresult).
 
 ### AnnouncementPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/announcement.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/announcement.ts#L4)
 
 ```ts
 export interface AnnouncementPart extends Part {
@@ -470,7 +473,7 @@ Referenced declarations: [`AnnouncementPartState`](#announcementpartstate), [`Pa
 
 ### AnnouncementPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/announcement.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/announcement.ts#L3)
 
 ```ts
 export interface AnnouncementPartState {
@@ -480,7 +483,7 @@ export interface AnnouncementPartState {
 
 ### createAnnouncementPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/announcement.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/announcement.ts#L10)
 
 ```ts
 /** A native polite live region with library-owned screen-reader presentation. */
@@ -491,7 +494,7 @@ Referenced declarations: [`AnnouncementPart`](#announcementpart), [`Announcement
 
 ### BrandMarkOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/brand.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/brand.ts#L3)
 
 ```ts
 export type BrandMarkOptions = {
@@ -509,7 +512,7 @@ export type BrandMarkOptions = {
 
 ### BrandMarkPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/brand.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/brand.ts#L6)
 
 ```ts
 export interface BrandMarkPart extends Part {
@@ -520,7 +523,7 @@ Referenced declarations: [`Part`](#part).
 
 ### BrandPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/brand.ts#L36)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/brand.ts#L36)
 
 ```ts
 export interface BrandPart extends Part {
@@ -532,7 +535,7 @@ Referenced declarations: [`BrandPartState`](#brandpartstate), [`Part`](#part).
 
 ### BrandPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/brand.ts#L35)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/brand.ts#L35)
 
 ```ts
 export interface BrandPartState {
@@ -543,7 +546,7 @@ export interface BrandPartState {
 
 ### createBrandMarkPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/brand.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/brand.ts#L11)
 
 ```ts
 /** A fixed named symbol or image resource. Its geometry belongs to the library. */
@@ -554,7 +557,7 @@ Referenced declarations: [`BrandMarkOptions`](#brandmarkoptions), [`BrandMarkPar
 
 ### createBrandPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/brand.ts#L41)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/brand.ts#L41)
 
 ```ts
 /** Wordmark and optional mark, using the established native display-contents structure. */
@@ -567,7 +570,7 @@ Referenced declarations: [`BrandMarkPart`](#brandmarkpart), [`BrandPart`](#brand
 
 ### ButtonPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L37)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L37)
 
 ```ts
 export interface ButtonPart extends Part {
@@ -581,7 +584,7 @@ Referenced declarations: [`ButtonPartState`](#buttonpartstate), [`Part`](#part).
 
 ### ButtonPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L31)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L31)
 
 ```ts
 export type ButtonPartOptions = (ButtonPartState & {
@@ -600,7 +603,7 @@ Referenced declarations: [`ButtonPartState`](#buttonpartstate), [`PromptButtonSt
 
 ### ButtonPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L23)
 
 ```ts
 export type ButtonPartState = PromptButtonState | ButtonState & {
@@ -643,7 +646,7 @@ Referenced declarations: [`ButtonState`](#buttonstate), [`IconName`](#iconname),
 
 ### ButtonState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L10)
 
 ```ts
 interface ButtonState {
@@ -659,7 +662,7 @@ interface ButtonState {
 
 ### ButtonVariant
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L9)
 
 ```ts
 export type ButtonVariant = OrdinaryButtonVariant | NavigationButtonVariant | 'quiet-icon' | 'counter' | 'picker' | 'suggestion' | 'overlay-close' | 'context-icon' | 'submit-icon' | 'stop-icon' | 'dismiss-icon';
@@ -669,7 +672,7 @@ Referenced declarations: [`NavigationButtonVariant`](#navigationbuttonvariant), 
 
 ### createButtonPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L82)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L82)
 
 ```ts
 /** Retained product button markup, backed by the existing action controller. */
@@ -680,7 +683,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`ButtonPartOptions`](#but
 
 ### NavigationButtonVariant
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L8)
 
 ```ts
 type NavigationButtonVariant = 'navigation' | 'navigation-item' | 'toolbar-action' | 'drawer-trigger' | 'previous-match' | 'latest' | 'quiet-action';
@@ -688,7 +691,7 @@ type NavigationButtonVariant = 'navigation' | 'navigation-item' | 'toolbar-actio
 
 ### OrdinaryButtonVariant
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L7)
 
 ```ts
 type OrdinaryButtonVariant = 'standard' | 'primary' | 'secondary' | 'danger' | 'warning' | 'caution' | 'text-action' | 'compact-choice';
@@ -696,7 +699,7 @@ type OrdinaryButtonVariant = 'standard' | 'primary' | 'secondary' | 'danger' | '
 
 ### PromptButtonState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/button.ts#L19)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/button.ts#L19)
 
 ```ts
 type PromptButtonState = ButtonState & ({
@@ -714,7 +717,7 @@ Referenced declarations: [`ButtonState`](#buttonstate), [`IconName`](#iconname),
 
 ### CalloutPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L90)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L90)
 
 ```ts
 export interface CalloutPart extends LayoutPart {
@@ -726,7 +729,7 @@ Referenced declarations: [`CalloutPartState`](#calloutpartstate), [`LayoutPart`]
 
 ### CalloutPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L89)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L89)
 
 ```ts
 export interface CalloutPartOptions extends CalloutPartState {
@@ -739,7 +742,7 @@ Referenced declarations: [`CalloutPartState`](#calloutpartstate), [`Part`](#part
 
 ### CalloutPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L88)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L88)
 
 ```ts
 export interface CalloutPartState {
@@ -752,7 +755,7 @@ export interface CalloutPartState {
 
 ### CardBodyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L41)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L41)
 
 ```ts
 export interface CardBodyPart extends LayoutPart {
@@ -763,7 +766,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### CardPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L40)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L40)
 
 ```ts
 export interface CardPart extends LayoutPart {
@@ -774,7 +777,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### CompactActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L42)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L42)
 
 ```ts
 export interface CompactActionsPart extends LayoutPart {
@@ -785,7 +788,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### ContentSectionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L7)
 
 ```ts
 export interface ContentSectionPart extends LayoutPart {
@@ -797,7 +800,7 @@ Referenced declarations: [`ContentSectionPartState`](#contentsectionpartstate), 
 
 ### ContentSectionPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L6)
 
 ```ts
 export interface ContentSectionPartState {
@@ -811,7 +814,7 @@ Referenced declarations: [`ContentSectionTone`](#contentsectiontone).
 
 ### ContentSectionTone
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L5)
 
 ```ts
 export type ContentSectionTone = 'standard' | 'warning';
@@ -819,7 +822,7 @@ export type ContentSectionTone = 'standard' | 'warning';
 
 ### createCalloutActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L61)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L61)
 
 ```ts
 /** Trailing wrapping actions for a callout, without a field/footer border. */
@@ -832,7 +835,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createCalloutHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L59)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L59)
 
 ```ts
 /** A compact review heading. Icons, literal text and badges are caller-owned parts. */
@@ -845,7 +848,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createCalloutPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L93)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L93)
 
 ```ts
 /** A bounded native surface. Every heading, message, icon and action remains
@@ -857,7 +860,7 @@ Referenced declarations: [`CalloutPart`](#calloutpart), [`CalloutPartOptions`](#
 
 ### createCardBodyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L63)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L63)
 
 ```ts
 /** Flexible card information. It supplies no implicit text, icon or action. */
@@ -870,7 +873,7 @@ Referenced declarations: [`CardBodyPart`](#cardbodypart), [`Part`](#part).
 
 ### createCardHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L57)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L57)
 
 ```ts
 /** A wrapping summary row. Callers compose their own text, status and actions. */
@@ -883,7 +886,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createCardPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L51)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L51)
 
 ```ts
 /** One native card. Icons, text, and actions are composed as direct children. */
@@ -897,7 +900,7 @@ Referenced declarations: [`CardPart`](#cardpart), [`Part`](#part).
 
 ### createCompactActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L65)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L65)
 
 ```ts
 /** A compact action row with fixed button sizes and natural wrapping. */
@@ -910,7 +913,7 @@ Referenced declarations: [`CompactActionsPart`](#compactactionspart), [`Part`](#
 
 ### createContentSectionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L14)
 
 ```ts
 /** A content section with a native heading and the library's fixed vertical rhythm. */
@@ -923,7 +926,7 @@ Referenced declarations: [`ContentSectionPart`](#contentsectionpart), [`ContentS
 
 ### createGroupedCardPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L70)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L70)
 
 ```ts
 /** A card with a summary row and following composed content. The single
@@ -938,7 +941,7 @@ Referenced declarations: [`GroupedCardPart`](#groupedcardpart), [`Part`](#part).
 
 ### GroupedCardPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/cards.ts#L67)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/cards.ts#L67)
 
 ```ts
 export interface GroupedCardPart extends LayoutPart {
@@ -950,7 +953,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L67)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L67)
 
 ```ts
 /** Keyed direct row children. No list-item wrapper or public rendering callback. */
@@ -963,7 +966,7 @@ Referenced declarations: [`ListEntry`](#listentry), [`ListPart`](#listpart), [`L
 
 ### createListRowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L18)
 
 ```ts
 /** A small presentational row, with independently composed action buttons. */
@@ -976,7 +979,7 @@ Referenced declarations: [`ActionsPart`](#actionspart), [`ListRowPart`](#listrow
 
 ### ListEntry
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L47)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L47)
 
 ```ts
 export interface ListEntry {
@@ -989,7 +992,7 @@ Referenced declarations: [`ListRowPart`](#listrowpart).
 
 ### ListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L49)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L49)
 
 ```ts
 export interface ListPart extends Part {
@@ -1002,7 +1005,7 @@ Referenced declarations: [`ListEntry`](#listentry), [`ListPartState`](#listparts
 
 ### ListPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L48)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L48)
 
 ```ts
 export interface ListPartState {
@@ -1013,7 +1016,7 @@ export interface ListPartState {
 
 ### ListRowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L7)
 
 ```ts
 export interface ListRowPart extends Part {
@@ -1025,7 +1028,7 @@ Referenced declarations: [`ListRowPartState`](#listrowpartstate), [`Part`](#part
 
 ### ListRowPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/collection.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/collection.ts#L6)
 
 ```ts
 export interface ListRowPartState {
@@ -1042,7 +1045,7 @@ Referenced declarations: [`IconName`](#iconname).
 
 ### createCompactRowActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L23)
 
 ```ts
 export declare function createCompactRowActionsPart(options: {
@@ -1054,7 +1057,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createCompactRowBodyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L22)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L22)
 
 ```ts
 export declare function createCompactRowBodyPart(options: {
@@ -1066,7 +1069,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createCompactRowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L21)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L21)
 
 ```ts
 export declare function createCompactRowPart(options: {
@@ -1078,7 +1081,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createRowTextPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L29)
 
 ```ts
 /** A two-line literal preview or one small count. Library rules fix truncation
@@ -1092,7 +1095,7 @@ Referenced declarations: [`RowTextPart`](#rowtextpart), [`RowTextPartState`](#ro
 
 ### createScrollListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L8)
 
 ```ts
 /** A bounded native list surface. Heading, rows, badges and actions are all
@@ -1109,7 +1112,7 @@ Referenced declarations: [`Part`](#part), [`ScrollListPart`](#scrolllistpart).
 
 ### RowTextPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L26)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L26)
 
 ```ts
 export interface RowTextPart extends Part {
@@ -1121,7 +1124,7 @@ Referenced declarations: [`Part`](#part), [`RowTextPartState`](#rowtextpartstate
 
 ### RowTextPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L25)
 
 ```ts
 export interface RowTextPartState {
@@ -1133,7 +1136,7 @@ export interface RowTextPartState {
 
 ### ScrollListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compact-list.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compact-list.ts#L5)
 
 ```ts
 export interface ScrollListPart extends LayoutPart {
@@ -1147,7 +1150,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### ComposerLayoutOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/composer-layout.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/composer-layout.ts#L3)
 
 ```ts
 export interface ComposerLayoutOptions {
@@ -1160,7 +1163,7 @@ Referenced declarations: [`Part`](#part).
 
 ### createComposerPanelsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/composer-layout.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/composer-layout.ts#L9)
 
 ```ts
 export declare function createComposerPanelsPart(options: ComposerLayoutOptions): LayoutPart;
@@ -1170,7 +1173,7 @@ Referenced declarations: [`ComposerLayoutOptions`](#composerlayoutoptions), [`La
 
 ### createComposerRegionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/composer-layout.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/composer-layout.ts#L8)
 
 ```ts
 export declare function createComposerRegionPart(options: ComposerLayoutOptions): LayoutPart;
@@ -1180,7 +1183,7 @@ Referenced declarations: [`ComposerLayoutOptions`](#composerlayoutoptions), [`La
 
 ### createInputActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/composer-layout.ts#L22)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/composer-layout.ts#L22)
 
 ```ts
 export declare function createInputActionsPart(options: ComposerLayoutOptions): LayoutPart;
@@ -1190,7 +1193,7 @@ Referenced declarations: [`ComposerLayoutOptions`](#composerlayoutoptions), [`La
 
 ### createInputContextPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/composer-layout.ts#L21)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/composer-layout.ts#L21)
 
 ```ts
 export declare function createInputContextPart(options: ComposerLayoutOptions): LayoutPart;
@@ -1200,7 +1203,7 @@ Referenced declarations: [`ComposerLayoutOptions`](#composerlayoutoptions), [`La
 
 ### createInputToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/composer-layout.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/composer-layout.ts#L10)
 
 ```ts
 export declare function createInputToolbarPart(options: ComposerLayoutOptions): LayoutPart;
@@ -1210,7 +1213,7 @@ Referenced declarations: [`ComposerLayoutOptions`](#composerlayoutoptions), [`La
 
 ### CompoundDisclosurePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compound-disclosure.ts#L15)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compound-disclosure.ts#L15)
 
 ```ts
 export interface CompoundDisclosurePart extends LayoutPart {
@@ -1225,7 +1228,7 @@ Referenced declarations: [`CompoundDisclosurePartState`](#compounddisclosurepart
 
 ### CompoundDisclosurePartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compound-disclosure.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compound-disclosure.ts#L6)
 
 ```ts
 export interface CompoundDisclosurePartOptions extends CompoundDisclosurePartState {
@@ -1243,7 +1246,7 @@ Referenced declarations: [`CompoundDisclosurePartState`](#compounddisclosurepart
 
 ### CompoundDisclosurePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compound-disclosure.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compound-disclosure.ts#L5)
 
 ```ts
 export interface CompoundDisclosurePartState {
@@ -1254,7 +1257,7 @@ export interface CompoundDisclosurePartState {
 
 ### createCompoundDisclosurePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compound-disclosure.ts#L27)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compound-disclosure.ts#L27)
 
 ```ts
 /** Native details plus its required summary. The caller supplies every icon,
@@ -1266,7 +1269,7 @@ Referenced declarations: [`CompoundDisclosurePart`](#compounddisclosurepart), [`
 
 ### createDisclosureBodyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compound-disclosure.ts#L58)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compound-disclosure.ts#L58)
 
 ```ts
 /** A single empty native content region with a finite padding/border purpose. */
@@ -1280,7 +1283,7 @@ Referenced declarations: [`DisclosureBodyPurpose`](#disclosurebodypurpose), [`La
 
 ### DisclosureBodyPurpose
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/compound-disclosure.ts#L56)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/compound-disclosure.ts#L56)
 
 ```ts
 export type DisclosureBodyPurpose = 'group' | 'details' | 'output';
@@ -1288,7 +1291,7 @@ export type DisclosureBodyPurpose = 'group' | 'details' | 'output';
 
 ### ContentActionResult
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L9)
 
 ```ts
 export type ContentActionResult = void | ActionResult | Promise<void | ActionResult>;
@@ -1298,7 +1301,7 @@ Referenced declarations: [`ActionResult`](#actionresult).
 
 ### createMarkdownPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L32)
 
 ```ts
 /** Sanitized content flow. Copy/link callbacks receive data, never rendered nodes. */
@@ -1309,7 +1312,7 @@ Referenced declarations: [`MarkdownPart`](#markdownpart), [`MarkdownPartOptions`
 
 ### createPreformattedPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L100)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L100)
 
 ```ts
 /** Literal text or a line-oriented diff with the library's semantic colors. */
@@ -1320,7 +1323,7 @@ Referenced declarations: [`PreformattedPart`](#preformattedpart), [`Preformatted
 
 ### MarkdownPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L24)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L24)
 
 ```ts
 export interface MarkdownPart extends Part {
@@ -1332,7 +1335,7 @@ Referenced declarations: [`MarkdownPartState`](#markdownpartstate), [`Part`](#pa
 
 ### MarkdownPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L18)
 
 ```ts
 export interface MarkdownPartOptions extends MarkdownPartState {
@@ -1347,7 +1350,7 @@ Referenced declarations: [`ContentActionResult`](#contentactionresult), [`LocalC
 
 ### MarkdownPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L11)
 
 ```ts
 export interface MarkdownPartState {
@@ -1363,7 +1366,7 @@ export interface MarkdownPartState {
 
 ### PreformattedPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L97)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L97)
 
 ```ts
 export interface PreformattedPart extends Part {
@@ -1375,7 +1378,7 @@ Referenced declarations: [`Part`](#part), [`PreformattedPartState`](#preformatte
 
 ### PreformattedPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L98)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L98)
 
 ```ts
 export interface PreformattedPartOptions extends PreformattedPartState {
@@ -1387,7 +1390,7 @@ Referenced declarations: [`PreformattedPartState`](#preformattedpartstate).
 
 ### PreformattedPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/content.ts#L96)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/content.ts#L96)
 
 ```ts
 export interface PreformattedPartState {
@@ -1399,7 +1402,7 @@ export interface PreformattedPartState {
 
 ### CopyButtonPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/copy-button.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/copy-button.ts#L14)
 
 ```ts
 export type CopyButtonPartOptions = CopyOptions<ButtonPartOptions>;
@@ -1409,7 +1412,7 @@ Referenced declarations: [`ButtonPartOptions`](#buttonpartoptions), [`CopyOption
 
 ### CopyOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/copy-button.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/copy-button.ts#L7)
 
 ```ts
 type CopyOptions<Options> = Options extends unknown ? Omit<Options, 'onAction' | 'onError'> & {
@@ -1425,7 +1428,7 @@ Referenced declarations: [`AnnouncementPart`](#announcementpart), [`UIAction`](#
 
 ### createCopyButtonPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/copy-button.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/copy-button.ts#L17)
 
 ```ts
 /** The retained native button owns its pending and fixed-lived copied feedback. */
@@ -1436,7 +1439,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`CopyButtonPartOptions`](
 
 ### createDescriptionListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/description-list.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/description-list.ts#L10)
 
 ```ts
 /** Native keyed term/definition pairs, without a row wrapper. */
@@ -1449,7 +1452,7 @@ Referenced declarations: [`DescriptionEntry`](#descriptionentry), [`DescriptionL
 
 ### DescriptionEntry
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/description-list.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/description-list.ts#L3)
 
 ```ts
 export interface DescriptionEntry {
@@ -1461,7 +1464,7 @@ export interface DescriptionEntry {
 
 ### DescriptionListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/description-list.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/description-list.ts#L4)
 
 ```ts
 export interface DescriptionListPart extends Part {
@@ -1473,7 +1476,7 @@ Referenced declarations: [`DescriptionEntry`](#descriptionentry), [`Part`](#part
 
 ### createDialogPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/dialog.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/dialog.ts#L23)
 
 ```ts
 /** A standard native modal. Content and actions are independently composed parts. */
@@ -1484,7 +1487,7 @@ Referenced declarations: [`DialogPart`](#dialogpart), [`DialogPartOptions`](#dia
 
 ### DialogPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/dialog.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/dialog.ts#L14)
 
 ```ts
 export interface DialogPart extends Part {
@@ -1500,7 +1503,7 @@ Referenced declarations: [`DialogPartState`](#dialogpartstate), [`Part`](#part).
 
 ### DialogPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/dialog.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/dialog.ts#L6)
 
 ```ts
 export interface DialogPartOptions extends DialogPartState {
@@ -1517,7 +1520,7 @@ Referenced declarations: [`DialogPartState`](#dialogpartstate), [`Part`](#part).
 
 ### DialogPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/dialog.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/dialog.ts#L5)
 
 ```ts
 export interface DialogPartState {
@@ -1531,7 +1534,7 @@ export interface DialogPartState {
 
 ### createDisclosurePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/disclosure.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/disclosure.ts#L25)
 
 ```ts
 /** Native details with a text summary and directly owned content parts. */
@@ -1542,7 +1545,7 @@ Referenced declarations: [`DisclosurePart`](#disclosurepart), [`DisclosurePartOp
 
 ### DisclosurePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/disclosure.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/disclosure.ts#L12)
 
 ```ts
 export interface DisclosurePart extends Part {
@@ -1557,7 +1560,7 @@ Referenced declarations: [`DisclosurePartState`](#disclosurepartstate), [`Part`]
 
 ### DisclosurePartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/disclosure.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/disclosure.ts#L6)
 
 ```ts
 export interface DisclosurePartOptions extends DisclosurePartState {
@@ -1572,7 +1575,7 @@ Referenced declarations: [`DisclosurePartState`](#disclosurepartstate), [`Disclo
 
 ### DisclosurePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/disclosure.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/disclosure.ts#L5)
 
 ```ts
 export interface DisclosurePartState {
@@ -1584,7 +1587,7 @@ export interface DisclosurePartState {
 
 ### DisclosurePurpose
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/disclosure.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/disclosure.ts#L4)
 
 ```ts
 export type DisclosurePurpose = 'plain' | 'advanced' | 'preview' | 'status' | 'breakdown';
@@ -1592,7 +1595,7 @@ export type DisclosurePurpose = 'plain' | 'advanced' | 'preview' | 'status' | 'b
 
 ### createDownloadPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/download.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/download.ts#L6)
 
 ```ts
 /** Native file delivery with library-owned URL retirement. No style or DOM port. */
@@ -1603,7 +1606,7 @@ Referenced declarations: [`DownloadPart`](#downloadpart).
 
 ### DownloadPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/download.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/download.ts#L4)
 
 ```ts
 export interface DownloadPart extends Part {
@@ -1618,7 +1621,7 @@ Referenced declarations: [`DownloadResult`](#downloadresult), [`Part`](#part).
 
 ### DownloadResult
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/download.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/download.ts#L3)
 
 ```ts
 export type DownloadResult = {
@@ -1631,7 +1634,7 @@ export type DownloadResult = {
 
 ### createFeedbackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/feedback.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/feedback.ts#L9)
 
 ```ts
 /** Inline feedback; its existing semantic error/hint presentation belongs here. */
@@ -1642,7 +1645,7 @@ Referenced declarations: [`FeedbackPart`](#feedbackpart), [`FeedbackPartOptions`
 
 ### FeedbackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/feedback.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/feedback.ts#L6)
 
 ```ts
 export interface FeedbackPart extends Part {
@@ -1654,7 +1657,7 @@ Referenced declarations: [`FeedbackPartState`](#feedbackpartstate), [`Part`](#pa
 
 ### FeedbackPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/feedback.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/feedback.ts#L5)
 
 ```ts
 export interface FeedbackPartOptions extends FeedbackPartState {
@@ -1666,7 +1669,7 @@ Referenced declarations: [`FeedbackPartState`](#feedbackpartstate).
 
 ### FeedbackPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/feedback.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/feedback.ts#L4)
 
 ```ts
 export interface FeedbackPartState {
@@ -1679,7 +1682,7 @@ export interface FeedbackPartState {
 
 ### createFieldGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/field-group.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/field-group.ts#L6)
 
 ```ts
 /** One native label/control group using the library's fixed field spacing. */
@@ -1692,7 +1695,7 @@ Referenced declarations: [`FieldGroupPart`](#fieldgrouppart), [`Part`](#part).
 
 ### FieldGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/field-group.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/field-group.ts#L3)
 
 ```ts
 export interface FieldGroupPart extends Part {
@@ -1704,7 +1707,7 @@ Referenced declarations: [`Part`](#part).
 
 ### Autocomplete
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L25)
 
 ```ts
 export type Autocomplete = 'off' | 'on' | 'url' | 'username' | 'current-password' | 'new-password' | 'one-time-code';
@@ -1712,7 +1715,7 @@ export type Autocomplete = 'off' | 'on' | 'url' | 'username' | 'current-password
 
 ### CheckboxOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L349)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L349)
 
 ```ts
 export interface CheckboxOptions {
@@ -1727,7 +1730,7 @@ export interface CheckboxOptions {
 
 ### CheckboxPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L350)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L350)
 
 ```ts
 export interface CheckboxPart extends Part {
@@ -1746,7 +1749,7 @@ Referenced declarations: [`Part`](#part).
 
 ### ChoiceOption
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L147)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L147)
 
 ```ts
 export interface ChoiceOption {
@@ -1758,7 +1761,7 @@ export interface ChoiceOption {
 
 ### ChoiceOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L152)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L152)
 
 ```ts
 export interface ChoiceOptions extends ChoiceState {
@@ -1773,7 +1776,7 @@ Referenced declarations: [`ChoiceOption`](#choiceoption), [`ChoiceState`](#choic
 
 ### ChoicePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L154)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L154)
 
 ```ts
 export interface ChoicePart extends Part {
@@ -1788,7 +1791,7 @@ Referenced declarations: [`ChoiceState`](#choicestate), [`Part`](#part).
 
 ### ChoiceState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L148)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L148)
 
 ```ts
 export interface ChoiceState extends Omit<FieldState, 'readOnly' | 'placeholder'> {
@@ -1801,7 +1804,7 @@ Referenced declarations: [`ChoiceOption`](#choiceoption), [`FieldState`](#fields
 
 ### CompactSelectOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L221)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L221)
 
 ```ts
 export interface CompactSelectOptions extends CompactSelectPartState {
@@ -1818,7 +1821,7 @@ Referenced declarations: [`ChoiceOption`](#choiceoption), [`CompactSelectPartSta
 
 ### CompactSelectPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L222)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L222)
 
 ```ts
 export interface CompactSelectPart extends ChoicePart {
@@ -1830,7 +1833,7 @@ Referenced declarations: [`ChoicePart`](#choicepart), [`CompactSelectPartState`]
 
 ### CompactSelectPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L220)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L220)
 
 ```ts
 export interface CompactSelectPartState extends Omit<ChoiceState, 'catalog'> {
@@ -1843,7 +1846,7 @@ Referenced declarations: [`ChoiceState`](#choicestate), [`IconName`](#iconname).
 
 ### createCheckboxPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L351)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L351)
 
 ```ts
 export declare function createCheckboxPart(options: CheckboxOptions): CheckboxPart;
@@ -1853,7 +1856,7 @@ Referenced declarations: [`CheckboxOptions`](#checkboxoptions), [`CheckboxPart`]
 
 ### createChoiceListPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L218)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L218)
 
 ```ts
 /** Native six-row choice list; its geometry and keyboard behavior belong to the library. */
@@ -1864,7 +1867,7 @@ Referenced declarations: [`ChoiceOptions`](#choiceoptions), [`ChoicePart`](#choi
 
 ### createCompactSelectPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L225)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L225)
 
 ```ts
 /** A compact icon choice in one native label. Its popup anchors to that label,
@@ -1876,7 +1879,7 @@ Referenced declarations: [`CompactSelectOptions`](#compactselectoptions), [`Comp
 
 ### createFieldLabelPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L274)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L274)
 
 ```ts
 /** A separate native label associated with a previously created field. */
@@ -1891,7 +1894,7 @@ Referenced declarations: [`BadgePart`](#badgepart), [`ChoicePart`](#choicepart),
 
 ### createInputPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L112)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L112)
 
 ```ts
 /** One native input. Labels and feedback are separate parts, without a field wrapper. */
@@ -1902,7 +1905,7 @@ Referenced declarations: [`InputOptions`](#inputoptions), [`ValuePart`](#valuepa
 
 ### createLabelledFieldPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L318)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L318)
 
 ```ts
 /** A native containing label. Unlike a separate field label, it takes ownership
@@ -1916,7 +1919,7 @@ Referenced declarations: [`ChoicePart`](#choicepart), [`FieldLabelPart`](#fieldl
 
 ### createSelectPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L216)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L216)
 
 ```ts
 export declare function createSelectPart(options: SelectOptions): ChoicePart;
@@ -1926,7 +1929,7 @@ Referenced declarations: [`ChoicePart`](#choicepart), [`SelectOptions`](#selecto
 
 ### createTextareaPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L131)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L131)
 
 ```ts
 export declare function createTextareaPart(options: TextareaOptions): ValuePart;
@@ -1936,7 +1939,7 @@ Referenced declarations: [`TextareaOptions`](#textareaoptions), [`ValuePart`](#v
 
 ### FieldLabelPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L272)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L272)
 
 ```ts
 export interface FieldLabelPart extends Part {
@@ -1948,7 +1951,7 @@ Referenced declarations: [`FieldLabelState`](#fieldlabelstate), [`Part`](#part).
 
 ### FieldLabelState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L271)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L271)
 
 ```ts
 export interface FieldLabelState {
@@ -1959,7 +1962,7 @@ export interface FieldLabelState {
 
 ### FieldState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L8)
 
 ```ts
 export interface FieldState {
@@ -1977,7 +1980,7 @@ Referenced declarations: [`TextPart`](#textpart).
 
 ### InputKind
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L24)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L24)
 
 ```ts
 export type InputKind = 'text' | 'search' | 'password' | 'url' | 'number';
@@ -1985,7 +1988,7 @@ export type InputKind = 'text' | 'search' | 'password' | 'url' | 'number';
 
 ### InputOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L26)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L26)
 
 ```ts
 export interface InputOptions extends FieldState {
@@ -2012,7 +2015,7 @@ Referenced declarations: [`Autocomplete`](#autocomplete), [`FieldState`](#fields
 
 ### SelectOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L153)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L153)
 
 ```ts
 export interface SelectOptions extends ChoiceOptions {
@@ -2024,7 +2027,7 @@ Referenced declarations: [`ChoiceOptions`](#choiceoptions).
 
 ### TextareaOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L128)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L128)
 
 ```ts
 export interface TextareaOptions extends Omit<InputOptions, 'purpose' | 'kind' | 'min' | 'max' | 'step' | 'pattern' | 'onEnter'> {
@@ -2036,7 +2039,7 @@ Referenced declarations: [`InputOptions`](#inputoptions).
 
 ### ValuePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/fields.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/fields.ts#L17)
 
 ```ts
 export interface ValuePart extends Part {
@@ -2052,7 +2055,7 @@ Referenced declarations: [`FieldState`](#fieldstate), [`Part`](#part).
 
 ### createMenuPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L101)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L101)
 
 ```ts
 /** A keyboard menu with the retained menu row markup and no coordinate input. */
@@ -2068,7 +2071,7 @@ Referenced declarations: [`DialogPart`](#dialogpart), [`MenuPart`](#menupart), [
 
 ### createPopoverPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L69)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L69)
 
 ```ts
 /** One small anchored region; content ownership and borrowed source are explicit. */
@@ -2081,7 +2084,7 @@ Referenced declarations: [`FloatingOptions`](#floatingoptions), [`FloatingPart`]
 
 ### FloatingOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L16)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L16)
 
 ```ts
 interface FloatingOptions extends FloatingPartState {
@@ -2094,7 +2097,7 @@ Referenced declarations: [`DialogPart`](#dialogpart), [`FloatingPartState`](#flo
 
 ### FloatingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L10)
 
 ```ts
 export interface FloatingPart extends Part {
@@ -2109,7 +2112,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`FloatingPartState`](#flo
 
 ### FloatingPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L9)
 
 ```ts
 export interface FloatingPartState {
@@ -2120,7 +2123,7 @@ export interface FloatingPartState {
 
 ### MenuPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L86)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L86)
 
 ```ts
 export interface MenuPart extends Omit<FloatingPart, 'update'> {
@@ -2132,7 +2135,7 @@ Referenced declarations: [`FloatingPart`](#floatingpart), [`MenuPartState`](#men
 
 ### MenuPartItem
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L84)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L84)
 
 ```ts
 export interface MenuPartItem {
@@ -2149,7 +2152,7 @@ Referenced declarations: [`UIAction`](#uiaction).
 
 ### MenuPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/floating.ts#L85)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/floating.ts#L85)
 
 ```ts
 export interface MenuPartState extends FloatingPartState {
@@ -2161,7 +2164,7 @@ Referenced declarations: [`FloatingPartState`](#floatingpartstate), [`MenuPartIt
 
 ### createFoldingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/folding.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/folding.ts#L12)
 
 ```ts
 /** One owned body can be always visible or placed inside native details.
@@ -2173,7 +2176,7 @@ Referenced declarations: [`FoldingPart`](#foldingpart), [`FoldingPartOptions`](#
 
 ### FoldingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/folding.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/folding.ts#L5)
 
 ```ts
 export interface FoldingPart extends Part {
@@ -2187,7 +2190,7 @@ Referenced declarations: [`FoldingPartState`](#foldingpartstate), [`Part`](#part
 
 ### FoldingPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/folding.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/folding.ts#L4)
 
 ```ts
 export interface FoldingPartOptions extends FoldingPartState {
@@ -2202,7 +2205,7 @@ Referenced declarations: [`FoldingPartState`](#foldingpartstate), [`Part`](#part
 
 ### FoldingPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/folding.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/folding.ts#L3)
 
 ```ts
 export interface FoldingPartState {
@@ -2213,7 +2216,7 @@ export interface FoldingPartState {
 
 ### createCopyGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L14)
 
 ```ts
 /** Contiguous explanatory text and feedback, without additional paragraph gaps. */
@@ -2226,7 +2229,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createFieldStackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L63)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L63)
 
 ```ts
 /** A single label/control/feedback stack; no automatic field wrappers. */
@@ -2239,7 +2242,7 @@ Referenced declarations: [`FieldStackPart`](#fieldstackpart), [`FieldStackPartSt
 
 ### createFormLayoutPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L6)
 
 ```ts
 /** A grouped form's spacing scope; it supplies no headings, fields or actions. */
@@ -2252,7 +2255,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createSectionHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L28)
 
 ```ts
 /** A compact heading row; title content and optional actions remain explicit. */
@@ -2265,7 +2268,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createSectionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L41)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L41)
 
 ```ts
 /** One semantic section and its optional native heading, with fixed form rhythm. */
@@ -2278,7 +2281,7 @@ Referenced declarations: [`Part`](#part), [`SectionPart`](#sectionpart), [`Secti
 
 ### createSeparatedSectionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L22)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L22)
 
 ```ts
 /** A ruled editor section with the library's fixed separation from prior content. */
@@ -2291,7 +2294,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### FieldStackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L61)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L61)
 
 ```ts
 export interface FieldStackPart extends LayoutPart {
@@ -2303,7 +2306,7 @@ Referenced declarations: [`FieldStackPartState`](#fieldstackpartstate), [`Layout
 
 ### FieldStackPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L60)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L60)
 
 ```ts
 export interface FieldStackPartState {
@@ -2313,7 +2316,7 @@ export interface FieldStackPartState {
 
 ### SectionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L35)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L35)
 
 ```ts
 export interface SectionPart extends LayoutPart {
@@ -2325,7 +2328,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`SectionPartState`](#sect
 
 ### SectionPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form-layout.ts#L34)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form-layout.ts#L34)
 
 ```ts
 export interface SectionPartState {
@@ -2336,7 +2339,7 @@ export interface SectionPartState {
 
 ### createFormPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form.ts#L30)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form.ts#L30)
 
 ```ts
 /** A native form without a fieldset or layout wrapper. Validation stays native. */
@@ -2347,7 +2350,7 @@ Referenced declarations: [`FormPart`](#formpart), [`FormPartOptions`](#formparto
 
 ### FileDropData
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form.ts#L6)
 
 ```ts
 export interface FileDropData {
@@ -2358,7 +2361,7 @@ export interface FileDropData {
 
 ### FormPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form.ts#L18)
 
 ```ts
 export interface FormPart extends Part {
@@ -2377,7 +2380,7 @@ Referenced declarations: [`FormPartState`](#formpartstate), [`NativeFileDropData
 
 ### FormPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form.ts#L9)
 
 ```ts
 export interface FormPartOptions extends FormPartState {
@@ -2395,7 +2398,7 @@ Referenced declarations: [`ActionResult`](#actionresult), [`FileDropData`](#file
 
 ### FormPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form.ts#L5)
 
 ```ts
 export interface FormPartState {
@@ -2407,7 +2410,7 @@ export interface FormPartState {
 
 ### NativeFileDropData
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/form.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/form.ts#L8)
 
 ```ts
 /** Coordinates are incoming native pointer data, never a layout parameter. */
@@ -2420,7 +2423,7 @@ export interface NativeFileDropData {
 
 ### createDrawerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L80)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L80)
 
 ```ts
 /** The native scrim and fixed mobile drawer behavior. References are borrowed;
@@ -2440,7 +2443,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`DrawerPart`](#drawerpart
 
 ### createFramePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L18)
 
 ```ts
 /** Viewport layout only: callers supply every region and dialog as child parts. */
@@ -2456,7 +2459,7 @@ Referenced declarations: [`FramePart`](#framepart), [`Part`](#part).
 
 ### createMainPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L56)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L56)
 
 ```ts
 export declare function createMainPart(options: {
@@ -2468,7 +2471,7 @@ Referenced declarations: [`MainPart`](#mainpart), [`Part`](#part).
 
 ### createRailFooterPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L60)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L60)
 
 ```ts
 export declare function createRailFooterPart(options: {
@@ -2480,7 +2483,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createRailHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L63)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L63)
 
 ```ts
 export declare function createRailHeadingPart(options: {
@@ -2493,7 +2496,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`RailHeadingPart`](#railh
 
 ### createSideRailPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L49)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L49)
 
 ```ts
 export declare function createSideRailPart(options: {
@@ -2507,7 +2510,7 @@ Referenced declarations: [`Part`](#part), [`SideRailPart`](#siderailpart).
 
 ### createTopbarActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L59)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L59)
 
 ```ts
 /** A trailing header action group. Children remain caller-owned content. */
@@ -2520,7 +2523,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createTopbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L57)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L57)
 
 ```ts
 export declare function createTopbarPart(options: {
@@ -2532,7 +2535,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### DrawerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L75)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L75)
 
 ```ts
 export interface DrawerPart extends Part {
@@ -2546,7 +2549,7 @@ Referenced declarations: [`Part`](#part).
 
 ### FramePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L7)
 
 ```ts
 export interface FramePart extends LayoutPart {
@@ -2559,7 +2562,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`frameRole`](#framerole).
 
 ### frameRole
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L6)
 
 ```ts
 declare const frameRole: unique symbol;
@@ -2567,7 +2570,7 @@ declare const frameRole: unique symbol;
 
 ### MainPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L9)
 
 ```ts
 export interface MainPart extends LayoutPart {
@@ -2579,7 +2582,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`frameRole`](#framerole).
 
 ### RailHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L62)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L62)
 
 ```ts
 export interface RailHeadingPart extends Part {
@@ -2593,7 +2596,7 @@ Referenced declarations: [`Part`](#part).
 
 ### SideRailPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/frame.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/frame.ts#L8)
 
 ```ts
 export interface SideRailPart extends LayoutPart {
@@ -2605,7 +2608,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`frameRole`](#framerole).
 
 ### createImagePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L28)
 
 ```ts
 /** A single native image. Its semantic purpose selects the established rules. */
@@ -2616,7 +2619,7 @@ Referenced declarations: [`ImagePart`](#imagepart), [`ImagePartOptions`](#imagep
 
 ### createZoomImagePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L80)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L80)
 
 ```ts
 /** One fixed image viewport. The library owns all physical sizing and zoom steps. */
@@ -2627,7 +2630,7 @@ Referenced declarations: [`ZoomImageOptions`](#zoomimageoptions), [`ZoomImagePar
 
 ### ImageData
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L4)
 
 ```ts
 export interface ImageData {
@@ -2638,7 +2641,7 @@ export interface ImageData {
 
 ### ImagePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L12)
 
 ```ts
 export interface ImagePart extends Part {
@@ -2651,7 +2654,7 @@ Referenced declarations: [`ImagePartState`](#imagepartstate), [`Part`](#part).
 
 ### ImagePartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L6)
 
 ```ts
 export interface ImagePartOptions extends ImagePartState {
@@ -2666,7 +2669,7 @@ Referenced declarations: [`ImageData`](#imagedata), [`ImagePartState`](#imagepar
 
 ### ImagePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L5)
 
 ```ts
 export interface ImagePartState {
@@ -2680,7 +2683,7 @@ Referenced declarations: [`ImageStatus`](#imagestatus).
 
 ### ImageStatus
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L3)
 
 ```ts
 export type ImageStatus = 'loading' | 'ready' | 'unavailable';
@@ -2688,7 +2691,7 @@ export type ImageStatus = 'loading' | 'ready' | 'unavailable';
 
 ### ZoomImageOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L69)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L69)
 
 ```ts
 export interface ZoomImageOptions extends ZoomImageState {
@@ -2700,7 +2703,7 @@ Referenced declarations: [`ZoomImageState`](#zoomimagestate), [`ZoomImageStatus`
 
 ### ZoomImagePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L70)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L70)
 
 ```ts
 export interface ZoomImagePart extends Part {
@@ -2717,7 +2720,7 @@ Referenced declarations: [`Part`](#part), [`ZoomImageState`](#zoomimagestate).
 
 ### ZoomImageState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L67)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L67)
 
 ```ts
 export interface ZoomImageState {
@@ -2728,7 +2731,7 @@ export interface ZoomImageState {
 
 ### ZoomImageStatus
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/image.ts#L68)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/image.ts#L68)
 
 ```ts
 export interface ZoomImageStatus {
@@ -2741,7 +2744,7 @@ Referenced declarations: [`ImageStatus`](#imagestatus).
 
 ### AnchoredGroupOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L27)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L27)
 
 ```ts
 export interface AnchoredGroupOptions extends AnchoredGroupState {
@@ -2755,7 +2758,7 @@ Referenced declarations: [`AnchoredGroupState`](#anchoredgroupstate), [`ButtonPa
 
 ### AnchoredGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L28)
 
 ```ts
 export interface AnchoredGroupPart extends Part {
@@ -2767,7 +2770,7 @@ Referenced declarations: [`AnchoredGroupState`](#anchoredgroupstate), [`Part`](#
 
 ### AnchoredGroupState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L26)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L26)
 
 ```ts
 export interface AnchoredGroupState {
@@ -2777,7 +2780,7 @@ export interface AnchoredGroupState {
 
 ### createAnchoredGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L85)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L85)
 
 ```ts
 /** Only the original relative wrapper. Toggling remains caller assembly code. */
@@ -2788,7 +2791,7 @@ Referenced declarations: [`AnchoredGroupOptions`](#anchoredgroupoptions), [`Anch
 
 ### createInspectorHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L11)
 
 ```ts
 /** A compact heading with literal count content and a caller-owned action. */
@@ -2801,7 +2804,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`InspectorHeadingPart`](#
 
 ### createInspectorPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L34)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L34)
 
 ```ts
 /** One native, nonmodal section. It supplies dismissal and fixed presentation;
@@ -2813,7 +2816,7 @@ Referenced declarations: [`InspectorPart`](#inspectorpart), [`InspectorPartOptio
 
 ### InspectorHeadingPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L8)
 
 ```ts
 export interface InspectorHeadingPart extends Part {
@@ -2825,7 +2828,7 @@ Referenced declarations: [`InspectorHeadingState`](#inspectorheadingstate), [`Pa
 
 ### InspectorHeadingState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L7)
 
 ```ts
 export interface InspectorHeadingState {
@@ -2836,7 +2839,7 @@ export interface InspectorHeadingState {
 
 ### InspectorPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L25)
 
 ```ts
 export interface InspectorPart extends Part {
@@ -2852,7 +2855,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`DialogPart`](#dialogpart
 
 ### InspectorPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/inspector.ts#L24)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/inspector.ts#L24)
 
 ```ts
 export interface InspectorPartOptions {
@@ -2866,7 +2869,7 @@ Referenced declarations: [`DialogPart`](#dialogpart), [`InspectorHeadingPart`](#
 
 ### ActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L6)
 
 ```ts
 export interface ActionsPart extends LayoutPart {
@@ -2878,7 +2881,7 @@ Referenced declarations: [`ActionsPartState`](#actionspartstate), [`LayoutPart`]
 
 ### ActionsPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L5)
 
 ```ts
 export interface ActionsPartState {
@@ -2889,7 +2892,7 @@ export interface ActionsPartState {
 
 ### createActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L26)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L26)
 
 ```ts
 export declare function createActionsPart(options: ActionsPartState & {
@@ -2901,7 +2904,7 @@ Referenced declarations: [`ActionsPart`](#actionspart), [`ActionsPartState`](#ac
 
 ### createFooterPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L28)
 
 ```ts
 /** A small modal action row, with the library-owned border and spacing. */
@@ -2914,7 +2917,7 @@ Referenced declarations: [`ActionsPart`](#actionspart), [`ActionsPartState`](#ac
 
 ### createInlineGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L76)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L76)
 
 ```ts
 /** Native inline flow for adjacent controls or text; no additional layout rule. */
@@ -2927,7 +2930,7 @@ Referenced declarations: [`InlineGroupPart`](#inlinegrouppart), [`InlineGroupPar
 
 ### createStackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L61)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L61)
 
 ```ts
 /** Natural block flow. No spacing, dimensions, CSS classes or layout DSL. */
@@ -2938,7 +2941,7 @@ Referenced declarations: [`StackPart`](#stackpart), [`StackPartOptions`](#stackp
 
 ### createToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L38)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L38)
 
 ```ts
 export declare function createToolbarPart(options: ToolbarPartState & {
@@ -2951,7 +2954,7 @@ Referenced declarations: [`Part`](#part), [`ToolbarPart`](#toolbarpart), [`Toolb
 
 ### InlineGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L74)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L74)
 
 ```ts
 export interface InlineGroupPart extends LayoutPart {
@@ -2963,7 +2966,7 @@ Referenced declarations: [`InlineGroupPartState`](#inlinegrouppartstate), [`Layo
 
 ### InlineGroupPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L73)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L73)
 
 ```ts
 export interface InlineGroupPartState {
@@ -2973,7 +2976,7 @@ export interface InlineGroupPartState {
 
 ### LayoutPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L4)
 
 ```ts
 export interface LayoutPart extends Part {
@@ -2985,7 +2988,7 @@ Referenced declarations: [`Part`](#part).
 
 ### StackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L56)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L56)
 
 ```ts
 export interface StackPart extends LayoutPart {
@@ -2997,7 +3000,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`StackPartState`](#stackp
 
 ### StackPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L55)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L55)
 
 ```ts
 export interface StackPartOptions extends StackPartState {
@@ -3010,7 +3013,7 @@ Referenced declarations: [`Part`](#part), [`StackPartState`](#stackpartstate).
 
 ### StackPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L54)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L54)
 
 ```ts
 export interface StackPartState {
@@ -3020,7 +3023,7 @@ export interface StackPartState {
 
 ### ToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L32)
 
 ```ts
 export interface ToolbarPart extends LayoutPart {
@@ -3032,7 +3035,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`ToolbarPartState`](#tool
 
 ### ToolbarPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L30)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L30)
 
 ```ts
 export interface ToolbarPartState {
@@ -3043,7 +3046,7 @@ export interface ToolbarPartState {
 
 ### ToolbarPurpose
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/layout.ts#L31)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/layout.ts#L31)
 
 ```ts
 export type ToolbarPurpose = 'tools' | 'feature';
@@ -3051,7 +3054,7 @@ export type ToolbarPurpose = 'tools' | 'feature';
 
 ### createLinkPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/link.ts#L22)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/link.ts#L22)
 
 ```ts
 /** One external HTTP link, with fixed browser security attributes and a data callback. */
@@ -3062,7 +3065,7 @@ Referenced declarations: [`LinkPart`](#linkpart), [`LinkPartOptions`](#linkparto
 
 ### LinkPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/link.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/link.ts#L11)
 
 ```ts
 export interface LinkPart extends Part {
@@ -3074,7 +3077,7 @@ Referenced declarations: [`LinkPartState`](#linkpartstate), [`Part`](#part).
 
 ### LinkPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/link.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/link.ts#L6)
 
 ```ts
 export interface LinkPartOptions extends LinkPartState {
@@ -3088,7 +3091,7 @@ Referenced declarations: [`ActionResult`](#actionresult), [`LinkPartState`](#lin
 
 ### LinkPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/link.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/link.ts#L5)
 
 ```ts
 export interface LinkPartState {
@@ -3101,7 +3104,7 @@ export interface LinkPartState {
 
 ### createMediaToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/media-toolbar.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/media-toolbar.ts#L6)
 
 ```ts
 /** A media status and action group. The one inner DIV is the existing layout. */
@@ -3115,7 +3118,7 @@ Referenced declarations: [`MediaToolbarPart`](#mediatoolbarpart), [`Part`](#part
 
 ### MediaToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/media-toolbar.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/media-toolbar.ts#L4)
 
 ```ts
 export interface MediaToolbarPart extends Part {
@@ -3127,7 +3130,7 @@ Referenced declarations: [`Part`](#part).
 
 ### createFilePickerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L36)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L36)
 
 ```ts
 /** A native image chooser with the library's supported image formats. */
@@ -3142,7 +3145,7 @@ Referenced declarations: [`FilePickerPart`](#filepickerpart).
 
 ### createMessageInputPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L14)
 
 ```ts
 /** One native drafting textarea. Growth and composition behavior are fixed. */
@@ -3153,7 +3156,7 @@ Referenced declarations: [`MessageInputOptions`](#messageinputoptions), [`Messag
 
 ### FilePickerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L34)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L34)
 
 ```ts
 export interface FilePickerPart extends Part {
@@ -3168,7 +3171,7 @@ Referenced declarations: [`Part`](#part).
 
 ### MessageInputOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L5)
 
 ```ts
 export interface MessageInputOptions extends MessageInputState {
@@ -3184,7 +3187,7 @@ Referenced declarations: [`MessageInputState`](#messageinputstate).
 
 ### MessageInputPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L7)
 
 ```ts
 export interface MessageInputPart extends Part {
@@ -3202,7 +3205,7 @@ Referenced declarations: [`MessageInputState`](#messageinputstate), [`MessageSel
 
 ### MessageInputState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L4)
 
 ```ts
 export interface MessageInputState {
@@ -3215,7 +3218,7 @@ export interface MessageInputState {
 
 ### MessageSelection
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/message-input.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/message-input.ts#L6)
 
 ```ts
 export interface MessageSelection {
@@ -3227,7 +3230,7 @@ export interface MessageSelection {
 
 ### CodePropertyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L32)
 
 ```ts
 export interface CodePropertyPart extends Part {
@@ -3239,7 +3242,7 @@ Referenced declarations: [`CodePropertyPartState`](#codepropertypartstate), [`Pa
 
 ### CodePropertyPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L31)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L31)
 
 ```ts
 export interface CodePropertyPartOptions extends CodePropertyPartState {
@@ -3251,7 +3254,7 @@ Referenced declarations: [`CodePropertyPartState`](#codepropertypartstate).
 
 ### CodePropertyPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L30)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L30)
 
 ```ts
 export interface CodePropertyPartState {
@@ -3263,7 +3266,7 @@ export interface CodePropertyPartState {
 
 ### createCodePropertyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L35)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L35)
 
 ```ts
 /** A literal label/code property. The two native children are its intrinsic
@@ -3275,7 +3278,7 @@ Referenced declarations: [`CodePropertyPart`](#codepropertypart), [`CodeProperty
 
 ### createMetadataPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L8)
 
 ```ts
 /** One native span. Counts and statuses remain caller supplied content. */
@@ -3288,7 +3291,7 @@ Referenced declarations: [`MetadataPart`](#metadatapart), [`MetadataPartState`](
 
 ### MetadataPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L6)
 
 ```ts
 export interface MetadataPart extends Part {
@@ -3300,7 +3303,7 @@ Referenced declarations: [`MetadataPartState`](#metadatapartstate), [`Part`](#pa
 
 ### MetadataPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L5)
 
 ```ts
 export interface MetadataPartState {
@@ -3312,7 +3315,7 @@ export interface MetadataPartState {
 
 ### MetadataPurpose
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/metadata.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/metadata.ts#L4)
 
 ```ts
 export type MetadataPurpose = 'summary-label' | 'field-label' | 'count' | 'state' | 'trailing-state' | 'search-count';
@@ -3320,7 +3323,7 @@ export type MetadataPurpose = 'summary-label' | 'field-label' | 'count' | 'state
 
 ### ActivityPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L55)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L55)
 
 ```ts
 export interface ActivityPart extends Part {
@@ -3332,7 +3335,7 @@ Referenced declarations: [`ActivityPartState`](#activitypartstate), [`Part`](#pa
 
 ### ActivityPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L54)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L54)
 
 ```ts
 export interface ActivityPartState {
@@ -3342,7 +3345,7 @@ export interface ActivityPartState {
 
 ### BreadcrumbPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L95)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L95)
 
 ```ts
 export interface BreadcrumbPart extends Part {
@@ -3354,7 +3357,7 @@ Referenced declarations: [`BreadcrumbPartState`](#breadcrumbpartstate), [`Part`]
 
 ### BreadcrumbPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L94)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L94)
 
 ```ts
 export interface BreadcrumbPartState {
@@ -3365,7 +3368,7 @@ export interface BreadcrumbPartState {
 
 ### ConnectionIndicatorPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L107)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L107)
 
 ```ts
 export interface ConnectionIndicatorPart extends Part {
@@ -3377,7 +3380,7 @@ Referenced declarations: [`ConnectionIndicatorPartState`](#connectionindicatorpa
 
 ### ConnectionIndicatorPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L106)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L106)
 
 ```ts
 export interface ConnectionIndicatorPartState {
@@ -3388,7 +3391,7 @@ export interface ConnectionIndicatorPartState {
 
 ### createActivityPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L59)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L59)
 
 ```ts
 /** One bounded activity mark; its glyph, color and motion are fixed by the library. */
@@ -3399,7 +3402,7 @@ Referenced declarations: [`ActivityPart`](#activitypart), [`ActivityPartState`](
 
 ### createBreadcrumbPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L96)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L96)
 
 ```ts
 export declare function createBreadcrumbPart(options: BreadcrumbPartState): BreadcrumbPart;
@@ -3409,7 +3412,7 @@ Referenced declarations: [`BreadcrumbPart`](#breadcrumbpart), [`BreadcrumbPartSt
 
 ### createConnectionIndicatorPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L109)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L109)
 
 ```ts
 /** A compact waiting indicator, with a fixed warning dot and live message. */
@@ -3420,7 +3423,7 @@ Referenced declarations: [`ConnectionIndicatorPart`](#connectionindicatorpart), 
 
 ### createTreeBranchPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L29)
 
 ```ts
 /** One collapsible native branch; keys, filtering and business actions remain with its caller. */
@@ -3436,7 +3439,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`Part`](#part), [`TreeBra
 
 ### createTreeItemPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L74)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L74)
 
 ```ts
 /** One selectable leaf. Supplied activity/action parts keep their own identity. */
@@ -3451,7 +3454,7 @@ Referenced declarations: [`ActivityPart`](#activitypart), [`ButtonPart`](#button
 
 ### createTreePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L17)
 
 ```ts
 /** A navigation landmark with direct caller-owned branches, rows and empty text. */
@@ -3464,7 +3467,7 @@ Referenced declarations: [`Part`](#part), [`TreePart`](#treepart), [`TreePartSta
 
 ### TreeBranchPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L27)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L27)
 
 ```ts
 export interface TreeBranchPart extends LayoutPart {
@@ -3478,7 +3481,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`TreeBranchPartState`](#t
 
 ### TreeBranchPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L26)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L26)
 
 ```ts
 export interface TreeBranchPartState {
@@ -3491,7 +3494,7 @@ export interface TreeBranchPartState {
 
 ### TreeItemPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L72)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L72)
 
 ```ts
 export interface TreeItemPart extends Part {
@@ -3504,7 +3507,7 @@ Referenced declarations: [`ActivityPart`](#activitypart), [`Part`](#part), [`Tre
 
 ### TreeItemPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L71)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L71)
 
 ```ts
 export interface TreeItemPartState {
@@ -3517,7 +3520,7 @@ export interface TreeItemPartState {
 
 ### TreePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L15)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L15)
 
 ```ts
 export interface TreePart extends LayoutPart {
@@ -3529,7 +3532,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`TreePartState`](#treepar
 
 ### TreePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/navigation-small.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/navigation-small.ts#L14)
 
 ```ts
 export interface TreePartState {
@@ -3540,7 +3543,7 @@ export interface TreePartState {
 
 ### createLabelledDividerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L50)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L50)
 
 ```ts
 /** A labelled horizontal divider with library-owned spacing and rules. */
@@ -3553,7 +3556,7 @@ Referenced declarations: [`LabelledDividerPart`](#labelleddividerpart).
 
 ### createOptionActionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L19)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L19)
 
 ```ts
 /** One native action with an icon, literal title/description and fixed chevron. */
@@ -3564,7 +3567,7 @@ Referenced declarations: [`OptionActionOptions`](#optionactionoptions), [`Option
 
 ### createOptionGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L42)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L42)
 
 ```ts
 /** Fixed direct column. The local assembly owns keys and option ordering. */
@@ -3577,7 +3580,7 @@ Referenced declarations: [`OptionActionPart`](#optionactionpart), [`OptionGroupP
 
 ### createSeparatedGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L57)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L57)
 
 ```ts
 /** One native block separated from preceding content by a fixed section gap. */
@@ -3590,7 +3593,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### LabelledDividerPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L48)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L48)
 
 ```ts
 export interface LabelledDividerPart extends Part {
@@ -3604,7 +3607,7 @@ Referenced declarations: [`Part`](#part).
 
 ### OptionActionOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L9)
 
 ```ts
 export interface OptionActionOptions extends OptionActionState {
@@ -3617,7 +3620,7 @@ Referenced declarations: [`OptionActionState`](#optionactionstate), [`UIAction`]
 
 ### OptionActionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L11)
 
 ```ts
 export interface OptionActionPart extends Part {
@@ -3632,7 +3635,7 @@ Referenced declarations: [`OptionActionState`](#optionactionstate), [`Part`](#pa
 
 ### optionActionRole
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L10)
 
 ```ts
 declare const optionActionRole: unique symbol;
@@ -3640,7 +3643,7 @@ declare const optionActionRole: unique symbol;
 
 ### OptionActionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L8)
 
 ```ts
 export interface OptionActionState {
@@ -3656,7 +3659,7 @@ Referenced declarations: [`IconName`](#iconname).
 
 ### OptionGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/options.ts#L37)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/options.ts#L37)
 
 ```ts
 export interface OptionGroupPart extends Part {
@@ -3668,7 +3671,7 @@ Referenced declarations: [`OptionActionPart`](#optionactionpart), [`Part`](#part
 
 ### MountedParts
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/ownership.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/ownership.ts#L8)
 
 ```ts
 export interface MountedParts {
@@ -3682,7 +3685,7 @@ Referenced declarations: [`Appearance`](#appearance).
 
 ### mountParts
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/ownership.ts#L175)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/ownership.ts#L175)
 
 ```ts
 /** The only public DOM input. One live tree owns a checked, ordinary container. */
@@ -3693,7 +3696,7 @@ Referenced declarations: [`MountPartsOptions`](#mountpartsoptions), [`MountedPar
 
 ### MountPartsOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/ownership.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/ownership.ts#L7)
 
 ```ts
 export interface MountPartsOptions {
@@ -3705,7 +3708,7 @@ Referenced declarations: [`Appearance`](#appearance).
 
 ### Part
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/ownership.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/ownership.ts#L6)
 
 ```ts
 /** An opaque, library-owned part. Composition transfers its lifetime to its parent. */
@@ -3719,7 +3722,7 @@ Referenced declarations: [`partBrand`](#partbrand).
 
 ### partBrand
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/ownership.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/ownership.ts#L4)
 
 ```ts
 declare const partBrand: unique symbol;
@@ -3727,7 +3730,7 @@ declare const partBrand: unique symbol;
 
 ### createPaginationPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/pagination.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/pagination.ts#L14)
 
 ```ts
 /** A controlled Previous/status/Next row, with no content or page-size policy. */
@@ -3738,7 +3741,7 @@ Referenced declarations: [`PaginationPart`](#paginationpart), [`PaginationPartOp
 
 ### PaginationPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/pagination.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/pagination.ts#L7)
 
 ```ts
 export interface PaginationPart extends Part {
@@ -3750,7 +3753,7 @@ Referenced declarations: [`PaginationPartState`](#paginationpartstate), [`Part`]
 
 ### PaginationPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/pagination.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/pagination.ts#L6)
 
 ```ts
 export interface PaginationPartOptions extends PaginationPartState {
@@ -3762,7 +3765,7 @@ Referenced declarations: [`PaginationPartState`](#paginationpartstate).
 
 ### PaginationPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/pagination.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/pagination.ts#L5)
 
 ```ts
 export interface PaginationPartState {
@@ -3774,7 +3777,7 @@ export interface PaginationPartState {
 
 ### ContentViewportContent
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/preview-layout.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/preview-layout.ts#L4)
 
 ```ts
 export type ContentViewportContent = string | readonly Part[] | {
@@ -3787,7 +3790,7 @@ Referenced declarations: [`Part`](#part).
 
 ### ContentViewportOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/preview-layout.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/preview-layout.ts#L6)
 
 ```ts
 export interface ContentViewportOptions {
@@ -3802,7 +3805,7 @@ Referenced declarations: [`ContentViewportContent`](#contentviewportcontent).
 
 ### ContentViewportPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/preview-layout.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/preview-layout.ts#L5)
 
 ```ts
 export interface ContentViewportPart extends Part {
@@ -3814,7 +3817,7 @@ Referenced declarations: [`ContentViewportContent`](#contentviewportcontent), [`
 
 ### createContentViewportPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/preview-layout.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/preview-layout.ts#L8)
 
 ```ts
 /** A bounded content region. Literal loading/error text adds no wrapper. */
@@ -3825,7 +3828,7 @@ Referenced declarations: [`ContentViewportOptions`](#contentviewportoptions), [`
 
 ### createTrailingActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/preview-layout.ts#L40)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/preview-layout.ts#L40)
 
 ```ts
 /** A trailing row owns only placement; callers compose their own action group. */
@@ -3838,7 +3841,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createProgressPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/progress.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/progress.ts#L12)
 
 ```ts
 /** A native percentage progress track. Dimensions and accent belong to the library. */
@@ -3849,7 +3852,7 @@ Referenced declarations: [`ProgressPart`](#progresspart), [`ProgressPartState`](
 
 ### ProgressPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/progress.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/progress.ts#L4)
 
 ```ts
 export interface ProgressPart extends Part {
@@ -3861,7 +3864,7 @@ Referenced declarations: [`Part`](#part), [`ProgressPartState`](#progresspartsta
 
 ### ProgressPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/progress.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/progress.ts#L3)
 
 ```ts
 export interface ProgressPartState {
@@ -3873,7 +3876,7 @@ export interface ProgressPartState {
 
 ### createReadingRegionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reader-layout.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reader-layout.ts#L14)
 
 ```ts
 /** One flex reading region; the caller supplies viewport and floating action. */
@@ -3886,7 +3889,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createSearchToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reader-layout.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reader-layout.ts#L7)
 
 ```ts
 /** A native search row. Caller parts supply its field, count and actions. */
@@ -3899,7 +3902,7 @@ Referenced declarations: [`Part`](#part), [`SearchToolbarPart`](#searchtoolbarpa
 
 ### SearchToolbarPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reader-layout.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reader-layout.ts#L5)
 
 ```ts
 export interface SearchToolbarPart extends LayoutPart {
@@ -3911,7 +3914,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`SearchToolbarPartState`]
 
 ### SearchToolbarPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reader-layout.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reader-layout.ts#L4)
 
 ```ts
 export interface SearchToolbarPartState {
@@ -3921,7 +3924,7 @@ export interface SearchToolbarPartState {
 
 ### createReadingViewportPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading-viewport.ts#L18)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading-viewport.ts#L18)
 
 ```ts
 /** One native reading section. Search controls and all content are caller parts. */
@@ -3932,7 +3935,7 @@ Referenced declarations: [`ReadingViewportOptions`](#readingviewportoptions), [`
 
 ### ReadingViewportOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading-viewport.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading-viewport.ts#L6)
 
 ```ts
 export interface ReadingViewportOptions {
@@ -3948,7 +3951,7 @@ Referenced declarations: [`Part`](#part), [`ReadingColumnPart`](#readingcolumnpa
 
 ### ReadingViewportPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading-viewport.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading-viewport.ts#L12)
 
 ```ts
 export interface ReadingViewportPart extends Part {
@@ -3968,7 +3971,7 @@ Referenced declarations: [`Part`](#part).
 
 ### BubblePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L26)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L26)
 
 ```ts
 export interface BubblePart extends LayoutPart {
@@ -3980,7 +3983,7 @@ Referenced declarations: [`BubblePartState`](#bubblepartstate), [`LayoutPart`](#
 
 ### BubblePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L25)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L25)
 
 ```ts
 export interface BubblePartState {
@@ -3990,7 +3993,7 @@ export interface BubblePartState {
 
 ### createBubblePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L28)
 
 ```ts
 /** One article and its existing intrinsic body; no implicit text or actions. */
@@ -4004,7 +4007,7 @@ Referenced declarations: [`BubblePart`](#bubblepart), [`BubblePartState`](#bubbl
 
 ### createImageGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L42)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L42)
 
 ```ts
 /** A native image gallery. Images are independent caller-composed parts. */
@@ -4017,7 +4020,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createMessageActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L40)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L40)
 
 ```ts
 export declare function createMessageActionsPart(options: {
@@ -4029,7 +4032,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createMessageFooterPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L39)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L39)
 
 ```ts
 /** Metadata and actions stay separate from the reading bubble itself. */
@@ -4042,7 +4045,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createReadingColumnPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L16)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L16)
 
 ```ts
 export declare function createReadingColumnPart(options: {
@@ -4056,7 +4059,7 @@ Referenced declarations: [`Part`](#part), [`ReadingColumnPart`](#readingcolumnpa
 
 ### createReadingNotePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L45)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L45)
 
 ```ts
 export declare function createReadingNotePart(options: {
@@ -4069,7 +4072,7 @@ Referenced declarations: [`ReadingNotePart`](#readingnotepart).
 
 ### createTimestampPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L55)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L55)
 
 ```ts
 export declare function createTimestampPart(options: {
@@ -4081,7 +4084,7 @@ Referenced declarations: [`TimestampPart`](#timestamppart).
 
 ### createWorkingIndicatorPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L63)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L63)
 
 ```ts
 export declare function createWorkingIndicatorPart(options?: WorkingIndicatorPartState): WorkingIndicatorPart;
@@ -4091,7 +4094,7 @@ Referenced declarations: [`WorkingIndicatorPart`](#workingindicatorpart), [`Work
 
 ### ReadingColumnPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L12)
 
 ```ts
 /** A bounded reading column. Every message and status remains caller-composed. */
@@ -4106,7 +4109,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### ReadingNotePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L44)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L44)
 
 ```ts
 export interface ReadingNotePart extends Part {
@@ -4120,7 +4123,7 @@ Referenced declarations: [`Part`](#part).
 
 ### TimestampPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L54)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L54)
 
 ```ts
 export interface TimestampPart extends Part {
@@ -4134,7 +4137,7 @@ Referenced declarations: [`Part`](#part).
 
 ### WorkingIndicatorPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L62)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L62)
 
 ```ts
 export interface WorkingIndicatorPart extends Part {
@@ -4146,7 +4149,7 @@ Referenced declarations: [`Part`](#part), [`WorkingIndicatorPartState`](#working
 
 ### WorkingIndicatorPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/reading.ts#L61)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/reading.ts#L61)
 
 ```ts
 export interface WorkingIndicatorPartState {
@@ -4157,7 +4160,7 @@ export interface WorkingIndicatorPartState {
 
 ### createScrollAreaPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/scroll-area.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/scroll-area.ts#L6)
 
 ```ts
 /** A fixed metrics scroller. Its bounds and scrollbar rules stay in the library. */
@@ -4171,7 +4174,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createSearchFieldPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/search.ts#L13)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/search.ts#L13)
 
 ```ts
 /** A native containing search label. Its one icon and input use the fixed rail specification. */
@@ -4182,7 +4185,7 @@ Referenced declarations: [`SearchFieldPart`](#searchfieldpart), [`SearchFieldPar
 
 ### SearchFieldPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/search.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/search.ts#L7)
 
 ```ts
 export interface SearchFieldPart extends Part {
@@ -4197,7 +4200,7 @@ Referenced declarations: [`Part`](#part), [`SearchFieldPartState`](#searchfieldp
 
 ### SearchFieldPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/search.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/search.ts#L6)
 
 ```ts
 export interface SearchFieldPartOptions extends SearchFieldPartState {
@@ -4210,7 +4213,7 @@ Referenced declarations: [`SearchFieldPartState`](#searchfieldpartstate).
 
 ### SearchFieldPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/search.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/search.ts#L5)
 
 ```ts
 export interface SearchFieldPartState {
@@ -4223,7 +4226,7 @@ export interface SearchFieldPartState {
 
 ### createSecretLabelPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/secret-label.ts#L15)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/secret-label.ts#L15)
 
 ```ts
 /** A label and visibility action for a borrowed secret textarea. The control
@@ -4235,7 +4238,7 @@ Referenced declarations: [`SecretLabelPart`](#secretlabelpart), [`SecretLabelPar
 
 ### SecretLabelPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/secret-label.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/secret-label.ts#L7)
 
 ```ts
 export interface SecretLabelPart extends Part {
@@ -4247,7 +4250,7 @@ Referenced declarations: [`Part`](#part), [`SecretLabelPartState`](#secretlabelp
 
 ### SecretLabelPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/secret-label.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/secret-label.ts#L6)
 
 ```ts
 export interface SecretLabelPartOptions extends SecretLabelPartState {
@@ -4260,7 +4263,7 @@ Referenced declarations: [`SecretLabelPartState`](#secretlabelpartstate), [`Valu
 
 ### SecretLabelPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/secret-label.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/secret-label.ts#L5)
 
 ```ts
 export interface SecretLabelPartState {
@@ -4272,7 +4275,7 @@ export interface SecretLabelPartState {
 
 ### createSelectableCardPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/selectable-card.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/selectable-card.ts#L7)
 
 ```ts
 /** One native outlined article. Its caller composes all content and actions. */
@@ -4285,7 +4288,7 @@ Referenced declarations: [`Part`](#part), [`SelectableCardPart`](#selectablecard
 
 ### SelectableCardPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/selectable-card.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/selectable-card.ts#L5)
 
 ```ts
 export interface SelectableCardPart extends LayoutPart {
@@ -4297,7 +4300,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`SelectableCardState`](#s
 
 ### SelectableCardState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/selectable-card.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/selectable-card.ts#L4)
 
 ```ts
 export interface SelectableCardState {
@@ -4307,7 +4310,7 @@ export interface SelectableCardState {
 
 ### createStatusActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status-actions.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status-actions.ts#L6)
 
 ```ts
 /** One inline status/action row. The caller supplies its text and action parts. */
@@ -4321,7 +4324,7 @@ Referenced declarations: [`Part`](#part), [`StatusActionsPart`](#statusactionspa
 
 ### StatusActionsPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status-actions.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status-actions.ts#L4)
 
 ```ts
 export interface StatusActionsPart extends LayoutPart {
@@ -4335,7 +4338,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### BadgePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L4)
 
 ```ts
 export interface BadgePart extends Part {
@@ -4347,7 +4350,7 @@ Referenced declarations: [`BadgePartState`](#badgepartstate), [`Part`](#part).
 
 ### BadgePartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L5)
 
 ```ts
 export interface BadgePartOptions extends BadgePartState {
@@ -4359,7 +4362,7 @@ Referenced declarations: [`BadgePartState`](#badgepartstate).
 
 ### BadgePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L3)
 
 ```ts
 export interface BadgePartState {
@@ -4370,7 +4373,7 @@ export interface BadgePartState {
 
 ### createBadgePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L15)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L15)
 
 ```ts
 /** A small text badge. Its border, spacing and type are fixed by the library. */
@@ -4381,7 +4384,7 @@ Referenced declarations: [`BadgePart`](#badgepart), [`BadgePartOptions`](#badgep
 
 ### createStatusPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L37)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L37)
 
 ```ts
 /** A live inline result. Empty content takes no space; typography and tones are library-owned. */
@@ -4392,7 +4395,7 @@ Referenced declarations: [`StatusPart`](#statuspart), [`StatusPartOptions`](#sta
 
 ### StatusPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L29)
 
 ```ts
 export interface StatusPart extends Part {
@@ -4404,7 +4407,7 @@ Referenced declarations: [`Part`](#part), [`StatusPartState`](#statuspartstate).
 
 ### StatusPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L28)
 
 ```ts
 export interface StatusPartOptions extends StatusPartState {
@@ -4416,7 +4419,7 @@ Referenced declarations: [`StatusPartState`](#statuspartstate).
 
 ### StatusPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/status.ts#L27)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/status.ts#L27)
 
 ```ts
 export interface StatusPartState {
@@ -4428,7 +4431,7 @@ export interface StatusPartState {
 
 ### createFieldGridPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L31)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L31)
 
 ```ts
 /** The library's fixed two-column field grid; children retain their own identity. */
@@ -4441,7 +4444,7 @@ Referenced declarations: [`FieldGridPart`](#fieldgridpart), [`FieldGridPartState
 
 ### createFieldsetPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L13)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L13)
 
 ```ts
 /** A native legend group. Disabling is inherited by its existing controls. */
@@ -4454,7 +4457,7 @@ Referenced declarations: [`FieldsetPart`](#fieldsetpart), [`FieldsetPartState`](
 
 ### createInputAdornmentPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L52)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L52)
 
 ```ts
 /** The existing icon/input container; ordinary inputs receive no extra wrapper. */
@@ -4467,7 +4470,7 @@ Referenced declarations: [`InputAdornmentPart`](#inputadornmentpart), [`InputAdo
 
 ### FieldGridPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L29)
 
 ```ts
 export interface FieldGridPart extends Part {
@@ -4480,7 +4483,7 @@ Referenced declarations: [`FieldGridPartState`](#fieldgridpartstate), [`Part`](#
 
 ### FieldGridPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L28)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L28)
 
 ```ts
 export interface FieldGridPartState {
@@ -4490,7 +4493,7 @@ export interface FieldGridPartState {
 
 ### FieldsetPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L7)
 
 ```ts
 export interface FieldsetPart extends Part {
@@ -4503,7 +4506,7 @@ Referenced declarations: [`FieldsetPartState`](#fieldsetpartstate), [`Part`](#pa
 
 ### FieldsetPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L6)
 
 ```ts
 export interface FieldsetPartState {
@@ -4515,7 +4518,7 @@ export interface FieldsetPartState {
 
 ### InputAdornmentPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L46)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L46)
 
 ```ts
 export interface InputAdornmentPart extends Part {
@@ -4527,7 +4530,7 @@ Referenced declarations: [`InputAdornmentPartState`](#inputadornmentpartstate), 
 
 ### InputAdornmentPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/structure.ts#L45)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/structure.ts#L45)
 
 ```ts
 export interface InputAdornmentPartState {
@@ -4540,7 +4543,7 @@ Referenced declarations: [`IconName`](#iconname).
 
 ### createTablePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/table.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/table.ts#L29)
 
 ```ts
 /** A fixed native table with text headers and genuine, explicitly composed rows. */
@@ -4555,7 +4558,7 @@ Referenced declarations: [`TablePart`](#tablepart), [`TableRowPart`](#tablerowpa
 
 ### createTableRowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/table.ts#L9)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/table.ts#L9)
 
 ```ts
 /** Native cells contain either literal text or opaque child parts. */
@@ -4568,7 +4571,7 @@ Referenced declarations: [`Part`](#part), [`TableRowPart`](#tablerowpart).
 
 ### TablePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/table.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/table.ts#L5)
 
 ```ts
 export interface TablePart extends Part {
@@ -4580,7 +4583,7 @@ Referenced declarations: [`Part`](#part), [`TableRowPart`](#tablerowpart).
 
 ### tableRowBrand
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/table.ts#L3)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/table.ts#L3)
 
 ```ts
 declare const tableRowBrand: unique symbol;
@@ -4588,7 +4591,7 @@ declare const tableRowBrand: unique symbol;
 
 ### TableRowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/table.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/table.ts#L4)
 
 ```ts
 export interface TableRowPart extends Part {
@@ -4603,7 +4606,7 @@ Referenced declarations: [`Part`](#part), [`tableRowBrand`](#tablerowbrand).
 
 ### createTerminalPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/terminal.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/terminal.ts#L23)
 
 ```ts
 /** An opaque xterm emulator. The host owns transport and shell lifetime.
@@ -4615,7 +4618,7 @@ Referenced declarations: [`TerminalPart`](#terminalpart), [`TerminalPartOptions`
 
 ### TerminalPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/terminal.ts#L13)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/terminal.ts#L13)
 
 ```ts
 export interface TerminalPart extends Part {
@@ -4640,7 +4643,7 @@ Referenced declarations: [`Part`](#part), [`TerminalPartState`](#terminalpartsta
 
 ### TerminalPartOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/terminal.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/terminal.ts#L8)
 
 ```ts
 export interface TerminalPartOptions extends TerminalPartState {
@@ -4657,7 +4660,7 @@ Referenced declarations: [`TerminalPartState`](#terminalpartstate).
 
 ### TerminalPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/terminal.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/terminal.ts#L7)
 
 ```ts
 export interface TerminalPartState {
@@ -4669,7 +4672,7 @@ export interface TerminalPartState {
 
 ### createTextFlowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text-flow.ts#L20)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text-flow.ts#L20)
 
 ```ts
 /** A literal text flow with native strong emphasis, never HTML or per-word spans. */
@@ -4682,7 +4685,7 @@ Referenced declarations: [`TextFlowPart`](#textflowpart), [`TextFlowPartState`](
 
 ### TextFlowPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text-flow.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text-flow.ts#L7)
 
 ```ts
 export interface TextFlowPart extends Part {
@@ -4694,7 +4697,7 @@ Referenced declarations: [`Part`](#part), [`TextFlowPartState`](#textflowpartsta
 
 ### TextFlowPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text-flow.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text-flow.ts#L5)
 
 ```ts
 export interface TextFlowPartState {
@@ -4707,7 +4710,7 @@ Referenced declarations: [`TextFlowSegment`](#textflowsegment).
 
 ### TextFlowRole
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text-flow.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text-flow.ts#L6)
 
 ```ts
 export type TextFlowRole = 'paragraph' | 'description' | 'hint' | 'inline';
@@ -4715,7 +4718,7 @@ export type TextFlowRole = 'paragraph' | 'description' | 'hint' | 'inline';
 
 ### TextFlowSegment
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text-flow.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text-flow.ts#L4)
 
 ```ts
 export interface TextFlowSegment {
@@ -4726,7 +4729,7 @@ export interface TextFlowSegment {
 
 ### ContextNotePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L51)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L51)
 
 ```ts
 export interface ContextNotePart extends TextPart {
@@ -4738,7 +4741,7 @@ Referenced declarations: [`ContextNotePartState`](#contextnotepartstate), [`Text
 
 ### ContextNotePartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L50)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L50)
 
 ```ts
 export interface ContextNotePartState extends TextPartState {
@@ -4750,7 +4753,7 @@ Referenced declarations: [`TextPartState`](#textpartstate).
 
 ### createContextNotePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L54)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L54)
 
 ```ts
 /** A short centered context hint with one bounded warning state. It is a
@@ -4764,7 +4767,7 @@ Referenced declarations: [`ContextNotePart`](#contextnotepart), [`ContextNotePar
 
 ### createIconPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L77)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L77)
 
 ```ts
 /** SVG is the part root, so composing an icon never adds a span wrapper. */
@@ -4775,7 +4778,7 @@ Referenced declarations: [`IconPart`](#iconpart), [`IconPartState`](#iconpartsta
 
 ### createLineBreakPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L100)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L100)
 
 ```ts
 /** A native line break with no presentation options or wrapper. */
@@ -4786,7 +4789,7 @@ Referenced declarations: [`Part`](#part).
 
 ### createTextPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L29)
 
 ```ts
 /** A single semantic text node; the library owns its tag and presentation. */
@@ -4799,7 +4802,7 @@ Referenced declarations: [`TextPart`](#textpart), [`TextPartState`](#textpartsta
 
 ### IconName
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L6)
 
 ```ts
 export type IconName = typeof iconNames[number];
@@ -4809,7 +4812,7 @@ Referenced declarations: [`iconNames`](#iconnames).
 
 ### iconNames
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L5)
 
 ```ts
 export declare const iconNames: readonly [
@@ -4851,7 +4854,7 @@ export declare const iconNames: readonly [
 
 ### IconPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L75)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L75)
 
 ```ts
 export interface IconPart extends Part {
@@ -4863,7 +4866,7 @@ Referenced declarations: [`IconPartState`](#iconpartstate), [`Part`](#part).
 
 ### IconPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L74)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L74)
 
 ```ts
 export interface IconPartState {
@@ -4877,7 +4880,7 @@ Referenced declarations: [`IconName`](#iconname).
 
 ### TextPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L13)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L13)
 
 ```ts
 export interface TextPart extends Part {
@@ -4889,7 +4892,7 @@ Referenced declarations: [`Part`](#part), [`TextPartState`](#textpartstate).
 
 ### TextPartState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L11)
 
 ```ts
 export interface TextPartState {
@@ -4901,7 +4904,7 @@ export interface TextPartState {
 
 ### TextRole
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/text.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/text.ts#L12)
 
 ```ts
 export type TextRole = 'text' | 'small' | 'paragraph' | 'muted' | 'muted-paragraph' | 'path' | 'path-paragraph' | 'location' | 'footnote' | 'warning-paragraph' | 'scope-note' | 'surface-status' | 'note' | 'caption' | 'hint' | 'description' | 'eyebrow' | 'eyebrow-paragraph' | 'heading' | 'display-heading' | 'strong' | 'screenreader' | 'bubble' | 'interrupted' | 'section-title';
@@ -4909,7 +4912,7 @@ export type TextRole = 'text' | 'small' | 'paragraph' | 'muted' | 'muted-paragra
 
 ### CaptionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L8)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L8)
 
 ```ts
 export interface CaptionPart extends Part {
@@ -4923,7 +4926,7 @@ Referenced declarations: [`Part`](#part).
 
 ### createCaptionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L38)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L38)
 
 ```ts
 /** Literal native caption text, without a span or markup port. */
@@ -4936,7 +4939,7 @@ Referenced declarations: [`CaptionPart`](#captionpart).
 
 ### createThumbnailPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L31)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L31)
 
 ```ts
 /** A native thumbnail figure. Images, captions and actions are caller-composed. */
@@ -4949,7 +4952,7 @@ Referenced declarations: [`Part`](#part), [`ThumbnailPart`](#thumbnailpart).
 
 ### createThumbnailStripPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L17)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L17)
 
 ```ts
 /** One native horizontal strip. The library fixes thumbnail sizing and overflow. */
@@ -4960,7 +4963,7 @@ Referenced declarations: [`ThumbnailStripOptions`](#thumbnailstripoptions), [`Th
 
 ### ThumbnailPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L7)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L7)
 
 ```ts
 export interface ThumbnailPart extends LayoutPart {
@@ -4971,7 +4974,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart).
 
 ### ThumbnailStripOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L5)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L5)
 
 ```ts
 export interface ThumbnailStripOptions extends ThumbnailStripState {
@@ -4984,7 +4987,7 @@ Referenced declarations: [`Part`](#part), [`ThumbnailStripState`](#thumbnailstri
 
 ### ThumbnailStripPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L6)
 
 ```ts
 export interface ThumbnailStripPart extends LayoutPart {
@@ -4996,7 +4999,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`ThumbnailStripState`](#t
 
 ### ThumbnailStripState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/thumbnail.ts#L4)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/thumbnail.ts#L4)
 
 ```ts
 export interface ThumbnailStripState {
@@ -5007,7 +5010,7 @@ export interface ThumbnailStripState {
 
 ### createEmblemPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/toast.ts#L23)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/toast.ts#L23)
 
 ```ts
 /** A fixed success emblem. Shape, icon and size are library-owned. */
@@ -5020,7 +5023,7 @@ Referenced declarations: [`Part`](#part).
 
 ### createToastBodyPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/toast.ts#L21)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/toast.ts#L21)
 
 ```ts
 /** The flexible content slot leaves the emblem and dismissal as direct siblings. */
@@ -5033,7 +5036,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createToastPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/toast.ts#L19)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/toast.ts#L19)
 
 ```ts
 /** One native notification card; callers supply its actual small parts. */
@@ -5046,7 +5049,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createToastStackPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/toast.ts#L10)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/toast.ts#L10)
 
 ```ts
 /** A fixed, nonmodal notification stack. Content and its lifetime are owned once. */
@@ -5061,7 +5064,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createWarningPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/warning.ts#L6)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/warning.ts#L6)
 
 ```ts
 /** A bounded warning surface. Its icon, literal text and actions are composed
@@ -5073,9 +5076,45 @@ export declare function createWarningPart(options: {
 
 Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
+### createWebPreviewPart
+
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/web-preview.ts#L8)
+
+```ts
+/** Sandboxed, separate-origin web content. The host admits addresses and owns
+ * proxy/authentication policy; this part never reads the frame or its messages. */
+export declare function createWebPreviewPart(initial: WebPreviewPartState): WebPreviewPart;
+```
+
+Referenced declarations: [`WebPreviewPart`](#webpreviewpart), [`WebPreviewPartState`](#webpreviewpartstate).
+
+### WebPreviewPart
+
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/web-preview.ts#L4)
+
+```ts
+export interface WebPreviewPart extends Part {
+    update(state: Readonly<WebPreviewPartState>): void;
+}
+```
+
+Referenced declarations: [`Part`](#part), [`WebPreviewPartState`](#webpreviewpartstate).
+
+### WebPreviewPartState
+
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/web-preview.ts#L3)
+
+```ts
+export interface WebPreviewPartState {
+    url: string;
+    disabled?: boolean;
+    revision?: number;
+}
+```
+
 ### CenteredContentPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L12)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L12)
 
 ```ts
 export interface CenteredContentPart extends LayoutPart {
@@ -5087,7 +5126,7 @@ Referenced declarations: [`CenteredContentState`](#centeredcontentstate), [`Layo
 
 ### CenteredContentState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L11)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L11)
 
 ```ts
 export interface CenteredContentState {
@@ -5097,7 +5136,7 @@ export interface CenteredContentState {
 
 ### createBrandTilePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L24)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L24)
 
 ```ts
 /** One fixed emblem tile, with the genuine mark as its direct child. */
@@ -5110,7 +5149,7 @@ Referenced declarations: [`BrandMarkPart`](#brandmarkpart), [`Part`](#part).
 
 ### createCenteredContentPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L14)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L14)
 
 ```ts
 /** An empty centered content column. All text, controls and branching are caller parts. */
@@ -5124,7 +5163,7 @@ Referenced declarations: [`CenteredContentPart`](#centeredcontentpart), [`Center
 
 ### createContextLinePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L87)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L87)
 
 ```ts
 /** A short inline context row with independently composed content and actions. */
@@ -5137,7 +5176,7 @@ Referenced declarations: [`LayoutPart`](#layoutpart), [`Part`](#part).
 
 ### createIconNotePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L104)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L104)
 
 ```ts
 /** One icon and literal note in the library's fixed quiet line presentation. */
@@ -5148,7 +5187,7 @@ Referenced declarations: [`IconNotePart`](#iconnotepart), [`IconNoteState`](#ico
 
 ### createResponsiveLeadPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L32)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L32)
 
 ```ts
 /** Literal content lines separated by the library's fixed responsive break. */
@@ -5159,7 +5198,7 @@ Referenced declarations: [`ResponsiveLeadPart`](#responsiveleadpart), [`Responsi
 
 ### createStepActionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L52)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L52)
 
 ```ts
 /** One native rich action. The leading number/check and chevron are intrinsic. */
@@ -5170,7 +5209,7 @@ Referenced declarations: [`StepActionOptions`](#stepactionoptions), [`StepAction
 
 ### createStepGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L76)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L76)
 
 ```ts
 /** A small titled group. It supplies no setup workflow, model or workspace data. */
@@ -5183,7 +5222,7 @@ Referenced declarations: [`StepActionPart`](#stepactionpart), [`StepGroupPart`](
 
 ### createSuggestionGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L90)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L90)
 
 ```ts
 /** A wrapping group of genuine ordinary actions, without implicit suggestions. */
@@ -5196,7 +5235,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`SuggestionGroupPart`](#s
 
 ### IconNotePart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L102)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L102)
 
 ```ts
 export interface IconNotePart extends Part {
@@ -5208,7 +5247,7 @@ Referenced declarations: [`IconNoteState`](#iconnotestate), [`Part`](#part).
 
 ### IconNoteState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L101)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L101)
 
 ```ts
 export interface IconNoteState {
@@ -5221,7 +5260,7 @@ Referenced declarations: [`IconName`](#iconname).
 
 ### ResponsiveLeadPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L30)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L30)
 
 ```ts
 export interface ResponsiveLeadPart extends Part {
@@ -5233,7 +5272,7 @@ Referenced declarations: [`Part`](#part), [`ResponsiveLeadState`](#responsivelea
 
 ### ResponsiveLeadState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L29)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L29)
 
 ```ts
 export interface ResponsiveLeadState {
@@ -5243,7 +5282,7 @@ export interface ResponsiveLeadState {
 
 ### StepActionOptions
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L44)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L44)
 
 ```ts
 export interface StepActionOptions extends StepActionState {
@@ -5256,7 +5295,7 @@ Referenced declarations: [`StepActionState`](#stepactionstate), [`UIAction`](#ui
 
 ### StepActionPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L43)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L43)
 
 ```ts
 export interface StepActionPart extends Part {
@@ -5271,7 +5310,7 @@ Referenced declarations: [`Part`](#part), [`StepActionState`](#stepactionstate),
 
 ### stepActionRole
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L42)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L42)
 
 ```ts
 declare const stepActionRole: unique symbol;
@@ -5279,7 +5318,7 @@ declare const stepActionRole: unique symbol;
 
 ### StepActionState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L41)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L41)
 
 ```ts
 export interface StepActionState {
@@ -5293,7 +5332,7 @@ export interface StepActionState {
 
 ### StepGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L71)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L71)
 
 ```ts
 export interface StepGroupPart extends Part {
@@ -5306,7 +5345,7 @@ Referenced declarations: [`Part`](#part), [`StepActionPart`](#stepactionpart), [
 
 ### StepGroupState
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L70)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L70)
 
 ```ts
 export interface StepGroupState {
@@ -5317,7 +5356,7 @@ export interface StepGroupState {
 
 ### SuggestionGroupPart
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/parts/welcome-parts.ts#L88)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/parts/welcome-parts.ts#L88)
 
 ```ts
 export interface SuggestionGroupPart extends Part {
@@ -5329,7 +5368,7 @@ Referenced declarations: [`ButtonPart`](#buttonpart), [`Part`](#part).
 
 ### Appearance
 
-[Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/theme.ts#L1)
+[Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/theme.ts#L1)
 
 ```ts
 export type Appearance = 'light' | 'dark' | 'system';
@@ -5341,227 +5380,230 @@ Import these regions, state and callback types from `pith-ui/recipes`. Their ins
 
 | Export | Declaration source |
 |---|---|
-| `Appearance` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L11) |
-| `Approval` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/approval.ts#L10) |
-| `ApprovalComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/approval.ts#L12) |
-| `ApprovalState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/approval.ts#L11) |
-| `ArtifactActionResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L17) |
-| `ArtifactsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L18) |
-| `ArtifactsComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L23) |
-| `ArtifactsDependencies` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L22) |
-| `ArtifactsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L11) |
-| `ArtifactTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L16) |
-| `AttachmentItem` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/attachments.ts#L7) |
-| `AttachmentsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/attachments.ts#L9) |
-| `AttachmentsComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/attachments.ts#L10) |
-| `AttachmentsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/attachments.ts#L8) |
-| `BodyMessage` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L12) |
-| `BodyResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L15) |
-| `BrowserAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L14) |
-| `BrowserDirectory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L6) |
-| `BrowserEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L5) |
-| `BrowserTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L13) |
-| `CompletionNoticeDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/completion-notices.ts#L4) |
-| `CompletionNoticesComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/completion-notices.ts#L5) |
-| `composeApproval` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/approval.ts#L28) |
-| `composeArtifacts` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/artifacts.ts#L30) |
-| `composeAttachments` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/attachments.ts#L14) |
-| `composeBranchHistory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L17) |
-| `composeCompletionNotices` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/completion-notices.ts#L7) |
-| `composeComposer` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/composer.ts#L11) |
-| `composeConfirmation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L32) |
-| `composeConversationBody` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L23) |
-| `composeConversationReader` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-reader.ts#L16) |
-| `composeCostLedger` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L19) |
-| `composeCustomConnection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L21) |
-| `composeCustomConnectionLoading` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L83) |
-| `composeFileBrowser` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L26) |
-| `composeFilePreview` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L33) |
-| `composeFrame` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L62) |
-| `composeFullAccess` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L18) |
-| `composeImageViewer` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/image-viewer.ts#L18) |
-| `composeMCPConnections` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L29) |
-| `composeModelPicker` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L47) |
-| `composePendingMessages` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/pending-messages.ts#L14) |
-| `composePermissionControl` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/permission-control.ts#L8) |
-| `composeProviderLogin` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/provider-login.ts#L19) |
-| `ComposerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/composer.ts#L9) |
-| `ComposerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/composer.ts#L10) |
-| `composeRename` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L25) |
-| `composeResourceEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L42) |
-| `composeResourceLoading` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L135) |
-| `composeResourcesInventory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L65) |
-| `ComposerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/composer.ts#L7) |
-| `composeRuntime` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/runtime.ts#L8) |
-| `composeSettings` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L50) |
-| `composeTaskFailure` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L9) |
-| `composeTerminal` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L18) |
-| `composeTextEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L42) |
-| `composeToolGroup` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/tool-disclosures.ts#L22) |
-| `composeWelcome` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/welcome.ts#L20) |
-| `composeWorkspacePicker` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L26) |
-| `composeWorkspaceTools` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L16) |
-| `ConfirmationAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L22) |
-| `ConfirmationCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L21) |
-| `ConfirmationComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L29) |
-| `ConfirmationResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L20) |
-| `ConfirmationState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/confirmation.ts#L9) |
-| `ConversationBodyCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L16) |
-| `ConversationBodyComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L18) |
-| `ConversationBodyState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L13) |
-| `ConversationHostAvailability` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L17) |
-| `ConversationImageScope` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-images.ts#L7) |
-| `ConversationReaderComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-reader.ts#L8) |
-| `CostLedgerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L7) |
-| `CostLedgerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L5) |
-| `CostRequestDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L4) |
-| `CostSummaryDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L6) |
-| `createConversationImageScope` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-images.ts#L11) |
-| `createDialogHost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/dialog-host.ts#L23) |
-| `CustomConnectionAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L16) |
-| `CustomConnectionCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L15) |
-| `CustomConnectionComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L17) |
-| `CustomConnectionDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L14) |
-| `CustomConnectionState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L12) |
-| `CustomLoadingAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L81) |
-| `CustomLoadingComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L82) |
-| `CustomLoadingState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L80) |
-| `CustomModel` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L9) |
-| `customModelDefaults` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L11) |
-| `CustomModelDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/custom-connection.ts#L13) |
-| `DialogHost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/dialog-host.ts#L16) |
-| `DialogHostOptions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/dialog-host.ts#L11) |
-| `DialogOpening` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/dialog-host.ts#L5) |
-| `FailureAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L4) |
-| `FileActions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/types.ts#L5) |
-| `FileBrowserCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L15) |
-| `FileBrowserComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L21) |
-| `FileBrowserState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-browser.ts#L7) |
-| `FilePreviewAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L24) |
-| `FilePreviewComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L28) |
-| `formatCost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/cost-ledger.ts#L14) |
-| `FrameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L53) |
-| `FrameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L28) |
-| `FrameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L60) |
-| `FrameContent` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L38) |
-| `FrameConversation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L17) |
-| `FrameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L22) |
-| `FrameWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame.ts#L21) |
-| `FullAccessAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L13) |
-| `FullAccessCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L12) |
-| `FullAccessComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L14) |
-| `FullAccessResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L11) |
-| `FullAccessState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/full-access.ts#L10) |
-| `GalleryCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-images.ts#L5) |
-| `HistoryAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L12) |
-| `HistoryCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L11) |
-| `HistoryComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L13) |
-| `HistoryNode` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L8) |
-| `HistoryResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L10) |
-| `HistoryState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/branch-history.ts#L9) |
-| `ImageGalleryComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-images.ts#L6) |
-| `ImageReference` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-images.ts#L4) |
-| `ImageTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-images.ts#L3) |
-| `ImageViewerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/image-viewer.ts#L8) |
-| `ImageViewerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/image-viewer.ts#L9) |
-| `ImageViewerInput` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/image-viewer.ts#L7) |
-| `InventoryCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L24) |
-| `InventoryState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L11) |
-| `MCPAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L16) |
-| `MCPAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L22) |
-| `MCPCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L17) |
-| `MCPComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L27) |
-| `MCPConnection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L15) |
-| `MCPDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L14) |
-| `MCPEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L13) |
-| `MCPState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/mcp.ts#L12) |
-| `MessageAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/conversation-body.ts#L14) |
-| `ModelCatalog` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L20) |
-| `ModelEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L16) |
-| `ModelPickerAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L32) |
-| `ModelPickerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L28) |
-| `ModelPickerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L41) |
-| `ModelPickerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L26) |
-| `ModelProvider` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L15) |
-| `ModelSelection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L14) |
-| `PendingCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/pending-messages.ts#L8) |
-| `PendingComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/pending-messages.ts#L9) |
-| `PendingItem` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/pending-messages.ts#L6) |
-| `PendingState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/pending-messages.ts#L7) |
-| `PermissionComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/permission-control.ts#L6) |
-| `PermissionState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/permission-control.ts#L5) |
-| `PickerWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L10) |
-| `PreviewCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L17) |
-| `PreviewInput` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L16) |
-| `PreviewKind` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L12) |
-| `previewPageBytes` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/preview-pages.ts#L2) |
-| `previewPageRanges` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/preview-pages.ts#L3) |
-| `PreviewResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L13) |
-| `PreviewState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L14) |
-| `PreviewTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/file-preview.ts#L15) |
-| `ProviderAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L21) |
-| `ProviderActions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L20) |
-| `ProviderLoginAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/provider-login.ts#L16) |
-| `ProviderLoginCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/provider-login.ts#L10) |
-| `ProviderLoginComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/provider-login.ts#L17) |
-| `ProviderLoginState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/provider-login.ts#L9) |
-| `RecipeResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/types.ts#L3) |
-| `RenameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L13) |
-| `RenameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L12) |
-| `RenameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L22) |
-| `RenameDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L10) |
-| `RenameResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L11) |
-| `RenameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/rename.ts#L9) |
-| `ResourceActionResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L23) |
-| `ResourceCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L25) |
-| `ResourceDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L24) |
-| `ResourceEditorAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L30) |
-| `ResourceEditorComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L38) |
-| `ResourceEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L10) |
-| `ResourceInventoryAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L32) |
-| `ResourceInventoryComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-inventory.ts#L40) |
-| `ResourceKind` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/types.ts#L6) |
-| `ResourceLoadingAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L125) |
-| `ResourceLoadingComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L132) |
-| `ResourceLoadingState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L124) |
-| `ResourceResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L9) |
-| `ResourceState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/resource-editor.ts#L10) |
-| `ResourceTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/types.ts#L7) |
-| `RuntimeComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/runtime.ts#L5) |
-| `RuntimeState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/runtime.ts#L4) |
-| `SettingsAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L34) |
-| `SettingsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L24) |
-| `SettingsComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L43) |
-| `SettingsCredential` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L22) |
-| `SettingsDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L18) |
-| `SettingsProvider` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L19) |
-| `SettingsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L13) |
-| `SidebarWidths` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/frame-sizing.ts#L4) |
-| `TaskFailureCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L6) |
-| `TaskFailureComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L7) |
-| `TaskFailureState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/task-failure.ts#L5) |
-| `TerminalCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L10) |
-| `TerminalState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/terminal.ts#L5) |
-| `TextEditorAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L29) |
-| `TextEditorCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L23) |
-| `TextEditorComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L39) |
-| `TextEditorInput` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L21) |
-| `TextEditorResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L22) |
-| `TextEditorState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/text-edit.ts#L10) |
-| `thinkingLabel` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/model-picker.ts#L44) |
-| `ToolGroupComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/tool-disclosures.ts#L11) |
-| `ToolMessage` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/tool-disclosures.ts#L10) |
-| `UpdateState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/settings.ts#L23) |
-| `WelcomeCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/welcome.ts#L11) |
-| `WelcomeComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/welcome.ts#L17) |
-| `WelcomeResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/welcome.ts#L10) |
-| `WelcomeState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/welcome.ts#L9) |
-| `WorkspacePickerAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L19) |
-| `WorkspacePickerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L13) |
-| `WorkspacePickerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L23) |
-| `WorkspacePickerResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L12) |
-| `WorkspacePickerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-picker.ts#L11) |
-| `WorkspaceToolsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L10) |
-| `WorkspaceToolsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L7) |
-| `WorkspaceToolTab` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L6) |
-| `WorkspaceToolView` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.10.0/src/recipes/workspace-tools.ts#L5) |
+| `Appearance` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L11) |
+| `Approval` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/approval.ts#L10) |
+| `ApprovalComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/approval.ts#L12) |
+| `ApprovalState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/approval.ts#L11) |
+| `ArtifactActionResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L17) |
+| `ArtifactsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L18) |
+| `ArtifactsComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L23) |
+| `ArtifactsDependencies` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L22) |
+| `ArtifactsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L11) |
+| `ArtifactTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L16) |
+| `AttachmentItem` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/attachments.ts#L7) |
+| `AttachmentsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/attachments.ts#L9) |
+| `AttachmentsComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/attachments.ts#L10) |
+| `AttachmentsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/attachments.ts#L8) |
+| `BodyMessage` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L12) |
+| `BodyResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L15) |
+| `BrowserAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L14) |
+| `BrowserDirectory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L6) |
+| `BrowserEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L5) |
+| `BrowserTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L13) |
+| `CompletionNoticeDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/completion-notices.ts#L4) |
+| `CompletionNoticesComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/completion-notices.ts#L5) |
+| `composeApproval` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/approval.ts#L28) |
+| `composeArtifacts` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/artifacts.ts#L30) |
+| `composeAttachments` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/attachments.ts#L14) |
+| `composeBranchHistory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L17) |
+| `composeCompletionNotices` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/completion-notices.ts#L7) |
+| `composeComposer` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/composer.ts#L11) |
+| `composeConfirmation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/confirmation.ts#L32) |
+| `composeConversationBody` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L23) |
+| `composeConversationReader` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-reader.ts#L16) |
+| `composeCostLedger` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/cost-ledger.ts#L19) |
+| `composeCustomConnection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L21) |
+| `composeCustomConnectionLoading` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L83) |
+| `composeFileBrowser` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L26) |
+| `composeFilePreview` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L33) |
+| `composeFrame` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L62) |
+| `composeFullAccess` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/full-access.ts#L18) |
+| `composeImageViewer` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/image-viewer.ts#L18) |
+| `composeMCPConnections` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L29) |
+| `composeModelPicker` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L47) |
+| `composePendingMessages` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/pending-messages.ts#L14) |
+| `composePermissionControl` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/permission-control.ts#L8) |
+| `composeProviderLogin` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/provider-login.ts#L19) |
+| `ComposerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/composer.ts#L9) |
+| `ComposerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/composer.ts#L10) |
+| `composeRename` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L25) |
+| `composeResourceEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L42) |
+| `composeResourceLoading` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L135) |
+| `composeResourcesInventory` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L65) |
+| `ComposerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/composer.ts#L7) |
+| `composeRuntime` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/runtime.ts#L8) |
+| `composeSettings` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L50) |
+| `composeTaskFailure` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/task-failure.ts#L9) |
+| `composeTerminal` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/terminal.ts#L18) |
+| `composeTextEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L42) |
+| `composeToolGroup` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/tool-disclosures.ts#L22) |
+| `composeWebPreview` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/web-preview.ts#L8) |
+| `composeWelcome` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/welcome.ts#L20) |
+| `composeWorkspacePicker` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L26) |
+| `composeWorkspaceTools` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-tools.ts#L16) |
+| `ConfirmationAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/confirmation.ts#L22) |
+| `ConfirmationCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/confirmation.ts#L21) |
+| `ConfirmationComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/confirmation.ts#L29) |
+| `ConfirmationResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/confirmation.ts#L20) |
+| `ConfirmationState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/confirmation.ts#L9) |
+| `ConversationBodyCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L16) |
+| `ConversationBodyComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L18) |
+| `ConversationBodyState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L13) |
+| `ConversationHostAvailability` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L17) |
+| `ConversationImageScope` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-images.ts#L7) |
+| `ConversationReaderComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-reader.ts#L8) |
+| `CostLedgerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/cost-ledger.ts#L7) |
+| `CostLedgerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/cost-ledger.ts#L5) |
+| `CostRequestDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/cost-ledger.ts#L4) |
+| `CostSummaryDisplay` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/cost-ledger.ts#L6) |
+| `createConversationImageScope` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-images.ts#L11) |
+| `createDialogHost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/dialog-host.ts#L23) |
+| `CustomConnectionAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L16) |
+| `CustomConnectionCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L15) |
+| `CustomConnectionComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L17) |
+| `CustomConnectionDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L14) |
+| `CustomConnectionState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L12) |
+| `CustomLoadingAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L81) |
+| `CustomLoadingComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L82) |
+| `CustomLoadingState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L80) |
+| `CustomModel` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L9) |
+| `customModelDefaults` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L11) |
+| `CustomModelDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/custom-connection.ts#L13) |
+| `DialogHost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/dialog-host.ts#L16) |
+| `DialogHostOptions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/dialog-host.ts#L11) |
+| `DialogOpening` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/dialog-host.ts#L5) |
+| `FailureAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/task-failure.ts#L4) |
+| `FileActions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/types.ts#L5) |
+| `FileBrowserCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L15) |
+| `FileBrowserComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L21) |
+| `FileBrowserState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-browser.ts#L7) |
+| `FilePreviewAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L24) |
+| `FilePreviewComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L28) |
+| `formatCost` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/cost-ledger.ts#L14) |
+| `FrameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L53) |
+| `FrameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L28) |
+| `FrameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L60) |
+| `FrameContent` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L38) |
+| `FrameConversation` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L17) |
+| `FrameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L22) |
+| `FrameWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame.ts#L21) |
+| `FullAccessAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/full-access.ts#L13) |
+| `FullAccessCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/full-access.ts#L12) |
+| `FullAccessComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/full-access.ts#L14) |
+| `FullAccessResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/full-access.ts#L11) |
+| `FullAccessState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/full-access.ts#L10) |
+| `GalleryCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-images.ts#L5) |
+| `HistoryAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L12) |
+| `HistoryCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L11) |
+| `HistoryComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L13) |
+| `HistoryNode` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L8) |
+| `HistoryResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L10) |
+| `HistoryState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/branch-history.ts#L9) |
+| `ImageGalleryComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-images.ts#L6) |
+| `ImageReference` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-images.ts#L4) |
+| `ImageTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-images.ts#L3) |
+| `ImageViewerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/image-viewer.ts#L8) |
+| `ImageViewerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/image-viewer.ts#L9) |
+| `ImageViewerInput` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/image-viewer.ts#L7) |
+| `InventoryCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L24) |
+| `InventoryState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L11) |
+| `MCPAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L16) |
+| `MCPAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L22) |
+| `MCPCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L17) |
+| `MCPComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L27) |
+| `MCPConnection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L15) |
+| `MCPDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L14) |
+| `MCPEditor` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L13) |
+| `MCPState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/mcp.ts#L12) |
+| `MessageAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/conversation-body.ts#L14) |
+| `ModelCatalog` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L20) |
+| `ModelEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L16) |
+| `ModelPickerAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L32) |
+| `ModelPickerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L28) |
+| `ModelPickerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L41) |
+| `ModelPickerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L26) |
+| `ModelProvider` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L15) |
+| `ModelSelection` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L14) |
+| `PendingCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/pending-messages.ts#L8) |
+| `PendingComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/pending-messages.ts#L9) |
+| `PendingItem` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/pending-messages.ts#L6) |
+| `PendingState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/pending-messages.ts#L7) |
+| `PermissionComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/permission-control.ts#L6) |
+| `PermissionState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/permission-control.ts#L5) |
+| `PickerWorkspace` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L10) |
+| `PreviewCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L17) |
+| `PreviewInput` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L16) |
+| `PreviewKind` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L12) |
+| `previewPageBytes` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/preview-pages.ts#L2) |
+| `previewPageRanges` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/preview-pages.ts#L3) |
+| `PreviewResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L13) |
+| `PreviewState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L14) |
+| `PreviewTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/file-preview.ts#L15) |
+| `ProviderAction` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L21) |
+| `ProviderActions` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L20) |
+| `ProviderLoginAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/provider-login.ts#L16) |
+| `ProviderLoginCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/provider-login.ts#L10) |
+| `ProviderLoginComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/provider-login.ts#L17) |
+| `ProviderLoginState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/provider-login.ts#L9) |
+| `RecipeResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/types.ts#L3) |
+| `RenameAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L13) |
+| `RenameCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L12) |
+| `RenameComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L22) |
+| `RenameDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L10) |
+| `RenameResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L11) |
+| `RenameState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/rename.ts#L9) |
+| `ResourceActionResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L23) |
+| `ResourceCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L25) |
+| `ResourceDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L24) |
+| `ResourceEditorAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L30) |
+| `ResourceEditorComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L38) |
+| `ResourceEntry` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L10) |
+| `ResourceInventoryAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L32) |
+| `ResourceInventoryComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-inventory.ts#L40) |
+| `ResourceKind` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/types.ts#L6) |
+| `ResourceLoadingAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L125) |
+| `ResourceLoadingComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L132) |
+| `ResourceLoadingState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L124) |
+| `ResourceResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L9) |
+| `ResourceState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/resource-editor.ts#L10) |
+| `ResourceTarget` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/types.ts#L7) |
+| `RuntimeComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/runtime.ts#L5) |
+| `RuntimeState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/runtime.ts#L4) |
+| `SettingsAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L34) |
+| `SettingsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L24) |
+| `SettingsComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L43) |
+| `SettingsCredential` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L22) |
+| `SettingsDraft` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L18) |
+| `SettingsProvider` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L19) |
+| `SettingsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L13) |
+| `SidebarWidths` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/frame-sizing.ts#L4) |
+| `TaskFailureCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/task-failure.ts#L6) |
+| `TaskFailureComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/task-failure.ts#L7) |
+| `TaskFailureState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/task-failure.ts#L5) |
+| `TerminalCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/terminal.ts#L10) |
+| `TerminalState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/terminal.ts#L5) |
+| `TextEditorAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L29) |
+| `TextEditorCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L23) |
+| `TextEditorComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L39) |
+| `TextEditorInput` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L21) |
+| `TextEditorResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L22) |
+| `TextEditorState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/text-edit.ts#L10) |
+| `thinkingLabel` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/model-picker.ts#L44) |
+| `ToolGroupComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/tool-disclosures.ts#L11) |
+| `ToolMessage` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/tool-disclosures.ts#L10) |
+| `UpdateState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/settings.ts#L23) |
+| `WebPreviewCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/web-preview.ts#L5) |
+| `WebPreviewState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/web-preview.ts#L4) |
+| `WelcomeCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/welcome.ts#L11) |
+| `WelcomeComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/welcome.ts#L17) |
+| `WelcomeResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/welcome.ts#L10) |
+| `WelcomeState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/welcome.ts#L9) |
+| `WorkspacePickerAssembly` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L19) |
+| `WorkspacePickerCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L13) |
+| `WorkspacePickerComposition` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L23) |
+| `WorkspacePickerResult` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L12) |
+| `WorkspacePickerState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-picker.ts#L11) |
+| `WorkspaceToolsCallbacks` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-tools.ts#L10) |
+| `WorkspaceToolsState` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-tools.ts#L7) |
+| `WorkspaceToolTab` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-tools.ts#L6) |
+| `WorkspaceToolView` | [Source](https://github.com/minifish-org/pith-ui/blob/v0.11.0/src/recipes/workspace-tools.ts#L5) |

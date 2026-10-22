@@ -141,6 +141,7 @@ Every linked exhibit has a strictly compiled example made from the formal API. S
 | `createTreeItemPart` | [tree-item-part](https://minifish-org.github.io/pith-ui/?item=tree-item-part) |
 | `createTreePart` | [tree-part](https://minifish-org.github.io/pith-ui/?item=tree-part) |
 | `createWarningPart` | [warning-part](https://minifish-org.github.io/pith-ui/?item=warning-part) |
+| `createWebPreviewPart` | [web-preview-part](https://minifish-org.github.io/pith-ui/?item=web-preview-part) |
 | `createWorkingIndicatorPart` | [working-indicator-part](https://minifish-org.github.io/pith-ui/?item=working-indicator-part) |
 | `createZoomImagePart` | [zoom-image-part](https://minifish-org.github.io/pith-ui/?item=zoom-image-part) |
 | `mountParts` | [button-parts](https://minifish-org.github.io/pith-ui/?item=button-parts) |

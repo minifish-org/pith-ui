@@ -48,6 +48,13 @@ shrinking visual viewport in Chromium and WebKit: input/selection, approval
 scrolling, drawer bounds, modal bounds and zoom behavior. This simulation does
 not replace a real iOS/Android soft-keyboard acceptance check.
 
+`tests/web-preview.spec.ts` covers the single-row toolbar at 240px, Return
+navigation, the refresh icon and external-opening context menu, error-only
+feedback, address-draft and iframe retention, sandbox
+permissions, unsafe/same-origin address rejection, the optional tool intent and
+frame teardown on disable/disposal. Desk covers URL admission, isolated preview
+grants, credential stripping, lease revocation, real Vite HMR and WKWebView use.
+
 `parts-titlebar.spec.ts` verifies one compact header height across navigation,
 conversation and tool tabs, all wide rail states and narrow overlays, including
 native window-control reservations and fullscreen draft preservation.

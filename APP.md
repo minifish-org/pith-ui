@@ -89,6 +89,10 @@ rail heading. The frame borrows the tab strip's genuine button for drawer focus
 and dismissal. Applications retain
 tab data, persistence, shell and transport lifetimes.
 
+See [web preview](./docs/assemblies/web-preview.md) for a single sandboxed iframe,
+address draft and external-opening controls. Applications admit addresses and
+provide a separate origin for untrusted projects; the library owns presentation.
+
 See [region coverage](./docs/assemblies/coverage.md), [settings](./docs/assemblies/settings.md),
 [conversation reader](./docs/assemblies/conversation-reader.md),
 [composer](./docs/assemblies/composer.md), [resources](./docs/assemblies/resource-editor.md),

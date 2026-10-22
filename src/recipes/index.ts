@@ -35,4 +35,5 @@ export {composeWorkspacePicker, type PickerWorkspace, type WorkspacePickerState,
 export {createDialogHost, type DialogHost, type DialogOpening, type DialogHostOptions} from "./dialog-host.js";
 export {previewPageRanges, previewPageBytes} from "./preview-pages.js";
 export {composeTerminal,type TerminalState,type TerminalCallbacks} from './terminal.js';
+export {composeWebPreview,type WebPreviewState,type WebPreviewCallbacks} from './web-preview.js';
 export {composeWorkspaceTools,type WorkspaceToolView,type WorkspaceToolTab,type WorkspaceToolsState,type WorkspaceToolsCallbacks} from './workspace-tools.js';

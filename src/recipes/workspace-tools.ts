@@ -2,10 +2,10 @@ import {createButtonPart,createMenuPart,createStackPart,type ButtonPart,type Par
 import {nodeOf,onPartDestroy} from '../parts/ownership.js';
 import {uniqueId} from '../dom.js';
 
-export type WorkspaceToolView = 'files'|'terminal';
+export type WorkspaceToolView = 'files'|'terminal'|'preview';
 export interface WorkspaceToolTab {id: string;kind: WorkspaceToolView;label: string;detail?: string;pending?: boolean}
 export interface WorkspaceToolsState {
-  tabs: readonly WorkspaceToolTab[];activeId: string;location: 'Local'|'Server';detail: string;disabled?: boolean;
+  tabs: readonly WorkspaceToolTab[];activeId: string;location: 'Local'|'Server';detail: string;disabled?: boolean;webPreview?: boolean;
 }
 export interface WorkspaceToolsCallbacks {
   onSelect?(id: string): void;onClose?(id: string): void;onNew?(kind: WorkspaceToolView): void;onDismiss?(): void;
@@ -23,7 +23,8 @@ export function composeWorkspaceTools(initial: Readonly<WorkspaceToolsState>,cal
   nodeOf(body).className = 'pui-tool-panels';
   const dismiss = createButtonPart({label: 'Close tools',title: 'Close tools',icon: 'sidebar-right',variant: 'quiet-icon',onAction: callbacks.onDismiss});nodeOf(dismiss).classList.add('pui-tool-dismiss');
   const heading = createStackPart({children: [strip,dismiss]});nodeOf(heading).className = 'pui-tool-tabs-heading';
-  const menu = createMenuPart({label: 'New workspace tool',scrollBehavior: 'anchor',items: (['terminal','files'] as const).map(kind => ({key: kind,label: kind === 'terminal' ? 'New terminal' : 'New files',onAction() {menu.close();if (alive && !state.disabled) callbacks.onNew?.(kind);}}))});
+  const menuItems = () => (['terminal','files',...(state.webPreview ? ['preview'] as const : [])] as const).map(kind => ({key: kind,label: kind === 'terminal' ? 'New terminal' : kind === 'files' ? 'New files' : 'New Web',onAction() {menu.close();if (alive && !state.disabled) callbacks.onNew?.(kind);}}));
+  const menu = createMenuPart({label: 'New workspace tool',scrollBehavior: 'anchor',items: menuItems()});
   const part = createStackPart({children: [heading,body,menu]});nodeOf(part).className = 'pui-workspace-tools';
 
   function select(id: string,focus = false): void {
@@ -32,8 +33,9 @@ export function composeWorkspaceTools(initial: Readonly<WorkspaceToolsState>,cal
   }
   function update(next: Readonly<WorkspaceToolsState>): void {
     if (!alive) return;
-    if (!Array.isArray(next.tabs) || new Set(next.tabs.map(tab => tab.id)).size !== next.tabs.length || next.tabs.some(tab => !tab.id || !['files','terminal'].includes(tab.kind))) throw new TypeError('Invalid workspace tool tabs.');
+    if (!Array.isArray(next.tabs) || new Set(next.tabs.map(tab => tab.id)).size !== next.tabs.length || next.tabs.some(tab => !tab.id || !['files','terminal','preview'].includes(tab.kind))) throw new TypeError('Invalid workspace tool tabs.');
     const changedActive = state.activeId !== next.activeId;state = next;
+    menu.update({label:'New workspace tool',items:menuItems()});
     const wanted = new Set(next.tabs.map(tab => tab.id));
     const returnFocus = restoreFocus || [...selectors].some(([id,row]) => !wanted.has(id) && nodeOf(row.part).contains(document.activeElement));restoreFocus = false;
     for (const [id,row] of selectors) if (!wanted.has(id)) {row.part.destroy();selectors.delete(id);}
@@ -42,7 +44,7 @@ export function composeWorkspaceTools(initial: Readonly<WorkspaceToolsState>,cal
       if (!row) {
         const id = tab.id;
         const button = createButtonPart({label: tab.label,variant: 'secondary',onAction: () => select(id)});
-        const close = createButtonPart({label: 'Close '+tab.label,title: tab.kind === 'terminal' ? 'Stop this terminal and its jobs' : 'Close this files view',icon: 'close',variant: 'quiet-icon',onAction() {if (alive && !state.disabled && !state.tabs.find(tab => tab.id === id)?.pending) callbacks.onClose?.(id);}});
+        const close = createButtonPart({label: 'Close '+tab.label,title: tab.kind === 'terminal' ? 'Stop this terminal and its jobs' : 'Close this '+(tab.kind === 'preview' ? 'web' : 'files')+' view',icon: 'close',variant: 'quiet-icon',onAction() {if (alive && !state.disabled && !state.tabs.find(tab => tab.id === id)?.pending) callbacks.onClose?.(id);}});
         const wrapper = createStackPart({children: [button,close]});nodeOf(wrapper).className = 'pui-tool-tab';nodeOf(wrapper).setAttribute('role','presentation');
         const buttonNode = nodeOf(button);buttonNode.id = uniqueId('pui-tool-tab');buttonNode.setAttribute('role','tab');
         const navigate = (event: Event) => {
@@ -56,7 +58,7 @@ export function composeWorkspaceTools(initial: Readonly<WorkspaceToolsState>,cal
         row = {part: wrapper,select: button,close};selectors.set(id,row);
       }
       row.select.update({label: tab.label,title: tab.detail || `${next.location}${next.detail ? '\n'+next.detail : ''}`,variant: 'secondary',disabled: !!next.disabled});
-      row.close.update({label: 'Close '+tab.label,title: tab.kind === 'terminal' ? 'Stop this terminal and its jobs' : 'Close this files view',icon: 'close',variant: 'quiet-icon',disabled: !!next.disabled || !!tab.pending});
+      row.close.update({label: 'Close '+tab.label,title: tab.kind === 'terminal' ? 'Stop this terminal and its jobs' : 'Close this '+(tab.kind === 'preview' ? 'web' : 'files')+' view',icon: 'close',variant: 'quiet-icon',disabled: !!next.disabled || !!tab.pending});
       const selected = next.activeId === tab.id;
       nodeOf(row.select).setAttribute('aria-selected',String(selected));nodeOf(row.select).setAttribute('tabindex',selected ? '0' : '-1');
       nodeOf(row.part).classList.toggle('pui-selected',selected);
